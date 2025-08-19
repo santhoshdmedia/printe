@@ -6,25 +6,12 @@ require("dotenv").config();
 const morgan = require("morgan");
 const path = require("path");
 const app = express();
-const allowedOrigins = [
-'*'
-];
-
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = `The CORS policy for this site does not allow access from ${origin}`;
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
+  origin: '*', // Wildcard is allowed if credentials are not used
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  credentials: true,
-  maxAge: 86400 // 24 hours
+  // credentials: true, // REMOVED THIS LINE
+  maxAge: 86400
 }));
 app.use(express.json());
 app.use(morgan("dev"));
