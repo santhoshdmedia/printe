@@ -7,11 +7,7 @@ const morgan = require("morgan");
 const path = require("path");
 const app = express();
 const allowedOrigins = [
-  'https://printe.in/',
-  'https://www.printe.in/',
-  'http://62.72.58.252',
-  'https://62.72.58.252',
-  'http://localhost:8000'
+'*'
 ];
 
 app.use(cors({
