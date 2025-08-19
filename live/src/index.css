@@ -1,0 +1,413 @@
+@import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer components {
+  .center_div {
+    @apply flex items-center justify-center;
+  }
+  .title {
+    @apply font-primary font-bold lg:text-3xl;
+  }
+  .sub_title {
+    @apply font-primary font-semibold lg:text-lg text-sm;
+  }
+  .para {
+    @apply font-primary font-normal lg:text-base text-sm;
+  }
+  .button {
+    @apply border py-3 px-4 para bg-primary text-white rounded-md transition-all duration-200 ease-in-out w-full hover:bg-purple-700;
+  }
+  .button_disable {
+    @apply border py-3 px-4 para bg-gray-100 text-gray-400 rounded-md transition-all duration-200 ease-in-out hover:bg-gray-200;
+  }
+  .button_inline {
+    @apply border-primary text-center border py-3 px-4 para rounded-md w-full text-primary hover:bg-purple-100;
+  }
+  .link_hover {
+    @apply hover:text-secondary relative after:content-[''] after:w-0 after:h-[2px] after:bg-secondary after:absolute after:left-0 after:-bottom-[7px] after:transition-all hover:after:w-full;
+  }
+  .givemeitall {
+    @apply w-full h-[50px] center_div !bg-white !font-medium !text-[14px];
+  }
+  .skyslate_gradient {
+    @apply bg-white;
+  }
+}
+
+
+* {
+  font-family: "Jost", serif;
+}
+
+:root {
+  --primary-color: #1d1d1d;
+  --secondary-color: #d9d9d9;
+}
+
+.ant-select-item-option-content,
+.ant-select-selection-item {
+  font-size: larger;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  border-radius: 50px !important;
+}
+
+
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: rgb(255, 255, 255) !important;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color) !important;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: white !important;
+}
+
+.ant-collapse-header {
+  background-color: white !important;
+  border-radius: 0% !important;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+.ant-table-thead > tr > th {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+.slick-prev,
+.slick-next {
+  background-color: white !important;
+  color: black !important;
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  z-index: 10 !important;
+  filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1)) !important;
+}
+
+.slick-next::after,
+.slick-prev::after {
+  position: unset !important;
+}
+
+.slick-prev:hover,
+.slick-next:hover {
+  background-color: #ebebeb !important;
+}
+.custom-slider .slick-list {
+  padding-left: 15px !important;
+}
+
+.phone .ant-input {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px 11px;
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 14px;
+  line-height: 1.5714285714285714;
+  list-style: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  height: 50px;
+  min-width: 0;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+/* carousal navigation */
+
+.swiper-button-prev,
+.swiper-button-next {
+  color: #615e5e !important;
+  font-size: 40px !important;
+  font-weight: 1000;
+  /* background-color: rgba(255, 255, 255, 0.658) !important; */
+  /* border-radius: 50px !important; */
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50%;
+  text-align: center;
+}
+.swiper-button-prev:after,
+.swiper-button-next:after {
+  font-size: 20px !important;
+  font-family: 1000;
+}
+
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  background-color: rgba(255, 255, 255, 0.658) !important;
+  
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th,
+.ant-table-wrapper .ant-table-thead > tr > td {
+  background-color: white !important;
+  color: var(--primary-color) !important;
+}
+
+.ant-collapse > .ant-collapse-item > .ant-collapse-header > .ant-collapse-header-text {
+  color: black !important;
+}
+
+@media screen and (orientation: portrait) {
+  .swiper-button-prev,
+  .swiper-button-next {
+    width: 15px !important;
+    height: 15px !important;
+    display: none!important;
+  }
+  .swiper-button-prev:after,
+  .swiper-button-next:after {
+    font-size: 5px !important;
+    display: none!important;
+
+  }
+}
+
+.custom-collapse .ant-collapse-header {
+  background-color: var(--primary-color) !important;
+  font-weight: bold !important;
+  color: white !important;
+}
+
+.selectoption.ant-select-outlined:not(.ant-select-customize-input) .ant-select-selector {
+  background-color: rgb(255, 255, 255) !important;
+  color: rgb(0, 0, 0) !important;
+  border-radius: 0%;
+}
+
+/* carousal paginatiton */
+span.swiper-pagination-bullet {
+    height: 12px !important;
+    width: 12px !important;
+}
+
+span.swiper-pagination-bullet.swiper-pagination-bullet-active {
+    background: #ddd;
+    height: 15px!important;
+    width:  15px!important;
+}
+/* Custom pagination bullets with animation */
+/* .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  margin: 0 6px !important;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+  
+  /* Pulse animation */
+  /* animation: pulse 2s infinite;
+}  */
+
+.swiper-pagination-bullet {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
+  animation-delay: calc(0.1s * var(--i)); /* Add this as inline style */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 0.7; transform: translateY(0); }
+}
+.swiper-pagination-bullet-active {
+  background: #fff;
+  width: 30px;
+  border-radius: 8px;
+  animation: activePulse 2s infinite, stretch 0.3s ease-out;
+}
+
+/* Subtle pulse animation for inactive dots */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+/* Stronger pulse for active dot */
+@keyframes activePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+  }
+}
+
+/* Stretch animation when becoming active */
+@keyframes stretch {
+  0% {
+    width: 12px;
+  }
+  100% {
+    width: 30px;
+  }
+}
+
+/* Optional: Hover effects */
+.swiper-pagination-bullet:hover {
+  transform: scale(1.2);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+#headerSearch::placeholder{
+  color: #fff;
+  transition: all 300ms ease-in-out;
+}
+
+
+#headerSearch:focus::placeholder{
+  color: black;
+  transition: all 300ms ease-in-out;
+
+}
+
+#headerSearch:hover::placeholder{
+  color: black;
+  transition: all 300ms ease-in-out;
+
+}
+
+
+/* 3d card */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.card__Banear_section{
+  background: url('../src/assets/mockup/card_bg.jpg') center center no-repeat cover;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+.animate-fade-out {
+  animation: fade-out 0.3s ease-out forwards;
+}
+
+
+/* banear section */
+.banear__section{
+  background: url('assets/mockup/banear_bg.jpeg') center fixed no-repeat;
+  background-size: cover;
+  position: relative;
+  z-index: 1;
+}
+
+
+.single_product{
+  animation: tilt 3s linear 0.5s infinite alternate ;
+}
+.single_product_right{
+  animation: tilt 3s linear 1.5s infinite alternate ;
+ 
+}
+
+
+@keyframes tilt {
+  0%{
+    transform: translateY(0px);
+  }
+  100%{
+    transform: translateY(50px);
+  }
+}
+
+
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.1); }
+  40% { transform: scale(1); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.animate-heartBeat {
+  animation: heartBeat 0.8s ease-in-out;
+}
+
+.policy_section{
+  background: url('assets/mockup/shoping-png.png') no-repeat 50% 40%;
+  background-size: 70%;
+}
+
+@media (Max-width:400px) {
+  .policy_section{
+    background: none;
+  }
+}
+
+/* carousal */
+/* .carousal_overlay{
+  background: url('assets/logo/fav.png') center center no-repeat;
+  background-size: 150%;
+  animation: carosalAnimation 3s linear infinite alternate ;
+}
+
+@keyframes carosalAnimation {
+  from{
+    opacity: 0;
+  }
+  to{
+    opacity: 1;
+  }
+} */

@@ -1,0 +1,12 @@
+# Root .gitignore (works for both frontend and backend)
+/node_modules
+/.env
+.DS_Store
+dist/
+build/
+*.log
+*.tmp
+*.cache
+
+.env
+
