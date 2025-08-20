@@ -72,8 +72,8 @@ const CarouselBanner = () => {
   };
 
   return (
-    <div className="w-full bg-transparent h-fit pt-6 lg:py-2 px-5 lg:px-24 mx-auto relative">
-      <div className="px-0 pt-10">
+    <div className="w-full bg-transparent h-[100%] pt-6 lg:py-2  mx-auto relative translate-x-[-40%] left-[50%]">
+      <div className="px-0 pt-10 flex justify-center">
         <Swiper
           modules={[Autoplay, EffectFade, Navigation]}
           effect="fade"
@@ -89,7 +89,7 @@ const CarouselBanner = () => {
             pauseOnHover: true
           }}
           speed={2000}
-          className="w-full mx-auto relative"
+          className="w-full  relative"
           onSlideChange={handleSlideChange}
           onSwiper={handleSwiperInit}
         >

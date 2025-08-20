@@ -74,17 +74,16 @@ const Footer = () => {
               <span>Follow us</span>
               <ul className="flex gap-2">
                 <li>
+                  <Link to={'https://www.facebook.com/profile.php?id=61578118705571&sk=about'} target="_blank">
                   <FaFacebook size={20} />
+                  </Link>
                 </li>
                 <li>
+                  <Link to={'https://www.instagram.com/printe_in/'} target="_blank">
                   <FaInstagram size={20} />
+                  </Link>
                 </li>
-                <li>
-                  <FaTwitterSquare size={20} />
-                </li>
-                <li>
-                  <FaLinkedin size={20} />
-                </li>
+                
               </ul>
             </li>
           </ul>

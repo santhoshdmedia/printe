@@ -7,10 +7,10 @@ const morgan = require("morgan");
 const path = require("path");
 const app = express();
 app.use(cors({
-  origin: '*', // Wildcard is allowed if credentials are not used
+  origin: '*', 
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  // credentials: true, // REMOVED THIS LINE
+  credentials: true, // REMOVED THIS LINE
   maxAge: 86400
 }));
 app.use(express.json());

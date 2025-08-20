@@ -13,7 +13,6 @@ import BrowseAll from "../../components/Home/BrowseAll";
 import { useNavigate } from "react-router-dom";
 import QuickAccess from "../../config/QuickAccess";
 import ThreeDSlider from "../../components/Home/ThreeDSlider";
-import { DynamicBannear } from "../../components/Lists/SwiperList";
 
 const Home = () => {
   const [loading, setLoading] = useState(false);
@@ -64,52 +63,27 @@ const Home = () => {
         <BrowseAll />
         {/* <StepProcess /> */}
       </div>
-      <div className="flex flex-col">
-        {sectionData.map((res, index) => {
-          console.log(res);
-          return (
-            <div key={index}>
-              {_.get(res, "section_type") === "floating product" ? (
-                <>
-                {/* <DynamicBannear Product_cover_img={}/> */}
+    <div className="flex flex-col">
+          {sectionData.map((res, index) => {
+            console.log(res);
+            return (
+              <div key={index}>
+                {/* <div className={`grid ${GETGRID_COUNT(res)}  grid-cols-1 gap-y-2 gap-x-2 py-2 lg:py-5`}>
+                  {!_.isEmpty(_.get(res, "banner_images", [])) && (
+                    <>
+                      {_.get(res, "banner_images", []).map((pic, index) => {
+                        return <img src={pic.path} key={index} className="w-full !h-full object-fill rounded-xl" />;
+                      })}
+                    </>
+                  )}
+                </div> */}
                 
-                </>
-              ) : (
-                <div
-                  className={`grid ${GETGRID_COUNT(
-                    res
-                  )} grid-cols-1 gap-2 py-2 lg:py-5`}
-                >
-                  {!_.isEmpty(_.get(res, "banner_images", [])) &&
-                    _.get(res, "banner_images", []).map((pic, index) => (
-                      <img
-                        key={`banner-${index}`}
-                        src={pic.path}
-                        alt={`Banner ${index + 1}`}
-                        className="w-full h-full object-cover rounded-xl"
-                        loading="lazy"
-                      />
-                    ))}
-                </div>
-              )}
-
-              <SwiperList
-                product_type={_.get(res, "product_display", "1")}
-                title={_.get(res, "section_name", "")}
-                data={_.get(res, "productDetails", [])}
-                subtitle={_.get(res, "sub_title", "")}
-                type="Product"
-                to={`/see-more/${_.get(res, "section_name", "")}/${_.get(
-                  res,
-                  "_id",
-                  ""
-                )}`}
-                productCardType="Simple"
-              />
-            </div>
-          );
-        })}
-      </div>
+               
+                <SwiperList product_type={_.get(res, "product_display", "1")} title={_.get(res, "section_name", "")} data={_.get(res, "productDetails", [])} subtitle={_.get(res, "sub_title", "")} type="Product" to={`/see-more/${_.get(res, "section_name", "")}/${_.get(res, "_id", "")}`} productCardType="Simple" />
+              </div>
+            );
+          })}
+        </div>
 
       <div className="">
         {/* {_.get(user, "_id", "") && (

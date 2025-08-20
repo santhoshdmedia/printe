@@ -487,7 +487,7 @@ We use third-party service providers to serve ads on our behalf across the Inter
 
 export const returnPolicy = [
   {
-    title: "Return Policy",
+    title: "Return and Refund Policy",
     desc: "At Printe, customer satisfaction is our top priority. We are committed to providing high-quality, custom-printed products. However, we understand that in some cases, returns may be necessary. Please review our return policy below:",
     children: [
       {
@@ -498,8 +498,15 @@ The return request must be made within 7 days of receiving the product.`,
       },
       {
         title: "Return Process",
-        desc: `To initiate a return, please contact our customer support team at [99999 99999/ xxxxxxx@printe.com] with your order number, a description of the issue, and photos of the product if applicable.
-Our team will review your request and guide you through the return process.`,
+        desc: `To initiate a return, please contact our customer support team at [95856 10000/ help@printe.com] with your order number, a description of the issue, and photos of the product if applicable.
+Our team will review your request and guide you through the return process.
+All refunds will be processed through Razorpay to the original payment method.`,
+      },
+      {
+        title: "Refund Timeline",
+        desc: `Once we receive and inspect your returned item, we will send you an email to notify you that we have received your returned item.
+We will also notify you of the approval or rejection of your refund.
+If approved, your refund will be processed through Razorpay, and a credit will automatically be applied to your original method of payment within 7-10 business days.`,
       },
       {
         title: "Conditions for Returns",
