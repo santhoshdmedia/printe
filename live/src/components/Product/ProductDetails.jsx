@@ -198,7 +198,7 @@
 //     const averageRating = ratingSum === 0 ? 0 : ratingSum / rate.length;
 //     setAverageRatingCount(parseFloat(averageRating.toFixed(1)));
 //   }, [rate]);
-  
+
 //   //redux
 //   const { isGettingVariantPrice, product, productRateAndReview } = useSelector(
 //     (state) => state.publicSlice
@@ -451,7 +451,7 @@
 //         <div className="flex flex-col gap-4">
 //           <div className="flex gap-4 items-center">
 //             <h1
-//               className={`status-label hidden lg:block capitalize text-sm w-fit p-2 rounded-md 
+//               className={`status-label hidden lg:block capitalize text-sm w-fit p-2 rounded-md
 //   ${
 //     data.stocks_status === "In Stock"
 //       ? "bg-green-100 text-green-800"
@@ -490,7 +490,7 @@
 //           <p className="text-sm text-gray-500">
 //             {rate.length} Ratings & {review.length} Reviews
 //           </p>
-          
+
 //           <h1 className="title text-primary hidden lg:block capitalize">
 //             {data.name}
 //           </h1>
@@ -509,7 +509,7 @@
 //               <IconHelper.SHARE_ICON className="!text-2xl cursor-pointer" />
 //             </motion.div>
 //           </motion.div>
-          
+
 //           <div className="pb-2">
 //             <span className="!text-lg ">
 //               <div
@@ -846,9 +846,9 @@
 //                       </span>
 //                       <div className="flex items-center gap-1">
 //                         <span className="text-xs">Design Needed?</span>
-//                         <Switch 
+//                         <Switch
 //                           size="small"
-//                           checked={needDesignUpload} 
+//                           checked={needDesignUpload}
 //                           onChange={(checked) => {
 //                             setNeedDesignUpload(checked);
 //                             if (!checked) {
@@ -867,7 +867,7 @@
 //                       </div>
 //                     </h1>
 //                   </h3>
-                  
+
 //                   {needDesignUpload ? (
 //                     <>
 //                       <div className="py-4">
@@ -1101,7 +1101,7 @@ const ProductDetails = ({
 
   //state
   const [totalPrice, setTotalPrice] = useState(price);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(100);
   const [discountPercentage, setDiscountPercentage] = useState({
     uuid: "",
     percentage: 0,
@@ -1145,14 +1145,20 @@ const ProductDetails = ({
         uuid: _.get(data, "quantity_discount_splitup[0].uniqe_id", ""),
         percentage: _.get(data, "quantity_discount_splitup[0].discount", ""),
       });
-      const initialQuantity = _.get(data, "quantity_discount_splitup[0].quantity", 1);
+      const initialQuantity = _.get(
+        data,
+        "quantity_discount_splitup[0].quantity",
+        100
+      );
       setQuantity(initialQuantity);
-      setCheckOutState(prev => ({
+      setCheckOutState((prev) => ({
         ...prev,
-        product_quantity: initialQuantity
+        product_quantity: initialQuantity,
       }));
     } else {
-      if (Number(_.get(data, "quantity_discount_splitup[0].quantity", "")) === 1) {
+      if (
+        Number(_.get(data, "quantity_discount_splitup[0].quantity", "")) === 1
+      ) {
         setDiscountPercentage({
           uuid: _.get(data, "quantity_discount_splitup[0].uniqe_id", ""),
           percentage: _.get(data, "quantity_discount_splitup[0].discount", ""),
@@ -1162,9 +1168,9 @@ const ProductDetails = ({
       }
       setMaimumQuantity(_.get(data, "max_quantity", ""));
       setQuantity(1);
-      setCheckOutState(prev => ({
+      setCheckOutState((prev) => ({
         ...prev,
-        product_quantity: 1
+        product_quantity: 100,
       }));
     }
   }, [_.get(data, "quantity_discount_splitup[0].discount", "")]);
@@ -1260,6 +1266,8 @@ const ProductDetails = ({
         setError("Please Confirm Your Designs");
         return;
       }
+      
+
 
       if (_.isEmpty(user)) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
@@ -1289,10 +1297,30 @@ const ProductDetails = ({
       });
       dispatch(ADD_TO_CART(_.get(result, "data.data.data", "")));
     } catch (err) {
+      if (err?.response?.status === 401) {
+      localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
+      CUSTOM_ERROR_NOTIFICATION("login to place order ");
+      navigate("/sign-up");
+    } else {
       ERROR_NOTIFICATION(err);
+    }
     } finally {
       setLoading(false);
     }
+  };
+
+   const calculateDeliveryDate = (days) => {
+    const today = new Date();
+    const deliveryDate = new Date(today);
+    deliveryDate.setDate(today.getDate() + Number(days));
+    console.log(days);
+    
+    
+    return deliveryDate.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
 
   const generateLabel = (label) => {
@@ -1317,9 +1345,9 @@ const ProductDetails = ({
       );
       const newQuantity = Number(_.get(filter_data, "[0].quantity", 1));
       setQuantity(newQuantity);
-      setCheckOutState(prev => ({
+      setCheckOutState((prev) => ({
         ...prev,
-        product_quantity: newQuantity
+        product_quantity: newQuantity,
       }));
       setDiscountPercentage({
         uuid: Number(_.get(filter_data, "[0].uniqe_id", 1)),
@@ -1345,9 +1373,9 @@ const ProductDetails = ({
       setDiscountPercentage({ uuid: 0, percentage: 0 });
     }
     setQuantity(value);
-    setCheckOutState(prev => ({
+    setCheckOutState((prev) => ({
       ...prev,
-      product_quantity: value
+      product_quantity: value,
     }));
   };
 
@@ -1458,11 +1486,11 @@ const ProductDetails = ({
           <p className="text-sm text-gray-500">
             {rate.length} Ratings & {review.length} Reviews
           </p>
-          
+
           <h1 className="title text-primary hidden lg:block capitalize">
             {data.name}
           </h1>
-          
+
           <div className="pb-2">
             <span className="!text-lg ">
               <div
@@ -1503,45 +1531,43 @@ const ProductDetails = ({
                         />
                       ) : (
                         <div className="flex items-center gap-x-2 flex-wrap w-full py-2">
-                          {_.get(variant, "options", []).map(
-                            (data, index2) => {
-                              return (
+                          {_.get(variant, "options", []).map((data, index2) => {
+                            return (
+                              <div
+                                key={index}
+                                className="flex flex-col items-center gap-y-1"
+                              >
                                 <div
-                                  key={index}
-                                  className="flex flex-col items-center gap-y-1"
+                                  key={index2}
+                                  onClick={() =>
+                                    handleOnChangeSelectOption(
+                                      data.value,
+                                      index
+                                    )
+                                  }
+                                  className={`!size-[50px] border ${
+                                    variant.options.length === 1
+                                      ? "!cursor-not-allowed"
+                                      : "cursor-pointer"
+                                  } center_div border-2 rounded-lg ${
+                                    _.get(
+                                      currentPriceSplitup,
+                                      `[${variant.variant_name}]`,
+                                      ""
+                                    ) === data.value
+                                      ? "border-sky-500"
+                                      : "border-gray-400"
+                                  }`}
                                 >
-                                  <div
-                                    key={index2}
-                                    onClick={() =>
-                                      handleOnChangeSelectOption(
-                                        data.value,
-                                        index
-                                      )
-                                    }
-                                    className={`!size-[50px] border ${
-                                      variant.options.length === 1
-                                        ? "!cursor-not-allowed"
-                                        : "cursor-pointer"
-                                    } center_div border-2 rounded-lg ${
-                                      _.get(
-                                        currentPriceSplitup,
-                                        `[${variant.variant_name}]`,
-                                        ""
-                                      ) === data.value
-                                        ? "border-sky-500"
-                                        : "border-gray-400"
-                                    }`}
-                                  >
-                                    <img
-                                      src={data.image_name}
-                                      className="!size-[30px] !object-contain"
-                                    />
-                                  </div>
-                                  <h1>{data.value}</h1>
+                                  <img
+                                    src={data.image_name}
+                                    className="!size-[30px] !object-contain"
+                                  />
                                 </div>
-                              );
-                            }
-                          )}
+                                <h1>{data.value}</h1>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1579,9 +1605,9 @@ const ProductDetails = ({
             onCancel={() => setIsModalOpen(false)}
             footer={null}
             centered
-            className="!max-w-[300px]"
+            className="!max-w-[1000px]"
           >
-            <div className="max-w-[300px] max-h-[400px] overflow-y-auto text-sm text-gray-700 p-2">
+            <div className="max-w-full max-h-[800px] overflow-y-auto text-lg text-gray-700 p-2">
               <p>
                 The printing time determines how long it takes us to complete
                 your order. You may pick your preferred production time from the
@@ -1638,7 +1664,7 @@ const ProductDetails = ({
             <div className="w-[100%] border center_div border-white h-[60px]">
               {_.get(data, "quantity_type", "") === "textbox" ? (
                 <Input
-                  min={1}
+                  min={100}
                   type="number"
                   className="flex-1 !h-[50px] text-lg"
                   value={quantity}
@@ -1655,8 +1681,8 @@ const ProductDetails = ({
                       className="flex-1 !h-[50px] text-lg"
                       placeholder={"Quantity"}
                       disabled={
-                        _.get(data, "quantity_discount_splitup", [])
-                          .length === 1
+                        _.get(data, "quantity_discount_splitup", []).length ===
+                        1
                       }
                     >
                       {_.get(data, "quantity_discount_splitup", []).map(
@@ -1717,9 +1743,8 @@ const ProductDetails = ({
                         <span className="grayscale text-3xl !font-medium title line-through">
                           Rs.{" "}
                           {Number(
-                            Number(
-                              _.get(checkOutState, "product_price", 0)
-                            ) * Number(quantity)
+                            Number(_.get(checkOutState, "product_price", 0)) *
+                              Number(quantity)
                           ).toFixed(2)}
                         </span>
                       )}
@@ -1749,16 +1774,13 @@ const ProductDetails = ({
                         You will save{" "}
                         {Math.abs(
                           Number(
-                            Number(
-                              _.get(checkOutState, "product_price", 0)
-                            ) * quantity
+                            Number(_.get(checkOutState, "product_price", 0)) *
+                              quantity
                           ) -
                             Number(
                               DISCOUNT_HELPER(
                                 discountPercentage.percentage,
-                                Number(
-                                  _.get(checkOutState, "product_price", 0)
-                                )
+                                Number(_.get(checkOutState, "product_price", 0))
                               ) * Number(quantity)
                             )
                         ).toFixed(2)}
@@ -1781,16 +1803,16 @@ const ProductDetails = ({
                         / pieces)
                       </span>
                       <div className="flex items-center gap-1">
-                        <span className="text-xs">Design Needed?</span>
-                        <Switch 
+                        <span className="text-md font-bold capitalize">already have design</span>
+                        <Switch
                           size="small"
-                          checked={needDesignUpload} 
+                          checked={needDesignUpload}
                           onChange={(checked) => {
                             setNeedDesignUpload(checked);
                             if (!checked) {
-                              setCheckOutState(prev => ({
+                              setCheckOutState((prev) => ({
                                 ...prev,
-                                product_design_file: ""
+                                product_design_file: "",
                               }));
                             }
                           }}
@@ -1798,15 +1820,19 @@ const ProductDetails = ({
                       </div>
                     </h1>
                   </h3>
-                  
-                  <div className="min-h-[200px]"> {/* Added fixed height container */}
-                    {needDesignUpload ? (
-                      <div className="py-4">
+
+                  <div className="min-h-[100px]">
+                    {" "}
+                    {/* Added fixed height container */}
+                    {needDesignUpload ?(
+                        <div className="py-4">
                         {checkOutState.product_design_file ? (
                           <>
                             <div className="hidden lg:block">
                               <Tag className="center_div justify-between border px-4 !h-[50px] !text-[14px] gap-x-4 w-full">
-                                <Tooltip title={checkOutState.product_design_file}>
+                                <Tooltip
+                                  title={checkOutState.product_design_file}
+                                >
                                   <span className="line-clamp-1 text-slate-600 max-w-[200px] overflow-hidden">
                                     {checkOutState.product_design_file}
                                   </span>
@@ -1836,7 +1862,9 @@ const ProductDetails = ({
                             </div>
                             <div className="lg:hidden block bg-slate-100 p-2 rounded-lg">
                               <div className="flex items-center py-2">
-                                <Tooltip title={checkOutState.product_design_file}>
+                                <Tooltip
+                                  title={checkOutState.product_design_file}
+                                >
                                   <span className="line-clamp-1 text-[12px] text-slate-600 max-w-[200px] overflow-hidden">
                                     {checkOutState.product_design_file}
                                   </span>
@@ -1904,7 +1932,7 @@ const ProductDetails = ({
                           />
                         )}
                       </div>
-                    ) : (
+                    ) :(
                       <div className="py-4">
                         <button
                           className="w-full my-2 bg-orange-500 text-white px-3 !h-[50px] rounded"
@@ -1913,14 +1941,22 @@ const ProductDetails = ({
                           Add To Shopping Cart
                         </button>
                       </div>
-                    )}
+                      )  }
                   </div>
                 </div>
 
-                <motion.div initial="hidden" animate="visible" variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-                }}>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.5 },
+                    },
+                  }}
+                >
                   <h3 className="py-3 text-black text-lg">
                     Estimated Delivery
                   </h3>
@@ -1933,7 +1969,7 @@ const ProductDetails = ({
                   >
                     <IconHelper.DELIVERY_TRUCK_ICON />
                     Standard Delivery by
-                    <span className="text-gray-500">Fri, Dec 6 | </span> ₹ 75
+                    <span className="text-gray-500">{calculateDeliveryDate(processing_item)}| </span> ₹ 75
                   </motion.h3>
                 </motion.div>
 
@@ -1941,9 +1977,7 @@ const ProductDetails = ({
                   <h1>contact us about your order</h1>
                   {shareicon.map((res, index) => (
                     <Tooltip title={res.name} key={index}>
-                      <div
-                        className="cursor-pointer group border size-[35px] transition-all duration-700 center_div rounded-full"
-                      >
+                      <div className="cursor-pointer group border size-[35px] transition-all duration-700 center_div rounded-full">
                         {res.com}
                       </div>
                     </Tooltip>

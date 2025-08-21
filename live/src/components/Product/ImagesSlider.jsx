@@ -76,40 +76,26 @@ const ImagesSlider = ({ imageList, data }) => {
       <div className="lg:hidden block">{<DividerCards name={data.name} />}</div>
       <div className="flex flex-row-reverse gap-2">
         <div
-          className="flex-1 bg-white border lg:h-[650px] w-[650px] h-[210px] overflow-hidden relative rounded-md z-20"
+          className="flex-1 bg-white border lg:h-[650px] !w-[50px] h-[210px] overflow-hidden relative rounded-md z-20"
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          style={{ height: '650px' }} // Fixed height
+          style={{ height: '700px' }} // Fixed height
         >
           <img
             ref={imgRef}
             src={imageSelected}
-            className="w-full h-full object-contain rounded-md"
+            className="w-full h-full object-cover rounded-md"
             alt="product"
           />
 
-          {position.showZoom && (
-            <div
-              className="hidden lg:block absolute pointer-events-none border-2 border-gray-300 rounded-full w-40 h-40"
-              style={{
-                left: `${position.x - 80}px`,
-                top: `${position.y - 80}px`,
-                backgroundImage: `url(${imageSelected})`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: backgroundPosition,
-                backgroundSize: `${imgRef.current?.naturalWidth}px ${imgRef.current?.naturalHeight}px`,
-                transform: "scale(2)",
-                zIndex: 30,
-              }}
-            />
-          )}
+        
 
           <Tooltip
             title={`${isFav ? "Remove From" : "Add To"} Wish List`}
             placement="right"
           >
             <button
-              className={`rounded absolute top-3 right-3 text-white hover:scale-110 p-1 transition-all duration-200 delay-300 ease-in-out`}
+              className={`rounded absolute top-3 right-3 text-red-500 hover:scale-110 p-1 transition-all duration-200 delay-300 ease-in-out`}
               onClick={handleAddWishList}
               style={{ zIndex: 40 }}
             >

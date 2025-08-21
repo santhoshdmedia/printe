@@ -213,7 +213,7 @@ const ProductCard2 = ({ data }) => {
             <span className="text-xl font-bold text-gray-900">${price}</span>
             {data.original_price && (
               <span className="ml-2 text-sm text-gray-500 line-through">
-                ${data.original_price}
+                ₹ 
               </span>
             )}
           </motion.div>

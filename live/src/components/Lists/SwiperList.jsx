@@ -55,7 +55,7 @@ const SwiperList = ({
       case "2":
         return (
           <div className="relative">
-            <ProductCard2 data={data} />
+            <SimpleProductCard data={data} />
           </div>
         );
       case "3":
@@ -115,10 +115,16 @@ const SwiperList = ({
 
   return (
     <div>
-      {product_type === "3" && (
+      {product_type === "2" && (
         <div className=" my-10">
           {" "}
           <Bannear />
+        </div>
+      )}
+      {product_type === "3" && (
+        <div className="my-20">
+          {" "}
+          <ThreeStep />
         </div>
       )}
       <div className="lg:px-20 px-2 ">
@@ -126,6 +132,7 @@ const SwiperList = ({
           <DividerCards name={title} subtitle={subtitle} to={to} left={left} />
         )}
         <div className="relative">
+          
           <Swiper
             spaceBetween={20}
             breakpoints={{
@@ -215,12 +222,7 @@ const SwiperList = ({
           )}
         </div>
       </div>
-      {product_type === "2" && (
-        <div className="my-20">
-          {" "}
-          <ThreeStep />
-        </div>
-      )}
+      
     </div>
   );
 };

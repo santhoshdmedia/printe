@@ -54,7 +54,7 @@ const BrowseAll = () => {
             slidesPerView: 4,
           },
           1440: {
-            slidesPerView: 5,
+            slidesPerView: 4,
           },
         }}
         className="mySwiper"

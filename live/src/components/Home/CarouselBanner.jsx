@@ -72,7 +72,7 @@ const CarouselBanner = () => {
   };
 
   return (
-    <div className="w-full bg-transparent h-[100%] pt-6 lg:py-2  mx-auto relative translate-x-[-40%] left-[50%]">
+    <div className="lg:w-[85%]  bg-transparent h-[100%] pt-6 lg:py-2  mx-auto relative translate-x-[5%]">
       <div className="px-0 pt-10 flex justify-center">
         <Swiper
           modules={[Autoplay, EffectFade, Navigation]}
