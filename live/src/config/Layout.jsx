@@ -36,9 +36,12 @@ const Layout = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []); // Empty dependency array means this runs only once on mount
+  const isProduct = [
+    "product"
+  ].some((route) => location.pathname.includes(route));
   return (
     <div className={` w-full mx-auto !transition-all !duration-700 `}>
-      <div className="fixed top-0 left-0 -z-10 h-[100vh] w-full">
+      <div className={`fixed top-0 left-0 -z-10 h-[100vh] w-full ${isProduct?"hidden":""}`}>
         <div 
           className="absolute inset-0 h-full w-full bg-gradient-to-b from-white to-[#FFF9C7]"
           aria-hidden="true"

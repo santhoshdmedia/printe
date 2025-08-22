@@ -32,7 +32,9 @@ const Product = () => {
   }, []);
 
   //redux
-  const { product, isGettingProduct, isUploadingFile } = useSelector((state) => state.publicSlice);
+  const { product, isGettingProduct, isUploadingFile } = useSelector(
+    (state) => state.publicSlice
+  );
 
   const addToHistoryDb = async () => {
     try {
@@ -51,7 +53,29 @@ const Product = () => {
   return (
     <div className="lg:px-20 px-4">
       <div className="pt-10 ">
-        <Breadcrumbs title3={_.get(product, "name", "")} title={_.get(product, "category_details.main_category_name", "")} titleto={`/category/${_.get(product, "category_details.main_category_name", "")}/${_.get(product, "category_details._id", "")}`} title2={_.get(product, "sub_category_details.sub_category_name", "")} title2to={`/category/${_.get(product, "category_details.main_category_name", "")}/${_.get(product, "sub_category_details.sub_category_name", "")}/${_.get(product, "category_details._id", "")}/${_.get(product, "sub_category_details._id", "")}`} />
+        <Breadcrumbs
+          title3={_.get(product, "name", "")}
+          title={_.get(product, "category_details.main_category_name", "")}
+          titleto={`/category/${_.get(
+            product,
+            "category_details.main_category_name",
+            ""
+          )}/${_.get(product, "category_details._id", "")}`}
+          title2={_.get(product, "sub_category_details.sub_category_name", "")}
+          title2to={`/category/${_.get(
+            product,
+            "category_details.main_category_name",
+            ""
+          )}/${_.get(
+            product,
+            "sub_category_details.sub_category_name",
+            ""
+          )}/${_.get(product, "category_details._id", "")}/${_.get(
+            product,
+            "sub_category_details._id",
+            ""
+          )}`}
+        />
       </div>
       <div>
         {isGettingProduct ? (
@@ -59,24 +83,35 @@ const Product = () => {
         ) : (
           <Spin spinning={isUploadingFile}>
             <div className="flex flex-col">
-              <div className="flex lg:py-5 w-full lg:gap-10 lg:flex-row flex-col justify-start">
-                <div className="lg:w-1/2 w-full">
+              <div className="flex w-full flex-col justify-start gap-10 lg:flex-row lg:py-5 !relative">
+                {/* Image Slider Section - Sticky on desktop */}
+                <div className="w-full  lg:w-1/2 !sticky !top-24 !left-0">
                   <ImagesSlider imageList={product?.images} data={product} />
                 </div>
-                <div className="lg:w-1/2 w-full">
+
+                {/* Product Details Section */}
+                <div className="w-full lg:w-1/2">
                   <ProductDetails data={product} />
                 </div>
               </div>
-              <OverViewDetails data={product} />
-              <div className="h-[20px]"></div>
-              <SimilarProducts left={true} category_id={_.get(product, "category_details._id", "")} />
 
-              {_.get(user, "_id", "") && (
-                <>
-                  <HistoryProducts left={true} />
-                </>
-              )}
-              <div className="h-[20px]"></div>
+              {/* Product Overview Section */}
+              <OverViewDetails data={product} />
+
+              {/* Spacer */}
+              <div className="h-5"></div>
+
+              {/* Similar Products Section */}
+              <SimilarProducts
+                left={true}
+                category_id={product?.category_details?._id || ""}
+              />
+
+              {/* Recently Viewed Section (only for logged-in users) */}
+              {user?._id && <HistoryProducts left={true} />}
+
+              {/* Bottom Spacer */}
+              <div className="h-5"></div>
             </div>
           </Spin>
         )}

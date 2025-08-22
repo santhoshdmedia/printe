@@ -72,7 +72,7 @@ const ImagesSlider = ({ imageList, data }) => {
   };
 
   return (
-    <div className="sticky top-36">
+    <div className="">
       <div className="lg:hidden block">{<DividerCards name={data.name} />}</div>
       <div className="flex flex-row-reverse gap-2">
         <div

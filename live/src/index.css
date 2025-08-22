@@ -390,7 +390,7 @@ span.swiper-pagination-bullet.swiper-pagination-bullet-active {
   background-size: 70%;
 }
 
-@media (Max-width:400px) {
+@media (Max-width:500px) {
   .policy_section{
     background: none;
   }
