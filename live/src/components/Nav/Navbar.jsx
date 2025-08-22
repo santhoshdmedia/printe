@@ -311,7 +311,7 @@ const Navbar = () => {
                     className="center_div justify-start hover:!text-[#121621]  w-fit text-nowrap "
                   >
 
-                    +91 9876543210
+                    +91  9987654321
                   </a>
                 </h1>
                 <h1 className=" !text-[#121621]">24/7 Support</h1>
@@ -396,7 +396,7 @@ const Navbar = () => {
       {/* Desktop Menu */}
 
       {/* Mobile Navbar */}
-      <div className="block lg:hidden w-full fixed z-50 bg-white">
+      <div className="block lg:hidden w-full fixed z-50 bg-[#f9c114]">
         <div className="w-full h-[50px] border-b center_div justify-between px-4">
           <Link
             to="/"

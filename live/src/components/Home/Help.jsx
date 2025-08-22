@@ -50,8 +50,8 @@ const Help = () => {
           <h2 className="text-lg font-semibold text-gray-800 mb-2">Call us for Queries</h2>
           <p className="text-gray-600">
             Helpdesk:{" "}
-            <a href="tel:+919513734374" className="text-blue-600 hover:underline">
-              +91 8888888888
+            <a href="tel:+919513734374" className="text-black hover:underline">
+              +91  99876 54321
             </a>
           </p>
           <p className="text-gray-500">(Mon - Sat: 10:00 AM - 7:00 PM)</p>
@@ -62,7 +62,7 @@ const Help = () => {
           <h2 className="text-lg font-semibold text-gray-800 mb-2">E-Mail us</h2>
           <p className="text-gray-600">
             Sales enquiries and customer support:{" "}
-            <a href="mailto:care@printo.in" className="text-blue-600 hover:underline">
+            <a href="mailto:care@printo.in" className="text-black hover:underline">
               care@printe.in
             </a>
           </p>

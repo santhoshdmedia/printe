@@ -27,6 +27,8 @@ const CarouselBanner = () => {
 
   useEffect(() => {
     dispatch({ type: "GET_BANNERS" });
+    console.log(banners);
+    
   }, [dispatch]);
 
   if (isGettingBanners) {
@@ -162,7 +164,7 @@ const CarouselBanner = () => {
                 </div>
 
                 {/* Content Section */}
-                <div className="w-full lg:w-1/2 space-y-6 lg:pr-8 py-0 pt-[-100px]">
+                <div className="w-[90%] lg:w-1/2 space-y-6 lg:pr-8 py-0 pt-[-100px]">
                   <AnimatePresence mode="wait">
                     {activeIndex === index && (
                       <motion.div
@@ -444,7 +446,7 @@ const CarouselBanner = () => {
         {/* Navigation Buttons */}
         {!isBeginning && (
           <button
-            className="banner-prev hidden lg:block absolute left-4 top-1/2 z-10 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors"
+            className="banner-prev hidden lg:block absolute left-[-100px] top-1/2 z-10 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors"
             aria-label="Previous slide"
             onClick={() => swiperRef.current?.slidePrev()}
           >

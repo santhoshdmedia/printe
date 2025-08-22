@@ -7,7 +7,7 @@ import { Spin } from "antd";
 import SwiperList from "../../components/Lists/SwiperList";
 import { useParams } from "react-router-dom";
 import Breadcrumbs from "../../components/cards/Breadcrumbs";
-// import Bannear from "../../components/Lists/SwiperList"
+import Bannear from "../../components/Lists/SwiperList"
 
 const BannerProduct = () => {
   const [bannerProducts, setBannerProducts] = useState([]);

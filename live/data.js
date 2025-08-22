@@ -452,7 +452,7 @@ export const termsAndConditions = [
         title: "Contact Information",
         desc: `If you have any questions or concerns about these Terms and Conditions, please contact us at:
     Email: xxxxxxx@printe.com
-    Phone: 99999 99999`,
+    Phone:  99876 54321`,
       },
     ],
   },

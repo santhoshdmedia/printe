@@ -56,19 +56,19 @@ const Home = () => {
       indicator={
         <IconHelper.CIRCLELOADING_ICON className="!animate-spin !text-yellow-500" />
       }
-      className="lg:!px-20 font-sans"
+      className="lg:!px-20 font-sans "
     >
       <CarouselBanner />
       <div className="lg:px-20 px-2 pb-10 mx-auto">
         <BrowseAll />
         {/* <StepProcess /> */}
       </div>
-    <div className="flex flex-col">
-          {sectionData.map((res, index) => {
-            console.log(res);
-            return (
-              <div key={index}>
-                {/* <div className={`grid ${GETGRID_COUNT(res)}  grid-cols-1 gap-y-2 gap-x-2 py-2 lg:py-5`}>
+      <div className="flex flex-col">
+        {sectionData.map((res, index) => {
+          console.log(res);
+          return (
+            <div key={index}>
+              {/* <div className={`grid ${GETGRID_COUNT(res)}  grid-cols-1 gap-y-2 gap-x-2 py-2 lg:py-5`}>
                   {!_.isEmpty(_.get(res, "banner_images", [])) && (
                     <>
                       {_.get(res, "banner_images", []).map((pic, index) => {
@@ -77,13 +77,24 @@ const Home = () => {
                     </>
                   )}
                 </div> */}
-                
-               
-                <SwiperList product_type={_.get(res, "product_display", "1")} title={_.get(res, "section_name", "")} data={_.get(res, "productDetails", [])} subtitle={_.get(res, "sub_title", "")} type="Product" to={`/see-more/${_.get(res, "section_name", "")}/${_.get(res, "_id", "")}`} productCardType="Simple" />
-              </div>
-            );
-          })}
-        </div>
+
+              <SwiperList
+                product_type={_.get(res, "product_display", "1")}
+                title={_.get(res, "section_name", "")}
+                data={_.get(res, "productDetails", [])}
+                subtitle={_.get(res, "sub_title", "")}
+                type="Product"
+                to={`/see-more/${_.get(res, "section_name", "")}/${_.get(
+                  res,
+                  "_id",
+                  ""
+                )}`}
+                productCardType="Simple"
+              />
+            </div>
+          );
+        })}
+      </div>
 
       <div className="">
         {/* {_.get(user, "_id", "") && (
