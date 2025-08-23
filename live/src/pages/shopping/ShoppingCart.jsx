@@ -422,14 +422,14 @@ const ShoppingCart = () => {
                     Includes ₹{Number(GET_CST_TOTAL("cgst") + GET_CST_TOTAL("sgst")).toFixed(2)} in taxes
                   </div>
                 </div>
-                <Button 
+                {/* <Button 
                   type="primary" 
                   size="large"
                   onClick={() => handleProceedToBuy(null)}
                   className="bg-yellow-400 hover:bg-yellow-500 border-none text-black font-bold"
                 >
                   Proceed to Buy
-                </Button>
+                </Button> */}
               </div>
             </div>
           </div>

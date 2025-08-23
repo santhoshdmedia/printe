@@ -2,22 +2,17 @@ const nodemailer = require("nodemailer");
 const { TemplateHelper } = require("./templateHelper");
 
 const transporter = nodemailer.createTransport({
-  host: "mail.weboney.in",
-  secure: true,
-  port: 465,
+  service: "gmail",
   auth: {
-    user: "manikandan@weboney.in",
-    pass: "Manikandanmsm@2025",
-  },
-  tls: {
-    rejectUnauthorized: false,
+    user: "santhoshprinte@gmail.com",
+    pass: "yzce dawn tdtp jfbt",
   },
 });
 
 const sendMail = async (values) => {
   try {
     const result = await transporter.sendMail({
-      from: "manikandan@weboney.in",
+      from: "santhoshprinte@gmail.com",
       to: values.email,
       subject: TemplateHelper(values)?.subject,
       html: TemplateHelper(values)?.templete,
@@ -33,7 +28,7 @@ const inquiryMail = async (values) => {
   try {
     const result = await transporter.sendMail({
       from: `"${values.name}" <${values.email}>`,
-      to: "rajmadhan923@gmail.com",
+      to: "santhoshprinte@gmail.com",
       subject: `New Inquiry from ${values.name}`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
@@ -63,7 +58,10 @@ const inquiryMail = async (values) => {
 
 const orderMail = async (values) => {
   try {
-    const { subject, template } = TemplateHelper({ ...values, target: "placed order" });
+    const { subject, template } = TemplateHelper({
+      ...values,
+      target: "placed order",
+    });
 
     const result = await transporter.sendMail({
       from: "mlcreation806r@gmail.com",
@@ -80,10 +78,13 @@ const orderMail = async (values) => {
 
 const orderStatusMail = async (values) => {
   try {
-    const { subject, template } = TemplateHelper({ ...values, target: "order status" });
+    const { subject, template } = TemplateHelper({
+      ...values,
+      target: "order status",
+    });
 
     const result = await transporter.sendMail({
-      from: "mlcreation806r@gmail.com",
+      from: "santhoshprinte@gmail.com",
       to: values?.delivery_address?.email,
       subject,
       html: template,

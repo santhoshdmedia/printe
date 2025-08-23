@@ -84,7 +84,7 @@ const Product = () => {
           <Spin spinning={isUploadingFile}>
             <div className="flex flex-col">
               {/* Main Product Container */}
-              <div className="flex w-full flex-col justify-start gap-8 lg:flex-row lg:py-6 bg-white rounded-xl shadow-sm p-6 mt-4">
+              <div className="flex w-full flex-col justify-start gap-8 lg:flex-row lg:py-6  rounded-xl shadow-sm p-6 mt-4">
                 {/* Image Slider Section - Sticky on desktop */}
                 <div className="w-full lg:w-2/5 lg:sticky lg:top-24 self-start">
                   <ImagesSlider imageList={product?.images} data={product} />
