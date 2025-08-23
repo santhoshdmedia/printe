@@ -51,8 +51,8 @@ const Product = () => {
   }, [_.get(user, "_id", ""), _.get(product, "_id", "")]);
 
   return (
-    <div className="lg:px-20 px-4">
-      <div className="pt-10 ">
+    <div className="lg:px-8 px-4 bg-gray-50 min-h-screen">
+      <div className="pt-6">
         <Breadcrumbs
           title3={_.get(product, "name", "")}
           title={_.get(product, "category_details.main_category_name", "")}
@@ -83,35 +83,44 @@ const Product = () => {
         ) : (
           <Spin spinning={isUploadingFile}>
             <div className="flex flex-col">
-              <div className="flex w-full flex-col justify-start gap-10 lg:flex-row lg:py-5 !relative" style={{position:"relative"}}>
+              {/* Main Product Container */}
+              <div className="flex w-full flex-col justify-start gap-8 lg:flex-row lg:py-6 bg-white rounded-xl shadow-sm p-6 mt-4">
                 {/* Image Slider Section - Sticky on desktop */}
-                <div className="w-full  lg:w-1/2 !sticky !top-24 ">
+                <div className="w-full lg:w-2/5 lg:sticky lg:top-24 self-start">
                   <ImagesSlider imageList={product?.images} data={product} />
                 </div>
 
                 {/* Product Details Section */}
-                <div className="w-full lg:w-1/2">
+                <div className="w-full lg:w-3/5 lg:pl-8">
                   <ProductDetails data={product} />
                 </div>
               </div>
 
               {/* Product Overview Section */}
-              <OverViewDetails data={product} />
+              <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
+                <OverViewDetails data={product} />
+              </div>
 
               {/* Spacer */}
-              <div className="h-5"></div>
+              <div className="h-8"></div>
 
               {/* Similar Products Section */}
-              <SimilarProducts
-                left={true}
-                category_id={product?.category_details?._id || ""}
-              />
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <SimilarProducts
+                  left={true}
+                  category_id={product?.category_details?._id || ""}
+                />
+              </div>
 
               {/* Recently Viewed Section (only for logged-in users) */}
-              {user?._id && <HistoryProducts left={true} />}
+              {user?._id && (
+                <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
+                  <HistoryProducts left={true} />
+                </div>
+              )}
 
               {/* Bottom Spacer */}
-              <div className="h-5"></div>
+              <div className="h-8"></div>
             </div>
           </Spin>
         )}

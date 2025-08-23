@@ -18,6 +18,7 @@ const ImagesSlider = ({ imageList, data }) => {
   const { user, isAuth } = useSelector((state) => state.authSlice);
   const [isFav, setIsFav] = useState(false);
   const [imageSelected, setImageSelected] = useState(initialImage);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     setIsFav(user?.wish_list?.includes(data._id) ?? false);
@@ -25,6 +26,7 @@ const ImagesSlider = ({ imageList, data }) => {
 
   const imageOnClickHandler = (id) => {
     setImageSelected(imageList[id].path);
+    setActiveIndex(id);
   };
 
   const handleMouseMove = (e) => {
@@ -72,59 +74,81 @@ const ImagesSlider = ({ imageList, data }) => {
   };
 
   return (
-    <div className="!sticky !top-36">
-      <div className="lg:hidden block">{<DividerCards name={data.name} />}</div>
-      <div className="flex flex-row-reverse gap-2">
+    <div className="sticky top-24">
+      <div className="lg:hidden block">
+        <DividerCards name={data.name} />
+      </div>
+      
+      {/* Main Image with Zoom Effect */}
+      <div className="relative mb-4">
         <div
-          className="flex-1 bg-white border lg:h-[650px] !w-[50px] h-[210px] overflow-hidden relative rounded-md z-20"
+          className="w-full bg-white border rounded-xl overflow-hidden relative"
+          style={{ height: '700px',width:'700px' }}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          style={{ height: '700px' }} // Fixed height
         >
           <img
             ref={imgRef}
             src={imageSelected}
-            className="w-full h-full object-cover rounded-md"
+            className="w-full h-full object-cover rounded-xl transition-transform duration-300 hover:scale-105"
             alt="product"
           />
+          
+         
 
-        
-
+          {/* Wishlist Button */}
           <Tooltip
             title={`${isFav ? "Remove From" : "Add To"} Wish List`}
-            placement="right"
+            placement="left"
           >
             <button
-              className={`rounded absolute top-3 right-3 text-red-500 hover:scale-110 p-1 transition-all duration-200 delay-300 ease-in-out`}
+              className={`absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 ${
+                isFav ? "text-red-500" : "text-gray-600"
+              }`}
               onClick={handleAddWishList}
               style={{ zIndex: 40 }}
             >
               {isFav ? (
-                <IconHelper.HEART_ICON_FILLED
-                  className="!text-[#f9c114]"
-                  size={20}
-                />
+                <IconHelper.HEART_ICON_FILLED className="!text-[#f9c114]" size={24} />
               ) : (
-                <IconHelper.HEART_ICON size={20} />
+                <IconHelper.HEART_ICON size={24} />
               )}
             </button>
           </Tooltip>
         </div>
-        <div className="py-1 flex flex-col gap-y-2 flex-wrap">
-          {!_.isEmpty(imageList) &&
-            imageList.map((data, index) => (
-              <div
-                className="flex items-center justify-center bg-white border group size-[100px] overflow-hidden rounded-lg cursor-pointer"
-                key={index}
-                onMouseEnter={() => imageOnClickHandler(index)}
-              >
-                <img
-                  src={data.path}
-                  className="!object-cover w-full h-full rounded-lg group-hover:scale-125 transition-all duration-700"
-                />
-              </div>
-            ))}
-        </div>
+      </div>
+
+      {/* Thumbnail Navigation */}
+      <div className="flex gap-3 overflow-x-auto py-2 px-1">
+        {!_.isEmpty(imageList) &&
+          imageList.map((data, index) => (
+            <div
+              className={`flex-shrink-0 bg-white border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${
+                activeIndex === index 
+                  ? "border-blue-500 shadow-md" 
+                  : "border-gray-200 hover:border-gray-400"
+              }`}
+              key={index}
+              onClick={() => imageOnClickHandler(index)}
+              style={{ width: '80px', height: '80px' }}
+            >
+              <img
+                src={data.path}
+                className="w-full h-full object-cover"
+                alt={`Thumbnail ${index + 1}`}
+              />
+            </div>
+          ))}
+      </div>
+
+      {/* Overview Button for Mobile */}
+      <div className="lg:hidden mt-4">
+        <button
+          onClick={handleMoveToOverView}
+          className="w-full py-3 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition-colors"
+        >
+          View Product Details
+        </button>
       </div>
     </div>
   );

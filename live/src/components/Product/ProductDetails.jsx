@@ -13,6 +13,11 @@ import {
   Tooltip,
   Switch,
   Button,
+  Card,
+  Badge,
+  Progress,
+  Collapse,
+  Alert
 } from "antd";
 import React, { useEffect, useState } from "react";
 import _ from "lodash";
@@ -48,6 +53,8 @@ import {
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import { DISCOUNT_HELPER } from "../../helper/form_validation";
 import { motion } from "framer-motion";
+
+const { Panel } = Collapse;
 
 const ProductDetails = ({
   data = {
@@ -97,6 +104,7 @@ const ProductDetails = ({
   const [averageRatingCount, setAverageRatingCount] = useState(0);
   const [stock, setStockCount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -412,6 +420,38 @@ const ProductDetails = ({
     },
   ];
 
+  // Calculate savings
+  const calculateSavings = () => {
+    return Math.abs(
+      Number(
+        Number(_.get(checkOutState, "product_price", 0)) * quantity
+      ) -
+        Number(
+          DISCOUNT_HELPER(
+            discountPercentage.percentage,
+            Number(_.get(checkOutState, "product_price", 0))
+          ) * Number(quantity)
+        )
+    ).toFixed(2);
+  };
+
+  // Get stock status
+  const getStockStatus = () => {
+    if (data.stocks_status === "In Stock") {
+      return { text: "In Stock", color: "green", icon: "●" };
+    } else if (data.stocks_status === "Low Stock") {
+      return { text: "Limited Stock", color: "orange", icon: "⚠" };
+    } else if (data.stocks_status === "Out of Stock") {
+      return { text: "Out of Stock", color: "red", icon: "✕" };
+    } else if (data.stocks_status === "Don't Track Stocks") {
+      return { text: "Available", color: "green", icon: "●" };
+    } else {
+      return { text: "Stock Unknown", color: "gray", icon: "?" };
+    }
+  };
+
+  const stockStatus = getStockStatus();
+
   return (
     <Spin
       spinning={loading}
@@ -421,114 +461,137 @@ const ProductDetails = ({
     >
       <div className="flex-1 font-primary w-full space-y-8">
         {/* Product Header */}
-        <div className="space-y-4">
-          <div className="flex gap-4 items-center">
-            <h1
-              className={`status-label hidden lg:block capitalize text-sm w-fit p-2 rounded-md 
-                ${
-                  data.stocks_status === "In Stock"
-                    ? "bg-green-100 text-green-800"
-                    : data.stocks_status === "Low Stock"
-                    ? "bg-amber-100 text-amber-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm">
+          <div className="flex flex-wrap gap-4 items-center mb-4">
+            <Badge.Ribbon 
+              text={stockStatus.text} 
+              color={stockStatus.color}
+              placement="start"
             >
-              {data.stocks_status === "In Stock" ? (
-                <>
-                  <span className="text-green-500">●</span> In Stock
-                </>
-              ) : data.stocks_status === "Low Stock" ? (
-                <>
-                  <span className="text-amber-500">●</span> Limited stocks
-                </>
-              ) : data.stocks_status === "Out of Stock" ? (
-                <>
-                  <span className="text-red-500">●</span> Out of Stock
-                </>
-              ) : data.stocks_status === "Don't Track Stocks" ? (
-                <>
-                  <span className="text-green-500">●</span> In Stock
-                </>
-              ) : (
-                "Stock Unknown"
-              )}
-            </h1>
-            <div className="flex items-start lg:pt-0 pt-4">
-              <Tag color="green" className="flex gap-1 items-center">
+              <div className="w-3 h-3"></div> {/* Spacer for the ribbon */}
+            </Badge.Ribbon>
+            
+            <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm">
+              <Tag color="blue" className="flex gap-1 items-center m-0">
                 {averageRatingCount}
-                <IconHelper.STAR_ICON />
+                <IconHelper.STAR_ICON className="text-yellow-400" />
               </Tag>
+              <span className="text-sm text-gray-600">
+                {rate.length} Ratings & {review.length} Reviews
+              </span>
             </div>
           </div>
-          <p className="text-sm text-gray-500">
-            {rate.length} Ratings & {review.length} Reviews
-          </p>
 
-          <h1 className="title text-primary hidden lg:block capitalize text-2xl font-bold">
+          <h1 className="title text-gray-900 text-3xl font-bold mb-3">
             {data.name}
           </h1>
 
-          <div className="pb-2">
-            <span className="text-lg text-gray-700">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: _.get(data, "short_description", ""),
-                }}
-              />
-            </span>
+          <div className="mb-4">
+            <div
+              className="text-gray-700 leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: _.get(data, "short_description", ""),
+              }}
+            />
           </div>
+
+          {/* Product Labels */}
+          {data.label && data.label.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {data.label.map((label, index) => (
+                <span key={index} className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                  {label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        <Divider className="my-6" />
+        {/* Tabs Navigation */}
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8">
+            {["details", "options", "pricing", "delivery"].map((tab) => (
+              <button
+                key={tab}
+                className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                  activeTab === tab
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-        {/* Variants Selection */}
-        {product_type !== "Single Product" && !_.isEmpty(currentPriceSplitup) && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-800">Product Options</h3>
-            <div className="flex flex-col w-full space-y-6">
-              {_.get(data, "variants", []).map((variant, index) => {
-                return (
-                  <div
-                    className="flex flex-col w-full justify-between"
-                    key={index}
-                  >
-                    <label className="line-clamp-1 text-md font-medium py-1 text-gray-700">
-                      {variant.variant_name}
-                    </label>
-                    <div className="w-[100%] center_div min-h-[60px]">
-                      {variant.variant_type != "image_variant" ? (
-                        <Select
-                          disabled={variant.options.length === 1}
-                          className="flex-1 !w-full !h-[50px] !rounded-lg border-gray-300"
-                          defaultValue={_.get(
-                            currentPriceSplitup,
-                            `[${variant.variant_name}]`,
-                            ""
-                          )}
-                          options={variant.options}
-                          onChange={(value) =>
-                            handleOnChangeSelectOption(value, index)
-                          }
-                        />
-                      ) : (
-                        <div className="flex items-center gap-x-3 flex-wrap w-full py-2">
-                          {_.get(variant, "options", []).map((data, index2) => {
-                            return (
+        {/* Tab Content */}
+        <div className="min-h-[400px]">
+          {/* Details Tab */}
+          {activeTab === "details" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              <h3 className="text-xl font-semibold text-gray-800">Product Details</h3>
+              <div
+                className="text-gray-600 prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: _.get(data, "desc", "") }}
+              />
+            </motion.div>
+          )}
+
+          {/* Options Tab */}
+          {activeTab === "options" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              {/* Variants Selection */}
+              {product_type !== "Single Product" && !_.isEmpty(currentPriceSplitup) && (
+                <div className="space-y-6">
+                  <h3 className="text-xl font-semibold text-gray-800">Customization Options</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {_.get(data, "variants", []).map((variant, index) => (
+                      <Card 
+                        key={index} 
+                        className="shadow-sm hover:shadow-md transition-shadow"
+                        title={variant.variant_name}
+                      >
+                        {variant.variant_type !== "image_variant" ? (
+                          <Select
+                            disabled={variant.options.length === 1}
+                            className="w-full h-12 rounded-lg"
+                            defaultValue={_.get(
+                              currentPriceSplitup,
+                              `[${variant.variant_name}]`,
+                              ""
+                            )}
+                            options={variant.options}
+                            onChange={(value) =>
+                              handleOnChangeSelectOption(value, index)
+                            }
+                          />
+                        ) : (
+                          <div className="flex flex-wrap gap-3 py-2">
+                            {_.get(variant, "options", []).map((data, index2) => (
                               <div
-                                key={index}
-                                className="flex flex-col items-center gap-y-1"
+                                key={index2}
+                                className="flex flex-col items-center"
                               >
                                 <div
-                                  key={index2}
                                   onClick={() =>
-                                    handleOnChangeSelectOption(
-                                      data.value,
-                                      index
-                                    )
+                                    variant.options.length !== 1 &&
+                                    handleOnChangeSelectOption(data.value, index)
                                   }
-                                  className={`!size-[60px] border-2 ${
+                                  className={`size-16 border-2 ${
                                     variant.options.length === 1
-                                      ? "!cursor-not-allowed"
+                                      ? "cursor-not-allowed opacity-50"
                                       : "cursor-pointer hover:border-blue-400 transition-all"
                                   } center_div rounded-lg p-1 ${
                                     _.get(
@@ -542,459 +605,384 @@ const ProductDetails = ({
                                 >
                                   <img
                                     src={data.image_name}
-                                    className="!size-[40px] !object-contain"
+                                    className="size-10 object-contain"
+                                    alt={data.value}
                                   />
                                 </div>
-                                <h1 className="text-sm mt-1">{data.value}</h1>
+                                <span className="text-xs mt-1 text-center">{data.value}</span>
                               </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+                            ))}
+                          </div>
+                        )}
+                      </Card>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {product_type !== "Single Product" && <Divider className="my-6" />}
-
-        {/* Processing Time */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Processing & Delivery</h3>
-          <div className="flex flex-col w-full justify-between">
-            <label className="line-clamp-1 flex items-center gap-2 text-md font-medium py-1 text-gray-700">
-              Processing Time{" "}
-              <div
-                className="text-sm cursor-pointer text-blue-500"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <IconHelper.QUESTION_MARK />
-              </div>
-            </label>
-
-            <div className="w-[100%] center_div border border-none rounded-lg h-[60px] ">
-              <Input
-                type="text"
-                value={`${processing_item} days`}
-                className="flex-1 !h-[50px] text-lg text-black font-bold bg-transparent border-0"
-                disabled
-              />
-            </div>
-
-            <Modal
-              title="Processing Time Information"
-              open={isModalOpen}
-              onCancel={() => setIsModalOpen(false)}
-              footer={null}
-              centered
-              className="!max-w-[1000px]"
-            >
-              <div className="max-w-full max-h-[800px] overflow-y-auto text-lg text-gray-700 p-2">
-                <p>
-                  The printing time determines how long it takes us to complete
-                  your order. You may pick your preferred production time from the
-                  list.{" "}
-                </p>
-                <div className="flex items-start gap-2 mt-2">
-                  <p>
-                    While we strive to complete the order within the committed
-                    timeframes, the timings also depend on the following factors:
-                  </p>
                 </div>
-                <div className="flex items-start gap-2 mt-2">
-                  <p>
-                    ✅ We will provide the proof file for approval before
-                    printing. Faster approval will guarantee speedy processing. We
-                    need 300 dpi CMYK resolution artwork uploaded along the order.
-                    Preferred file types include CDR, AI, PSD, and High-Res Images
-                    with text and components converted to vector where needed.
-                  </p>
-                </div>
-                <div className="flex items-start gap-2 mt-2">
-                  <p>
-                    ✅Production time does not include the shipping time. Business
-                    days do not include Sundays and National Holidays, and orders
-                    made after 12 p.m. are counted from the next Business Day.
-                  </p>
-                </div>
-                <div className="flex items-start gap-2 mt-2">
-                  <p>
-                    In case you still have any questions, let's connect?{" "}
-                    <span className="text-primary font-medium text-sm">
-                      Click Here to Whatsapp
-                    </span>{" "}
-                    or{" "}
-                    <span className="text-primary font-medium text-sm">
-                      call us on 📞+91-9876543210
-                    </span>{" "}
-                    or{" "}
-                    <span className="text-primary font-medium text-sm">
-                      📧 business@printe.in.
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </Modal>
-          </div>
+              )}
 
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: {
-                opacity: 1,
-                y: 0,
-                transition: { duration: 0.5 },
-              },
-            }}
-            className="mt-6"
-          >
-            <h3 className="text-md font-medium text-gray-800">Estimated Delivery</h3>
-            <motion.div whileHover={{ scale: 1.01 }} className="my-2">
-              <Input className="h-12 rounded-lg" value={639001} />
-            </motion.div>
-            <motion.h3
-              className="text-gray-700 pt-2 flex gap-2 items-center"
-              whileHover={{ x: 5 }}
-            >
-              <IconHelper.DELIVERY_TRUCK_ICON className="text-blue-500" />
-              Standard Delivery by
-              <span className="text-gray-800 font-medium">{calculateDeliveryDate(processing_item)}</span> | 
-              <span className="text-green-600 font-medium">₹ 75</span>
-            </motion.h3>
-          </motion.div>
-        </div>
+              {/* Design Upload Section */}
+              <Card title="Design Requirements" className="shadow-sm">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700">I need to upload my design</span>
+                    <Switch 
+                      checked={needDesignUpload} 
+                      onChange={(checked) => {
+                        setNeedDesignUpload(checked);
+                        if (!checked) {
+                          setCheckOutState(prev => ({
+                            ...prev,
+                            product_design_file: ""
+                          }));
+                        }
+                      }}
+                    />
+                  </div>
 
-        <Divider className="my-6" />
-
-        {/* Quantity Selection */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Quantity & Pricing</h3>
-          <div className="flex flex-col w-full justify-between">
-            <label className="line-clamp-1 text-md font-medium py-1 text-gray-700">
-              Quantity (Minimum: 100)
-            </label>
-
-            <div className="w-[100%] center_div border border-gray-200 rounded-lg h-[60px] bg-gray-50">
-              {_.get(data, "quantity_type", "") === "textbox" ? (
-                <InputNumber
-                  min={100}
-                  type="number"
-                  className="flex-1 !h-[50px] text-lg bg-transparent border-0 w-full focus:outline-none"
-                  value={quantity}
-                  onChange={(value) => {
-                    handleTextboxQuantityChange(value);
-                  }}
-                />
-              ) : (
-                <>
-                  {_.get(discountPercentage, "uuid", "") && (
-                    <Select
-                      defaultValue={discountPercentage?.uuid}
-                      onChange={handleQuantityChnage}
-                      className="flex-1 !h-[50px] text-lg border-0 bg-transparent"
-                      placeholder={"Quantity"}
-                      disabled={
-                        _.get(data, "quantity_discount_splitup", []).length ===
-                        1
-                      }
+                  {needDesignUpload && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      transition={{ duration: 0.3 }}
                     >
-                      {_.get(data, "quantity_discount_splitup", []).map(
-                        (dis, index) => {
-                          return (
+                      {checkOutState.product_design_file ? (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-medium">Design File</span>
+                            <div className="flex gap-2">
+                              <a
+                                href={checkOutState.product_design_file}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                View
+                              </a>
+                              <button
+                                onClick={() => {
+                                  setCheckOutState(prevState => ({
+                                    ...prevState,
+                                    product_design_file: "",
+                                  }));
+                                }}
+                                className="text-red-600 hover:text-red-800 text-sm"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={checked}
+                              onChange={(e) => {
+                                setChecked(e.target.checked);
+                                setError("");
+                              }}
+                            >
+                              I confirm this design is correct
+                            </Checkbox>
+                            {error && (
+                              <span className="text-red-500 text-sm">{error}</span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <UploadFileButton
+                          handleUploadImage={handleUploadImage}
+                          buttonText="Upload Design File"
+                          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 transition-colors"
+                        />
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Pricing Tab */}
+          {activeTab === "pricing" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              <h3 className="text-xl font-semibold text-gray-800">Quantity & Pricing</h3>
+              
+              <Card className="shadow-sm">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Quantity (Minimum: 100)
+                    </label>
+                    
+                    {_.get(data, "quantity_type", "") === "textbox" ? (
+                      <InputNumber
+                        min={100}
+                        type="number"
+                        className="w-full h-12"
+                        value={quantity}
+                        onChange={handleTextboxQuantityChange}
+                      />
+                    ) : (
+                      <Select
+                        defaultValue={discountPercentage?.uuid}
+                        onChange={handleQuantityChnage}
+                        className="w-full h-12"
+                        placeholder="Select Quantity"
+                        disabled={
+                          _.get(data, "quantity_discount_splitup", []).length === 1
+                        }
+                      >
+                        {_.get(data, "quantity_discount_splitup", []).map(
+                          (dis, index) => (
                             <Select.Option key={index} value={dis.uniqe_id}>
                               <div className="flex items-center justify-between">
                                 <span>{dis.quantity} units</span>
-                                <span className="text-green-600">({dis.discount}% off)</span>
-                                {_.get(dis, "recommended_stats", "") !=
+                                <span className="text-green-600">
+                                  ({dis.discount}% off)
+                                </span>
+                                {_.get(dis, "recommended_stats", "") !==
                                   "Not Recommended" && (
-                                  <Tag color="blue" className="!text-[12px] ml-2">
+                                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
                                     Recommended
-                                  </Tag>
+                                  </span>
                                 )}
                               </div>
                             </Select.Option>
-                          );
-                        }
-                      )}
-                    </Select>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-          {_.get(data, "stocks_status", "") != "Don't Track Stocks" && (
-            <span
-              className={`!text-[14px] mt-2 ${
-                handleQuantityDetails(stock, quantity)
-                  ? "text-green-600"
-                  : "text-red-600"
-              }`}
-            >
-              {handleQuantityDetails(stock, quantity)
-                ? `Available Stock: ${Number(stock) - Number(quantity)} units`
-                : "(Out-of-Stock)"}
-            </span>
-          )}
-        </div>
-
-        <Divider className="my-6" />
-
-        {/* Pricing & Order Section */}
-        <div className="space-y-6 bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl">
-          {isGettingVariantPrice ? (
-            <div className="center_div py-10">
-              <Spin size="large" />
-            </div>
-          ) : (
-            handleQuantityDetails(stock, quantity) && (
-              <div className="text-gray-600 text-md flex-1">
-                <div>
-                  <h3 className="!text-sm py-2">
-                    <div className="center_div gap-x-2 py-2 justify-start">
-                      {Number(
-                        DISCOUNT_HELPER(
-                          discountPercentage?.percentage,
-                          Number(_.get(checkOutState, "product_price", 0))
-                        ) * Number(quantity)
-                      ).toFixed(2) !==
-                        Number(
-                          Number(_.get(checkOutState, "product_price", 0)) *
-                            Number(quantity)
-                        ).toFixed(2) && (
-                        <span className="grayscale text-3xl !font-medium title line-through">
-                          Rs.{" "}
-                          {Number(
-                            Number(
-                              _.get(checkOutState, "product_price", 0)
-                            ) * Number(quantity)
-                          ).toFixed(2)}
-                        </span>
-                      )}
-                      <span className="text-green-500 text-3xl !font-medium title">
-                        Rs.{" "}
-                        {Number(
-                          DISCOUNT_HELPER(
-                            discountPercentage.percentage,
-                            Number(_.get(checkOutState, "product_price", 0))
-                          ) * Number(quantity)
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                    {Math.abs(
-                      Number(
-                        Number(_.get(checkOutState, "product_price", 0)) *
-                          quantity
-                      ) -
-                        Number(
-                          DISCOUNT_HELPER(
-                            discountPercentage.percentage,
-                            Number(_.get(checkOutState, "product_price", 0))
-                          ) * Number(quantity)
-                        )
-                    ).toFixed(2) > 0 && (
-                      <Tag color="green" className="!my-2">
-                        You will save{" "}
-                        {Math.abs(
-                          Number(
-                            Number(
-                              _.get(checkOutState, "product_price", 0)
-                            ) * quantity
-                          ) -
-                            Number(
-                              DISCOUNT_HELPER(
-                                discountPercentage.percentage,
-                                Number(
-                                  _.get(checkOutState, "product_price", 0)
-                                )
-                              ) * Number(quantity)
-                            )
-                        ).toFixed(2)}
-                      </Tag>
-                    )}
-
-                    <h1 className="pt-2 flex justify-between items-center">
-                      <span>
-                        inclusive of all taxes for{" "}
-                        <span className="text-black">{quantity}</span> Qty (
-                        <span className="text-black">
-                          Rs.{" "}
-                          {Number(
-                            DISCOUNT_HELPER(
-                              discountPercentage.percentage,
-                              Number(_.get(checkOutState, "product_price", 0))
-                            )
-                          ).toFixed(2)}
-                        </span>{" "}
-                        / pieces)
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs">Already have design</span>
-                        <Switch 
-                          size="small"
-                          checked={needDesignUpload} 
-                          onChange={(checked) => {
-                            setNeedDesignUpload(checked);
-                            if (!checked) {
-                              setCheckOutState(prev => ({
-                                ...prev,
-                                product_design_file: ""
-                              }));
-                            }
-                          }}
-                        />
-                      </div>
-                    </h1>
-                  </h3>
-                  
-                  <div className="">
-                    {needDesignUpload ? (
-                      <div className="py-4">
-                        {checkOutState.product_design_file ? (
-                          <>
-                            <div className="hidden lg:block">
-                              <Tag className="center_div justify-between border px-4 !h-[50px] !text-[14px] gap-x-4 w-full">
-                                <Tooltip title={checkOutState.product_design_file}>
-                                  <span className="line-clamp-1 text-slate-600 max-w-[200px] overflow-hidden">
-                                    {checkOutState.product_design_file}
-                                  </span>
-                                </Tooltip>
-                                <div className="center_div gap-x-2">
-                                  <a
-                                    href={checkOutState.product_design_file}
-                                    target="_blank"
-                                    className="!text-orange-500 !font-medium"
-                                  >
-                                    View
-                                  </a>
-                                  <Divider type="vertical" />
-                                  <div
-                                    className="!text-[12px] cursor-pointer text-red-500"
-                                    onClick={() => {
-                                      setCheckOutState((prevState) => ({
-                                        ...prevState,
-                                        product_design_file: "",
-                                      }));
-                                    }}
-                                  >
-                                    Remove
-                                  </div>
-                                </div>
-                              </Tag>
-                            </div>
-                            <div className="lg:hidden block bg-slate-100 p-2 rounded-lg">
-                              <div className="flex items-center py-2">
-                                <Tooltip title={checkOutState.product_design_file}>
-                                  <span className="line-clamp-1 text-[12px] text-slate-600 max-w-[200px] overflow-hidden">
-                                    {checkOutState.product_design_file}
-                                  </span>
-                                </Tooltip>
-                              </div>
-                              <hr />
-                              <div className="flex justify-between px-6 gap-x-2 text-sm pt-2">
-                                <a
-                                  href={checkOutState.product_design_file}
-                                  target="_blank"
-                                  className="text-orange-500 font-medium"
-                                >
-                                  View
-                                </a>
-                                <Divider type="vertical" />
-                                <div
-                                  className="text-[12px] cursor-pointer text-red-500"
-                                  onClick={() => {
-                                    setCheckOutState((prevState) => ({
-                                      ...prevState,
-                                      product_design_file: "",
-                                    }));
-                                  }}
-                                >
-                                  Remove
-                                </div>
-                              </div>
-                            </div>
-                            <div className="lg:py-2 py-4">
-                              <div className="flex items-center gap-x-2">
-                                <Checkbox
-                                  checked={checked}
-                                  onChange={(e) => {
-                                    setChecked(e.target.checked);
-                                    setError("");
-                                  }}
-                                >
-                                  I confirm this design
-                                </Checkbox>
-                              </div>
-                              {error && (
-                                <p className="text-red-500 text-xs">{error}</p>
-                              )}
-                            </div>
-                            <Button
-                              type="primary"
-                              className="w-full my-2 bg-orange-500 text-white px-3 !h-[50px] rounded"
-                              onClick={handlebuy}
-                              size="large"
-                            >
-                              Add To Shopping Cart
-                            </Button>
-                          </>
-                        ) : (
-                          <UploadFileButton
-                            handleUploadImage={handleUploadImage}
-                            buttonText={`${
-                              checkOutState.product_design_file
-                                ? "Upload your Design file or pencil sketch."
-                                : "Upload your Design file or pencil sketch. "
-                            }`}
-                            className={`${
-                              checkOutState.product_design_file
-                                ? "!bg-white !text-primary border border-primary"
-                                : "!bg-primary !text-white"
-                            }`}
-                          />
+                          )
                         )}
-                      </div>
-                    ) : (
-                      <div className="py-4">
-                        <Button
-                          type="primary"
-                          className="w-full my-2 bg-orange-500 text-white px-3 !h-[50px] rounded"
-                          onClick={handlebuy}
-                          size="large"
-                        >
-                          Add To Shopping Cart
-                        </Button>
-                      </div>
+                      </Select>
                     )}
                   </div>
+
+                  {_.get(data, "stocks_status", "") !== "Don't Track Stocks" && (
+                    <div className={`text-sm ${
+                      handleQuantityDetails(stock, quantity)
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}>
+                      {handleQuantityDetails(stock, quantity)
+                        ? `Available Stock: ${Number(stock) - Number(quantity)} units`
+                        : "Out of Stock"}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )
+              </Card>
+
+              {/* Price Display */}
+              {isGettingVariantPrice ? (
+                <div className="center_div py-10">
+                  <Spin size="large" />
+                </div>
+              ) : (
+                handleQuantityDetails(stock, quantity) && (
+                  <Card className="bg-gradient-to-r from-blue-50 to-purple-50 shadow-md">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">Unit Price:</span>
+                        <span className="text-lg font-semibold">
+                          Rs. {Number(_.get(checkOutState, "product_price", 0)).toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">Quantity:</span>
+                        <span className="font-medium">{quantity}</span>
+                      </div>
+
+                      {discountPercentage.percentage > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">Discount:</span>
+                          <span className="text-green-600 font-semibold">
+                            {discountPercentage.percentage}%
+                          </span>
+                        </div>
+                      )}
+
+                      <Divider className="my-2" />
+
+                      <div className="flex items-center justify-between text-xl font-bold">
+                        <span>Total:</span>
+                        <div className="flex flex-col items-end">
+                          {discountPercentage.percentage > 0 && (
+                            <span className="text-gray-400 line-through text-sm">
+                              Rs. {(
+                                Number(_.get(checkOutState, "product_price", 0)) * quantity
+                              ).toFixed(2)}
+                            </span>
+                          )}
+                          <span className="text-blue-600">
+                            Rs. {(
+                              DISCOUNT_HELPER(
+                                discountPercentage.percentage,
+                                Number(_.get(checkOutState, "product_price", 0))
+                              ) * quantity
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {calculateSavings() > 0 && (
+                        <div className="bg-green-100 text-green-800 p-3 rounded-lg">
+                          You save Rs. {calculateSavings()} on this order!
+                        </div>
+                      )}
+
+                      <Button
+                        type="primary"
+                        size="large"
+                        className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 border-0 hover:from-blue-600 hover:to-purple-700"
+                        onClick={handlebuy}
+                        disabled={needDesignUpload && !checkOutState.product_design_file}
+                      >
+                        {needDesignUpload && !checkOutState.product_design_file
+                          ? "Upload Design to Continue"
+                          : "Add to Cart"}
+                      </Button>
+                    </div>
+                  </Card>
+                )
+              )}
+            </motion.div>
           )}
 
-          <Divider className="my-6" />
+          {/* Delivery Tab */}
+          {activeTab === "delivery" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              <h3 className="text-xl font-semibold text-gray-800">Delivery Information</h3>
+              
+              <Card className="shadow-sm">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700">Processing Time</span>
+                    <span className="font-semibold">{processing_item} business days</span>
+                  </div>
 
-          {/* Social Sharing */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">Share this product</h3>
-            <div className="center_div gap-x-4 justify-start">
-              {shareicon.map((res, index) => (
-                <Tooltip title={`Share on ${res.name}`} key={index}>
-                  <motion.div 
-                    whileHover={{ scale: 1.1, y: -2 }}
-                    className="cursor-pointer group border size-[45px] transition-all duration-300 center_div rounded-full shadow-sm hover:shadow-md"
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <IconHelper.DELIVERY_TRUCK_ICON className="text-blue-500 text-xl" />
+                      <span className="font-medium">Estimated Delivery</span>
+                    </div>
+                    <p className="text-gray-700">
+                      Your order will be delivered by{" "}
+                      <span className="font-semibold text-blue-600">
+                        {calculateDeliveryDate(Number(processing_item) + 3)}
+                      </span>
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      (Processing: {processing_item} days + Shipping: 3 days)
+                    </p>
+                  </div>
+
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <IconHelper.INFO_ICON className="text-yellow-500 text-xl" />
+                      <span className="font-medium">Important Notes</span>
+                    </div>
+                    <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
+                      <li>Business days exclude weekends and holidays</li>
+                      <li>Production time starts after design approval</li>
+                      <li>Delivery times may vary based on your location</li>
+                    </ul>
+                  </div>
+
+                  <Button 
+                    type="text" 
+                    className="text-blue-600 p-0"
+                    onClick={() => setIsModalOpen(true)}
                   >
-                    {res.com}
-                  </motion.div>
-                </Tooltip>
-              ))}
-            </div>
-          </div>
+                    View detailed processing information
+                  </Button>
+                </div>
+              </Card>
+
+              <Modal
+                title="Processing Time Details"
+                open={isModalOpen}
+                onCancel={() => setIsModalOpen(false)}
+                footer={null}
+                width={700}
+              >
+                <div className="max-h-96 overflow-y-auto p-1">
+                  <p className="text-gray-700 mb-4">
+                    The printing time determines how long it takes us to complete
+                    your order. You may pick your preferred production time from the
+                    list.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <span className="text-green-500 mt-1">✓</span>
+                      <p>
+                        We will provide the proof file for approval before
+                        printing. Faster approval will guarantee speedy processing.
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-start gap-2">
+                      <span className="text-green-500 mt-1">✓</span>
+                      <p>
+                        We need 300 dpi CMYK resolution artwork uploaded along the order.
+                        Preferred file types include CDR, AI, PSD, and High-Res Images
+                        with text and components converted to vector where needed.
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-start gap-2">
+                      <span className="text-green-500 mt-1">✓</span>
+                      <p>
+                        Production time does not include the shipping time. Business
+                        days do not include Sundays and National Holidays, and orders
+                        made after 12 p.m. are counted from the next Business Day.
+                      </p>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg mt-4">
+                      <p className="text-gray-700">
+                        Need more information? Contact us:
+                      </p>
+                      <div className="flex flex-wrap gap-4 mt-2">
+                        <a href="#" className="text-blue-600 hover:underline">
+                          WhatsApp Support
+                        </a>
+                        <a href="tel:+919876543210" className="text-blue-600 hover:underline">
+                          +91-9876543210
+                        </a>
+                        <a href="mailto:business@printe.in" className="text-blue-600 hover:underline">
+                          business@printe.in
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Modal>
+            </motion.div>
+          )}
         </div>
+
+        {/* Social Sharing */}
+        <Card title="Share this product" className="shadow-sm">
+          <div className="flex flex-wrap gap-4">
+            {shareicon.map((res) => (
+              <motion.div
+                key={res.id}
+                whileHover={{ scale: 1.1, y: -2 }}
+                className="cursor-pointer"
+              >
+                <Tooltip title={`Share on ${res.name}`}>
+                  {res.com}
+                </Tooltip>
+              </motion.div>
+            ))}
+          </div>
+        </Card>
       </div>
     </Spin>
   );

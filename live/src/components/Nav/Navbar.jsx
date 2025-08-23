@@ -163,7 +163,7 @@ const Navbar = () => {
   return (
     <div>
       {/* Desktop Navbar */}
-      <div className="w-full lg:flex hidden h-[80px] gap-x-10 bg-[#f9c114] shadow-2xl center_div justify-between px-20 sticky top-0 z-10">
+      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f9c114] shadow-2xl center_div justify-between px-20 sticky top-0 z-10">
         <div className="flex items-center gap-x-32 w-[70%] justify-start">
           <Link
             to="/"
@@ -173,7 +173,7 @@ const Navbar = () => {
               <img
                 src={Logo}
                 alt="printee logo"
-                className="w-auto h-[55px] bg-center bg-contain rounded-md"
+                className="w-auto xl:h-[70px]  bg-center bg-contain rounded-md"
               />
             </div>
           </Link>

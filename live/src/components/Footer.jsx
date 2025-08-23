@@ -91,7 +91,7 @@ const Footer = () => {
       </div>
 
       <div id="bottom" className="center_div h-[50px] bg-white border-t border-slate-400 font-primary flex justify-center items-center">
-        <span className="lining-nums text-sm text-center px-5">@{moment().format("YYYY")} Printe Document Services Pvt. Ltd.. All Rights Reserved.</span>
+        <span className="lining-nums text-sm text-center px-5">@{moment().format("YYYY")} Dmedia. All Rights Reserved.</span>
       </div>
     </div>
   );
