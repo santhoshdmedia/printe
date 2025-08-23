@@ -12,6 +12,7 @@ import {
   Tag,
   Tooltip,
   Switch,
+  Button,
 } from "antd";
 import React, { useEffect, useState } from "react";
 import _ from "lodash";
@@ -64,7 +65,7 @@ const ProductDetails = ({
       ? _.get(data, "single_product_price", 0)
       : _.get(data, "variants_price[0].price", "");
 
-  //state
+  // State
   const [totalPrice, setTotalPrice] = useState(price);
   const [quantity, setQuantity] = useState(100);
   const [discountPercentage, setDiscountPercentage] = useState({
@@ -82,9 +83,9 @@ const ProductDetails = ({
     product_name: _.get(data, "name", ""),
     category_name: _.get(data, "category_details.main_category_name", ""),
     subcategory_name: _.get(data, "sub_category_details.sub_category_name", ""),
-    product_price: 0,
+    product_price: price,
     product_variants: {},
-    product_quantity: 1,
+    product_quantity: 100,
     product_seo_url: _.get(data, "seo_url", ""),
     product_id: _.get(data, "_id", ""),
   });
@@ -132,7 +133,7 @@ const ProductDetails = ({
         setDiscountPercentage({ uuid: "", percentage: 0 });
       }
       setMaimumQuantity(_.get(data, "max_quantity", ""));
-      setQuantity(1);
+      setQuantity(100);
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: 100,
@@ -162,7 +163,15 @@ const ProductDetails = ({
   }, [reviewData]);
 
   useEffect(() => {
-    if (_.isEmpty(currentPriceSplitup)) {
+    // For single products, set the initial price and stock
+    if (product_type === "Single Product") {
+      setCheckOutState((prevState) => ({
+        ...prevState,
+        product_price: price,
+      }));
+      setStockCount(_.get(data, "stock_count", 0));
+    } else if (_.isEmpty(currentPriceSplitup)) {
+      // For products with variants
       let items = _.get(product, "variants_price", []).map((res) => {
         return Number(res.price);
       });
@@ -174,14 +183,16 @@ const ProductDetails = ({
       setCurrentPriceSplitup(
         _.get(product, `variants_price[${lowest_price_index}]`, {})
       );
-      let stock_count =
-        _.get(data, "type", "") === "Single Product"
-          ? _.get(data, "stock_count", "")
-          : _.get(product, `variants_price[${lowest_price_index}].stock`, {});
-      let product_price =
-        _.get(data, "type", "") === "Single Product"
-          ? _.get(data, "single_product_price", "")
-          : _.get(product, `variants_price[${lowest_price_index}].price`, {});
+      let stock_count = _.get(
+        product,
+        `variants_price[${lowest_price_index}].stock`,
+        {}
+      );
+      let product_price = _.get(
+        product,
+        `variants_price[${lowest_price_index}].price`,
+        {}
+      );
 
       setCheckOutState((prevState) => ({
         ...prevState,
@@ -194,7 +205,7 @@ const ProductDetails = ({
       }));
       setStockCount(stock_count);
     }
-  }, [product]);
+  }, [product, product_type, price, data]);
 
   const handleOnChangeSelectOption = async (selectedValue, index) => {
     try {
@@ -304,20 +315,24 @@ const ProductDetails = ({
           return res.uniqe_id === id;
         }
       );
-      const newQuantity = Number(_.get(filter_data, "[0].quantity", 1));
+      const newQuantity = Number(_.get(filter_data, "[0].quantity", 100));
       setQuantity(newQuantity);
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: newQuantity,
       }));
       setDiscountPercentage({
-        uuid: Number(_.get(filter_data, "[0].uniqe_id", 1)),
-        percentage: Number(_.get(filter_data, "[0].discount", 1)),
+        uuid: Number(_.get(filter_data, "[0].uniqe_id", 100)),
+        percentage: Number(_.get(filter_data, "[0].discount", 100)),
       });
     } catch (err) {}
   };
 
   const handleTextboxQuantityChange = (value) => {
+    if (value < 100) {
+      value = 100;
+    }
+    
     const result = _.get(data, "quantity_discount_splitup", []).filter(
       (res) => {
         return Number(res.quantity) <= Number(value);
@@ -467,85 +482,84 @@ const ProductDetails = ({
         <Divider className="my-6" />
 
         {/* Variants Selection */}
-        {!_.isEmpty(currentPriceSplitup) && (
+        {product_type !== "Single Product" && !_.isEmpty(currentPriceSplitup) && (
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-800">Product Options</h3>
             <div className="flex flex-col w-full space-y-6">
-              {product_type !== "Single Product" &&
-                _.get(data, "variants", []).map((variant, index) => {
-                  return (
-                    <div
-                      className="flex flex-col w-full justify-between"
-                      key={index}
-                    >
-                      <label className="line-clamp-1 text-md font-medium py-1 text-gray-700">
-                        {variant.variant_name}
-                      </label>
-                      <div className="w-[100%] center_div min-h-[60px]">
-                        {variant.variant_type != "image_variant" ? (
-                          <Select
-                            disabled={variant.options.length === 1}
-                            className="flex-1 !w-full !h-[50px] !rounded-lg border-gray-300"
-                            defaultValue={_.get(
-                              currentPriceSplitup,
-                              `[${variant.variant_name}]`,
-                              ""
-                            )}
-                            options={variant.options}
-                            onChange={(value) =>
-                              handleOnChangeSelectOption(value, index)
-                            }
-                          />
-                        ) : (
-                          <div className="flex items-center gap-x-3 flex-wrap w-full py-2">
-                            {_.get(variant, "options", []).map((data, index2) => {
-                              return (
+              {_.get(data, "variants", []).map((variant, index) => {
+                return (
+                  <div
+                    className="flex flex-col w-full justify-between"
+                    key={index}
+                  >
+                    <label className="line-clamp-1 text-md font-medium py-1 text-gray-700">
+                      {variant.variant_name}
+                    </label>
+                    <div className="w-[100%] center_div min-h-[60px]">
+                      {variant.variant_type != "image_variant" ? (
+                        <Select
+                          disabled={variant.options.length === 1}
+                          className="flex-1 !w-full !h-[50px] !rounded-lg border-gray-300"
+                          defaultValue={_.get(
+                            currentPriceSplitup,
+                            `[${variant.variant_name}]`,
+                            ""
+                          )}
+                          options={variant.options}
+                          onChange={(value) =>
+                            handleOnChangeSelectOption(value, index)
+                          }
+                        />
+                      ) : (
+                        <div className="flex items-center gap-x-3 flex-wrap w-full py-2">
+                          {_.get(variant, "options", []).map((data, index2) => {
+                            return (
+                              <div
+                                key={index}
+                                className="flex flex-col items-center gap-y-1"
+                              >
                                 <div
-                                  key={index}
-                                  className="flex flex-col items-center gap-y-1"
+                                  key={index2}
+                                  onClick={() =>
+                                    handleOnChangeSelectOption(
+                                      data.value,
+                                      index
+                                    )
+                                  }
+                                  className={`!size-[60px] border-2 ${
+                                    variant.options.length === 1
+                                      ? "!cursor-not-allowed"
+                                      : "cursor-pointer hover:border-blue-400 transition-all"
+                                  } center_div rounded-lg p-1 ${
+                                    _.get(
+                                      currentPriceSplitup,
+                                      `[${variant.variant_name}]`,
+                                      ""
+                                    ) === data.value
+                                      ? "border-blue-500 shadow-md"
+                                      : "border-gray-300"
+                                  }`}
                                 >
-                                  <div
-                                    key={index2}
-                                    onClick={() =>
-                                      handleOnChangeSelectOption(
-                                        data.value,
-                                        index
-                                      )
-                                    }
-                                    className={`!size-[60px] border-2 ${
-                                      variant.options.length === 1
-                                        ? "!cursor-not-allowed"
-                                        : "cursor-pointer hover:border-blue-400 transition-all"
-                                    } center_div rounded-lg p-1 ${
-                                      _.get(
-                                        currentPriceSplitup,
-                                        `[${variant.variant_name}]`,
-                                        ""
-                                      ) === data.value
-                                        ? "border-blue-500 shadow-md"
-                                        : "border-gray-300"
-                                    }`}
-                                  >
-                                    <img
-                                      src={data.image_name}
-                                      className="!size-[40px] !object-contain"
-                                    />
-                                  </div>
-                                  <h1 className="text-sm mt-1">{data.value}</h1>
+                                  <img
+                                    src={data.image_name}
+                                    className="!size-[40px] !object-contain"
+                                  />
                                 </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
+                                <h1 className="text-sm mt-1">{data.value}</h1>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        <Divider className="my-6" />
+        {product_type !== "Single Product" && <Divider className="my-6" />}
 
         {/* Processing Time */}
         <div className="space-y-4">
@@ -561,11 +575,11 @@ const ProductDetails = ({
               </div>
             </label>
 
-            <div className="w-[100%] center_div border border-gray-200 rounded-lg h-[60px] bg-gray-50">
+            <div className="w-[100%] center_div border border-none rounded-lg h-[60px] ">
               <Input
                 type="text"
-                value={processing_item}
-                className="flex-1 !h-[50px] text-lg bg-transparent border-0"
+                value={`${processing_item} days`}
+                className="flex-1 !h-[50px] text-lg text-black font-bold bg-transparent border-0"
                 disabled
               />
             </div>
@@ -662,18 +676,18 @@ const ProductDetails = ({
           <h3 className="text-lg font-semibold text-gray-800">Quantity & Pricing</h3>
           <div className="flex flex-col w-full justify-between">
             <label className="line-clamp-1 text-md font-medium py-1 text-gray-700">
-              Quantity
+              Quantity (Minimum: 100)
             </label>
 
             <div className="w-[100%] center_div border border-gray-200 rounded-lg h-[60px] bg-gray-50">
               {_.get(data, "quantity_type", "") === "textbox" ? (
-                <Input
+                <InputNumber
                   min={100}
                   type="number"
-                  className="flex-1 !h-[50px] text-lg bg-transparent border-0"
+                  className="flex-1 !h-[50px] text-lg bg-transparent border-0 w-full focus:outline-none"
                   value={quantity}
-                  onChange={(e) => {
-                    handleTextboxQuantityChange(e.target.value);
+                  onChange={(value) => {
+                    handleTextboxQuantityChange(value);
                   }}
                 />
               ) : (
@@ -731,20 +745,17 @@ const ProductDetails = ({
         <Divider className="my-6" />
 
         {/* Pricing & Order Section */}
-        {!_.isEmpty(currentPriceSplitup) && (
-          <div className="space-y-6 bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl">
-            {isGettingVariantPrice ? (
-              <div className="center_div py-10">
-                <Spin size="large" />
-              </div>
-            ) : (
-              handleQuantityDetails(stock, quantity) && (
-                <div className="text-gray-700">
-                  {/* Price Display */}
-                  <div className="mb-6 p-4 bg-white rounded-lg shadow-sm">
-                    <h3 className="text-lg font-semibold mb-3">Price Summary</h3>
-                    
-                    <div className="center_div gap-x-4 py-2 justify-start">
+        <div className="space-y-6 bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl">
+          {isGettingVariantPrice ? (
+            <div className="center_div py-10">
+              <Spin size="large" />
+            </div>
+          ) : (
+            handleQuantityDetails(stock, quantity) && (
+              <div className="text-gray-600 text-md flex-1">
+                <div>
+                  <h3 className="!text-sm py-2">
+                    <div className="center_div gap-x-2 py-2 justify-start">
                       {Number(
                         DISCOUNT_HELPER(
                           discountPercentage?.percentage,
@@ -755,16 +766,17 @@ const ProductDetails = ({
                           Number(_.get(checkOutState, "product_price", 0)) *
                             Number(quantity)
                         ).toFixed(2) && (
-                        <span className="text-xl text-gray-500 line-through">
-                          ₹{" "}
+                        <span className="grayscale text-3xl !font-medium title line-through">
+                          Rs.{" "}
                           {Number(
-                            Number(_.get(checkOutState, "product_price", 0)) *
-                              Number(quantity)
+                            Number(
+                              _.get(checkOutState, "product_price", 0)
+                            ) * Number(quantity)
                           ).toFixed(2)}
                         </span>
                       )}
-                      <span className="text-3xl font-bold text-green-600">
-                        ₹{" "}
+                      <span className="text-green-500 text-3xl !font-medium title">
+                        Rs.{" "}
                         {Number(
                           DISCOUNT_HELPER(
                             discountPercentage.percentage,
@@ -773,7 +785,6 @@ const ProductDetails = ({
                         ).toFixed(2)}
                       </span>
                     </div>
-                    
                     {Math.abs(
                       Number(
                         Number(_.get(checkOutState, "product_price", 0)) *
@@ -786,79 +797,83 @@ const ProductDetails = ({
                           ) * Number(quantity)
                         )
                     ).toFixed(2) > 0 && (
-                      <Tag color="green" className="!my-2 !text-sm !py-1">
-                        You save ₹{" "}
+                      <Tag color="green" className="!my-2">
+                        You will save{" "}
                         {Math.abs(
                           Number(
-                            Number(_.get(checkOutState, "product_price", 0)) *
-                              quantity
+                            Number(
+                              _.get(checkOutState, "product_price", 0)
+                            ) * quantity
                           ) -
                             Number(
                               DISCOUNT_HELPER(
                                 discountPercentage.percentage,
-                                Number(_.get(checkOutState, "product_price", 0))
+                                Number(
+                                  _.get(checkOutState, "product_price", 0)
+                                )
                               ) * Number(quantity)
                             )
                         ).toFixed(2)}
                       </Tag>
                     )}
 
-                    <div className="pt-3 text-sm text-gray-600">
-                      Inclusive of all taxes for{" "}
-                      <span className="font-semibold">{quantity}</span> quantity
-                      <br />
-                      <span className="font-medium">
-                        (₹ {Number(
-                          DISCOUNT_HELPER(
-                            discountPercentage.percentage,
-                            Number(_.get(checkOutState, "product_price", 0))
-                          )
-                        ).toFixed(2)} per unit)
+                    <h1 className="pt-2 flex justify-between items-center">
+                      <span>
+                        inclusive of all taxes for{" "}
+                        <span className="text-black">{quantity}</span> Qty (
+                        <span className="text-black">
+                          Rs.{" "}
+                          {Number(
+                            DISCOUNT_HELPER(
+                              discountPercentage.percentage,
+                              Number(_.get(checkOutState, "product_price", 0))
+                            )
+                          ).toFixed(2)}
+                        </span>{" "}
+                        / pieces)
                       </span>
-                    </div>
-                  </div>
-
-                  {/* Design Upload Toggle */}
-                  <div className="flex items-center justify-between mb-4 p-3 bg-white rounded-lg shadow-sm">
-                    <span className="text-md font-medium">I already have a design</span>
-                    <Switch
-                      checked={needDesignUpload}
-                      onChange={(checked) => {
-                        setNeedDesignUpload(checked);
-                        if (!checked) {
-                          setCheckOutState((prev) => ({
-                            ...prev,
-                            product_design_file: "",
-                          }));
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {/* Design Upload Section */}
-                  <div className="min-h-[100px] transition-all duration-300">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs">Already have design</span>
+                        <Switch 
+                          size="small"
+                          checked={needDesignUpload} 
+                          onChange={(checked) => {
+                            setNeedDesignUpload(checked);
+                            if (!checked) {
+                              setCheckOutState(prev => ({
+                                ...prev,
+                                product_design_file: ""
+                              }));
+                            }
+                          }}
+                        />
+                      </div>
+                    </h1>
+                  </h3>
+                  
+                  <div className="">
                     {needDesignUpload ? (
-                      <div className="py-4 bg-white rounded-lg shadow-sm p-4">
+                      <div className="py-4">
                         {checkOutState.product_design_file ? (
                           <>
                             <div className="hidden lg:block">
-                              <div className="center_div justify-between border border-green-200 bg-green-50 px-4 !h-[50px] rounded-lg gap-x-4 w-full">
+                              <Tag className="center_div justify-between border px-4 !h-[50px] !text-[14px] gap-x-4 w-full">
                                 <Tooltip title={checkOutState.product_design_file}>
-                                  <span className="line-clamp-1 text-green-700 max-w-[200px] overflow-hidden font-medium">
+                                  <span className="line-clamp-1 text-slate-600 max-w-[200px] overflow-hidden">
                                     {checkOutState.product_design_file}
                                   </span>
                                 </Tooltip>
-                                <div className="center_div gap-x-3">
+                                <div className="center_div gap-x-2">
                                   <a
                                     href={checkOutState.product_design_file}
                                     target="_blank"
-                                    className="!text-blue-500 !font-medium hover:underline"
+                                    className="!text-orange-500 !font-medium"
                                   >
                                     View
                                   </a>
                                   <Divider type="vertical" />
                                   <div
-                                    className="!text-[14px] cursor-pointer text-red-500 hover:text-red-700"
+                                    className="!text-[12px] cursor-pointer text-red-500"
                                     onClick={() => {
                                       setCheckOutState((prevState) => ({
                                         ...prevState,
@@ -869,28 +884,28 @@ const ProductDetails = ({
                                     Remove
                                   </div>
                                 </div>
-                              </div>
+                              </Tag>
                             </div>
-                            <div className="lg:hidden block bg-green-50 p-3 rounded-lg border border-green-200">
+                            <div className="lg:hidden block bg-slate-100 p-2 rounded-lg">
                               <div className="flex items-center py-2">
                                 <Tooltip title={checkOutState.product_design_file}>
-                                  <span className="line-clamp-1 text-[14px] text-green-700 max-w-[200px] overflow-hidden font-medium">
+                                  <span className="line-clamp-1 text-[12px] text-slate-600 max-w-[200px] overflow-hidden">
                                     {checkOutState.product_design_file}
                                   </span>
                                 </Tooltip>
                               </div>
-                              <hr className="border-green-200 my-2" />
-                              <div className="flex justify-between px-4 gap-x-3 text-sm">
+                              <hr />
+                              <div className="flex justify-between px-6 gap-x-2 text-sm pt-2">
                                 <a
                                   href={checkOutState.product_design_file}
                                   target="_blank"
-                                  className="text-blue-500 font-medium hover:underline"
+                                  className="text-orange-500 font-medium"
                                 >
                                   View
                                 </a>
                                 <Divider type="vertical" />
                                 <div
-                                  className="text-[14px] cursor-pointer text-red-500 hover:text-red-700"
+                                  className="text-[12px] cursor-pointer text-red-500"
                                   onClick={() => {
                                     setCheckOutState((prevState) => ({
                                       ...prevState,
@@ -902,7 +917,7 @@ const ProductDetails = ({
                                 </div>
                               </div>
                             </div>
-                            <div className="lg:py-3 py-4">
+                            <div className="lg:py-2 py-4">
                               <div className="flex items-center gap-x-2">
                                 <Checkbox
                                   checked={checked}
@@ -911,69 +926,73 @@ const ProductDetails = ({
                                     setError("");
                                   }}
                                 >
-                                  <span className="text-sm">I confirm this design is correct</span>
+                                  I confirm this design
                                 </Checkbox>
                               </div>
                               {error && (
-                                <p className="text-red-500 text-xs mt-1">{error}</p>
+                                <p className="text-red-500 text-xs">{error}</p>
                               )}
                             </div>
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              className="w-full my-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 !h-[50px] rounded-lg font-semibold shadow-md hover:shadow-lg transition-all"
+                            <Button
+                              type="primary"
+                              className="w-full my-2 bg-orange-500 text-white px-3 !h-[50px] rounded"
                               onClick={handlebuy}
+                              size="large"
                             >
                               Add To Shopping Cart
-                            </motion.button>
+                            </Button>
                           </>
                         ) : (
                           <UploadFileButton
                             handleUploadImage={handleUploadImage}
-                            buttonText={`Upload your Design file or pencil sketch`}
+                            buttonText={`${
+                              checkOutState.product_design_file
+                                ? "Upload your Design file or pencil sketch."
+                                : "Upload your Design file or pencil sketch. "
+                            }`}
                             className={`${
                               checkOutState.product_design_file
                                 ? "!bg-white !text-primary border border-primary"
-                                : "!bg-blue-500 !text-white hover:bg-blue-600"
-                            } !rounded-lg !h-[50px] !font-medium`}
+                                : "!bg-primary !text-white"
+                            }`}
                           />
                         )}
                       </div>
                     ) : (
                       <div className="py-4">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className="w-full my-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 !h-[50px] rounded-lg font-semibold shadow-md hover:shadow-lg transition-all"
+                        <Button
+                          type="primary"
+                          className="w-full my-2 bg-orange-500 text-white px-3 !h-[50px] rounded"
                           onClick={handlebuy}
+                          size="large"
                         >
                           Add To Shopping Cart
-                        </motion.button>
+                        </Button>
                       </div>
                     )}
                   </div>
                 </div>
-              )
-            )}
-          </div>
-        )}
+              </div>
+            )
+          )}
 
-        <Divider className="my-6" />
+          <Divider className="my-6" />
 
-        {/* Social Sharing */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Share this product</h3>
-          <div className="center_div gap-x-4 justify-start">
-            {shareicon.map((res, index) => (
-              <Tooltip title={`Share on ${res.name}`} key={index}>
-                <motion.div 
-                  whileHover={{ scale: 1.1, y: -2 }}
-                  className="cursor-pointer group border size-[45px] transition-all duration-300 center_div rounded-full shadow-sm hover:shadow-md"
-                >
-                  {res.com}
-                </motion.div>
-              </Tooltip>
-            ))}
+          {/* Social Sharing */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">Share this product</h3>
+            <div className="center_div gap-x-4 justify-start">
+              {shareicon.map((res, index) => (
+                <Tooltip title={`Share on ${res.name}`} key={index}>
+                  <motion.div 
+                    whileHover={{ scale: 1.1, y: -2 }}
+                    className="cursor-pointer group border size-[45px] transition-all duration-300 center_div rounded-full shadow-sm hover:shadow-md"
+                  >
+                    {res.com}
+                  </motion.div>
+                </Tooltip>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -83,9 +83,9 @@ const Product = () => {
         ) : (
           <Spin spinning={isUploadingFile}>
             <div className="flex flex-col">
-              <div className="flex w-full flex-col justify-start gap-10 lg:flex-row lg:py-5 !relative">
+              <div className="flex w-full flex-col justify-start gap-10 lg:flex-row lg:py-5 !relative" style={{position:"relative"}}>
                 {/* Image Slider Section - Sticky on desktop */}
-                <div className="w-full  lg:w-1/2 !sticky !top-24 !left-0">
+                <div className="w-full  lg:w-1/2 !sticky !top-24 ">
                   <ImagesSlider imageList={product?.images} data={product} />
                 </div>
 
