@@ -59,7 +59,7 @@ const Home = () => {
       className="lg:!px-20 font-sans "
     >
       <CarouselBanner />
-      <div className="lg:px-20 px-2 pb-10 mx-auto">
+      <div className=" pb-10 mx-auto">
         <BrowseAll />
         {/* <StepProcess /> */}
       </div>
