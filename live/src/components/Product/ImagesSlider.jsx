@@ -74,16 +74,16 @@ const ImagesSlider = ({ imageList, data }) => {
   };
 
   return (
-    <div className="sticky top-24">
+    <div className="!sticky !top-24">
       <div className="lg:hidden block">
         <DividerCards name={data.name} />
       </div>
       
       {/* Main Image with Zoom Effect */}
-      <div className="relative mb-4">
+      <div className="">
         <div
-          className="w-full bg-white border rounded-xl overflow-hidden relative"
-          style={{ height: '700px',width:'700px' }}
+          className="w-full bg-white border rounded-xl overflow-hidden relative "
+      
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >

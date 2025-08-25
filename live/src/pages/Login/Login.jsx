@@ -57,7 +57,7 @@ const Login = () => {
   return (
     <div className="h-screen flex overflow-hidden">
       <div className="flex-1 z-20 animate-swipeLeft sm:block hidden">
-        <img src="https://img.freepik.com/free-photo/beautiful-bouquet-flowers-gift-bag-generated-by-artificial-intelligence_188544-113196.jpg?t=st=1738060587~exp=1738064187~hmac=b583f35b9e0157a692e17e819f31c44c3d69cff7f99a53d66cc55bdf41ed7582&w=996" className="object-cover w-full h-full" />
+        <img src="https://res.cloudinary.com/dmvc40kyp/image/upload/v1755958948/Subham/1755958947211.webp" className="object-cover w-full h-full" />
       </div>
       <div className="flex-1 flex flex-col justify-between relative">
         <div className="bg-sky-50 h-[50%] w-[50%] rounded-br-[70%]  z-0 absolute -top-28 -left-24"></div>

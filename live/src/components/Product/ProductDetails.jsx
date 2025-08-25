@@ -6,7 +6,6 @@ import {
   Input,
   InputNumber,
   Modal,
-  Popover,
   Select,
   Spin,
   Tag,
@@ -14,10 +13,10 @@ import {
   Switch,
   Button,
   Card,
-  Badge,
-  Progress,
-  Collapse,
-  Alert
+  Typography,
+  Space,
+  Alert,
+  Rate
 } from "antd";
 import React, { useEffect, useState } from "react";
 import _ from "lodash";
@@ -31,13 +30,9 @@ import {
   FacebookShareButton,
   LinkedinIcon,
   LinkedinShareButton,
-  TelegramIcon,
-  TelegramShareButton,
-  TwitterShareButton,
   WhatsappIcon,
   WhatsappShareButton,
 } from "react-share";
-import { RiTwitterXFill } from "react-icons/ri";
 import { MdOutlineMailOutline } from "react-icons/md";
 import {
   addToShoppingCart,
@@ -53,8 +48,11 @@ import {
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import { DISCOUNT_HELPER } from "../../helper/form_validation";
 import { motion } from "framer-motion";
+import { HeartOutlined, PlusOutlined, MinusOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import { CiFaceSmile } from "react-icons/ci";
+import { CgSmileSad } from "react-icons/cg";
 
-const { Panel } = Collapse;
+const { Title, Text, Paragraph } = Typography;
 
 const ProductDetails = ({
   data = {
@@ -104,7 +102,6 @@ const ProductDetails = ({
   const [averageRatingCount, setAverageRatingCount] = useState(0);
   const [stock, setStockCount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -246,11 +243,16 @@ const ProductDetails = ({
   const handlebuy = async () => {
     try {
       setLoading(true);
+      if (needDesignUpload && !checkOutState.product_design_file) {
+        setError("Please upload your design file first");
+        return;
+      }
+
       if (needDesignUpload && !checked) {
         setError("Please Confirm Your Designs");
         return;
       }
-      
+
       if (_.isEmpty(user)) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
         CUSTOM_ERROR_NOTIFICATION("Please Login");
@@ -295,11 +297,11 @@ const ProductDetails = ({
     const today = new Date();
     const deliveryDate = new Date(today);
     deliveryDate.setDate(today.getDate() + Number(days));
-    
-    return deliveryDate.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric' 
+
+    return deliveryDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -340,7 +342,7 @@ const ProductDetails = ({
     if (value < 100) {
       value = 100;
     }
-    
+
     const result = _.get(data, "quantity_discount_splitup", []).filter(
       (res) => {
         return Number(res.quantity) <= Number(value);
@@ -420,37 +422,33 @@ const ProductDetails = ({
     },
   ];
 
-  // Calculate savings
-  const calculateSavings = () => {
-    return Math.abs(
-      Number(
-        Number(_.get(checkOutState, "product_price", 0)) * quantity
-      ) -
-        Number(
-          DISCOUNT_HELPER(
-            discountPercentage.percentage,
-            Number(_.get(checkOutState, "product_price", 0))
-          ) * Number(quantity)
-        )
+  // Format price with Indian Rupee symbol
+  const formatPrice = (price) => {
+    return `₹${parseFloat(price).toFixed(2)}`;
+  };
+
+  // Calculate total price
+  const calculateTotalPrice = () => {
+    const unitPrice = DISCOUNT_HELPER(
+      discountPercentage.percentage,
+      Number(_.get(checkOutState, "product_price", 0))
+    );
+    return Number(unitPrice * quantity).toFixed(2);
+  };
+
+  // Calculate original price (before discount)
+  const calculateOriginalPrice = () => {
+    return Number(
+      Number(_.get(checkOutState, "product_price", 0)) * quantity
     ).toFixed(2);
   };
 
-  // Get stock status
-  const getStockStatus = () => {
-    if (data.stocks_status === "In Stock") {
-      return { text: "In Stock", color: "green", icon: "●" };
-    } else if (data.stocks_status === "Low Stock") {
-      return { text: "Limited Stock", color: "orange", icon: "⚠" };
-    } else if (data.stocks_status === "Out of Stock") {
-      return { text: "Out of Stock", color: "red", icon: "✕" };
-    } else if (data.stocks_status === "Don't Track Stocks") {
-      return { text: "Available", color: "green", icon: "●" };
-    } else {
-      return { text: "Stock Unknown", color: "gray", icon: "?" };
-    }
+  // Calculate savings
+  const calculateSavings = () => {
+    const original = calculateOriginalPrice();
+    const discounted = calculateTotalPrice();
+    return (original - discounted).toFixed(2);
   };
-
-  const stockStatus = getStockStatus();
 
   return (
     <Spin
@@ -459,114 +457,82 @@ const ProductDetails = ({
         <IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />
       }
     >
-      <div className="flex-1 font-primary w-full space-y-8">
-        {/* Product Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm">
-          <div className="flex flex-wrap gap-4 items-center mb-4">
-            <Badge.Ribbon 
-              text={stockStatus.text} 
-              color={stockStatus.color}
-              placement="start"
-            >
-              <div className="w-3 h-3"></div> {/* Spacer for the ribbon */}
-            </Badge.Ribbon>
-            
-            <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm">
-              <Tag color="blue" className="flex gap-1 items-center m-0">
-                {averageRatingCount}
-                <IconHelper.STAR_ICON className="text-yellow-400" />
-              </Tag>
-              <span className="text-sm text-gray-600">
-                {rate.length} Ratings & {review.length} Reviews
-              </span>
+      <div className="font-primary w-full space-y-6">
+         <div className="">
+           {_.get(data, "stocks_status", "") !== "Out of Stock" ? (
+              <div  className="!m-0 text-xl font-bold bg-transparent flex w-fit items-center gap-2 text-green-500">
+                <CiFaceSmile />In Stock
+              </div>
+            ) : (
+              <div  className="!m-0 text-xl font-bold bg-transparent flex w-fit items-center gap-2 text-red-500">
+                <CgSmileSad/>Out of Stock
+              </div>
+            )}
+            <div className="flex items-center gap-4">
+            <div className="flex items-center">
+              <Rate 
+                disabled 
+                defaultValue={averageRatingCount} 
+                className="!text-yellow-400 !text-sm" 
+              />
+              <Text className="ml-2 text-gray-600">
+                ({rate.length} Reviews)
+              </Text>
             </div>
+            
+          
           </div>
-
-          <h1 className="title text-gray-900 text-3xl font-bold mb-3">
+         </div>
+        {/* Product Header - Porterhouse Style */}
+        <div className="space-y-4">
+          <Title level={1} className="!mb-2 !text-gray-900 !font-bold">
             {data.name}
-          </h1>
+          </Title>
+          
+          
+          
+          <Title level={2} className="!my-4 !text-gray-900 !font-normal">
+            {formatPrice(
+              DISCOUNT_HELPER(
+                discountPercentage.percentage,
+                Number(_.get(checkOutState, "product_price", 0))
+              )
+            )}
+          </Title>
+        </div>
 
-          <div className="mb-4">
+        <Divider className="!my-6" />
+
+        {/* Product Description */}
+        <div className="space-y-4">
+          <Paragraph className="text-gray-700 text-base leading-relaxed">
             <div
-              className="text-gray-700 leading-relaxed"
               dangerouslySetInnerHTML={{
                 __html: _.get(data, "short_description", ""),
               }}
             />
-          </div>
-
-          {/* Product Labels */}
-          {data.label && data.label.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {data.label.map((label, index) => (
-                <span key={index} className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                  {label}
-                </span>
-              ))}
-            </div>
-          )}
+          </Paragraph>
         </div>
 
-        {/* Tabs Navigation */}
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8">
-            {["details", "options", "pricing", "delivery"].map((tab) => (
-              <button
-                key={tab}
-                className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                  activeTab === tab
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Tab Content */}
-        <div className="min-h-[400px]">
-          {/* Details Tab */}
-          {activeTab === "details" && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
-            >
-              <h3 className="text-xl font-semibold text-gray-800">Product Details</h3>
-              <div
-                className="text-gray-600 prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: _.get(data, "desc", "") }}
-              />
-            </motion.div>
-          )}
-
-          {/* Options Tab */}
-          {activeTab === "options" && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
-            >
-              {/* Variants Selection */}
-              {product_type !== "Single Product" && !_.isEmpty(currentPriceSplitup) && (
-                <div className="space-y-6">
-                  <h3 className="text-xl font-semibold text-gray-800">Customization Options</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {_.get(data, "variants", []).map((variant, index) => (
-                      <Card 
-                        key={index} 
-                        className="shadow-sm hover:shadow-md transition-shadow"
-                        title={variant.variant_name}
-                      >
-                        {variant.variant_type !== "image_variant" ? (
+         {/* Variants Selection (Hidden by default, shows when product has variants) */}
+        {product_type !== "Single Product" &&
+          !_.isEmpty(currentPriceSplitup) && (
+            <Card size="small" title="Product Options" className="mt-6 !bg-transparent !border-none">
+              <div className="flex flex-col w-full space-y-6">
+                {_.get(data, "variants", []).map((variant, index) => {
+                  return (
+                    <div
+                      className="flex items-center gap-0 w-full justify-between"
+                      key={index}
+                    >
+                      <label className="line-clamp-1 text-2xl font-medium py-1 text-gray-700 w-[8%]">
+                        {variant.variant_name}
+                      </label>
+                      <div className="w-[100%] center_div min-h-[40px]">
+                        {variant.variant_type != "image_variant" ? (
                           <Select
                             disabled={variant.options.length === 1}
-                            className="w-full h-12 rounded-lg"
+                            className="flex-1 !w-full !h-[50px] !rounded-lg border-gray-300"
                             defaultValue={_.get(
                               currentPriceSplitup,
                               `[${variant.variant_name}]`,
@@ -578,411 +544,340 @@ const ProductDetails = ({
                             }
                           />
                         ) : (
-                          <div className="flex flex-wrap gap-3 py-2">
-                            {_.get(variant, "options", []).map((data, index2) => (
-                              <div
-                                key={index2}
-                                className="flex flex-col items-center"
-                              >
-                                <div
-                                  onClick={() =>
-                                    variant.options.length !== 1 &&
-                                    handleOnChangeSelectOption(data.value, index)
-                                  }
-                                  className={`size-16 border-2 ${
-                                    variant.options.length === 1
-                                      ? "cursor-not-allowed opacity-50"
-                                      : "cursor-pointer hover:border-blue-400 transition-all"
-                                  } center_div rounded-lg p-1 ${
-                                    _.get(
-                                      currentPriceSplitup,
-                                      `[${variant.variant_name}]`,
-                                      ""
-                                    ) === data.value
-                                      ? "border-blue-500 shadow-md"
-                                      : "border-gray-300"
-                                  }`}
-                                >
-                                  <img
-                                    src={data.image_name}
-                                    className="size-10 object-contain"
-                                    alt={data.value}
-                                  />
-                                </div>
-                                <span className="text-xs mt-1 text-center">{data.value}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Design Upload Section */}
-              <Card title="Design Requirements" className="shadow-sm">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700">I need to upload my design</span>
-                    <Switch 
-                      checked={needDesignUpload} 
-                      onChange={(checked) => {
-                        setNeedDesignUpload(checked);
-                        if (!checked) {
-                          setCheckOutState(prev => ({
-                            ...prev,
-                            product_design_file: ""
-                          }));
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {needDesignUpload && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {checkOutState.product_design_file ? (
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-medium">Design File</span>
-                            <div className="flex gap-2">
-                              <a
-                                href={checkOutState.product_design_file}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 text-sm"
-                              >
-                                View
-                              </a>
-                              <button
-                                onClick={() => {
-                                  setCheckOutState(prevState => ({
-                                    ...prevState,
-                                    product_design_file: "",
-                                  }));
-                                }}
-                                className="text-red-600 hover:text-red-800 text-sm"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              checked={checked}
-                              onChange={(e) => {
-                                setChecked(e.target.checked);
-                                setError("");
-                              }}
-                            >
-                              I confirm this design is correct
-                            </Checkbox>
-                            {error && (
-                              <span className="text-red-500 text-sm">{error}</span>
+                          <div className="flex items-center gap-x-3 flex-wrap w-full py-2">
+                            {_.get(variant, "options", []).map(
+                              (data, index2) => {
+                                return (
+                                  <div
+                                    key={index}
+                                    className="flex flex-col items-center gap-y-1"
+                                  >
+                                    <div
+                                      key={index2}
+                                      onClick={() =>
+                                        handleOnChangeSelectOption(
+                                          data.value,
+                                          index
+                                        )
+                                      }
+                                      className={`!size-[60px] border-2 ${
+                                        variant.options.length === 1
+                                          ? "!cursor-not-allowed"
+                                          : "cursor-pointer hover:border-blue-400 transition-all"
+                                      } center_div rounded-lg p-1 ${
+                                        _.get(
+                                          currentPriceSplitup,
+                                          `[${variant.variant_name}]`,
+                                          ""
+                                        ) === data.value
+                                          ? "border-blue-500 shadow-md"
+                                          : "border-gray-300"
+                                      }`}
+                                    >
+                                      <img
+                                        src={data.image_name}
+                                        className="!size-[40px] !object-contain"
+                                      />
+                                    </div>
+                                    <h1 className="text-sm mt-1">
+                                      {data.value}
+                                    </h1>
+                                  </div>
+                                );
+                              }
                             )}
                           </div>
-                        </div>
-                      ) : (
-                        <UploadFileButton
-                          handleUploadImage={handleUploadImage}
-                          buttonText="Upload Design File"
-                          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 transition-colors"
-                        />
-                      )}
-                    </motion.div>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Pricing Tab */}
-          {activeTab === "pricing" && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
-            >
-              <h3 className="text-xl font-semibold text-gray-800">Quantity & Pricing</h3>
-              
-              <Card className="shadow-sm">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Quantity (Minimum: 100)
-                    </label>
-                    
-                    {_.get(data, "quantity_type", "") === "textbox" ? (
-                      <InputNumber
-                        min={100}
-                        type="number"
-                        className="w-full h-12"
-                        value={quantity}
-                        onChange={handleTextboxQuantityChange}
-                      />
-                    ) : (
-                      <Select
-                        defaultValue={discountPercentage?.uuid}
-                        onChange={handleQuantityChnage}
-                        className="w-full h-12"
-                        placeholder="Select Quantity"
-                        disabled={
-                          _.get(data, "quantity_discount_splitup", []).length === 1
-                        }
-                      >
-                        {_.get(data, "quantity_discount_splitup", []).map(
-                          (dis, index) => (
-                            <Select.Option key={index} value={dis.uniqe_id}>
-                              <div className="flex items-center justify-between">
-                                <span>{dis.quantity} units</span>
-                                <span className="text-green-600">
-                                  ({dis.discount}% off)
-                                </span>
-                                {_.get(dis, "recommended_stats", "") !==
-                                  "Not Recommended" && (
-                                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                                    Recommended
-                                  </span>
-                                )}
-                              </div>
-                            </Select.Option>
-                          )
                         )}
-                      </Select>
-                    )}
-                  </div>
-
-                  {_.get(data, "stocks_status", "") !== "Don't Track Stocks" && (
-                    <div className={`text-sm ${
-                      handleQuantityDetails(stock, quantity)
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}>
-                      {handleQuantityDetails(stock, quantity)
-                        ? `Available Stock: ${Number(stock) - Number(quantity)} units`
-                        : "Out of Stock"}
+                      </div>
                     </div>
-                  )}
-                </div>
-              </Card>
-
-              {/* Price Display */}
-              {isGettingVariantPrice ? (
-                <div className="center_div py-10">
-                  <Spin size="large" />
-                </div>
-              ) : (
-                handleQuantityDetails(stock, quantity) && (
-                  <Card className="bg-gradient-to-r from-blue-50 to-purple-50 shadow-md">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Unit Price:</span>
-                        <span className="text-lg font-semibold">
-                          Rs. {Number(_.get(checkOutState, "product_price", 0)).toFixed(2)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Quantity:</span>
-                        <span className="font-medium">{quantity}</span>
-                      </div>
-
-                      {discountPercentage.percentage > 0 && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Discount:</span>
-                          <span className="text-green-600 font-semibold">
-                            {discountPercentage.percentage}%
-                          </span>
-                        </div>
-                      )}
-
-                      <Divider className="my-2" />
-
-                      <div className="flex items-center justify-between text-xl font-bold">
-                        <span>Total:</span>
-                        <div className="flex flex-col items-end">
-                          {discountPercentage.percentage > 0 && (
-                            <span className="text-gray-400 line-through text-sm">
-                              Rs. {(
-                                Number(_.get(checkOutState, "product_price", 0)) * quantity
-                              ).toFixed(2)}
-                            </span>
-                          )}
-                          <span className="text-blue-600">
-                            Rs. {(
-                              DISCOUNT_HELPER(
-                                discountPercentage.percentage,
-                                Number(_.get(checkOutState, "product_price", 0))
-                              ) * quantity
-                            ).toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {calculateSavings() > 0 && (
-                        <div className="bg-green-100 text-green-800 p-3 rounded-lg">
-                          You save Rs. {calculateSavings()} on this order!
-                        </div>
-                      )}
-
-                      <Button
-                        type="primary"
-                        size="large"
-                        className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 border-0 hover:from-blue-600 hover:to-purple-700"
-                        onClick={handlebuy}
-                        disabled={needDesignUpload && !checkOutState.product_design_file}
-                      >
-                        {needDesignUpload && !checkOutState.product_design_file
-                          ? "Upload Design to Continue"
-                          : "Add to Cart"}
-                      </Button>
-                    </div>
-                  </Card>
-                )
-              )}
-            </motion.div>
+                  );
+                })}
+              </div>
+            </Card>
           )}
 
-          {/* Delivery Tab */}
-          {activeTab === "delivery" && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
-            >
-              <h3 className="text-xl font-semibold text-gray-800">Delivery Information</h3>
+        {/* File Upload Section - Porterhouse Style */}
+        <div className="space-y-4">
+          <Text strong className="block mb-2 text-gray-800">
+            Upload Your Design
+          </Text>
+          
+          {needDesignUpload ? (
+            <>
+              <UploadFileButton
+                handleUploadImage={handleUploadImage}
+                buttonText="Drag & Drop Files Here or Browse Files"
+                className="w-full h-40 border-1  border-dotted  rounded-lg flex flex-col items-center justify-center   transition-colors"
+                icon={<div className="text-3xl mb-2 text-gray-400">+</div>}
+              />
               
-              <Card className="shadow-sm">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700">Processing Time</span>
-                    <span className="font-semibold">{processing_item} business days</span>
-                  </div>
+              {checkOutState.product_design_file && (
+                <div className="mt-4">
+                  <Checkbox
+                    checked={checked}
+                    onChange={(e) => {
+                      setChecked(e.target.checked);
+                      setError("");
+                    }}
+                  >
+                    I confirm this design
+                  </Checkbox>
+                  {error && (
+                    <Text type="danger" className="block mt-1">{error}</Text>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <Alert 
+              message="Our Designing Team contact within 24 Hours After Booking" 
+              type="info" 
+              showIcon 
+            />
+          )}
+          
+          <div className="flex items-center gap-2 mt-2">
+            <Text>Already have a Design</Text>
+            <Switch
+              checked={needDesignUpload}
+              onChange={(checked) => {
+                setNeedDesignUpload(checked);
+                if (!checked) {
+                  setCheckOutState((prev) => ({
+                    ...prev,
+                    product_design_file: "",
+                  }));
+                  setChecked(false);
+                }
+              }}
+            />
+          </div>
+        </div>
 
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <IconHelper.DELIVERY_TRUCK_ICON className="text-blue-500 text-xl" />
-                      <span className="font-medium">Estimated Delivery</span>
-                    </div>
-                    <p className="text-gray-700">
-                      Your order will be delivered by{" "}
-                      <span className="font-semibold text-blue-600">
-                        {calculateDeliveryDate(Number(processing_item) + 3)}
-                      </span>
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      (Processing: {processing_item} days + Shipping: 3 days)
-                    </p>
-                  </div>
+        <Divider className="!my-6" />
 
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <IconHelper.INFO_ICON className="text-yellow-500 text-xl" />
-                      <span className="font-medium">Important Notes</span>
-                    </div>
-                    <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                      <li>Business days exclude weekends and holidays</li>
-                      <li>Production time starts after design approval</li>
-                      <li>Delivery times may vary based on your location</li>
-                    </ul>
-                  </div>
-
+        {/* Total Price Section - Added back */}
+        <Card className="bg-blue-50 rounded-lg border-0">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Text strong className="text-gray-800">Total Price:</Text>
+              <div className="text-right">
+                {calculateSavings() > 0 && (
+                  <Text delete className="text-lg text-gray-500 mr-2">
+                    {formatPrice(calculateOriginalPrice())}
+                  </Text>
+                )}
+                <Title level={3} className="!m-0 !text-green-600">
+                  {formatPrice(calculateTotalPrice())}
+                </Title>
+              </div>
+            </div>
+            
+            {calculateSavings() > 0 && (
+              <Alert 
+                message={`You save ${formatPrice(calculateSavings())}`}
+                type="success"
+                showIcon
+              />
+            )}
+            
+            <div className="text-sm text-gray-600">
+              <Text>
+                Inclusive of all taxes for{" "}
+                <Text strong>{quantity}</Text> Qty (
+                <Text strong>
+                  {formatPrice(
+                    DISCOUNT_HELPER(
+                      discountPercentage.percentage,
+                      Number(_.get(checkOutState, "product_price", 0))
+                    )
+                  )}
+                </Text>{" "}
+                / piece)
+              </Text>
+            </div>
+          </div>
+          <div className="flex flex-col w-full justify-between mt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Text strong className="text-gray-700">
+                  Processing Time 
+                </Text>
+                <Tooltip title="Learn more about processing time">
                   <Button 
                     type="text" 
-                    className="text-blue-600 p-0"
+                    icon={<IconHelper.QUESTION_MARK />} 
+                    size="small"
                     onClick={() => setIsModalOpen(true)}
-                  >
-                    View detailed processing information
-                  </Button>
-                </div>
-              </Card>
+                  />
+                </Tooltip>
+                <span className="text-xl font-bold">{processing_item} business days</span>
+              </div>
+
 
               <Modal
-                title="Processing Time Details"
+                title="Processing Time Information"
                 open={isModalOpen}
                 onCancel={() => setIsModalOpen(false)}
                 footer={null}
+                centered
                 width={700}
               >
-                <div className="max-h-96 overflow-y-auto p-1">
-                  <p className="text-gray-700 mb-4">
+                <div className="max-h-[400px] overflow-y-auto text-gray-700">
+                  <Paragraph>
                     The printing time determines how long it takes us to complete
-                    your order. You may pick your preferred production time from the
-                    list.
-                  </p>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <p>
-                        We will provide the proof file for approval before
-                        printing. Faster approval will guarantee speedy processing.
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-start gap-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <p>
-                        We need 300 dpi CMYK resolution artwork uploaded along the order.
-                        Preferred file types include CDR, AI, PSD, and High-Res Images
-                        with text and components converted to vector where needed.
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-start gap-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <p>
-                        Production time does not include the shipping time. Business
-                        days do not include Sundays and National Holidays, and orders
-                        made after 12 p.m. are counted from the next Business Day.
-                      </p>
-                    </div>
-                    
-                    <div className="bg-gray-50 p-4 rounded-lg mt-4">
-                      <p className="text-gray-700">
-                        Need more information? Contact us:
-                      </p>
-                      <div className="flex flex-wrap gap-4 mt-2">
-                        <a href="#" className="text-blue-600 hover:underline">
-                          WhatsApp Support
-                        </a>
-                        <a href="tel:+919876543210" className="text-blue-600 hover:underline">
-                          +91-9876543210
-                        </a>
-                        <a href="mailto:business@printe.in" className="text-blue-600 hover:underline">
-                          business@printe.in
-                        </a>
-                      </div>
-                    </div>
-                  </div>
+                    your order. You may pick your preferred production time from
+                    the list.
+                  </Paragraph>
+                  <Paragraph>
+                    While we strive to complete the order within the committed
+                    timeframes, the timings also depend on the following factors:
+                  </Paragraph>
+                  <ul className="list-disc pl-5 mt-2 space-y-2">
+                    <li>
+                      We will provide the proof file for approval before printing. 
+                      Faster approval will guarantee speedy processing.
+                    </li>
+                    <li>
+                      We need 300 dpi CMYK resolution artwork uploaded along the
+                      order. Preferred file types include CDR, AI, PSD, and
+                      High-Res Images with text and components converted to vector
+                      where needed.
+                    </li>
+                    <li>
+                      Production time does not include the shipping time. Business 
+                      days do not include Sundays and National Holidays, and orders 
+                      made after 12 p.m. are counted from the next Business Day.
+                    </li>
+                  </ul>
+                  <Paragraph className="mt-4">
+                    In case you still have any questions, let's connect? Contact us
+                    on WhatsApp, call us at +91-9876543210, or email business@printe.in.
+                  </Paragraph>
                 </div>
               </Modal>
+            </div>
+
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.5 },
+                },
+              }}
+              className="mt-2"
+            >
+              <Text strong className="block mb-2 text-gray-700">
+                Estimated Delivery
+              </Text>
+              <motion.div whileHover={{ scale: 1.01 }} className="my-2">
+                <Input className="h-12 rounded-lg" value={639001} />
+              </motion.div>
+              <motion.div
+                className="text-gray-700 pt-2 flex gap-2 items-center"
+                whileHover={{ x: 5 }}
+              >
+                <IconHelper.DELIVERY_TRUCK_ICON className="text-blue-500" />
+                Standard Delivery by
+                <Text strong>{calculateDeliveryDate(processing_item)}</Text>
+                <Divider type="vertical" />
+                <Text type="success" strong>₹ 75</Text>
+              </motion.div>
             </motion.div>
+        </Card>
+
+        <Divider className="!my-6" />
+
+        {/* Add to Cart Section - Porterhouse Style */}
+        <div className="space-y-6">
+          {isGettingVariantPrice ? (
+            <div className="center_div py-10">
+              <Spin size="large" />
+            </div>
+          ) : (
+            handleQuantityDetails(stock, quantity) && (
+              <div className="text-gray-600 text-md flex-1">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="flex items-center border rounded-lg overflow-hidden">
+                    <Button 
+                      type="text" 
+                      icon={<MinusOutlined />}
+                      onClick={() => setQuantity(prev => Math.max(100, prev - 100))}
+                      className=""
+                    />
+                    <InputNumber
+                      min={100}
+                      value={quantity}
+                      onChange={handleTextboxQuantityChange}
+                      className=" !text-center !border-x !border-0 [&_.ant-input-number-input]:!text-center"
+                      controls={false}
+                    />
+                    <Button 
+                      type="text" 
+                      icon={<PlusOutlined />}
+                      onClick={() => setQuantity(prev => prev + 100)}
+                      className=""
+                    />
+                  </div>
+                  
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<ShoppingCartOutlined />}
+                    className="!h-12 !px-6 !bg-yellow-400 text-black hover:!text-black font-semibold flex-1"
+                    onClick={handlebuy}
+                    loading={loading}
+                  >
+                    Add To Cart
+                  </Button>
+                </div>
+                
+                {/* {_.get(data, "stocks_status", "") != "Don't Track Stocks" && (
+                  <Text
+                    className={`!text-[14px] mt-2 ${
+                      handleQuantityDetails(stock, quantity)
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {handleQuantityDetails(stock, quantity)
+                      ? `Available Stock: ${Number(stock) - Number(quantity)} units`
+                      : "(Out-of-Stock)"}
+                  </Text>
+                )} */}
+              </div>
+            )
           )}
         </div>
 
-        {/* Social Sharing */}
-        <Card title="Share this product" className="shadow-sm">
-          <div className="flex flex-wrap gap-4">
-            {shareicon.map((res) => (
-              <motion.div
-                key={res.id}
-                whileHover={{ scale: 1.1, y: -2 }}
-                className="cursor-pointer"
-              >
-                <Tooltip title={`Share on ${res.name}`}>
-                  {res.com}
-                </Tooltip>
-              </motion.div>
-            ))}
+        <Divider className="!my-6" />
+
+        {/* Product Meta Information - Porterhouse Style */}
+        <div className="space-y-3">
+          <div className="flex items-center">
+            <Text strong className="!text-gray-800 !w-24">Categories:</Text>
+            <Text className="text-gray-600">
+              {_.get(data, "category_details.main_category_name", "")}
+              {_.get(data, "sub_category_details.sub_category_name", "") && 
+                `, ${_.get(data, "sub_category_details.sub_category_name", "")}`
+              }
+            </Text>
           </div>
-        </Card>
+          
+          {/* <div className="flex items-center">
+            <Text strong className="!text-gray-800 !w-24">Tags:</Text>
+            <Text className="text-gray-600">
+              {_.get(data, "label", []).join(", ")}
+            </Text>
+          </div> */}
+        </div>
+
+       
+
+    
       </div>
     </Spin>
   );
