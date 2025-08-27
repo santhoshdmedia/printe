@@ -21,7 +21,7 @@ const ImagesSlider = ({ imageList, data }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    setIsFav(user?.wish_list?.includes(data._id) ?? false);
+    setIsFav(user?.wish_list?.includes(data.seo_url) ?? false);
   }, [user]);
 
   const imageOnClickHandler = (id) => {
@@ -46,7 +46,7 @@ const ImagesSlider = ({ imageList, data }) => {
   const handleAddWishList = () => {
     if (isAuth) {
       if (isFav) {
-        const filter = user.wish_list.filter((product) => product !== data._id);
+        const filter = user.wish_list.filter((product) => product !== data.seo_url);
         const form = { wish_list: filter };
         dispatch({
           type: "UPDATE_USER",
@@ -54,7 +54,7 @@ const ImagesSlider = ({ imageList, data }) => {
         });
         setIsFav(false);
       } else {
-        const form = { wish_list: [...user.wish_list, data._id] };
+        const form = { wish_list: [...user.wish_list, data.seo_url] };
         dispatch({
           type: "UPDATE_USER",
           data: { form, type: "custom", message: "Added to WishList" },

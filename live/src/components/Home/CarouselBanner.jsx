@@ -206,7 +206,7 @@ const CarouselBanner = () => {
 
                         {/* Typing-like animation for heading */}
                         <motion.h1
-                          className="text-4xl md:text-5xl lg:text-7xl text-gray-900 font-bold"
+                          className="text-4xl md:text-5xl lg:text-6xl text-gray-900 font-bold"
                           variants={{
                             hidden: { opacity: 0, y: 30 },
                             visible: {
