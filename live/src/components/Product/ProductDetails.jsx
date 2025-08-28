@@ -16,7 +16,10 @@ import {
   Typography,
   Space,
   Alert,
-  Rate
+  Rate,
+  Image,
+  Row,
+  Col,
 } from "antd";
 import React, { useEffect, useState } from "react";
 import _ from "lodash";
@@ -48,9 +51,16 @@ import {
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import { DISCOUNT_HELPER } from "../../helper/form_validation";
 import { motion } from "framer-motion";
-import { HeartOutlined, PlusOutlined, MinusOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import {
+  HeartOutlined,
+  PlusOutlined,
+  MinusOutlined,
+  ShoppingCartOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 import { CiFaceSmile } from "react-icons/ci";
 import { CgSmileSad } from "react-icons/cg";
+import { toast } from "react-toastify";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -102,6 +112,10 @@ const ProductDetails = ({
   const [averageRatingCount, setAverageRatingCount] = useState(0);
   const [stock, setStockCount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [designPreviewVisible, setDesignPreviewVisible] = useState(false);
+  // geo locaton
+  const [pincode, setPincode] = useState("");
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -243,19 +257,20 @@ const ProductDetails = ({
   const handlebuy = async () => {
     try {
       setLoading(true);
+
       if (needDesignUpload && !checkOutState.product_design_file) {
-        setError("Please upload your design file first");
+        toast.error("Please upload your design file first");
         return;
       }
 
       if (needDesignUpload && !checked) {
-        setError("Please Confirm Your Designs");
+        toast.error("Please Confirm Your Designs");
         return;
       }
 
       if (_.isEmpty(user)) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
-        CUSTOM_ERROR_NOTIFICATION("Please Login");
+        toast.error("Please Login");
         return navigate("/login");
       }
 
@@ -268,10 +283,12 @@ const ProductDetails = ({
       );
 
       const result = await addToShoppingCart(checkOutState);
-      CUSTOM_SUCCESS_SWALFIRE_NOTIFICATION({
+
+      Swal.fire({
         title: "Product Added To Cart",
         text: "Choose an option: Go to the shopping cart page or stay here.",
         icon: "success",
+        showCancelButton: true,
         confirmButtonText: "Go to Shopping Cart",
         cancelButtonText: "Stay Here",
       }).then((result) => {
@@ -279,14 +296,15 @@ const ProductDetails = ({
           goToShoppingCart();
         }
       });
+
       dispatch(ADD_TO_CART(_.get(result, "data.data.data", "")));
     } catch (err) {
       if (err?.response?.status === 401) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
-        CUSTOM_ERROR_NOTIFICATION("login to place order ");
+        toast.error("Login to place order");
         navigate("/sign-up");
       } else {
-        ERROR_NOTIFICATION(err);
+        toast.error(err.message || "An error occurred");
       }
     } finally {
       setLoading(false);
@@ -296,7 +314,7 @@ const ProductDetails = ({
   const calculateDeliveryDate = (days) => {
     const today = new Date();
     const deliveryDate = new Date(today);
-    deliveryDate.setDate(today.getDate() + Number(days));
+    deliveryDate.setDate(today.getDate() + (Number(days) + 1));
 
     return deliveryDate.toLocaleDateString("en-US", {
       weekday: "long",
@@ -450,6 +468,75 @@ const ProductDetails = ({
     return (original - discounted).toFixed(2);
   };
 
+  //  handle geolocation
+  const getLocationFromBrowser = () => {
+    setIsGettingLocation(true);
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      setIsGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+
+          const foundPincode = data.address?.postcode;
+          if (foundPincode) {
+            setPincode(foundPincode);
+            toast.success(`Pincode detected: ${foundPincode}`);
+          } else {
+            toast.error("Could not detect pincode from your location");
+          }
+        } catch (error) {
+          console.error("Error getting location:", error);
+          toast.error("Failed to get location information");
+        } finally {
+          setIsGettingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        toast.error("Please allow location access to detect your pincode");
+        setIsGettingLocation(false);
+      },
+      {
+        timeout: 10000,
+        enableHighAccuracy: true,
+      }
+    );
+  };
+
+  // Generate quantity options for dropdown
+  const generateQuantityOptions = () => {
+    if (_.get(data, "quantity_type", "") === "textbox") {
+      // For textbox type, create options in increments of 100
+      const maxQty = _.get(data, "max_quantity", 10000);
+      const options = [];
+      for (let i = 100; i <= maxQty; i += 100) {
+        options.push({ value: i, label: i.toString() });
+      }
+      return options;
+    } else {
+      // For predefined quantities
+      return _.get(data, "quantity_discount_splitup", []).map((item) => ({
+        value: item.quantity,
+        label: `${item.quantity} (${item.discount}% off)`,
+      }));
+    }
+  };
+
+  const quantityOptions = generateQuantityOptions();
+  const [isClicked, setIsClicked] = useState(false);
+  const handleClick = () => {
+    setIsClicked(!isClicked); // Toggle the clicked state
+  };
+
   return (
     <Spin
       spinning={loading}
@@ -457,55 +544,37 @@ const ProductDetails = ({
         <IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />
       }
     >
-      <div className="font-primary w-full space-y-6">
-         <div className="">
-           {_.get(data, "stocks_status", "") !== "Out of Stock" ? (
-              <div  className="!m-0 text-xl font-bold bg-transparent flex w-fit items-center gap-2 text-green-500">
-                <CiFaceSmile />In Stock
-              </div>
-            ) : (
-              <div  className="!m-0 text-xl font-bold bg-transparent flex w-fit items-center gap-2 text-red-500">
-                <CgSmileSad/>Out of Stock
-              </div>
-            )}
-            <div className="flex items-center gap-4">
-            <div className="flex items-center">
-              <Rate 
-                disabled 
-                defaultValue={averageRatingCount} 
-                className="!text-yellow-400 !text-sm" 
-              />
-              <Text className="ml-2 text-gray-600">
-                ({rate.length} Reviews)
-              </Text>
-            </div>
-            
-          
-          </div>
-         </div>
-        {/* Product Header - Porterhouse Style */}
-        <div className="space-y-4">
-          <Title level={1} className="!mb-2 !text-gray-900 !font-bold">
+      <div className="font-primary w-full space-y-2">
+        {/* Product Header */}
+        <div className="space-y-1 flex justify-between">
+          <Title level={1} className="!text-gray-900 !font-bold !mb-2">
             {data.name}
           </Title>
-          
-          
-          
-          <Title level={2} className="!my-4 !text-gray-900 !font-normal">
-            {formatPrice(
-              DISCOUNT_HELPER(
-                discountPercentage.percentage,
-                Number(_.get(checkOutState, "product_price", 0))
-              )
-            )}
-          </Title>
+
+          <motion.div
+            animate={{ scale: [1, 1.1, 1] }} // Scale up and down
+            transition={{
+              duration: 0.6,
+              repeat: Infinity, // Repeat indefinitely
+              repeatType: "loop", // Loop the animation
+              ease: "easeInOut", // Easing function for smooth animation
+            }}
+            className="bg-green-100 border border-green-300 rounded-lg p-3 shadow-lg text-right"
+          >
+            <Title level={4} className="!m-0 !text-green-600">
+              {formatPrice(
+                DISCOUNT_HELPER(
+                  discountPercentage.percentage,
+                  Number(_.get(checkOutState, "product_price", 0))
+                )
+              )}
+            </Title>
+          </motion.div>
         </div>
 
-        <Divider className="!my-6" />
-
         {/* Product Description */}
-        <div className="space-y-4">
-          <Paragraph className="text-gray-700 text-base leading-relaxed">
+        <div>
+          <Paragraph className="text-gray-700 text-base leading-relaxed !mb-0">
             <div
               dangerouslySetInnerHTML={{
                 __html: _.get(data, "short_description", ""),
@@ -514,177 +583,158 @@ const ProductDetails = ({
           </Paragraph>
         </div>
 
-         {/* Variants Selection (Hidden by default, shows when product has variants) */}
-        {product_type !== "Single Product" &&
-          !_.isEmpty(currentPriceSplitup) && (
-            <Card size="small" title="Product Options" className="mt-6 !bg-transparent !border-none">
-              <div className="flex flex-col w-full space-y-6">
-                {_.get(data, "variants", []).map((variant, index) => {
-                  return (
-                    <div
-                      className="flex items-center gap-0 w-full justify-between"
-                      key={index}
-                    >
-                      <label className="line-clamp-1 text-2xl font-medium py-1 text-gray-700 w-[8%]">
-                        {variant.variant_name}
-                      </label>
-                      <div className="w-[100%] center_div min-h-[40px]">
-                        {variant.variant_type != "image_variant" ? (
+        {/* Quantity and Variants Section */}
+        <div className="w-full">
+          <Row
+            gutter={[16, 16]}
+            align="bottom"
+            className="justify-between w-full "
+          >
+            {/* Quantity Selection */}
+            <Col xs={24} md={product_type !== "Single Product" ? 8 : 24}>
+              <div className="flex flex-col">
+                <Text strong className="block mb-2">
+                  Quantity:
+                </Text>
+                <Select
+                  value={quantity}
+                  onChange={(value) => handleTextboxQuantityChange(value)}
+                  options={quantityOptions}
+                  className="w-full"
+                  placeholder="Select Quantity"
+                />
+              </div>
+            </Col>
+
+            {/* Variants Selection */}
+            {product_type !== "Single Product" &&
+              !_.isEmpty(currentPriceSplitup) && (
+                <>
+                  {_.get(data, "variants", []).map((variant, index) => (
+                    <Col xs={24} md={8} key={index}>
+                      <div className="flex flex-col">
+                        <Text strong className="block mb-2">
+                          {variant.variant_name}:
+                        </Text>
+                        {variant.variant_type !== "image_variant" ? (
                           <Select
                             disabled={variant.options.length === 1}
-                            className="flex-1 !w-full !h-[50px] !rounded-lg border-gray-300"
+                            className="w-full"
                             defaultValue={_.get(
                               currentPriceSplitup,
                               `[${variant.variant_name}]`,
                               ""
                             )}
-                            options={variant.options}
+                            options={variant.options.map((opt) => ({
+                              value: opt.value,
+                              label: opt.value,
+                            }))}
                             onChange={(value) =>
                               handleOnChangeSelectOption(value, index)
                             }
+                            placeholder={`Select ${variant.variant_name}`}
                           />
                         ) : (
-                          <div className="flex items-center gap-x-3 flex-wrap w-full py-2">
+                          <div className="flex flex-wrap gap-2">
                             {_.get(variant, "options", []).map(
-                              (data, index2) => {
-                                return (
+                              (option, optionIndex) => (
+                                <div
+                                  key={optionIndex}
+                                  className="flex flex-col items-center"
+                                >
                                   <div
-                                    key={index}
-                                    className="flex flex-col items-center gap-y-1"
+                                    onClick={() =>
+                                      handleOnChangeSelectOption(
+                                        option.value,
+                                        index
+                                      )
+                                    }
+                                    className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
+                                      _.get(
+                                        currentPriceSplitup,
+                                        `[${variant.variant_name}]`,
+                                        ""
+                                      ) === option.value
+                                        ? "border-blue-500 shadow-md"
+                                        : "border-gray-300 hover:border-blue-400"
+                                    }`}
+                                    style={{ width: "50px", height: "50px" }}
                                   >
-                                    <div
-                                      key={index2}
-                                      onClick={() =>
-                                        handleOnChangeSelectOption(
-                                          data.value,
-                                          index
-                                        )
-                                      }
-                                      className={`!size-[60px] border-2 ${
-                                        variant.options.length === 1
-                                          ? "!cursor-not-allowed"
-                                          : "cursor-pointer hover:border-blue-400 transition-all"
-                                      } center_div rounded-lg p-1 ${
-                                        _.get(
-                                          currentPriceSplitup,
-                                          `[${variant.variant_name}]`,
-                                          ""
-                                        ) === data.value
-                                          ? "border-blue-500 shadow-md"
-                                          : "border-gray-300"
-                                      }`}
-                                    >
-                                      <img
-                                        src={data.image_name}
-                                        className="!size-[40px] !object-contain"
-                                      />
-                                    </div>
-                                    <h1 className="text-sm mt-1">
-                                      {data.value}
-                                    </h1>
+                                    <img
+                                      src={option.image_name}
+                                      className="w-full h-full object-contain"
+                                      alt={option.value}
+                                    />
                                   </div>
-                                );
-                              }
+                                  <Text className="text-xs mt-1 text-center">
+                                    {option.value}
+                                  </Text>
+                                </div>
+                              )
                             )}
                           </div>
                         )}
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          )}
-
-        {/* File Upload Section - Porterhouse Style */}
-        <div className="space-y-4">
-          <Text strong className="block mb-2 text-gray-800">
-            Upload Your Design
-          </Text>
-          
-          {needDesignUpload ? (
-            <>
-              <UploadFileButton
-                handleUploadImage={handleUploadImage}
-                buttonText="Drag & Drop Files Here or Browse Files"
-                className="w-full h-40 border-1  border-dotted  rounded-lg flex flex-col items-center justify-center   transition-colors"
-                icon={<div className="text-3xl mb-2 text-gray-400">+</div>}
-              />
-              
-              {checkOutState.product_design_file && (
-                <div className="mt-4">
-                  <Checkbox
-                    checked={checked}
-                    onChange={(e) => {
-                      setChecked(e.target.checked);
-                      setError("");
-                    }}
-                  >
-                    I confirm this design
-                  </Checkbox>
-                  {error && (
-                    <Text type="danger" className="block mt-1">{error}</Text>
-                  )}
-                </div>
+                    </Col>
+                  ))}
+                </>
               )}
-            </>
-          ) : (
-            <Alert 
-              message="Our Designing Team contact within 24 Hours After Booking" 
-              type="info" 
-              showIcon 
-            />
-          )}
-          
-          <div className="flex items-center gap-2 mt-2">
-            <Text>Already have a Design</Text>
-            <Switch
-              checked={needDesignUpload}
-              onChange={(checked) => {
-                setNeedDesignUpload(checked);
-                if (!checked) {
-                  setCheckOutState((prev) => ({
-                    ...prev,
-                    product_design_file: "",
-                  }));
-                  setChecked(false);
-                }
-              }}
-            />
-          </div>
+            {/* Button for Individual Box */}
+            <Col
+              xs={24}
+              md={product_type !== "Single Product" ? 8 : 24}
+              className="flex items-center justify-center "
+            >
+              <Button
+                onClick={handleClick}
+                style={{
+                  backgroundColor: isClicked ? "#f9c114" : "#e0e0e0", // Change color on click
+                  color: isClicked ? "#000" : "#fff", // Change text color on click
+                  border: "none",
+                  transition: "background-color 0.3s ease", // Smooth transition
+                  padding: "10px 20px",
+                  borderRadius: "5px",
+                  fontWeight: "bold",
+                }}
+                className="w-[100%] text-md text-wrap py-5 lg:h-[50px] h-full"
+              >
+                Individual Box for 100 Cards
+              </Button>
+            </Col>
+          </Row>
         </div>
 
-        <Divider className="!my-6" />
-
-        {/* Total Price Section - Added back */}
+        {/* Total Price Section */}
         <Card className="bg-blue-50 rounded-lg border-0">
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Text strong className="text-gray-800">Total Price:</Text>
-              <div className="text-right">
+              <Text strong className="text-gray-800">
+                Total Price:
+              </Text>
+              <div className="text-right flex">
                 {calculateSavings() > 0 && (
-                  <Text delete className="text-lg text-gray-500 mr-2">
+                  <Text delete className="text-md text-gray-500 mr-2">
                     {formatPrice(calculateOriginalPrice())}
                   </Text>
                 )}
-                <Title level={3} className="!m-0 !text-green-600">
+                <Title level={4} className="!m-0 !text-green-600">
                   {formatPrice(calculateTotalPrice())}
                 </Title>
               </div>
             </div>
-            
+
             {calculateSavings() > 0 && (
-              <Alert 
+              <Alert
                 message={`You save ${formatPrice(calculateSavings())}`}
                 type="success"
                 showIcon
+                className="!py-2"
               />
             )}
-            
+
             <div className="text-sm text-gray-600">
               <Text>
-                Inclusive of all taxes for{" "}
-                <Text strong>{quantity}</Text> Qty (
+                Inclusive of all taxes for <Text strong>{quantity}</Text> Qty (
                 <Text strong>
                   {formatPrice(
                     DISCOUNT_HELPER(
@@ -697,187 +747,253 @@ const ProductDetails = ({
               </Text>
             </div>
           </div>
-          <div className="flex flex-col w-full justify-between mt-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Text strong className="text-gray-700">
-                  Processing Time 
-                </Text>
-                <Tooltip title="Learn more about processing time">
-                  <Button 
-                    type="text" 
-                    icon={<IconHelper.QUESTION_MARK />} 
-                    size="small"
-                    onClick={() => setIsModalOpen(true)}
-                  />
-                </Tooltip>
-                <span className="text-xl font-bold">{processing_item} business days</span>
-              </div>
 
-
-              <Modal
-                title="Processing Time Information"
-                open={isModalOpen}
-                onCancel={() => setIsModalOpen(false)}
-                footer={null}
-                centered
-                width={700}
-              >
-                <div className="max-h-[400px] overflow-y-auto text-gray-700">
-                  <Paragraph>
-                    The printing time determines how long it takes us to complete
-                    your order. You may pick your preferred production time from
-                    the list.
-                  </Paragraph>
-                  <Paragraph>
-                    While we strive to complete the order within the committed
-                    timeframes, the timings also depend on the following factors:
-                  </Paragraph>
-                  <ul className="list-disc pl-5 mt-2 space-y-2">
-                    <li>
-                      We will provide the proof file for approval before printing. 
-                      Faster approval will guarantee speedy processing.
-                    </li>
-                    <li>
-                      We need 300 dpi CMYK resolution artwork uploaded along the
-                      order. Preferred file types include CDR, AI, PSD, and
-                      High-Res Images with text and components converted to vector
-                      where needed.
-                    </li>
-                    <li>
-                      Production time does not include the shipping time. Business 
-                      days do not include Sundays and National Holidays, and orders 
-                      made after 12 p.m. are counted from the next Business Day.
-                    </li>
-                  </ul>
-                  <Paragraph className="mt-4">
-                    In case you still have any questions, let's connect? Contact us
-                    on WhatsApp, call us at +91-9876543210, or email business@printe.in.
-                  </Paragraph>
-                </div>
-              </Modal>
+          <div className="flex flex-col w-full justify-between mt-3">
+            <div className="flex items-center gap-2 ">
+              <Text strong className="text-gray-700">
+                Processing Time:
+              </Text>
+              <Tooltip title="Learn more about processing time">
+                <Button
+                  type="text"
+                  icon={<IconHelper.QUESTION_MARK />}
+                  size="small"
+                  onClick={() => setIsModalOpen(true)}
+                />
+              </Tooltip>
+              <span className="font-bold">
+                {processing_item} days + Production 1day{" "}
+              </span>
             </div>
 
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.5 },
-                },
-              }}
-              className="mt-2"
+            <Modal
+              title="Processing Time Information"
+              open={isModalOpen}
+              onCancel={() => setIsModalOpen(false)}
+              footer={null}
+              centered
+              width={700}
             >
-              <Text strong className="block mb-2 text-gray-700">
-                Estimated Delivery
-              </Text>
-              <motion.div whileHover={{ scale: 1.01 }} className="my-2">
-                <Input className="h-12 rounded-lg" value={639001} />
-              </motion.div>
-              <motion.div
-                className="text-gray-700 pt-2 flex gap-2 items-center"
-                whileHover={{ x: 5 }}
+              <div className="max-h-[400px] overflow-y-auto text-gray-700">
+                <Paragraph>
+                  The printing time determines how long it takes us to complete
+                  your order. You may pick your preferred production time from
+                  the list.
+                </Paragraph>
+                <Paragraph>
+                  While we strive to complete the order within the committed
+                  timeframes, the timings also depend on the following factors:
+                </Paragraph>
+                <ul className="list-disc pl-5 mt-2 space-y-2">
+                  <li>
+                    We will provide the proof file for approval before printing.
+                    Faster approval will guarantee speedy processing.
+                  </li>
+                  <li>
+                    We need 300 dpi CMYK resolution artwork uploaded along the
+                    order. Preferred file types include CDR, AI, PSD, and
+                    High-Res Images with text and components converted to vector
+                    where needed.
+                  </li>
+                  <li>
+                    Production time does not include the shipping time. Business
+                    days do not include Sundays and National Holidays, and
+                    orders made after 12 p.m. are counted from the next Business
+                    Day.
+                  </li>
+                </ul>
+                <Paragraph className="mt-4">
+                  In case you still have any questions, let's connect? Contact
+                  us on WhatsApp, call us at +91-9876543210, or email
+                  business@printe.in.
+                </Paragraph>
+              </div>
+            </Modal>
+          </div>
+
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.5 },
+              },
+            }}
+            className="mt-3"
+          >
+            <Text strong className="block mb-2 text-gray-700">
+              Estimated Delivery
+            </Text>
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              className="mb-2 flex rounded-lg relative overflow-hidden"
+            >
+              <Input
+                className="h-10 rounded-lg w-full"
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value)}
+                placeholder="Enter Pincode"
+              />
+              <button
+                onClick={getLocationFromBrowser}
+                className="absolute right-0 top-0 text-white p-3 bg-black h-full"
               >
-                <IconHelper.DELIVERY_TRUCK_ICON className="text-blue-500" />
-                Standard Delivery by
-                <Text strong>{calculateDeliveryDate(processing_item)}</Text>
-                <Divider type="vertical" />
-                <Text type="success" strong>₹ 75</Text>
-              </motion.div>
+                Get Pincode
+              </button>
             </motion.div>
+            <motion.div
+              className="text-gray-700 flex gap-2 items-center"
+              whileHover={{ x: 5 }}
+            >
+              <IconHelper.DELIVERY_TRUCK_ICON className="text-blue-500" />
+              Standard Delivery by
+              <Text strong>{calculateDeliveryDate(processing_item)}</Text>
+              <Divider type="vertical" />
+              <Text type="success" strong>
+                ₹ 75
+              </Text>
+            </motion.div>
+          </motion.div>
         </Card>
 
-        <Divider className="!my-6" />
+        {/* File Upload Section */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Text strong className="text-gray-800">
+              Upload Your Design
+            </Text>
+            <div className="flex items-center gap-2">
+              <Text>Already have a Design</Text>
+              <Switch
+                checked={needDesignUpload}
+                onChange={(checked) => {
+                  setNeedDesignUpload(checked);
+                  if (!checked) {
+                    setCheckOutState((prev) => ({
+                      ...prev,
+                      product_design_file: "",
+                    }));
+                    setChecked(false);
+                  }
+                }}
+              />
+            </div>
+          </div>
 
-        {/* Add to Cart Section - Porterhouse Style */}
-        <div className="space-y-6">
+          {needDesignUpload ? (
+            <>
+              <UploadFileButton
+                handleUploadImage={handleUploadImage}
+                buttonText="Drag & Drop Files Here or Browse Files"
+                className="w-full border-dotted rounded-lg flex flex-col items-center justify-center transition-colors"
+                icon={<div className="text-lg text-gray-400">+</div>}
+              />
+
+              {checkOutState.product_design_file && (
+                <div className="mt-2 flex items-center justify-between">
+                  <Checkbox
+                    checked={checked}
+                    onChange={(e) => {
+                      setChecked(e.target.checked);
+                      setError("");
+                    }}
+                  >
+                    I confirm this design
+                  </Checkbox>
+                  <Button
+                    type="link"
+                    icon={<EyeOutlined />}
+                    onClick={() => setDesignPreviewVisible(true)}
+                  >
+                    View Design
+                  </Button>
+                  {error && (
+                    <Text type="danger" className="block mt-1">
+                      {error}
+                    </Text>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <Alert
+              message="Our Designing Team contact will within 24 Hours After Booking"
+              type="info"
+              showIcon
+            />
+          )}
+
+          {/* Design Preview Modal */}
+          <Modal
+            title="Design Preview"
+            open={designPreviewVisible}
+            onCancel={() => setDesignPreviewVisible(false)}
+            footer={[
+              <Button
+                key="close"
+                onClick={() => setDesignPreviewVisible(false)}
+              >
+                Close
+              </Button>,
+            ]}
+            width={700}
+          >
+            <div className="flex justify-center">
+              <Image
+                src={checkOutState.product_design_file}
+                alt="Design Preview"
+                style={{ maxHeight: "400px" }}
+              />
+            </div>
+          </Modal>
+        </div>
+
+        {/* Add to Cart Section */}
+        <div className="w-full">
           {isGettingVariantPrice ? (
-            <div className="center_div py-10">
+            <div className="center_div py-6">
               <Spin size="large" />
             </div>
           ) : (
             handleQuantityDetails(stock, quantity) && (
-              <div className="text-gray-600 text-md flex-1">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="flex items-center border rounded-lg overflow-hidden">
-                    <Button 
-                      type="text" 
-                      icon={<MinusOutlined />}
-                      onClick={() => setQuantity(prev => Math.max(100, prev - 100))}
-                      className=""
-                    />
-                    <InputNumber
-                      min={100}
-                      value={quantity}
-                      onChange={handleTextboxQuantityChange}
-                      className=" !text-center !border-x !border-0 [&_.ant-input-number-input]:!text-center"
-                      controls={false}
-                    />
-                    <Button 
-                      type="text" 
-                      icon={<PlusOutlined />}
-                      onClick={() => setQuantity(prev => prev + 100)}
-                      className=""
-                    />
-                  </div>
-                  
-                  <Button
-                    type="primary"
-                    size="large"
-                    icon={<ShoppingCartOutlined />}
-                    className="!h-12 !px-6 !bg-yellow-400 text-black hover:!text-black font-semibold flex-1"
-                    onClick={handlebuy}
-                    loading={loading}
-                  >
-                    Add To Cart
-                  </Button>
-                </div>
-                
-                {/* {_.get(data, "stocks_status", "") != "Don't Track Stocks" && (
-                  <Text
-                    className={`!text-[14px] mt-2 ${
-                      handleQuantityDetails(stock, quantity)
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {handleQuantityDetails(stock, quantity)
-                      ? `Available Stock: ${Number(stock) - Number(quantity)} units`
-                      : "(Out-of-Stock)"}
-                  </Text>
-                )} */}
+              <div className="text-gray-600">
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<ShoppingCartOutlined />}
+                  className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                  onClick={handlebuy}
+                  loading={loading}
+                >
+                  Add To Cart
+                </Button>
               </div>
             )
           )}
         </div>
 
-        <Divider className="!my-6" />
+        <Divider className="!my-4" />
 
-        {/* Product Meta Information - Porterhouse Style */}
-        <div className="space-y-3">
+        {/* Product Meta Information */}
+        <div className="space-y-2">
           <div className="flex items-center">
-            <Text strong className="!text-gray-800 !w-24">Categories:</Text>
+            <Text strong className="!text-gray-800 !w-20">
+              Categories:
+            </Text>
             <Text className="text-gray-600">
               {_.get(data, "category_details.main_category_name", "")}
-              {_.get(data, "sub_category_details.sub_category_name", "") && 
-                `, ${_.get(data, "sub_category_details.sub_category_name", "")}`
-              }
+              {_.get(data, "sub_category_details.sub_category_name", "") &&
+                `, ${_.get(
+                  data,
+                  "sub_category_details.sub_category_name",
+                  ""
+                )}`}
             </Text>
           </div>
-          
-          {/* <div className="flex items-center">
-            <Text strong className="!text-gray-800 !w-24">Tags:</Text>
-            <Text className="text-gray-600">
-              {_.get(data, "label", []).join(", ")}
-            </Text>
-          </div> */}
         </div>
-
-       
-
-    
       </div>
     </Spin>
   );

@@ -74,7 +74,7 @@ const ImagesSlider = ({ imageList, data }) => {
   };
 
   return (
-    <div className="!sticky !top-24">
+    <div className="!sticky !top-24 w-full h-full">
       <div className="lg:hidden block">
         <DividerCards name={data.name} />
       </div>
@@ -90,12 +90,9 @@ const ImagesSlider = ({ imageList, data }) => {
           <img
             ref={imgRef}
             src={imageSelected}
-            className="w-full h-full object-cover rounded-xl transition-transform duration-300 hover:scale-105"
+            className="w-full  object-cover rounded-xl transition-transform duration-300 hover:scale-105 lg:h-[70vh]"
             alt="product"
           />
-          
-         
-
           {/* Wishlist Button */}
           <Tooltip
             title={`${isFav ? "Remove From" : "Add To"} Wish List`}
@@ -141,15 +138,7 @@ const ImagesSlider = ({ imageList, data }) => {
           ))}
       </div>
 
-      {/* Overview Button for Mobile */}
-      <div className="lg:hidden mt-4">
-        <button
-          onClick={handleMoveToOverView}
-          className="w-full py-3 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition-colors"
-        >
-          View Product Details
-        </button>
-      </div>
+      
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { useHref } from "react-router-dom";
 import { ImageHelper } from "../helper/ImageHelper";
 import QuickAccess from "./QuickAccess";
 import NavMenu from "../components/Nav/NavMenu.jsx";
+import { ToastContainer } from "react-toastify";
 
 const Layout = () => {
   const [showIcon,setShowIcon]=useState(false)
@@ -75,10 +76,9 @@ const Layout = () => {
       </div>
       
       <div className={`${showIcon?"":"hidden"}  transition-all transition-500  fixed bottom-24 right-6 cursor-pointer z-50   rounded-full lg:p-4 p-3`}>
-       
           <span className=""><ImageHelper.UP_arrow className="text-yellow-400 text-5xl hover:animate-bounce"onClick={scrollToTop}/></span>
-          
       </div>
+      <ToastContainer/>
     </div>
   );
 };
