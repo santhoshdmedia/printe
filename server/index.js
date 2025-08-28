@@ -20,7 +20,9 @@ const allowedOrigins = [
   "https://www.printe.in",
   "http://62.72.58.252",
   "https://62.72.58.252",
-  " http://localhost:5173"
+  "http://localhost:5173",
+  "http://localhost:5173",
+  "http://localhost:5174"
 ];
 
 app.use(
