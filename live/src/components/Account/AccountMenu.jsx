@@ -1,79 +1,3 @@
-// import React from "react";
-// import { FaBoxOpen, FaRegAddressCard } from "react-icons/fa";
-// import { FaUserLarge } from "react-icons/fa6";
-// import { IoHeartSharp, IoSettingsSharp } from "react-icons/io5";
-// import { Link, NavLink } from "react-router-dom";
-
-// const AccountMenu = () => {
-//   const menu = [
-//     {
-//       icon:<FaUserLarge />,
-//       link: "/account/profile",
-//       name: "Profile",
-//     },
-//     {
-//       icon:<FaRegAddressCard  />,
-//       link: "/account/manage-addresses",
-//       name: "Manage Addresses",
-//     },
-
-//     {
-//       icon:<FaBoxOpen />,
-//       link: "/account/my-orders",
-//       name: "My Orders",
-//     },
-
-//     {
-//       icon:<IoHeartSharp />,
-//       link: "/account/wishlist",
-//       name: "My Wishlist",
-//     },
-//     {
-//       icon:<IoSettingsSharp  />,
-//       link: "/account/settings",
-//       name: "Settings",
-//     },
-//   ];
-
-//   return (
-//     <>
-//       <ul className=' para !text-lg pb-3 divide-y divide-yellow-200 flex flex-col'>
-//         {menu.map((data, index) => {
-//           return (
-//             <li key={index}>
-//               <NavLink
-//                 to={data.link}
-//                 className={({ isActive }) =>
-//                   `block rounded-t-md px-4 py-2 capitalize mt-2 transition-all duration-150 ease-in   ${
-//                     isActive
-//                       ? "bg-primary hover:text-white  text-white "
-//                       : "hover:text-white  hover:bg-primary "
-//                   }`
-//                 }
-//               >
-//               <div className="flex gap-4 items-center">
-
-//               <span>
-                
-//               {data.icon}
-//               </span>
-//               <span>
-
-//                 {data.name}
-//               </span>
-//               </div>
-//               </NavLink>
-//             </li>
-//           );
-//         })}
-//       </ul>
-//     </>
-//   );
-// };
-
-// export default AccountMenu;
-
-
 import React from "react";
 import { FaBoxOpen, FaRegAddressCard } from "react-icons/fa";
 import { FaUserLarge } from "react-icons/fa6";
@@ -125,13 +49,13 @@ const AccountMenu = () => {
                 className={({ isActive }) =>
                   `flex items-center px-4 py-3 rounded-xl transition-all duration-200 ease-in-out group ${
                     isActive
-                      ? "bg-gradient-to-r from-yellow-600 to-yellow-600 text-white shadow-lg"
-                      : "text-gray-600 hover:bg-yellow-600 hover:text-black"
+                      ? "bg-gradient-to-r from-[#f9c114] to-[#f9c114] text-white shadow-lg"
+                      : "text-gray-600 hover:bg-[#f9c114] hover:text-black"
                   }`
                 }
               >
-                <span className={`text-lg mr-3 group-hover:text-white ${
-                  menu.active ? "text-white" : "text-yellow-500"
+                <span className={`text-lg mr-3 ${
+                  menu.active ? "text-white" : "text-gray-600 group-hover:text-white"
                 }`}>
                   {data.icon}
                 </span>
