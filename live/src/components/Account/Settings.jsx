@@ -146,7 +146,7 @@ const Settings = () => {
       {/* Change Password Section */}
       <div className="px-6 py-5 border border-gray-200 shadow-sm rounded-lg bg-white">
         <div className="flex items-start gap-3 mb-4">
-          <div className="bg-blue-100 p-2 rounded-full">
+          <div className="w-10 h-10 bg-red-100 flex items-center justify-center rounded-full">
             <LockOutlined className="text-blue-600 text-lg" />
           </div>
           <div>
@@ -173,37 +173,38 @@ const Settings = () => {
 
       {/* Danger Zone Section */}
       <div className="px-6 py-5 border border-red-100 shadow-sm rounded-lg bg-white">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="bg-red-100 p-2 rounded-full">
-            <ExclamationCircleOutlined className="text-red-600 text-lg" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-red-700">Danger Zone</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Irreversible and destructive actions
-            </p>
-          </div>
-        </div>
-        
-        <div className="bg-red-50 p-4 rounded-lg mt-3">
-          <p className="text-sm text-red-800 font-medium mb-2">
-            Deleting your account will:
-          </p>
-          <ul className="list-disc pl-5 text-sm text-red-700 space-y-1">
-            <li>Delete your profile, along with your authentication associations</li>
-            <li>Permanently remove all your content including articles, comments, and reading lists</li>
-            <li>Make your username available to anyone else</li>
-          </ul>
-        </div>
-        
-        <button
-          className="mt-5 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-medium py-2.5 px-4 rounded-md transition-colors w-full sm:w-auto"
-          onClick={showDeleteConfirm}
-        >
-          <DeleteOutlined />
-          Delete Account
-        </button>
-      </div>
+  <div className="flex items-start gap-3 mb-4">
+    <div className="w-10 h-10 bg-red-100 flex items-center justify-center rounded-full">
+      <ExclamationCircleOutlined className="text-red-600 text-lg" />
+    </div>
+    <div>
+      <h1 className="text-xl font-semibold text-red-700">Danger Zone</h1>
+      <p className="text-sm text-gray-600 mt-1">
+        Irreversible and destructive actions
+      </p>
+    </div>
+  </div>
+
+  <div className="bg-red-50 p-4 rounded-lg mt-3">
+    <p className="text-sm text-red-800 font-medium mb-2">
+      Deleting your account will:
+    </p>
+    <ul className="list-disc pl-5 text-sm text-red-700 space-y-1">
+      <li>Delete your profile, along with your authentication associations</li>
+      <li>Permanently remove all your content including articles, comments, and reading lists</li>
+      <li>Make your username available to anyone else</li>
+    </ul>
+  </div>
+
+  <button
+    className="mt-5 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-medium py-2.5 px-4 rounded-md transition-colors w-full sm:w-auto"
+    onClick={showDeleteConfirm}
+  >
+    <DeleteOutlined />
+    Delete Account
+  </button>
+</div>
+
 
       {/* Delete Confirmation Modal */}
       <Modal
