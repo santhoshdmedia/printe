@@ -37,7 +37,6 @@ const NavMenu = () => {
       sideSubcatId: null,
     });
     setIsAnyMegaMenuOpen(false);
-
   };
 
   // Control body overflow
@@ -93,9 +92,89 @@ const NavMenu = () => {
 
   return (
     <div className="hidden lg:block xl:block 2xl:block bg-primary h-full capitalize text-base lg:px-10 2xl:px-40 w-full p-4">
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease forwards;
+        }
+        
+        .animate-slide-in {
+          animation: slideIn 0.2s ease forwards;
+        }
+        
+        .nav-gradient {
+          background: transparent;
+        }
+        
+        .nav-shadow {
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .category-card {
+          transition: all 0.3s ease;
+          border-radius: 12px;
+          overflow: hidden;
+          background: transparent;
+        }
+        
+        .category-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+          background: transparent;
+        }
+        
+        .subcategory-item {
+          transition: all 0.2s ease;
+          border-left: 3px solid transparent;
+        }
+        
+        .subcategory-item:hover {
+          border-left-color: #3b82f6;
+          background-color: rgba(241, 245, 249, 0.3);
+        }
+        
+        .product-item {
+          transition: all 0.2s ease;
+        }
+        
+        .product-item:hover {
+          background-color: rgba(248, 250, 252, 0.3);
+          transform: translateX(5px);
+        }
+        
+        .menu-divider {
+          height: 1px;
+          background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.3) 50%, transparent 100%);
+        }
+        
+        .dropdown-panel {
+          background: transparent;
+          backdrop-filter: blur(5px);
+        }
+        
+        .mega-menu-container {
+          background: transparent;
+          backdrop-filter: blur(5px);
+        }
+        
+        /* Added styles for yellow hover effect */
+        .nav-item-hover:hover {
+          color: #FFD700 !important; /* Yellow color */
+        }
+      `}</style>
+      
       <div className="flex gap-x-4 !h-full justify-center items-center w-full relative">
         {/* All Categories Mega Menu */}
-        <div className="w-[200px] center_div  rounded-md !text-white">
+        <div className="w-[200px] center_div rounded-md !text-white">
           <div ref={(el) => (dropdownRefs.current.megaMenu = { current: el })}>
             <Link
               to="/all-categories"
@@ -105,7 +184,7 @@ const NavMenu = () => {
                 handleHoverState("side_category_id", "view");
                 setIsAnyMegaMenuOpen(true);
               }}
-              className="!text-[#fdfdfd] center_div gap-x-2 text-[16px] font-bold hover:text-[#1d1d1d]"
+              className="!text-[#fdfdfd] center_div gap-x-2 text-[16px] font-bold nav-item-hover transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white hover:bg-opacity-10"
             >
               All categories <IconHelper.DOWNARROW_ICON />
             </Link>
@@ -116,70 +195,72 @@ const NavMenu = () => {
                 activeDropdown.megaMenu
                   ? "animate-fade-in"
                   : "animate-fade-out hidden"
-              } max-h-fit w-full z-50 top-[43px] left-0 skyslate_gradient shadow-xl rounded-lg`}
+              } max-h-fit w-full z-50 top-[55px] left-0 mega-menu-container nav-shadow rounded-xl overflow-hidden border border-gray-100 border-opacity-20`}
             >
-              <div className="grid grid-cols-5 px-20 py-20 gap-12">
+              <div className="grid grid-cols-5 px-8 py-8 gap-6">
                 {menu.map((result) => (
-                  <div key={result._id}>
+                  <div key={result._id} className="category-card p-4">
                     <div
-                      // onMouseEnter={() => handleHoverState("side_category_id", result._id)}
-                      className="center_div justify-between h-[200px] px-4 border-b border-b-white text-[#121621] hover:bg-slate-100/10"
+                      onMouseEnter={() => handleHoverState("side_category_id", result._id)}
+                      className="flex flex-col gap-3"
                     >
-                      <div className="flex flex-col gap-2">
-                        <div className="flex justify-center align-middle gap-4">
-                          <span
-                            className="hover:text-[#68686c] cursor-pointer"
-                            onClick={() => {
-                              navigation(
-                                `/category/${result.main_category_name}/${result._id}`
-                              );
-                              closeAllDropdowns();
-                            }}
-                          >
-                            {result.main_category_name}
-                          </span>
-                          {hoverStates.side_category_id === result._id ? (
-                            <IconHelper.LEFTARROW_ICON className="!text-sm rotate-45" />
-                          ) : (
-                            <IconHelper.RIGHT_ARROW_ICON className="!text-sm" />
-                          )}
-                        </div>
-                        <div className="border-4 rounded-lg overflow-hidden hover:shadow-lg hover:border-[#1d1d1d]">
-                          <img
-                            src={_.get(
-                              result,
-                              "sub_categories_details[0].sub_category_image",
-                              ""
-                            )}
-                            alt={_.get(
-                              result,
-                              "sub_categories_details[0].sub_category_name",
-                              "Category"
-                            )}
-                            className="size-44"
-                            onClick={() => {
-                              navigation(
-                                `/category/${result.main_category_name}/${result._id}`
-                              );
-                              closeAllDropdowns();
-                            }}
-                          />
-                        </div>
+                      <div className="flex justify-between items-center">
+                        <span
+                          className="nav-item-hover cursor-pointer font-semibold text-gray-800 transition-colors"
+                          onClick={() => {
+                            navigation(
+                              `/category/${result.main_category_name}/${result._id}`
+                            );
+                            closeAllDropdowns();
+                          }}
+                        >
+                          {result.main_category_name}
+                        </span>
+                        {hoverStates.side_category_id === result._id ? (
+                          <IconHelper.LEFTARROW_ICON className="text-yellow-500 text-sm rotate-45" />
+                        ) : (
+                          <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm" />
+                        )}
                       </div>
+                      <div className="rounded-lg overflow-hidden border border-gray-200 border-opacity-30 hover:border-blue-300 transition-colors">
+                        <img
+                          src={_.get(
+                            result,
+                            "sub_categories_details[0].sub_category_image",
+                            ""
+                          )}
+                          alt={_.get(
+                            result,
+                            "sub_categories_details[0].sub_category_name",
+                            "Category"
+                          )}
+                          className="size-40 object-cover w-full"
+                          onClick={() => {
+                            navigation(
+                              `/category/${result.main_category_name}/${result._id}`
+                            );
+                            closeAllDropdowns();
+                          }}
+                        />
+                      </div>
+                    </div>
 
-                      {/* Subcategory Panel */}
-                      {hoverStates.side_category_id === result._id && (
-                        <div className="absolute min-w-[300px] min-h-full bg-transparent top-0 left-full border-l border-l-white">
+                    {/* Subcategory Panel */}
+                    {hoverStates.side_category_id === result._id && (
+                      <div className="absolute min-w-[300px] min-h-full dropdown-panel nav-shadow top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl overflow-hidden animate-slide-in">
+                        <div className="p-4">
+                          <h3 className="font-bold text-gray-800 mb-3 text-lg">Subcategories</h3>
+                          <div className="menu-divider my-2"></div>
                           {result.sub_categories_details?.map((subcat) => (
-                            <div key={subcat._id} className="skyslate_gradient">
+                            <div key={subcat._id} className="subcategory-item pl-3 py-2">
                               <div
                                 onMouseEnter={() =>
                                   handleHoverState("sideSubcatId", subcat._id)
                                 }
-                                className="border-b px-2 border-b-white text-[#1d1d1d] text-sm font-medium !min-w-fit center_div justify-between h-[50px] hover:bg-slate-100/10"
+                                className="text-gray-700 text-sm font-medium !min-w-fit flex justify-between items-center h-[40px] nav-item-hover transition-colors"
                               >
                                 <span
-                                  className="hover:text-primary cursor-pointer"
+                                  className="nav-item-hover cursor-pointer truncate"
                                   onClick={() => {
                                     navigation(
                                       `/category/${result.main_category_name}/${subcat.sub_category_name}/${result._id}/${subcat._id}`
@@ -190,70 +271,65 @@ const NavMenu = () => {
                                   {subcat.sub_category_name}
                                 </span>
                                 {hoverStates.sideSubcatId === subcat._id ? (
-                                  <IconHelper.LEFTARROW_ICON className="!text-sm" />
+                                  <IconHelper.LEFTARROW_ICON className="text-blue-500 text-xs" />
                                 ) : (
-                                  <IconHelper.RIGHT_ARROW_ICON className="!text-sm" />
+                                  <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs" />
                                 )}
                               </div>
 
                               {/* Products Panel */}
                               {hoverStates.sideSubcatId === subcat._id && (
-                                <div className="absolute min-w-[300px] bg-transparent !min-h-full top-0 left-full border-l border-l-white">
-                                  {result.product_details
-                                    ?.filter(
-                                      (p) =>
-                                        p.sub_category_details === subcat._id
-                                    )
-                                    .map((product) => (
-                                      <div
-  key={product._id}
-  className="flex items-center justify-between p-2 border-b border-gray-200 hover:bg-gray-50 transition-colors"
->
-  <div className="flex items-center gap-3 min-w-0 w-full">
-    {/* Image Container - Strictly Fixed Size */}
-    <div className="flex-shrink-0 relative w-16 h-16">
-      <div className="absolute inset-0 rounded-md overflow-hidden border border-gray-200">
-        <img
-          src={_.get(product, "images[0].path", "/placeholder-product.jpg")}
-          alt={product.name}
-          className="w-full h-full object-cover"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            aspectRatio: '1/1'
-          }}
-          onError={(e) => {
-            e.target.src = "/placeholder-product.jpg";
-            e.target.onerror = null; // Prevent infinite loop
-          }}
-        />
-      </div>
-    </div>
-    
-    {/* Product Name - Takes remaining space */}
-    <span 
-      className="text-sm font-medium text-gray-800 truncate hover:text-primary cursor-pointer flex-grow"
-      onClick={() => {
-        navigation(`/product/${product.seo_url}`);
-        closeAllDropdowns();
-      }}
-    >
-      {product.name}
-    </span>
-  </div>
-  
-  {/* Arrow Icon */}
-  <IconHelper.LEFTARROW_ICON className="text-gray-400 text-sm ml-2" />
-</div>
-                                    ))}
+                                <div className="absolute min-w-[300px] dropdown-panel nav-shadow min-h-full top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl p-4 animate-slide-in">
+                                  <h4 className="font-semibold text-gray-800 mb-3">Products</h4>
+                                  <div className="menu-divider my-2"></div>
+                                  <div className="max-h-[350px] overflow-y-auto">
+                                    {result.product_details
+                                      ?.filter(
+                                        (p) =>
+                                          p.sub_category_details === subcat._id
+                                      )
+                                      .map((product) => (
+                                        <div
+                                          key={product._id}
+                                          className="product-item flex items-center justify-between p-2 rounded-lg"
+                                        >
+                                          <div className="flex items-center gap-3 min-w-0 w-full">
+                                            <div className="flex-shrink-0 relative w-12 h-12">
+                                              <div className="absolute inset-0 rounded-md overflow-hidden border border-gray-200 border-opacity-30">
+                                                <img
+                                                  src={_.get(product, "images[0].path", "/placeholder-product.jpg")}
+                                                  alt={product.name}
+                                                  className="w-full h-full object-cover"
+                                                  onError={(e) => {
+                                                    e.target.src = "/placeholder-product.jpg";
+                                                    e.target.onerror = null;
+                                                  }}
+                                                />
+                                              </div>
+                                            </div>
+                                            
+                                            <span 
+                                              className="text-sm font-medium text-gray-800 truncate nav-item-hover cursor-pointer flex-grow"
+                                              onClick={() => {
+                                                navigation(`/product/${product.seo_url}`);
+                                                closeAllDropdowns();
+                                              }}
+                                            >
+                                              {product.name}
+                                            </span>
+                                          </div>
+                                          
+                                          <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs" />
+                                        </div>
+                                      ))}
+                                  </div>
                                 </div>
                               )}
                             </div>
                           ))}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -283,15 +359,14 @@ const NavMenu = () => {
                 }
               >
                 <div
-                  className="!text-white center_div gap-x-2 text-nowrap cursor-pointer"
+                  className="!text-white center_div gap-x-2 text-nowrap cursor-pointer py-2 px-4 rounded-lg nav-item-hover transition-all duration-300"
                   onMouseEnter={() => {
                     toggleDropdown("categories", category._id);
                     handleHoverState("category_id", category._id);
-                setIsAnyMegaMenuOpen(true);
-
+                    setIsAnyMegaMenuOpen(true);
                   }}
                 >
-                  <span className="!center_div gap-x-2">
+                  <span className="!center_div gap-x-2 font-bold">
                     {category.main_category_name}{" "}
                     {activeDropdown.categories[category._id] ? (
                       <IconHelper.UPARROW_ICON />
@@ -308,16 +383,17 @@ const NavMenu = () => {
                       activeDropdown.categories[category._id]
                         ? "animate-fade-in"
                         : "animate-fade-out hidden"
-                    }  border border-slate-100 bg-white w-[1200px] max-h-[600px] overflow-scroll left-[10px] z-50 p-8 top-[44px] rounded-lg`}
+                    } border border-gray-200 border-opacity-20 bg-transparent backdrop-filter backdrop-blur-md nav-shadow w-[1200px] max-h-[600px] overflow-auto left-[10px] z-50 p-8 top-[55px] rounded-xl`}
                   >
                     <div className="max-w-7xl mx-auto">
+                      <h2 className="text-2xl font-bold text-gray-800 mb-6">{category.main_category_name}</h2>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {subCategories.map((subcat) => (
                           <div
                             key={subcat._id}
-                            className="group transition-all duration-300 hover:bg-gray-50 rounded-lg p-4 hover:shadow-md"
+                            className="group transition-all duration-300 hover:bg-gray-50 hover:bg-opacity-20 rounded-lg p-4 border border-transparent hover:border-gray-200 hover:border-opacity-20"
                           >
-                            {/* Subcategory Title (Animated Underline) */}
+                            {/* Subcategory Title */}
                             <div
                               onClick={() => {
                                 navigation(
@@ -331,13 +407,14 @@ const NavMenu = () => {
                               }}
                               className="relative pb-2 mb-3 cursor-pointer"
                             >
-                              <h3 className="text-lg font-bold text-gray-800 group-hover:text-primary transition-colors">
+                              <h3 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors flex items-center justify-between">
                                 {subcat.sub_category_name}
+                                <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm group-hover:text-blue-500" />
                               </h3>
-                              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></div>
+                              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-500 transition-all duration-300 group-hover:w-full"></div>
                             </div>
 
-                            {/* Product List (Staggered Animation) */}
+                            {/* Product List */}
                             <div className="flex flex-col gap-3">
                               {category.product_details
                                 ?.filter(
@@ -348,13 +425,13 @@ const NavMenu = () => {
                                   <Link
                                     to={`/product/${product.seo_url}`}
                                     key={product._id}
-                                    className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-all duration-200 hover:translate-x-1"
+                                    className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 hover:bg-opacity-20 transition-all duration-200 hover:translate-x-1 group/product"
                                     onClick={closeAllDropdowns}
                                     style={{
                                       transitionDelay: `${index * 50}ms`,
-                                    }} // Staggered effect
+                                    }}
                                   >
-                                    <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gray-200 group-hover:border-primary transition-all">
+                                    <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gray-200 border-opacity-30 group-hover/product:border-blue-300 transition-all">
                                       <img
                                         src={_.get(
                                           product,
@@ -369,9 +446,10 @@ const NavMenu = () => {
                                         }}
                                       />
                                     </div>
-                                    <p className="text-sm font-medium text-gray-700 truncate hover:text-primary transition-colors">
+                                    <p className="text-sm font-medium text-gray-700 truncate group-hover/product:text-blue-600 transition-colors">
                                       {product.name}
                                     </p>
+                                    <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm opacity-0 group-hover/product:opacity-100 transition-opacity ml-auto" />
                                   </Link>
                                 ))}
                             </div>
@@ -379,8 +457,8 @@ const NavMenu = () => {
                         ))}
                       </div>
 
-                      {/* Optional: View All Button */}
-                      <div className="mt-6 text-center">
+                      {/* View All Button */}
+                      <div className="mt-8 text-center">
                         <button
                           onClick={() => {
                             navigation(
@@ -388,9 +466,10 @@ const NavMenu = () => {
                             );
                             closeAllDropdowns();
                           }}
-                          className="px-6 py-2 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors shadow-md hover:shadow-lg"
+                          className="px-6 py-3 bg-blue-600 bg-opacity-90 text-white rounded-full hover:bg-opacity-100 transition-colors shadow-md hover:shadow-lg font-medium flex items-center justify-center mx-auto"
                         >
                           View All {category.main_category_name}
+                          <IconHelper.RIGHT_ARROW_ICON className="ml-2 text-sm" />
                         </button>
                       </div>
                     </div>
@@ -402,10 +481,10 @@ const NavMenu = () => {
                       activeDropdown.categories[category._id]
                         ? "animate-fade-in"
                         : "animate-fade-out hidden"
-                    } border border-slate-100 bg-white min-w-[250px] z-50 py-2 top-[44px] left-0 shadow-lg rounded-md`}
+                    } border border-gray-200 border-opacity-20 bg-transparent backdrop-filter backdrop-blur-md nav-shadow min-w-[250px] z-50 py-3 top-[55px] left-0 rounded-xl overflow-hidden`}
                   >
                     {subCategories.map((subcat) => (
-                      <div key={subcat._id}>
+                      <div key={subcat._id} className="group">
                         <div
                           onClick={() => {
                             navigation(
@@ -413,11 +492,12 @@ const NavMenu = () => {
                             );
                             closeAllDropdowns();
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 text-black cursor-pointer font-medium border-b border-gray-100"
+                          className="px-4 py-3 hover:bg-gray-50 hover:bg-opacity-20 text-gray-800 cursor-pointer font-medium border-b border-gray-100 border-opacity-20 flex items-center justify-between transition-colors "
                         >
                           {subcat.sub_category_name}
+                          {/* <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity" /> */}
                         </div>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col pl-4">
                           {category.product_details
                             ?.filter(
                               (p) => p.sub_category_details === subcat._id
@@ -427,10 +507,11 @@ const NavMenu = () => {
                               <Link
                                 to={`/product/${product.seo_url}`}
                                 key={product._id}
-                                className="px-6 py-1.5 text-sm hover:bg-gray-50 text-gray-700 hover:text-primary"
+                                className="px-4 py-2 text-sm hover:bg-gray-50 hover:bg-opacity-20 text-gray-700 nav-item-hover transition-colors flex items-center group/item"
                                 onClick={closeAllDropdowns}
                               >
-                                {product.name}
+                                <span className="truncate">{product.name}</span>
+                                <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs ml-auto opacity-0 group-hover/item:opacity-100 transition-opacity" />
                               </Link>
                             ))}
                         </div>
