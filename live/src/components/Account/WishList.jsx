@@ -1,219 +1,5 @@
-//code1
-/* eslint-disable no-unused-vars */
-// import React, { useEffect } from "react";
-// import { MdDelete } from "react-icons/md";
-// import { Badge, Empty, Tag } from "antd";
-// import { Link } from "react-router-dom";
-// import { useDispatch, useSelector } from "react-redux";
-// import _ from "lodash";
-
-// const WishList = () => {
-//   const { user, wish_list } = useSelector((state) => state.authSlice);
-
-//   const dispatch = useDispatch();
-
-//   useEffect(() => {
-//     if (!user?.wish_list?.length) return;
-
-//     dispatch({
-//       type: "GET_PRODUCT",
-//       data: { id_list: user.wish_list, type: "wish_list" },
-//     });
-//   }, [user, dispatch]);
-
-//   const generateLabel = (label) => {
-//     switch (label) {
-//       case "new":
-//         return <Tag color="green">New</Tag>;
-//       case "popular":
-//         return <Tag color="purple">Popular</Tag>;
-//       default:
-//         return <></>;
-//     }
-//   };
-
-//   const handleDeleteWishProduct = (index) => {
-//     const filtedList = user.wish_list.filter((_, i) => i !== index);
-//     const form = { wish_list: filtedList };
-//     dispatch({
-//       type: "UPDATE_USER",
-//       data: { form, type: "custom", message: "Wished product deleted" },
-//     });
-
-//     // 🔑 auto refresh wishlist after delete
-//     dispatch({
-//       type: "GET_PRODUCT",
-//       data: { id_list: filtedList, type: "wish_list" },
-//     });
-//   };
-
-//   return (
-//     <div className="w-full">
-//       <div className="px-5 md:px-10 py-5 border shadow-md rounded-lg flex flex-col gap-2">
-//         <div className="flex items-center gap-2">
-//           <h1 className="title">WishList</h1>
-//           <Badge count={wish_list.data.length} />
-//         </div>
-//         {wish_list.loading ? (
-//           <div>loading</div>
-//         ) : wish_list.data.length === 0 ? (
-//           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
-//         ) : (
-//           wish_list.data.map((data, index) => {
-//             const img = data.images[0].path;
-//             const price = data.variants_price[0].price;
-//             return (
-//               <div
-//                 className="border rounded-md shadow-md flex flex-col md:flex-row gap-5 p-4 relative"
-//                 key={index}
-//               >
-//                 <div className="w-[6rem] bg-purple-200">
-//                   <img src={img} alt="" className="w-full h-full object-cover" />
-//                 </div>
-//                 <div className="flex-1 flex flex-col gap-2">
-//                   <>
-//                     <h3 className="text-wrap pr-5 sub_title">{data.name}</h3>
-//                     <button
-//                       className="absolute right-3 top-3"
-//                       onClick={() => handleDeleteWishProduct(index)}
-//                     >
-//                       <MdDelete color="gray" size={20} />
-//                     </button>
-//                   </>
-//                   <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
-//                     <span className="text-2xl font-bold text-primary">
-//                       Rs. {price}
-//                     </span>
-//                     {data.label.map((data) => generateLabel(data))}
-//                   </div>
-//                   <Link
-//                     to={`/product/${_.get(data, "seo_url", "")}`}
-//                     className="button text-center hover:text-white"
-//                   >
-//                     Shop
-//                   </Link>
-//                 </div>
-//               </div>
-//             );
-//           })
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default WishList;
-
-//code 2
-/* eslint-disable no-unused-vars */
-// import React, { useEffect } from "react";
-// import { MdDelete } from "react-icons/md";
-// import { Badge, Empty, Tag } from "antd";
-// import { Link } from "react-router-dom";
-// import { useDispatch, useSelector } from "react-redux";
-// import _ from "lodash";
-
-// const WishList = () => {
-//   const { user, wish_list } = useSelector((state) => state.authSlice);
-
-//   const dispatch = useDispatch();
-
-//   useEffect(() => {
-//     if (!user?.wish_list?.length) return;
-
-//     dispatch({
-//       type: "GET_PRODUCT",
-//       data: { id_list: user.wish_list, type: "wish_list" },
-//     });
-//   }, [user, dispatch]);
-
-//   const generateLabel = (label) => {
-//     switch (label) {
-//       case "new":
-//         return <Tag color="green">New</Tag>;
-//       case "popular":
-//         return <Tag color="purple">Popular</Tag>;
-//       default:
-//         return <></>;
-//     }
-//   };
-
-//   const handleDeleteWishProduct = (index) => {
-//     const filtedList = user.wish_list.filter((_, i) => i !== index);
-//     const form = { wish_list: filtedList };
-//     dispatch({
-//       type: "UPDATE_USER",
-//       data: { form, type: "custom", message: "Wished product deleted" },
-//     });
-
-//     // 🔑 auto refresh wishlist after delete
-//     dispatch({
-//       type: "GET_PRODUCT",
-//       data: { id_list: filtedList, type: "wish_list" },
-//     });
-//   };
-
-//   return (
-//     <div className="w-full">
-//       <div className="px-5 md:px-10 py-5 border shadow-md rounded-lg flex flex-col gap-2">
-//         <div className="flex items-center gap-2">
-//           <h1 className="title">WishList</h1>
-//           <Badge count={wish_list.data.length} />
-//         </div>
-//         {wish_list.loading ? (
-//           <div>loading</div>
-//         ) : wish_list.data.length === 0 ? (
-//           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
-//         ) : (
-//           wish_list.data.map((data, index) => {
-//             console.log("wishlist item:", data); // 🔍 check structure in console
-//             const img = data.images?.[0]?.path;
-//             const price = _.get(data, "single_product_price[0].price", null); // ✅ safe extraction
-//             return (
-//               <div
-//                 className="border rounded-md shadow-md flex flex-col md:flex-row gap-5 p-4 relative"
-//                 key={index}
-//               >
-//                 <div className="w-[6rem] bg-purple-200">
-//                   <img src={img} alt="" className="w-full h-full object-cover" />
-//                 </div>
-//                 <div className="flex-1 flex flex-col gap-2">
-//                   <>
-//                     <h3 className="text-wrap pr-5 sub_title">{data.name}</h3>
-//                     <button
-//                       className="absolute right-3 top-3"
-//                       onClick={() => handleDeleteWishProduct(index)}
-//                     >
-//                       <MdDelete color="gray" size={20} />
-//                     </button>
-//                   </>
-//                   <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
-//                     <span className="text-2xl font-bold text-primary">
-//                       {price ? `Rs. ${price}` : "Price not available"}
-//                     </span>
-//                     {data.label.map((data) => generateLabel(data))}
-//                   </div>
-//                   <Link
-//                     to={`/product/${_.get(data, "seo_url", "")}`}
-//                     className="button text-center hover:text-white"
-//                   >
-//                     Shop
-//                   </Link>
-//                 </div>
-//               </div>
-//             );
-//           })
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default WishList;
-
-//code3
 import React, { useEffect } from "react";
-import { MdDelete } from "react-icons/md";
+import { MdDelete, MdFavorite, MdShoppingCart } from "react-icons/md";
 import { Badge, Empty, Tag } from "antd";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -236,9 +22,9 @@ const WishList = () => {
   const generateLabel = (label) => {
     switch (label) {
       case "new":
-        return <Tag color="green">New</Tag>;
+        return <Tag color="green" className="text-xs py-1 px-2">New</Tag>;
       case "popular":
-        return <Tag color="purple">Popular</Tag>;
+        return <Tag color="purple" className="text-xs py-1 px-2">Popular</Tag>;
       default:
         return <></>;
     }
@@ -261,54 +47,159 @@ const WishList = () => {
 
   return (
     <div className="w-full">
-      <div className="px-5 md:px-10 py-5 border shadow-md rounded-lg flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <h1 className="title">WishList</h1>
-          <Badge count={wish_list.data.length} />
+      <style jsx>{`
+        .wishlist-item {
+          transition: all 0.3s ease;
+        }
+        
+        .wishlist-item:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .delete-btn {
+          transition: all 0.2s ease;
+        }
+        
+        .delete-btn:hover {
+          color: #ef4444 !important;
+          transform: scale(1.1);
+        }
+        
+        .shop-btn {
+          transition: all 0.3s ease;
+          background: linear-gradient(45deg, #facc15, #eab308);
+        }
+        
+        .shop-btn:hover {
+          background: linear-gradient(45deg, #facc15, #eab308);
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+          color: #0c0101 !important;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+          animation: fadeIn 0.4s ease forwards;
+        }
+        
+        /* Style for Browse Products button */
+        .browse-products-btn {
+          transition: all 0.3s ease;
+          background-color: #FFD700;
+          color: #000000;
+        }
+        
+        .browse-products-btn:hover {
+          background-color: #e6c200;
+          color: #0c0101 !important; /* Text color changes to white on hover */
+        }
+      `}</style>
+      
+      <div className="px-5 md:px-10 py-5 border shadow-md rounded-lg flex flex-col gap-6 bg-white">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+          <div className="p-2 bg-red-50 rounded-full">
+            <MdFavorite className="text-red-500 text-2xl" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">My Wishlist</h1>
+            <p className="text-gray-500 text-sm">Your favorite items all in one place</p>
+          </div>
         </div>
+        
         {wish_list.loading ? (
-          <div>loading</div>
+          <div className="flex justify-center items-center py-10">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="rounded-full bg-gray-200 h-12 w-12 mb-3"></div>
+              <div className="h-4 bg-gray-200 rounded w-32"></div>
+            </div>
+          </div>
         ) : wish_list.data.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          <div className="py-10 flex flex-col items-center justify-center">
+            <Empty 
+              image={Empty.PRESENTED_IMAGE_SIMPLE} 
+              description={
+                <span className="text-gray-500">Your wishlist is empty</span>
+              }
+            />
+            <Link 
+              to="/" 
+              className="browse-products-btn mt-5 px-6 py-2 rounded-full transition-colors flex items-center gap-2"
+            >
+              <MdShoppingCart /> Browse Products
+            </Link>
+          </div>
         ) : (
-          wish_list.data.map((data, index) => {
-            console.log("wishlist item:", data); // 🔍 check structure in console
-            const img = data.images?.[0]?.path;
-            const price = _.get(data, "single_product_price", null); // ✅ Updated to use single_product_price directly
-            return (
-              <div
-                className="border rounded-md shadow-md flex flex-col md:flex-row gap-5 p-4 relative"
-                key={index}
-              >
-                <div className="w-[6rem] bg-purple-200">
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 flex flex-col gap-2">
-                  <>
-                    <h3 className="text-wrap pr-5 sub_title">{data.name}</h3>
-                    <button
-                      className="absolute right-3 top-3"
-                      onClick={() => handleDeleteWishProduct(index)}
-                    >
-                      <MdDelete color="gray" size={20} />
-                    </button>
-                  </>
-                  <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
-                    <span className="text-2xl font-bold text-primary">
-                      {price ? `Rs. ${price}` : "Price not available"}
-                    </span>
-                    {data.label.map((data) => generateLabel(data))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {wish_list.data.map((data, index) => {
+              const img = data.images?.[0]?.path;
+              const price = _.get(data, "single_product_price", null);
+              
+              return (
+                <div 
+                  className="wishlist-item border rounded-xl overflow-hidden shadow-sm bg-white animate-fade-in"
+                  key={index}
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="flex flex-col md:flex-row">
+                    <div className="md:w-32 h-40 md:h-auto bg-gray-100 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={img || "/placeholder-product.jpg"} 
+                        alt={data.name} 
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        onError={(e) => {
+                          e.target.src = "/placeholder-product.jpg";
+                        }}
+                      />
+                    </div>
+                    
+                    <div className="flex-1 p-4 flex flex-col">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 pr-4">
+                          {data.name}
+                        </h3>
+                        <button
+                          className="delete-btn p-1 rounded-full hover:bg-gray-100"
+                          onClick={() => handleDeleteWishProduct(index)}
+                          aria-label="Remove from wishlist"
+                        >
+                          <MdDelete className="text-gray-400 hover:text-red-500" size={18} />
+                        </button>
+                      </div>
+                      
+                      <div className="mt-auto">
+                        <div className="flex items-center gap-2 mb-3">
+                          {data.label.map((label, i) => (
+                            <React.Fragment key={i}>
+                              {generateLabel(label)}
+                            </React.Fragment>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xl font-bold text-primary">
+                            {price ? `Rs. ${price}` : "Price not available"}
+                          </span>
+                          
+                          <Link
+                            to={`/product/${_.get(data, "seo_url", "")}`}
+                            className="shop-btn text-white text-sm py-2 px-4 rounded-full flex items-center gap-1"
+                          >
+                            <MdShoppingCart size={16} />
+                            <span>Shop Now</span>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <Link
-                    to={`/product/${_.get(data, "seo_url", "")}`}
-                    className="button text-center hover:text-white"
-                  >
-                    Shop
-                  </Link>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

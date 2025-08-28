@@ -59,30 +59,57 @@ const ManageAddress = () => {
 
   return (
     <div className="w-full h-auto">
-      <div className="px-5 md:px-10 py-5 border shadow-md rounded-lg flex flex-col gap-2">
-        <div className="flex flex-col md:flex-row justify-start md:justify-between gap-3 items-center">
-          <h1 className="title ">Manage Addresses</h1>
+      <div className="px-5 md:px-10 py-5 border shadow-md rounded-lg flex flex-col gap-2 bg-white">
+        <div className="flex flex-col md:flex-row justify-start md:justify-between gap-3 items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Manage Addresses</h1>
 
           <button
-            className="text-primary hover:text-purple-600 flex items-center para"
+            className="text-primary hover:text-yellow-500 flex items-center gap-2 py-2 px-4 rounded-md bg-purple-50 hover:bg-purple-100 transition-colors duration-200"
             onClick={showModal}
           >
-            <IoIosAddCircle size={40} /> Add Address
+            <IoIosAddCircle size={24} /> 
+            <span className="font-medium">Add New Address</span>
           </button>
         </div>
-        <div className="flex flex-col gap-3 py-7">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-3">
           {addresses.length === 0 ? (
-            <div className="flex justify-center flex-col items-center">
-              <FcEmptyTrash size={50} />
-              <h1 className="para">Empty</h1>
+            <div className="col-span-full flex justify-center flex-col items-center py-10 bg-gray-50 rounded-lg">
+              <FcEmptyTrash size={60} />
+              <h1 className="text-gray-500 mt-3 text-lg">No addresses saved yet</h1>
+              <p className="text-gray-400 mt-1">Add your first address to get started</p>
             </div>
           ) : (
             addresses.map((data, index) => (
-              <AddressCard
-                data={data}
-                index={index}
-                createMenuItems={createMenuItems}
-              />
+              <div key={index} className="bg-gray-50 p-5 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                <div className="flex justify-between items-start mb-4">
+                  <span className="bg-primary/10 text-primary text-xs font-medium px-2.5 py-1 rounded-full">
+                    {data.type || "Address"} {index === 0 && "(Default)"}
+                  </span>
+                  <Dropdown
+                    menu={{ items: createMenuItems(index) }}
+                    placement="bottomRight"
+                    trigger={["click"]}
+                  >
+                    <button className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-200">
+                      <CiMenuKebab size={20} />
+                    </button>
+                  </Dropdown>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-gray-800">{data.name}</h3>
+                  <p className="text-gray-600 text-sm">
+                    {data.street}, {data.city}, {data.state} - {data.zipCode}
+                  </p>
+                  <p className="text-gray-600 text-sm">{data.country}</p>
+                  {data.phone && (
+                    <p className="text-gray-600 text-sm mt-2">
+                      <span className="font-medium">Phone:</span> {data.phone}
+                    </p>
+                  )}
+                </div>
+              </div>
             ))
           )}
         </div>

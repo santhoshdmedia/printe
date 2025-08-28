@@ -64,6 +64,7 @@ const Profile = () => {
 
     if (isNameValid && isEmailValid) {
       dispatch({ type: "UPDATE_USER", data: { form } });
+      setIsEditDisabled(true);
     }
   };
 
@@ -76,94 +77,169 @@ const Profile = () => {
   const profileImageName = user?.name[0] || "";
 
   return (
-    <div className="w-full h-auto">
-      <form onSubmit={(e) => handleOnSubmit(e)} className="py-6 px-8 rounded-lg border shadow-md bg-white flex flex-col gap-6">
-        <div className="rounded-t-lg bg-secondary h-[10rem] -my-6 -mx-8"></div>
-
-        <div className="relative -mt-16 flex justify-center">
-          <div className="relative group w-24 h-24">
-            <Avatar
-              src={form.profile_pic}
-              style={{
-                width: "96px",
-                height: "96px",
-                objectFit: "cover",
-                textTransform: "capitalize",
-                borderRadius: "50%",
-              }}
-              className="text-primary capitalize text-5xl bg-purple-300 title"
-            >
-              {profileImageName}
-            </Avatar>
-            {!isEditDisabled && (
-              <>
-                <input
-                  type="file"
-                  name="image"
-                  id="image"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      dispatch({
-                        type: "UPLOAD_IMAGE",
-                        data: { file, handleUploadImage },
-                      });
-                    }
+     <div className="w-full max-w-3xl">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+          {/* Header Section with Yellow Background */}
+          <div className="bg-[#f9c114] py-6 px-8 text-center">
+            <h1 className="text-2xl font-bold text-black">Profile Information</h1>
+            <p className="text-black opacity-80 mt-1">Manage your personal details</p>
+          </div>
+          
+          <form onSubmit={(e) => handleOnSubmit(e)} className="px-8 py-8">
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center mb-8">
+              <div className="relative group w-32 h-32 mb-4">
+                <Avatar
+                  src={form.profile_pic}
+                  style={{
+                    width: "128px",
+                    height: "128px",
+                    objectFit: "cover",
+                    textTransform: "capitalize",
+                    borderRadius: "50%",
+                    border: "4px solid #FFD700",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                   }}
-                  style={{ display: "none" }}
-                />
+                  className="text-black capitalize text-5xl bg-yellow-100 font-semibold"
+                >
+                  {profileImageName}
+                </Avatar>
+                {!isEditDisabled && (
+                  <>
+                    <input
+                      type="file"
+                      name="image"
+                      id="image"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          dispatch({
+                            type: "UPLOAD_IMAGE",
+                            data: { file, handleUploadImage },
+                          });
+                        }
+                      }}
+                      style={{ display: "none" }}
+                    />
 
-                <label htmlFor="image" className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 text-white flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
-                  <IconHelper.EDIT_ICON />
+                    <label htmlFor="image" className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-70 text-white flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                      <IconHelper.EDIT_ICON className="text-xl" />
+                    </label>
+                  </>
+                )}
+              </div>
+              
+              <div className="flex space-x-3">
+                {/* <button 
+                  type="button" 
+                  className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-600 transition-colors"
+                  onClick={() => setIsEditDisabled(!isEditDisabled)}
+                >
+                  {isEditDisabled ? "Edit Profile" : "Cancel Editing"}
+                </button>
+                
+                <button 
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${isEditDisabled ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-black text-white hover:bg-gray-800"}`} 
+                  type="submit" 
+                  disabled={isEditDisabled}
+                >
+                  Save Changes
+                </button> */}
+              </div>
+            </div>
+
+            {/* Form Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Name <span className="text-red-500">*</span>
                 </label>
-              </>
-            )}
-          </div>
+                <Input 
+                  name="name" 
+                  onChange={(e) => handleOnChange(e)} 
+                  value={form.name} 
+                  placeholder="Enter your name" 
+                  style={{ fontSize: "16px", padding: "12px", borderRadius: "8px", border: "2px solid #e5e7eb" }} 
+                  disabled={isEditDisabled} 
+                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors" 
+                />
+                {errorMessage.name && <p className="text-red-500 text-xs mt-2">{errorMessage.name}</p>}
+              </div>
+
+              {/* Email Field */}
+              <div className="md:col-span-2">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <Input 
+                  name="email" 
+                  onChange={(e) => handleOnChange(e)} 
+                  value={form.email} 
+                  placeholder="Enter your email" 
+                  style={{ fontSize: "16px", padding: "12px", borderRadius: "8px", border: "2px solid #e5e7eb" }} 
+                  disabled={isEditDisabled} 
+                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors" 
+                />
+                {errorMessage.email && <p className="text-red-500 text-xs mt-2">{errorMessage.email}</p>}
+              </div>
+
+              {/* Mobile Number Field */}
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Mobile Number</label>
+                <Input 
+                  name="phone" 
+                  onChange={(e) => handleOnChange(e)} 
+                  value={form.phone} 
+                  placeholder="Enter your mobile number" 
+                  style={{ fontSize: "16px", padding: "12px", borderRadius: "8px", border: "2px solid #e5e7eb" }} 
+                  disabled={isEditDisabled} 
+                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors" 
+                />
+                {errorMessage.phone && <p className="text-red-500 text-xs mt-2">{errorMessage.phone}</p>}
+              </div>
+
+              {/* GST Field */}
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">GST NO</label>
+                <Input 
+                  name="gst_no" 
+                  onChange={(e) => handleOnChange(e)} 
+                  value={form.gst_no} 
+                  placeholder="Enter your GST" 
+                  style={{ fontSize: "16px", padding: "12px", borderRadius: "8px", border: "2px solid #e5e7eb" }} 
+                  disabled={isEditDisabled} 
+                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors" 
+                />
+              </div>
+            </div>
+
+            {/* Bottom Action Buttons */}
+            <div className="flex justify-between items-center mt-10 pt-6 border-t border-gray-200">
+              <div className="text-sm text-gray-500">
+                Last updated: {new Date().toLocaleDateString()}
+              </div>
+              <div className="flex gap-5">
+  <button 
+    type="button" 
+    className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-l-lg hover:bg-yellow-600 transition-colors"
+    onClick={() => setIsEditDisabled(!isEditDisabled)}
+  >
+    {isEditDisabled ? "Edit Profile" : "Cancel Editing"}
+  </button>
+  <button 
+    className={`px-4 py-2 font-medium transition-all rounded-r-lg ${isEditDisabled ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-black text-white hover:bg-gray-800"}`} 
+    type="submit" 
+    disabled={isEditDisabled}
+  >
+    Save Changes
+  </button>
+</div>
+
+            </div>
+          </form>
         </div>
-
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              Name <span className="text-red-500">*</span>
-            </label>
-            <Input name="name" onChange={(e) => handleOnChange(e)} value={form.name} placeholder="Enter your name" style={{ fontSize: "16px" }} disabled={isEditDisabled} className="w-full" />
-            {errorMessage.name && <p className="text-red-500 text-xs mt-1">{errorMessage.name}</p>}
-          </div>
-
-          {/* Email Field */}
-          <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <Input name="email" onChange={(e) => handleOnChange(e)} value={form.email} placeholder="Enter your email" style={{ fontSize: "16px" }} disabled={isEditDisabled} className="w-full" />
-            {errorMessage.email && <p className="text-red-500 text-xs mt-1">{errorMessage.email}</p>}
-          </div>
-
-          {/* Mobile Number Field */}
-          <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">Mobile Number</label>
-            <Input name="phone" onChange={(e) => handleOnChange(e)} value={form.phone} placeholder="Enter your mobile number" style={{ fontSize: "16px" }} disabled={isEditDisabled} className="w-full" />
-            {errorMessage.phone && <p className="text-red-500 text-xs mt-1">{errorMessage.phone}</p>}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-gray-700 text-sm font-medium mb-1">GST NO</label>
-          <Input name="gst_no" onChange={(e) => handleOnChange(e)} value={form.gst_no} placeholder="Enter your GST " style={{ fontSize: "16px" }} disabled={isEditDisabled} className="w-full" />
-        </div>
-
-        {/* Buttons */}
-        <div className="flex justify-between items-center mt-4">
-          <button type="button" className="text-purple-600 text-sm font-medium hover:underline" onClick={() => setIsEditDisabled(!isEditDisabled)}>
-            {isEditDisabled ? "Edit" : "Cancel"}
-          </button>
-          <button className={`${isEditDisabled ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-purple-600 text-white hover:bg-purple-700"} px-4 py-2 rounded text-sm font-medium transition-colors`} type="submit" disabled={isEditDisabled}>
-            Update Details
-          </button>
-        </div>
-      </form>
-    </div>
+      </div>
   );
 };
 
