@@ -51,8 +51,8 @@ const Product = () => {
   }, [_.get(user, "_id", ""), _.get(product, "_id", "")]);
 
   return (
-    <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto">
-      <div className="pt-10 ">
+    <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
+      <div className="pt-10 pb-0">
         <Breadcrumbs
           title3={_.get(product, "name", "")}
           title={_.get(product, "category_details.main_category_name", "")}
@@ -84,7 +84,7 @@ const Product = () => {
           <Spin spinning={isUploadingFile}>
             <div className="flex flex-col">
               {/* Main Product Container */}
-              <div className="flex w-full flex-col justify-start gap-8 lg:flex-row lg:py-6  rounded-xl  p-6 mt-4 ">
+              <div className="flex w-full flex-col justify-start gap-8 lg:flex-row lg:py-2  rounded-xl  p-2 mt-2 ">
                 {/* Image Slider Section - Sticky on desktop */}
                 <div className="w-full lg:w-1/2  self-start">
                   <ImagesSlider imageList={product?.images} data={product} />

@@ -688,7 +688,7 @@ const ProductDetails = ({
               <Button
                 onClick={handleClick}
                 style={{
-                  backgroundColor: isClicked ? "#f9c114" : "#e0e0e0", // Change color on click
+                  backgroundColor: isClicked ? "#f9c114" : "#000", // Change color on click
                   color: isClicked ? "#000" : "#fff", // Change text color on click
                   border: "none",
                   transition: "background-color 0.3s ease", // Smooth transition

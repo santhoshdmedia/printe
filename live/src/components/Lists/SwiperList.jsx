@@ -678,7 +678,7 @@ export const Bannear = () => {
             <motion.img
               src={Banear}
               alt="Printing business illustration"
-              className="w-auto h-[450px] object-contain"
+              className="w-auto h-[500px] object-contain"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             />
@@ -715,7 +715,7 @@ export const Bannear = () => {
             </motion.p>
 
             <motion.button
-              className="mt-4 bg-[#f9c114] hover:bg-[#e0b010] text-[#1a1a1a] font-semibold py-3 px-5 rounded-lg shadow-md hover:text-white"
+              className="mt-4 bg-[#f9c114] hover:bg-[#e0b010] text-[#1a1a1a] font-semibold py-3 px-8 rounded-lg shadow-md hover:text-white"
               // variants={itemVariants}
               whileHover="hover"
               whileTap="tap"
@@ -740,25 +740,25 @@ export const Bannear = () => {
 
           {/* Right Image - Hidden on mobile */}
           <motion.div
-            className="hidden lg:block flex-shrink-0 absolute bottom-[-120px] right-[260px] z-10 single_product"
+            className="hidden lg:block flex-shrink-0 absolute bottom-[-150px] right-[300px] z-10 single_product "
             variants={itemVariants}
           >
             <motion.img
               src={Carry_bag}
               alt="Printing business illustration"
-              className="w-auto h-[300px] object-contain"
+              className="w-auto h-[300px] object-contain "
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             />
           </motion.div>
           <motion.div
-            className="hidden lg:block flex-shrink-0 absolute bottom-[-120px] delay-150 right-[100px] z-10 single_product_right"
+            className="hidden lg:block flex-shrink-0 absolute bottom-[-150px] delay-150 right-[100px] z-10 single_product_right "
             variants={itemVariants}
           >
             <motion.img
               src={Big_sale}
               alt="Printing business illustration"
-              className="w-auto h-[300px] object-contain" 
+              className="w-auto h-[300px] object-contain "
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             />

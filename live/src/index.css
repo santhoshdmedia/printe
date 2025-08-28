@@ -386,13 +386,20 @@ span.swiper-pagination-bullet.swiper-pagination-bullet-active {
 }
 
 .policy_section{
-  background: url('assets/mockup/shoping-png.png') no-repeat 50% 40%;
+  background: url('assets/mockup/shoping-png.png') no-repeat 50% 80%;
   background-size: 70%;
 }
 
-@media (Max-width:500px) {
+@media (Max-width:1500px) {
+  .policy_section{
+      background: url('assets/mockup/shoping_tab.png') no-repeat 50% 50%;
+  background-size: 80%;
+  }
+}
+@media (Max-width:900px) {
   .policy_section{
     background: none;
+    
   }
 }
 

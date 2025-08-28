@@ -130,11 +130,11 @@ export const WGDesigns = () => {
   return (
     <div className="max-w-full mx-auto p-6 font-sans policy_section">
       {/* Two Column Layout */}
-      <div className="flex flex-col gap-4 justify-between w-full">
-        <div className="flex lg:flex-row flex-col justify-between w-[100%] lg:w-[90%] mx-auto">
+      <div className="flex flex-col gap-4  justify-center lg:justify-between items-center  w-full">
+        <div className="flex lg:flex-row flex-col items-center justify-between w-[100%] lg:w-[90%] mx-auto">
           {/* Shop Worldwide */}
-          <motion.div  
-          initial={{
+          <motion.div 
+            initial={{
                 opacity: 0,
                 x:  -100 ,
               }}
@@ -146,26 +146,21 @@ export const WGDesigns = () => {
                   ease: "easeOut",
                 },
               }}
-          className="lg:w-[350px]   p-6 rounded-lg  transition-shadow">
-            <div
-              
-              className="flex items-center mb-4"
-            >
-              <FaGlobe className="text-2xl lg:text-3xl text-blue-600 mr-4" />
+          className="w-[350px]  p-6 rounded-lg  transition-shadow">
+            <div className="flex items-center mb-4">
+              <FaGlobe className="text-4xl text-blue-600 mr-4" />
               <h2 className="text-lg lg:text-2xl font-semibold text-[#f9c114]">
-                Shop Worldwide
+               Shop Worldwide
               </h2>
             </div>
             <div className="mb-3">
               <span className="font-bold text-[#987c34] lg:text-md text-sm">GLOBAL REACH</span>
             </div>
-            <p className="text-[#1a1a1a] text-sm lg:text-md">
+            <p className="text-gray-600 lg:text-md text-sm">
               Access our products from anywhere in the world with fast
               international shipping options.
             </p>
           </motion.div>
-
-          {/* Big Saving Shop */}
           <motion.div 
           initial={{
                 opacity: 0,
@@ -196,7 +191,7 @@ export const WGDesigns = () => {
           </motion.div>
         </div>
 
-        <div className="flex lg:flex-row flex-col justify-between w-[100%] mx-auto">
+        <div className="flex lg:flex-row flex-col items-center  justify-between w-[100%] mx-auto">
           {/* 24/7 Support */}
           <motion.div
           initial={{
@@ -264,7 +259,7 @@ export const WGDesigns = () => {
           </motion.div>
         
         </div>
-        <div className="flex lg:flex-row flex-col justify-between w-[100%] mx-auto">
+        <div className="flex lg:flex-row flex-col items-center justify-between w-[100%] mx-auto">
           {/* Personalized Gift */}          
           <motion.div
           initial={{

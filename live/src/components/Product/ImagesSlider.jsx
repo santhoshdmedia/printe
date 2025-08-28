@@ -83,14 +83,13 @@ const ImagesSlider = ({ imageList, data }) => {
       <div className="">
         <div
           className="w-full bg-white border rounded-xl overflow-hidden relative "
-      
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
           <img
             ref={imgRef}
             src={imageSelected}
-            className="w-full  object-cover rounded-xl transition-transform duration-300 hover:scale-105 lg:h-[70vh]"
+            className="w-full object-cover rounded-xl transition-transform duration-300 hover:scale-105 lg:h-[30vh] xl:h-[40vh] 2xl:h-[70vh] 3xl:h-[60vh] 4xl:h-[50vh]"
             alt="product"
           />
           {/* Wishlist Button */}
@@ -137,8 +136,6 @@ const ImagesSlider = ({ imageList, data }) => {
             </div>
           ))}
       </div>
-
-      
     </div>
   );
 };
