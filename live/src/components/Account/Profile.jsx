@@ -80,7 +80,7 @@ const Profile = () => {
      <div className="w-full max-w-3xl">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
           {/* Header Section with Yellow Background */}
-          <div className="bg-yellow-500 py-6 px-8 text-center">
+          <div className="bg-[#f9c114] py-6 px-8 text-center">
             <h1 className="text-2xl font-bold text-black">Profile Information</h1>
             <p className="text-black opacity-80 mt-1">Manage your personal details</p>
           </div>
