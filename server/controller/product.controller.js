@@ -21,6 +21,53 @@ const addProduct = async (req, res) => {
   }
 };
 
+// const getProduct = async (req, res) => {
+//   const { filterByProduct_category = "", filterByType = "", filterByProduct_subcategory = "", search, newArrival = false, popular = false, onlyForToday = false, isAdmin = false, limitVariants = 1, id_list, vendor_filter } = req.query;
+//   const { id } = req.params;
+
+//   try {
+//     let where = {};
+//     let project = {
+//       variants_price: { $slice: parseInt(limitVariants, 10) },
+//     };
+//     if (isAdmin) project = {};
+
+//     if (id_list) {
+//       const list = JSON.parse(id_list);
+
+//       where.seo_url = {
+//         $in: list.map((id) => id),
+//       };
+//     }
+
+//     if (filterByType) where.type = filterByType;
+//     if (filterByProduct_category) where.category_details = new ObjectId(filterByProduct_category);
+//     if (filterByProduct_subcategory) where.sub_category_details = new ObjectId(filterByProduct_subcategory);
+//     if (vendor_filter) where.vendor_details = new ObjectId(vendor_filter);
+
+//     if (popular) {
+//       where.label = { $in: ["popular"] };
+//     } else if (newArrival) {
+//       where.label = { $in: ["new"] };
+//     } else if (onlyForToday) {
+//       where.label = { $in: ["only-for-today"] };
+//     }
+
+//     if (search) {
+//       where.name = { $regex: search, $options: "i" };
+//     }
+//     if (id) {
+//       where.seo_url = id;
+//     }
+
+//     const result = await ProductSchema.find(where).populate("vendor_details", "vendor_name").populate("category_details", "").populate("sub_category_details", "");
+//     return successResponse(res, PRODUCT_GET_SUCCESS, result);
+//   } catch (error) {
+//     console.error("Error in getProduct:", error);
+//     return errorResponse(res, PRODUCT_GET_FAILED);
+//   }
+// };
+
 const getProduct = async (req, res) => {
   const { filterByProduct_category = "", filterByType = "", filterByProduct_subcategory = "", search, newArrival = false, popular = false, onlyForToday = false, isAdmin = false, limitVariants = 1, id_list, vendor_filter } = req.query;
   const { id } = req.params;
@@ -28,7 +75,7 @@ const getProduct = async (req, res) => {
   try {
     let where = {};
     let project = {
-      variants_price: { $slice: parseInt(limitVariants, 10) },
+      // Removed variants_price slicing since we're using single_product_price
     };
     if (isAdmin) project = {};
 

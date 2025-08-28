@@ -678,7 +678,7 @@ export const Bannear = () => {
             <motion.img
               src={Banear}
               alt="Printing business illustration"
-              className="w-auto h-[350px] object-contain"
+              className="w-auto h-[450px] object-contain"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             />
@@ -715,7 +715,7 @@ export const Bannear = () => {
             </motion.p>
 
             <motion.button
-              className="mt-4 bg-[#f9c114] hover:bg-[#e0b010] text-[#1a1a1a] font-semibold py-3 px-8 rounded-lg shadow-md hover:text-white"
+              className="mt-4 bg-[#f9c114] hover:bg-[#e0b010] text-[#1a1a1a] font-semibold py-3 px-5 rounded-lg shadow-md hover:text-white"
               // variants={itemVariants}
               whileHover="hover"
               whileTap="tap"
