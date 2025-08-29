@@ -195,7 +195,7 @@ const NavMenu = () => {
                 activeDropdown.megaMenu
                   ? "animate-fade-in"
                   : "animate-fade-out hidden"
-              } max-h-fit w-full z-50 top-[55px] left-0 mega-menu-container nav-shadow rounded-xl overflow-hidden border border-gray-100 border-opacity-20`}
+              } max-h-fit w-full z-50 top-[55px] left-0 bg-white rounded-xl overflow-hidden border border-gray-100 border-opacity-20`}
             >
               <div className="grid grid-cols-5 px-8 py-8 gap-6">
                 {menu.map((result) => (
@@ -222,7 +222,7 @@ const NavMenu = () => {
                           <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm" />
                         )}
                       </div>
-                      <div className="rounded-lg overflow-hidden border border-gray-200 border-opacity-30 hover:border-blue-300 transition-colors">
+                      <div className="rounded-lg overflow-hidden border border-gray-200 border-opacity-30 hover:border-yellow-300 transition-colors">
                         <img
                           src={_.get(
                             result,
@@ -234,7 +234,7 @@ const NavMenu = () => {
                             "sub_categories_details[0].sub_category_name",
                             "Category"
                           )}
-                          className="size-40 object-cover w-full"
+                          className=" object-cover w-full"
                           onClick={() => {
                             navigation(
                               `/category/${result.main_category_name}/${result._id}`
@@ -271,7 +271,7 @@ const NavMenu = () => {
                                   {subcat.sub_category_name}
                                 </span>
                                 {hoverStates.sideSubcatId === subcat._id ? (
-                                  <IconHelper.LEFTARROW_ICON className="text-blue-500 text-xs" />
+                                  <IconHelper.LEFTARROW_ICON className="text-yellow-500 text-xs" />
                                 ) : (
                                   <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs" />
                                 )}
@@ -279,9 +279,9 @@ const NavMenu = () => {
 
                               {/* Products Panel */}
                               {hoverStates.sideSubcatId === subcat._id && (
-                                <div className="absolute min-w-[300px] dropdown-panel nav-shadow min-h-full top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl p-4 animate-slide-in">
+                                <div className="absolute min-w-[300px] !bg-white min-h-full top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl p-4 animate-slide-in">
                                   <h4 className="font-semibold text-gray-800 mb-3">Products</h4>
-                                  <div className="menu-divider my-2"></div>
+                                  <div className=" my-2"></div>
                                   <div className="max-h-[350px] overflow-y-auto">
                                     {result.product_details
                                       ?.filter(
@@ -391,7 +391,7 @@ const NavMenu = () => {
                         {subCategories.map((subcat) => (
                           <div
                             key={subcat._id}
-                            className="group transition-all duration-300 hover:bg-gray-50 hover:bg-opacity-20 rounded-lg p-4 border border-transparent hover:border-gray-200 hover:border-opacity-20"
+                            className="group transition-all duration-300 bg-white hover:bg-gray-50 hover:bg-opacity-20 rounded-lg p-4 border border-transparent hover:border-gray-200 hover:border-opacity-20"
                           >
                             {/* Subcategory Title */}
                             <div
@@ -407,11 +407,11 @@ const NavMenu = () => {
                               }}
                               className="relative pb-2 mb-3 cursor-pointer"
                             >
-                              <h3 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors flex items-center justify-between">
+                              <h3 className="text-lg font-bold text-gray-800 group-hover:text-yellow-600 transition-colors flex items-center justify-between">
                                 {subcat.sub_category_name}
-                                <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm group-hover:text-blue-500" />
+                                <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm group-hover:text-yellow-500" />
                               </h3>
-                              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-500 transition-all duration-300 group-hover:w-full"></div>
+                              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-yellow-500 transition-all duration-300 group-hover:w-full"></div>
                             </div>
 
                             {/* Product List */}
@@ -431,7 +431,7 @@ const NavMenu = () => {
                                       transitionDelay: `${index * 50}ms`,
                                     }}
                                   >
-                                    <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gray-200 border-opacity-30 group-hover/product:border-blue-300 transition-all">
+                                    <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gray-200 border-opacity-30 group-hover/product:border-yellow-300 transition-all">
                                       <img
                                         src={_.get(
                                           product,
@@ -446,7 +446,7 @@ const NavMenu = () => {
                                         }}
                                       />
                                     </div>
-                                    <p className="text-sm font-medium text-gray-700 truncate group-hover/product:text-blue-600 transition-colors">
+                                    <p className="text-sm font-medium text-gray-700 truncate group-hover/product:text-yellow-600 transition-colors">
                                       {product.name}
                                     </p>
                                     <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm opacity-0 group-hover/product:opacity-100 transition-opacity ml-auto" />
@@ -466,7 +466,7 @@ const NavMenu = () => {
                             );
                             closeAllDropdowns();
                           }}
-                          className="px-6 py-3 bg-blue-600 bg-opacity-90 text-white rounded-full hover:bg-opacity-100 transition-colors shadow-md hover:shadow-lg font-medium flex items-center justify-center mx-auto"
+                          className="px-6 py-3 bg-yellow-600 bg-opacity-90 text-white rounded-full hover:bg-opacity-100 transition-colors shadow-md hover:shadow-lg font-medium flex items-center justify-center mx-auto"
                         >
                           View All {category.main_category_name}
                           <IconHelper.RIGHT_ARROW_ICON className="ml-2 text-sm" />

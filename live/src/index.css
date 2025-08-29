@@ -64,15 +64,7 @@
   background: rgb(255, 255, 255) !important;
 }
 
-/* Handle */
-::-webkit-scrollbar-thumb {
-  background: var(--primary-color) !important;
-}
 
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-  background: white !important;
-}
 
 .ant-collapse-header {
   background-color: white !important;
@@ -418,3 +410,7 @@ span.swiper-pagination-bullet.swiper-pagination-bullet-active {
     opacity: 1;
   }
 } */
+
+.absolute.animate-fade-in.border.border-gray-200.border-opacity-20.bg-transparent.backdrop-filter.backdrop-blur-md.nav-shadow.min-w-\[250px\].z-50.py-3.top-\[55px\].left-0.rounded-xl.overflow-hidden {
+  background: #fff;
+}

@@ -23,7 +23,7 @@ import { TiUser } from "react-icons/ti";
 import { MdOutlineArrowDropDown } from "react-icons/md";
 import { getMyShoppingCart } from "../../helper/api_helper";
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
-import Logo from "../../assets/logo/Printelogo.jpg";
+import Logo from "../../assets/logo/without_bg.png";
 // import LogoPrepand from "../../assets/logo/color/dynamic/292524.png";
 import ExitementTag from "./ExitementTag";
 import SearchProductCard from "../Product/SearchProductCard";
