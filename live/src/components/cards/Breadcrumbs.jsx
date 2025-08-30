@@ -42,7 +42,7 @@ const Breadcrumbs = ({ title, title2, titleto, title2to, title3 }) => {
         )}
         {title3 && (
           <Breadcrumb.Item>
-            <div className="center_div gap-x-1 !text-slate-500 !font-light">{title3}</div>
+            <div className="center_div gap-x-1 !text-black !font-semibold">{title3}</div>
           </Breadcrumb.Item>
         )}
       </Breadcrumb>

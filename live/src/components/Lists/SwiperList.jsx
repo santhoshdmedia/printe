@@ -678,7 +678,7 @@ export const Bannear = () => {
             <motion.img
               src={Banear}
               alt="Printing business illustration"
-              className="w-auto h-[500px] object-contain"
+              className="w-auto h-[300px] lg:h-[500px] object-contain"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             />

@@ -4,6 +4,7 @@ import { Badge, Empty, Tag } from "antd";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import _ from "lodash";
+import wishlist from "../../assets/logo/color/wishlist.gif";
 
 const WishList = () => {
   const { user, wish_list } = useSelector((state) => state.authSlice);
@@ -96,7 +97,7 @@ const WishList = () => {
         
         .browse-products-btn:hover {
           background-color: #e6c200;
-          color: #0c0101 !important; /* Text color changes to white on hover */
+          color: #0c0101 !important;
         }
       `}</style>
       
@@ -121,7 +122,15 @@ const WishList = () => {
         ) : wish_list.data.length === 0 ? (
           <div className="py-10 flex flex-col items-center justify-center">
             <Empty 
-              image={Empty.PRESENTED_IMAGE_SIMPLE} 
+              image={
+                <div className="flex justify-center">
+                  <img 
+                    src={wishlist} 
+                    alt="Empty wishlist" 
+                    className="w-20 h-28 object-contain" 
+                  />
+                </div>
+              }
               description={
                 <span className="text-gray-500">Your wishlist is empty</span>
               }

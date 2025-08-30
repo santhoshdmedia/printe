@@ -9,7 +9,7 @@ import about_us_img2 from "../assets/About_Us/brand.png";
 import about_us_img3 from "../assets/About_Us/custom.jpg";
 import whatsapp_img from "../assets/About_Us/whatsapp.webp";
 import logo from "../assets/logo/color/logo.png";
-import EmptyCard from "../assets/logo/color/empty card.jpg";
+import EmptyCard from "../assets/logo/color/empty card.gif";
 import color1 from "../assets/logo/color/dynamic/1e40af.png";
 import color2 from "../assets/logo/color/dynamic/5b21b6.png";
 import color3 from "../assets/logo/color/dynamic/9f1239.png";

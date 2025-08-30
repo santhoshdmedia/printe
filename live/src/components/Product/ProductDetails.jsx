@@ -20,6 +20,7 @@ import {
   Image,
   Row,
   Col,
+  List,
 } from "antd";
 import React, { useEffect, useState } from "react";
 import _ from "lodash";
@@ -82,10 +83,10 @@ const ProductDetails = ({
 
   // State
   const [totalPrice, setTotalPrice] = useState(price);
-  const [quantity, setQuantity] = useState(100);
+  const [quantity, setQuantity] = useState(1000);
   const [discountPercentage, setDiscountPercentage] = useState({
     uuid: "",
-    percentage: 0,
+    percentage: 35,
   });
   const [variant, setVariant] = useState([]);
   const [currentPriceSplitup, setCurrentPriceSplitup] = useState([]);
@@ -100,7 +101,7 @@ const ProductDetails = ({
     subcategory_name: _.get(data, "sub_category_details.sub_category_name", ""),
     product_price: price,
     product_variants: {},
-    product_quantity: 100,
+    product_quantity: 1000,
     product_seo_url: _.get(data, "seo_url", ""),
     product_id: _.get(data, "_id", ""),
   });
@@ -116,6 +117,7 @@ const ProductDetails = ({
   // geo locaton
   const [pincode, setPincode] = useState("");
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [individualBox, setIndividualBox] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -123,6 +125,15 @@ const ProductDetails = ({
     (state) => state.publicSlice
   );
   const { user } = useSelector((state) => state.authSlice);
+
+  // Quantity discount data from the screenshot
+  const quantityDiscounts = [
+    { quantity: 500, price: 700, unitPrice: 1.4, savings: 30 },
+    { quantity: 1000, price: 1300, unitPrice: 1.3, savings: 35 },
+    { quantity: 2000, price: 2400, unitPrice: 1.2, savings: 40 },
+    { quantity: 5000, price: 5250, unitPrice: 1.05, savings: 47 },
+    { quantity: 10000, price: 10000, unitPrice: 1.0, savings: 50 },
+  ];
 
   useEffect(() => {
     if (_.get(data, "quantity_type", "") != "textbox") {
@@ -133,7 +144,7 @@ const ProductDetails = ({
       const initialQuantity = _.get(
         data,
         "quantity_discount_splitup[0].quantity",
-        100
+        1000
       );
       setQuantity(initialQuantity);
       setCheckOutState((prev) => ({
@@ -152,10 +163,10 @@ const ProductDetails = ({
         setDiscountPercentage({ uuid: "", percentage: 0 });
       }
       setMaimumQuantity(_.get(data, "max_quantity", ""));
-      setQuantity(100);
+      setQuantity(1000);
       setCheckOutState((prev) => ({
         ...prev,
-        product_quantity: 100,
+        product_quantity: 1000,
       }));
     }
   }, [_.get(data, "quantity_discount_splitup[0].discount", "")]);
@@ -340,18 +351,18 @@ const ProductDetails = ({
     try {
       let filter_data = _.get(data, "quantity_discount_splitup", "").filter(
         (res) => {
-          return res.uniqe_id === id;
+      return res.uniqe_id === id;
         }
       );
-      const newQuantity = Number(_.get(filter_data, "[0].quantity", 100));
+      const newQuantity = Number(_.get(filter_data, "[0].quantity", 1000));
       setQuantity(newQuantity);
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: newQuantity,
       }));
       setDiscountPercentage({
-        uuid: Number(_.get(filter_data, "[0].uniqe_id", 100)),
-        percentage: Number(_.get(filter_data, "[0].discount", 100)),
+        uuid: Number(_.get(filter_data, "[0].uniqe_id", 1000)),
+        percentage: Number(_.get(filter_data, "[0].discount", 1000)),
       });
     } catch (err) {}
   };
@@ -523,19 +534,67 @@ const ProductDetails = ({
       }
       return options;
     } else {
-      // For predefined quantities
-      return _.get(data, "quantity_discount_splitup", []).map((item) => ({
+      // For predefined quantities from the screenshot
+      return quantityDiscounts.map((item) => ({
         value: item.quantity,
-        label: `${item.quantity} (${item.discount}% off)`,
+        label: `${item.quantity}`,
+        price: item.price,
+        unitPrice: item.unitPrice,
+        savings: item.savings,
       }));
     }
   };
 
   const quantityOptions = generateQuantityOptions();
-  const [isClicked, setIsClicked] = useState(false);
-  const handleClick = () => {
-    setIsClicked(!isClicked); // Toggle the clicked state
+
+  const handleQuantitySelect = (qty) => {
+    const selectedDiscount = quantityDiscounts.find(item => item.quantity === qty);
+    setQuantity(qty);
+    setCheckOutState(prev => ({
+      ...prev,
+      product_quantity: qty
+    }));
+    if (selectedDiscount) {
+      setDiscountPercentage({
+        uuid: qty.toString(),
+        percentage: selectedDiscount.savings
+      });
+    }
   };
+
+  // Custom dropdown renderer for quantity selection
+  const quantityDropdownRender = (menu) => (
+    <div>
+      <div className="p-2 border-b border-gray-200 bg-gray-50">
+        <Text strong>Quantity Discounts</Text>
+      </div>
+      <div className="max-h-60 overflow-y-auto">
+        {quantityDiscounts.map((item) => (
+          <div
+            key={item.quantity}
+            className={`flex justify-between items-center p-2 cursor-pointer hover:bg-blue-50 ${quantity === item.quantity ? 'bg-blue-100' : ''}`}
+            onClick={() => handleQuantitySelect(item.quantity)}
+          >
+            <div className="flex-1">
+              <Text className={quantity === item.quantity ? 'font-semibold text-blue-600' : ''}>
+                {item.quantity}
+              </Text>
+            </div>
+            <div className="text-right">
+              <Text className={quantity === item.quantity ? 'font-semibold text-blue-600' : ''}>
+                {formatPrice(item.price)} ({formatPrice(item.unitPrice)}/unit)
+              </Text>
+              <div>
+                <Text type="success" className="text-sm">
+                  {item.savings}% savings
+                </Text>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <Spin
@@ -602,6 +661,8 @@ const ProductDetails = ({
                   options={quantityOptions}
                   className="w-full"
                   placeholder="Select Quantity"
+                  optionLabelProp="label"
+                  dropdownRender={quantityDropdownRender}
                 />
               </div>
             </Col>
@@ -679,27 +740,20 @@ const ProductDetails = ({
                   ))}
                 </>
               )}
-            {/* Button for Individual Box */}
+            
+            {/* Individual Box Checkbox */}
             <Col
               xs={24}
               md={product_type !== "Single Product" ? 8 : 24}
-              className="flex items-center justify-center "
+              className="flex items-center justify-start"
             >
-              <Button
-                onClick={handleClick}
-                style={{
-                  backgroundColor: isClicked ? "#f9c114" : "#000", // Change color on click
-                  color: isClicked ? "#000" : "#fff", // Change text color on click
-                  border: "none",
-                  transition: "background-color 0.3s ease", // Smooth transition
-                  padding: "10px 20px",
-                  borderRadius: "5px",
-                  fontWeight: "bold",
-                }}
-                className="w-[100%] text-md text-wrap py-5 lg:h-[50px] h-full"
+              <Checkbox
+                checked={individualBox}
+                onChange={(e) => setIndividualBox(e.target.checked)}
+                className="py-2"
               >
                 Individual Box for 100 Cards
-              </Button>
+              </Checkbox>
             </Col>
           </Row>
         </div>
@@ -937,7 +991,7 @@ const ProductDetails = ({
                 onClick={() => setDesignPreviewVisible(false)}
               >
                 Close
-              </Button>,
+              </Button>
             ]}
             width={700}
           >

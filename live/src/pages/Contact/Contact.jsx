@@ -17,7 +17,7 @@ const Contact = () => {
             <li className='center_div flex-col '>
                 <IconHelper.PHONE_CALL_ICON size={180}/>
                 <h3 className='sub_title'>Call us for Queries</h3>
-                <p className='text-gray-500'>Helpdest: +91 9987654321 </p>
+                <p className='text-gray-500'>Helpdest: +91 7373610000 </p>
                 <p className='text-gray-500'>(Mon-Sat:10:00 AM - 7:00 PM)</p>
             </li>
             <li  className='center_div flex-col '>

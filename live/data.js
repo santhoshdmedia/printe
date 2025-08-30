@@ -342,7 +342,7 @@ If your order is still in the initial stages of production (designing or pre-pre
       },
       {
         title: "Cancellation Process",
-        desc: `To cancel an order, please contact our customer support team at [99999 99999 / xxxxxx@printe.com] as soon as possible.
+        desc: `To cancel an order, please contact our customer support team at [917373610000 / info@printe.com] as soon as possible.
 Provide your order details (order number, customer name, and reason for cancellation) to help us process your request quickly.
 `,
       },
@@ -451,8 +451,8 @@ export const termsAndConditions = [
       {
         title: "Contact Information",
         desc: `If you have any questions or concerns about these Terms and Conditions, please contact us at:
-    Email: xxxxxxx@printe.com
-    Phone:  99876 54321`,
+    Email: info@printe.com
+    Phone:  73736 10000`,
       },
     ],
   },
@@ -689,8 +689,8 @@ Delivery timelines may vary depending on your location and external factors such
       {
         title: "Shipping Charges",
         desc: `Shipping charges are calculated at checkout and depend on the shipping method selected and your location.
--> Free shipping on orders above ₹[amount].
--> A flat shipping fee of ₹[amount] applies for orders below ₹[amount].`,
+-> Free shipping on orders above ₹[100000].
+-> A flat shipping fee of ₹[100000] applies for orders below ₹[100000].`,
       },
       {
         title: "Tracking Your Order",
@@ -702,7 +702,7 @@ Delivery timelines may vary depending on your location and external factors such
       },
       {
         title: "Delivery Issues",
-        desc: `If you experience any delays or issues with your delivery, please contact our customer support team at [support email/phone] within [7 days] of the expected delivery date.`,
+        desc: `If you experience any delays or issues with your delivery, please contact our customer support team at [support info@printe.in/917373610000] within [7 days] of the expected delivery date.`,
       },
       {
         title: "Undelivered Packages",
