@@ -16,7 +16,7 @@ import color3 from "../assets/logo/color/dynamic/9f1239.png";
 import color4 from "../assets/logo/color/dynamic/3f6212.png";
 import color5 from "../assets/logo/color/dynamic/9a3412.png";
 import color6 from "../assets/logo/color/dynamic/292524.png";
-import Fulllogo from "../assets/logo/color/full_logo.png";
+import without_bg from "../assets/logo/without_bg.png";
 import bottomimage from "../assets/About_Us/bottom_image.avif";
 import { VscArrowCircleUp } from "react-icons/vsc";
 
@@ -38,7 +38,7 @@ export const ImageHelper = {
   ABOUT_US_IMG2: about_us_img2,
   ABOUT_US_IMG3: about_us_img3,
   WHATSAPP_IMG: whatsapp_img,
-  FULL_LOGO: Fulllogo,
+  without_bg: without_bg,
   EmptyCard: EmptyCard,
   BOTTOM_IMAGE: bottomimage,
   UP_arrow:VscArrowCircleUp

@@ -1,4 +1,5 @@
 // /* eslint-disable no-empty */
+
 // /* eslint-disable react/prop-types */
 // import {
 //   Checkbox,
@@ -20,6 +21,7 @@
 //   Image,
 //   Row,
 //   Col,
+//   List,
 // } from "antd";
 // import React, { useEffect, useState } from "react";
 // import _ from "lodash";
@@ -82,10 +84,10 @@
 
 //   // State
 //   const [totalPrice, setTotalPrice] = useState(price);
-//   const [quantity, setQuantity] = useState(100);
+//   const [quantity, setQuantity] = useState(1000);
 //   const [discountPercentage, setDiscountPercentage] = useState({
 //     uuid: "",
-//     percentage: 0,
+//     percentage: 35,
 //   });
 //   const [variant, setVariant] = useState([]);
 //   const [currentPriceSplitup, setCurrentPriceSplitup] = useState([]);
@@ -100,7 +102,7 @@
 //     subcategory_name: _.get(data, "sub_category_details.sub_category_name", ""),
 //     product_price: price,
 //     product_variants: {},
-//     product_quantity: 100,
+//     product_quantity: 1000,
 //     product_seo_url: _.get(data, "seo_url", ""),
 //     product_id: _.get(data, "_id", ""),
 //   });
@@ -116,6 +118,8 @@
 //   // geo locaton
 //   const [pincode, setPincode] = useState("");
 //   const [isGettingLocation, setIsGettingLocation] = useState(false);
+//   const [individualBox, setIndividualBox] = useState(false);
+//   const [quantityDropdownVisible, setQuantityDropdownVisible] = useState(false);
 
 //   const dispatch = useDispatch();
 //   const navigate = useNavigate();
@@ -123,6 +127,37 @@
 //     (state) => state.publicSlice
 //   );
 //   const { user } = useSelector((state) => state.authSlice);
+
+//   // Get category name for determining quantity discounts
+//   const categoryName = _.get(data, "category_details.main_category_name", "").toLowerCase();
+
+//   // Function to get quantity discounts based on category
+//   const getQuantityDiscounts = () => {
+//     if (categoryName.includes("photo frame") || categoryName.includes("acrylic")) {
+//       return [
+//         { quantity: 2, price: 140, unitPrice: 70, savings: 30 },
+//         { quantity: 10, price: 600, unitPrice: 60, savings: 40 },
+//       ];
+//     } else if (categoryName.includes("visiting card") || categoryName.includes("business card")) {
+//       return [
+//         { quantity: 500, price: 700, unitPrice: 1.4, savings: 30 },
+//         { quantity: 1000, price: 1300, unitPrice: 1.3, savings: 35 },
+//         { quantity: 2000, price: 2400, unitPrice: 1.2, savings: 40 },
+//         { quantity: 5000, price: 5250, unitPrice: 1.05, savings: 47 },
+//         { quantity: 10000, price: 10000, unitPrice: 1.0, savings: 50 },
+//       ];
+//     } else {
+//       // Default/Standard discounts
+//       return [
+//         { quantity: 2, price: 140, unitPrice: 70, savings: 30 },
+//         { quantity: 10, price: 600, unitPrice: 60, savings: 40 },
+//         { quantity: 50, price: 2500, unitPrice: 50, savings: 50 },
+//         { quantity: 100, price: 4500, unitPrice: 45, savings: 55 },
+//       ];
+//     }
+//   };
+
+//   const quantityDiscounts = getQuantityDiscounts();
 
 //   useEffect(() => {
 //     if (_.get(data, "quantity_type", "") != "textbox") {
@@ -133,7 +168,7 @@
 //       const initialQuantity = _.get(
 //         data,
 //         "quantity_discount_splitup[0].quantity",
-//         100
+//         1000
 //       );
 //       setQuantity(initialQuantity);
 //       setCheckOutState((prev) => ({
@@ -152,10 +187,10 @@
 //         setDiscountPercentage({ uuid: "", percentage: 0 });
 //       }
 //       setMaimumQuantity(_.get(data, "max_quantity", ""));
-//       setQuantity(100);
+//       setQuantity(1000);
 //       setCheckOutState((prev) => ({
 //         ...prev,
-//         product_quantity: 100,
+//         product_quantity: 1000,
 //       }));
 //     }
 //   }, [_.get(data, "quantity_discount_splitup[0].discount", "")]);
@@ -340,18 +375,18 @@
 //     try {
 //       let filter_data = _.get(data, "quantity_discount_splitup", "").filter(
 //         (res) => {
-//           return res.uniqe_id === id;
+//       return res.uniqe_id === id;
 //         }
 //       );
-//       const newQuantity = Number(_.get(filter_data, "[0].quantity", 100));
+//       const newQuantity = Number(_.get(filter_data, "[0].quantity", 1000));
 //       setQuantity(newQuantity);
 //       setCheckOutState((prev) => ({
 //         ...prev,
 //         product_quantity: newQuantity,
 //       }));
 //       setDiscountPercentage({
-//         uuid: Number(_.get(filter_data, "[0].uniqe_id", 100)),
-//         percentage: Number(_.get(filter_data, "[0].discount", 100)),
+//         uuid: Number(_.get(filter_data, "[0].uniqe_id", 1000)),
+//         percentage: Number(_.get(filter_data, "[0].discount", 1000)),
 //       });
 //     } catch (err) {}
 //   };
@@ -523,19 +558,68 @@
 //       }
 //       return options;
 //     } else {
-//       // For predefined quantities
-//       return _.get(data, "quantity_discount_splitup", []).map((item) => ({
+//       // For predefined quantities based on category
+//       return quantityDiscounts.map((item) => ({
 //         value: item.quantity,
-//         label: `${item.quantity} (${item.discount}% off)`,
+//         label: `${item.quantity}`,
+//         price: item.price,
+//         unitPrice: item.unitPrice,
+//         savings: item.savings,
 //       }));
 //     }
 //   };
 
 //   const quantityOptions = generateQuantityOptions();
-//   const [isClicked, setIsClicked] = useState(false);
-//   const handleClick = () => {
-//     setIsClicked(!isClicked); // Toggle the clicked state
+
+//   const handleQuantitySelect = (qty) => {
+//     const selectedDiscount = quantityDiscounts.find(item => item.quantity === qty);
+//     setQuantity(qty);
+//     setCheckOutState(prev => ({
+//       ...prev,
+//       product_quantity: qty
+//     }));
+//     if (selectedDiscount) {
+//       setDiscountPercentage({
+//         uuid: qty.toString(),
+//         percentage: selectedDiscount.savings
+//       });
+//     }
+//     setQuantityDropdownVisible(false); // Close dropdown after selection
 //   };
+
+//   // Custom dropdown renderer for quantity selection
+//   const quantityDropdownRender = (menu) => (
+//     <div style={{ padding: '12px', minWidth: '350px' }}>
+//       <div>
+//         <Text strong>Quantity Discounts</Text>
+//       </div>
+//       <div className="max-h-60 overflow-y-auto">
+//         {quantityDiscounts.map((item) => (
+//           <div
+//             key={item.quantity}
+//             className={`flex justify-between items-center p-3 cursor-pointer hover:bg-blue-50 ${quantity === item.quantity ? 'bg-blue-100' : ''}`}
+//             onClick={() => handleQuantitySelect(item.quantity)}
+//           >
+//             <div className="flex-1">
+//               <Text className={quantity === item.quantity ? 'font-semibold text-blue-600' : ''}>
+//                 {item.quantity}
+//               </Text>
+//             </div>
+//             <div className="text-right">
+//               <Text className={quantity === item.quantity ? 'font-semibold text-blue-600' : ''}>
+//                 {formatPrice(item.price)} ({formatPrice(item.unitPrice)}/unit)
+//               </Text>
+//               <div>
+//                 <Text type="success" className="text-sm">
+//                   {item.savings}% savings
+//                 </Text>
+//               </div>
+//             </div>
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
 
 //   return (
 //     <Spin
@@ -602,6 +686,11 @@
 //                   options={quantityOptions}
 //                   className="w-full"
 //                   placeholder="Select Quantity"
+//                   optionLabelProp="label"
+//                   dropdownRender={quantityDropdownRender}
+//                   open={quantityDropdownVisible}
+//                   onDropdownVisibleChange={(visible) => setQuantityDropdownVisible(visible)}
+//                   dropdownStyle={{ minWidth: '350px' }}
 //                 />
 //               </div>
 //             </Col>
@@ -679,27 +768,20 @@
 //                   ))}
 //                 </>
 //               )}
-//             {/* Button for Individual Box */}
+            
+//             {/* Individual Box Checkbox */}
 //             <Col
 //               xs={24}
 //               md={product_type !== "Single Product" ? 8 : 24}
-//               className="flex items-center justify-center "
+//               className="flex items-center justify-start"
 //             >
-//               <Button
-//                 onClick={handleClick}
-//                 style={{
-//                   backgroundColor: isClicked ? "#f9c114" : "#000", // Change color on click
-//                   color: isClicked ? "#000" : "#fff", // Change text color on click
-//                   border: "none",
-//                   transition: "background-color 0.3s ease", // Smooth transition
-//                   padding: "10px 20px",
-//                   borderRadius: "5px",
-//                   fontWeight: "bold",
-//                 }}
-//                 className="w-[100%] text-md text-wrap py-5 lg:h-[50px] h-full"
+//               <Checkbox
+//                 checked={individualBox}
+//                 onChange={(e) => setIndividualBox(e.target.checked)}
+//                 className="py-2"
 //               >
 //                 Individual Box for 100 Cards
-//               </Button>
+//               </Checkbox>
 //             </Col>
 //           </Row>
 //         </div>
@@ -937,7 +1019,7 @@
 //                 onClick={() => setDesignPreviewVisible(false)}
 //               >
 //                 Close
-//               </Button>,
+//               </Button>
 //             ]}
 //             width={700}
 //           >
@@ -1000,6 +1082,9 @@
 // };
 
 // export default ProductDetails;
+
+
+//code2
 
 /* eslint-disable no-empty */
 /* eslint-disable react/prop-types */
@@ -1086,7 +1171,7 @@ const ProductDetails = ({
 
   // State
   const [totalPrice, setTotalPrice] = useState(price);
-  const [quantity, setQuantity] = useState(1000);
+  const [quantity, setQuantity] = useState(null);
   const [discountPercentage, setDiscountPercentage] = useState({
     uuid: "",
     percentage: 35,
@@ -1121,6 +1206,7 @@ const ProductDetails = ({
   const [pincode, setPincode] = useState("");
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [individualBox, setIndividualBox] = useState(false);
+  const [quantityDropdownVisible, setQuantityDropdownVisible] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -1188,7 +1274,7 @@ const ProductDetails = ({
         setDiscountPercentage({ uuid: "", percentage: 0 });
       }
       setMaimumQuantity(_.get(data, "max_quantity", ""));
-      setQuantity(1000);
+      setQuantity(null);
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: 1000,
@@ -1483,6 +1569,7 @@ const ProductDetails = ({
 
   // Calculate total price
   const calculateTotalPrice = () => {
+    if (!quantity) return "0.00";
     const unitPrice = DISCOUNT_HELPER(
       discountPercentage.percentage,
       Number(_.get(checkOutState, "product_price", 0))
@@ -1492,6 +1579,7 @@ const ProductDetails = ({
 
   // Calculate original price (before discount)
   const calculateOriginalPrice = () => {
+    if (!quantity) return "0.00";
     return Number(
       Number(_.get(checkOutState, "product_price", 0)) * quantity
     ).toFixed(2);
@@ -1499,6 +1587,7 @@ const ProductDetails = ({
 
   // Calculate savings
   const calculateSavings = () => {
+    if (!quantity) return "0.00";
     const original = calculateOriginalPrice();
     const discounted = calculateTotalPrice();
     return (original - discounted).toFixed(2);
@@ -1585,19 +1674,20 @@ const ProductDetails = ({
         percentage: selectedDiscount.savings
       });
     }
+    setQuantityDropdownVisible(false); // Close dropdown after selection
   };
 
   // Custom dropdown renderer for quantity selection
   const quantityDropdownRender = (menu) => (
-    <div>
-      <div className="p-2 border-b border-gray-200 bg-gray-50">
+    <div style={{ padding: '12px', minWidth: '350px' }}>
+      <div>
         <Text strong>Quantity Discounts</Text>
       </div>
       <div className="max-h-60 overflow-y-auto">
         {quantityDiscounts.map((item) => (
           <div
             key={item.quantity}
-            className={`flex justify-between items-center p-2 cursor-pointer hover:bg-blue-50 ${quantity === item.quantity ? 'bg-blue-100' : ''}`}
+            className={`flex justify-between items-center p-3 cursor-pointer hover:bg-blue-50 ${quantity === item.quantity ? 'bg-blue-100' : ''}`}
             onClick={() => handleQuantitySelect(item.quantity)}
           >
             <div className="flex-1">
@@ -1646,12 +1736,12 @@ const ProductDetails = ({
             className="bg-green-100 border border-green-300 rounded-lg p-3 shadow-lg text-right"
           >
             <Title level={4} className="!m-0 !text-green-600">
-              {formatPrice(
+              {quantity ? formatPrice(
                 DISCOUNT_HELPER(
                   discountPercentage.percentage,
                   Number(_.get(checkOutState, "product_price", 0))
                 )
-              )}
+              ) : "Select quantity"}
             </Title>
           </motion.div>
         </div>
@@ -1685,9 +1775,13 @@ const ProductDetails = ({
                   onChange={(value) => handleTextboxQuantityChange(value)}
                   options={quantityOptions}
                   className="w-full"
-                  placeholder="Select Quantity"
+                  placeholder="Select your quantity"
                   optionLabelProp="label"
                   dropdownRender={quantityDropdownRender}
+                  onMouseLeave={() => document.activeElement.blur()}
+                  open={quantityDropdownVisible}
+                  onDropdownVisibleChange={(visible) => setQuantityDropdownVisible(visible)}
+                  dropdownStyle={{ minWidth: '350px' }}
                 />
               </div>
             </Col>
@@ -1791,18 +1885,18 @@ const ProductDetails = ({
                 Total Price:
               </Text>
               <div className="text-right flex">
-                {calculateSavings() > 0 && (
+                {quantity && calculateSavings() > 0 && (
                   <Text delete className="text-md text-gray-500 mr-2">
                     {formatPrice(calculateOriginalPrice())}
                   </Text>
                 )}
                 <Title level={4} className="!m-0 !text-green-600">
-                  {formatPrice(calculateTotalPrice())}
+                  {quantity ? formatPrice(calculateTotalPrice()) : "Select quantity"}
                 </Title>
               </div>
             </div>
 
-            {calculateSavings() > 0 && (
+            {quantity && calculateSavings() > 0 && (
               <Alert
                 message={`You save ${formatPrice(calculateSavings())}`}
                 type="success"
@@ -1811,20 +1905,22 @@ const ProductDetails = ({
               />
             )}
 
-            <div className="text-sm text-gray-600">
-              <Text>
-                Inclusive of all taxes for <Text strong>{quantity}</Text> Qty (
-                <Text strong>
-                  {formatPrice(
-                    DISCOUNT_HELPER(
-                      discountPercentage.percentage,
-                      Number(_.get(checkOutState, "product_price", 0))
-                    )
-                  )}
-                </Text>{" "}
-                / piece)
-              </Text>
-            </div>
+            {quantity && (
+              <div className="text-sm text-gray-600">
+                <Text>
+                  Inclusive of all taxes for <Text strong>{quantity}</Text> Qty (
+                  <Text strong>
+                    {formatPrice(
+                      DISCOUNT_HELPER(
+                        discountPercentage.percentage,
+                        Number(_.get(checkOutState, "product_price", 0))
+                      )
+                    )}
+                  </Text>{" "}
+                  / piece)
+                </Text>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col w-full justify-between mt-3">
@@ -2037,20 +2133,23 @@ const ProductDetails = ({
               <Spin size="large" />
             </div>
           ) : (
-            handleQuantityDetails(stock, quantity) && (
-              <div className="text-gray-600">
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<ShoppingCartOutlined />}
-                  className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
-                  onClick={handlebuy}
-                  loading={loading}
-                >
-                  Add To Cart
-                </Button>
-              </div>
-            )
+            // Always show Add to Cart button regardless of stock status
+            // The button will be disabled if quantity is not selected or stock is insufficient
+            <div className="text-gray-600">
+              <Button
+                type="primary"
+                size="large"
+                icon={<ShoppingCartOutlined />}
+                className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                onClick={handlebuy}
+                loading={loading}
+                disabled={!quantity || !handleQuantityDetails(stock, quantity)}
+              >
+                {!quantity ? "Select quantity first" : 
+                 !handleQuantityDetails(stock, quantity) ? "Out of stock" : 
+                 "Add To Cart"}
+              </Button>
+            </div>
           )}
         </div>
 
@@ -2079,3 +2178,5 @@ const ProductDetails = ({
 };
 
 export default ProductDetails;
+
+

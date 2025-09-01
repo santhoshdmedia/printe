@@ -323,6 +323,7 @@ const OrderDetails = () => {
   };
 
   const renderInvoice = (orders, invoiceNo) => {
+    console.log(orders);
     const subtotal = _.sumBy(orders, order => 
       order.cart_items?.product_price * order.cart_items?.product_quantity || 0
     );
@@ -366,7 +367,7 @@ const OrderDetails = () => {
         <div className="w-full bg-gray-100 p-4 mb-5 rounded">
           <div className="flex justify-between items-center">
             <img
-              src={ImageHelper.FULL_LOGO}
+              src={ImageHelper.without_bg}
               alt="Company Logo"
               className="h-12"
               crossOrigin="anonymous"

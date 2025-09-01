@@ -196,6 +196,7 @@ const NavMenu = () => {
                   ? "animate-fade-in"
                   : "animate-fade-out hidden"
               } max-h-fit w-full z-50 top-[55px] left-0 bg-white rounded-xl overflow-hidden border border-gray-100 border-opacity-20`}
+              onMouseLeave={closeAllDropdowns}
             >
               <div className="grid grid-cols-5 px-8 py-8 gap-6">
                 {menu.map((result) => (
@@ -247,7 +248,10 @@ const NavMenu = () => {
 
                     {/* Subcategory Panel */}
                     {hoverStates.side_category_id === result._id && (
-                      <div className="absolute min-w-[300px] min-h-full dropdown-panel nav-shadow top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl overflow-hidden animate-slide-in">
+                      <div 
+                        className="absolute min-w-[300px] min-h-full dropdown-panel nav-shadow top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl overflow-hidden animate-slide-in"
+                        onMouseLeave={() => handleHoverState("side_category_id", null)}
+                      >
                         <div className="p-4">
                           <h3 className="font-bold text-gray-800 mb-3 text-lg">Subcategories</h3>
                           <div className="menu-divider my-2"></div>
@@ -279,7 +283,10 @@ const NavMenu = () => {
 
                               {/* Products Panel */}
                               {hoverStates.sideSubcatId === subcat._id && (
-                                <div className="absolute min-w-[300px] !bg-white min-h-full top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl p-4 animate-slide-in">
+                                <div 
+                                  className="absolute min-w-[300px] !bg-white min-h-full top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl p-4 animate-slide-in"
+                                  onMouseLeave={() => handleHoverState("sideSubcatId", null)}
+                                >
                                   <h4 className="font-semibold text-gray-800 mb-3">Products</h4>
                                   <div className=" my-2"></div>
                                   <div className="max-h-[350px] overflow-y-auto">
@@ -384,6 +391,7 @@ const NavMenu = () => {
                         ? "animate-fade-in"
                         : "animate-fade-out hidden"
                     } border border-gray-200 border-opacity-20 bg-transparent backdrop-filter backdrop-blur-md nav-shadow w-[1200px] max-h-[600px] overflow-auto left-[10px] z-50 p-8 top-[55px] rounded-xl`}
+                    onMouseLeave={closeAllDropdowns}
                   >
                     <div className="max-w-7xl mx-auto">
                       <h2 className="text-2xl font-bold text-gray-800 mb-6">{category.main_category_name}</h2>
@@ -482,6 +490,7 @@ const NavMenu = () => {
                         ? "animate-fade-in"
                         : "animate-fade-out hidden"
                     } border border-gray-200 border-opacity-20 bg-transparent backdrop-filter backdrop-blur-md nav-shadow min-w-[250px] z-50 py-3 top-[55px] left-0 rounded-xl overflow-hidden`}
+                    onMouseLeave={closeAllDropdowns}
                   >
                     {subCategories.map((subcat) => (
                       <div key={subcat._id} className="group">

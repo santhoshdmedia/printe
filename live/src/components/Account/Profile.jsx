@@ -222,7 +222,7 @@ const Profile = () => {
               <div className="flex gap-5">
   <button 
     type="button" 
-    className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-l-lg hover:bg-yellow-600 transition-colors"
+    className="px-4 py-2 bg-[#f9c114] text-black font-medium rounded-l-lg hover:bg-[#f9c114] transition-colors"
     onClick={() => setIsEditDisabled(!isEditDisabled)}
   >
     {isEditDisabled ? "Edit Profile" : "Cancel Editing"}

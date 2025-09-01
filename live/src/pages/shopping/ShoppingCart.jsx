@@ -427,9 +427,6 @@ const ShoppingCart = () => {
                   <div className="text-lg font-bold">
                     Subtotal ({cardData.length} items): <span className="text-orange-600">₹{Number(GET_TOTAL_AMOUNT()).toFixed(2)}</span>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    Includes ₹{Number(GET_CST_TOTAL("cgst") + GET_CST_TOTAL("sgst")).toFixed(2)} in taxes
-                  </div>
                 </div>
                 <Button 
                   type="primary" 
@@ -437,7 +434,7 @@ const ShoppingCart = () => {
                   onClick={() => handleProceedToBuy(null)}
                   className="bg-yellow-400 hover:bg-yellow-500 border-none text-black font-bold"
                 >
-                  Proceed to Buy
+                  Check Out All
                 </Button>
               </div>
             </div>
