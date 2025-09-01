@@ -1,4 +1,5 @@
 // import React, { useEffect, useState } from "react";
+
 // import Breadcrumbs from "../../components/cards/Breadcrumbs";
 // import { getMyShoppingCart, removeMyShoppingCart } from "../../helper/api_helper";
 // import _ from "lodash";
@@ -37,18 +38,18 @@
 //     fetchData();
 //   }, []);
 
-//  const handleDelete = async (id) => {
-//   try {
-//     setLoading(true);
-//     const result = await removeMyShoppingCart(id); // This now sends { ids: [id] }
-//     SUCCESS_NOTIFICATION(result);
-//     fetchData();
-//   } catch (err) {
-//     ERROR_NOTIFICATION(err);
-//   } finally {
-//     setLoading(false);
-//   }
-// };
+//   const handleDelete = async (id) => {
+//     try {
+//       setLoading(true);
+//       const result = await removeMyShoppingCart(id);
+//       SUCCESS_NOTIFICATION(result);
+//       fetchData();
+//     } catch (err) {
+//       ERROR_NOTIFICATION(err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 
 //   const handleProceedToBuy = (product) => {
 //     if (product) {
@@ -82,14 +83,16 @@
 //               <span className="text-gray-500">Qty: </span>
 //               <span className="font-medium">{record.product_quantity}</span>
 //             </div>
-//             <Button 
-//               type="link" 
-//               size="small" 
-//               onClick={() => handleViewDesign(record)}
-//               className="!p-0 !text-blue-600 !h-auto"
-//             >
-//               View Design
-//             </Button>
+//             {record.product_design_file && (
+//               <Button 
+//                 type="link" 
+//                 size="small" 
+//                 onClick={() => handleViewDesign(record)}
+//                 className="!p-0 !text-blue-600 !h-auto"
+//               >
+//                 Preview Design
+//               </Button>
+//             )}
 //           </div>
 //         </div>
 //       ),
@@ -230,6 +233,7 @@
 
 // export default ShoppingCart;
 
+
 import React, { useEffect, useState } from "react";
 import Breadcrumbs from "../../components/cards/Breadcrumbs";
 import { getMyShoppingCart, removeMyShoppingCart } from "../../helper/api_helper";
@@ -250,6 +254,11 @@ const ShoppingCart = () => {
 
   const dispatch = useDispatch();
   const navigation = useNavigate();
+
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -422,14 +431,14 @@ const ShoppingCart = () => {
                     Includes ₹{Number(GET_CST_TOTAL("cgst") + GET_CST_TOTAL("sgst")).toFixed(2)} in taxes
                   </div>
                 </div>
-                {/* <Button 
+                <Button 
                   type="primary" 
                   size="large"
                   onClick={() => handleProceedToBuy(null)}
                   className="bg-yellow-400 hover:bg-yellow-500 border-none text-black font-bold"
                 >
                   Proceed to Buy
-                </Button> */}
+                </Button>
               </div>
             </div>
           </div>

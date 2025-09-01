@@ -143,7 +143,7 @@ const NewCheckout = () => {
             </Link>
           </Tooltip>
           <div className="ml-4">
-            <Link to={`/product/${_.get(record, "product_seo_url", "")}`} target="_blank" className="text-blue-600 hover:text-orange-500">
+            <Link to={`/product/${_.get(record, "product_seo_url", "")}`} target="_blank" className="text-blue-600 hover:text-yellow-500">
               {record.product_name}
             </Link>
           </div>
@@ -513,7 +513,7 @@ const NewCheckout = () => {
                   {PAYMENT_TYPE.map((res, index) => (
                     <div 
                       key={index}
-                      className={`flex items-center p-3 border rounded-md cursor-pointer ${paymentType === res.name ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}
+                      className={`flex items-center p-3 border rounded-md cursor-pointer ${paymentType === res.name ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200'}`}
                       onClick={() => setPaymentType(res.name)}
                     >
                       <div className="mr-3">
@@ -634,7 +634,7 @@ const NewCheckout = () => {
                       I agree to the{' '}
                       <a 
                         onClick={() => setTermsClick(true)} 
-                        className="text-blue-600 hover:text-orange-500 cursor-pointer"
+                        className="text-blue-600 hover:text-yellow-500 cursor-pointer"
                       >
                         Terms and Conditions
                       </a>
@@ -646,7 +646,7 @@ const NewCheckout = () => {
                     block 
                     size="large" 
                     onClick={() => form.submit()}
-                    className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 border-none h-12 font-bold"
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 border-none h-12 font-bold"
                     disabled={!acceptTerms}
                   >
                     {paymentOption === "full" ? "Pay Full Amount" : "Pay 50% Advance"}
