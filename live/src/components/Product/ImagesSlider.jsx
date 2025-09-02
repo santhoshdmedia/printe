@@ -79,19 +79,22 @@ const ImagesSlider = ({ imageList, data }) => {
         <DividerCards name={data.name} />
       </div>
       
-      {/* Main Image with Zoom Effect */}
-      <div className="">
+      {/* Main Image Container */}
+      <div className="relative w-full h-0 pb-[100%] bg-white border rounded-xl overflow-hidden">
+        {/* Main Image with Zoom Effect */}
         <div
-          className="w-full bg-white border rounded-xl overflow-hidden relative "
+          className="absolute inset-0 w-full h-full"
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
           <img
             ref={imgRef}
             src={imageSelected}
-            className="w-full object-cover rounded-xl transition-transform duration-300 hover:scale-105 lg:h-[30vh] xl:h-[50vh] 2xl:h-[70vh] 3xl:h-[60vh] 4xl:h-[50vh]"
+            className="absolute inset-0 w-full h-full object-contain rounded-xl transition-transform duration-300 hover:scale-105"
             alt="product"
+           
           />
+          
           {/* Wishlist Button */}
           <Tooltip
             title={`${isFav ? "Remove From" : "Add To"} Wish List`}
@@ -115,7 +118,7 @@ const ImagesSlider = ({ imageList, data }) => {
       </div>
 
       {/* Thumbnail Navigation */}
-      <div className="flex gap-3 overflow-x-auto py-2 px-1">
+      <div className="flex gap-3 overflow-x-auto py-2 px-1 mt-4">
         {!_.isEmpty(imageList) &&
           imageList.map((data, index) => (
             <div
