@@ -6,6 +6,8 @@ import { MdHelpOutline } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { EnvHelper } from "../../helper/EnvHelper";
+import abc from "../../assets/logo/ABC.jpg";
+import logo from "../../assets/logo/without_bg.png"
 
 const Signup = () => {
   const dispatch = useDispatch();
@@ -194,11 +196,20 @@ const Signup = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Section - Signup Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 overflow-hidden">
-        <div className="w-full max-w-md">
-          <div className="mb-8 flex justify-between items-center">
-            <div>
-            </div>
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 overflow-hidden relative">
+        {/* Logo in top left corner with gold background */}
+        <div className="absolute top-6 left-6">
+          <div className=" p-3 bg-yellow-400 flex items-center justify-center rounded-md">
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="h-8 w-auto object-contain"
+            />
+          </div>
+        </div>
+
+        <div className="w-full max-w-md mt-16">
+          <div className="mb-8 flex justify-end">
             <button 
               onClick={() => navigate("/")} 
               className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200"
@@ -302,8 +313,16 @@ const Signup = () => {
                 Create Account
               </button>
               
-              <Divider className="my-6">Or </Divider>
+              <Divider className="my-6">Or</Divider>
               
+              <button
+                type="button"
+                className="w-full flex items-center justify-center gap-2 border border-gray-300 hover:border-gray-400 rounded-lg py-3 px-4 text-gray-700 hover:text-gray-900 transition duration-200 font-medium mb-6"
+              >
+                <FcGoogle className="text-lg" />
+                Sign in with Google
+              </button>
+
               <div className="text-center">
                 <p className="text-gray-600 text-sm">
                   Already have an account?{" "}
@@ -330,15 +349,25 @@ const Signup = () => {
       </div>
       
       {/* Right Section - Illustration (Fixed position, won't expand) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-yellow-50 to-yellow-300 items-center justify-center p-12 fixed right-0 top-0 h-full">
-        <div className="max-w-md">
+      <div 
+        className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 fixed right-0 top-0 h-full"
+        style={{
+          backgroundImage: `url(${abc})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        {/* Overlay for better readability */}
+        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+        
+        <div className="max-w-md relative z-10">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">Create Your Account</h1>
-            <p className="text-gray-600 text-lg">
+            <h1 className="text-4xl font-bold text-white mb-4">Create Your Account</h1>
+            <p className="text-white text-lg">
               Join us today and unlock a world of possibilities. Start your journey with our platform.
             </p>
           </div>
-          <div className="bg-yellow-400 p-6 rounded-xl shadow-lg">
+          <div className="bg-white bg-opacity-90 p-6 rounded-xl shadow-lg">
             <div className="flex items-center mb-4">
               <div className="bg-black p-2 rounded-full mr-3">
                 <svg className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">

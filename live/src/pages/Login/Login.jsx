@@ -6,6 +6,8 @@ import { MdHelpOutline } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { EnvHelper } from "../../helper/EnvHelper";
+import abc from "../../assets/logo/ABC.jpg";
+import logo from "../../assets/logo/without_bg.png"
 
 const Login = () => {
   const navigate = useNavigate();
@@ -56,16 +58,37 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Section - Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-yellow-50 to-yellow-300 items-center justify-center p-12">
-        <div className="max-w-md">
+      {/* Logo in top right corner with gold background */}
+      <div className="absolute top-6 right-6 z-50">
+        <div className="p-3 bg-yellow-400 flex items-center justify-center rounded-md">
+          <img 
+              src={logo} 
+              alt="Logo" 
+              className="h-8 w-auto object-contain"
+            />
+        </div>
+      </div>
+
+      {/* Left Section - Background Image */}
+      <div 
+        className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative"
+        style={{
+          backgroundImage: `url(${abc})`, // Changed from abc to logo
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        }}
+      >
+        {/* Overlay with opacity */}
+        <div className="absolute inset-0 bg-black opacity-70"></div>
+        
+        <div className="max-w-md relative z-10 text-white">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">Welcome Back</h1>
-            <p className="text-gray-600 text-lg">
+            <h1 className="text-4xl font-bold mb-4">Welcome Back</h1>
+            <p className="text-lg">
               Access your account and continue your journey with us. We're glad to have you back.
             </p>
           </div>
-          <div className="bg-yellow-400 p-6 rounded-xl shadow-lg">
+          <div className="bg-yellow-400 bg-opacity-90 p-6 rounded-xl shadow-lg">
             <div className="flex items-center mb-4">
               <div className="bg-black p-2 rounded-full mr-3">
                 <svg className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -142,16 +165,15 @@ const Login = () => {
                 Sign in
               </button>
               
-              {/* <Divider className="my-6">Or continue with</Divider> */}
               <Divider className="my-6">Or</Divider>
               
-              {/* <button 
+              <button
                 type="button"
                 className="w-full flex items-center justify-center gap-2 border border-gray-300 hover:border-gray-400 rounded-lg py-3 px-4 text-gray-700 hover:text-gray-900 transition duration-200 font-medium mb-6"
               >
                 <FcGoogle className="text-lg" />
                 Sign in with Google
-              </button> */}
+              </button>
               
               <div className="text-center">
                 <p className="text-gray-600 text-sm">

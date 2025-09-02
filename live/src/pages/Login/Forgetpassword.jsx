@@ -5,6 +5,8 @@ import { resetPassword, sendForgetPassowrdMail } from "../../helper/api_helper";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { MailOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import abc from "../../assets/logo/ABC.jpg";
+import logo from "../../assets/logo/without_bg.png"
 
 const Forgetpassword = () => {
   const [form] = Form.useForm();
@@ -24,17 +26,20 @@ const Forgetpassword = () => {
 
   return (
     <div className="w-full h-screen flex !font-primary">
-      {/* Left side - Illustration */}
-      {/* Right side - Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center px-6 bg-white">
-        <div className="w-full max-w-md">
-          {/* Logo placeholder - replace with your actual logo */}
-          <div className="flex justify-center mb-8">
-            <div className="h-20 w-20 rounded-full bg-yellow-400 flex items-center justify-center text-white font-bold text-xl">
-              PRINT <span className="text-black">E</span>
-            </div>
+      {/* Left side - Form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center px-6 bg-white relative">
+        {/* Logo in top left corner */}
+        <div className="absolute top-6 left-6">
+          <div className=" p-3 bg-yellow-400 flex items-center justify-center rounded-md">
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="h-8 w-auto object-contain"
+            />
           </div>
+        </div>
 
+        <div className="w-full max-w-md">
           <div className="text-center mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Forgot Password?</h1>
             <p className="text-gray-600 mt-3">No worries, we'll help you reset it</p>
@@ -82,11 +87,23 @@ const Forgetpassword = () => {
           </Form>
         </div>
       </div>
-      <div className="hidden md:flex w-1/2 bg-gradient-to-br from-yellow-50 to-yellow-300 p-12 flex-col justify-center items-center">
-        <div className="max-w-md">
+      
+      {/* Right side - Illustration with background image */}
+      <div 
+        className="hidden md:flex w-1/2 p-12 flex-col justify-center items-center relative"
+        style={{
+          backgroundImage: `url(${abc})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        {/* Overlay for better readability */}
+        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+        
+        <div className="max-w-md relative z-10">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-black mb-4">Reset Your Password</h1>
-            <p className="text-lg text-black">
+            <h1 className="text-4xl font-bold text-white mb-4">Reset Your Password</h1>
+            <p className="text-lg text-white">
               Enter your email address and we'll send you a link to reset your password.
             </p>
           </div>
