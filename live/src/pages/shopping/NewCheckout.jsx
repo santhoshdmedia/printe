@@ -1358,7 +1358,7 @@ const NewCheckout = () => {
                     type="primary" 
                     block 
                     size="large" 
-                    onClick={() => form.subit()}
+                    onClick={() => form.submit()}
                     className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 border-none h-12 font-bold"
                     disabled={!acceptTerms}
                   >

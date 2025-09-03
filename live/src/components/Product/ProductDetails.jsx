@@ -62,6 +62,7 @@ import {
 import { CiFaceSmile } from "react-icons/ci";
 import { CgSmileSad } from "react-icons/cg";
 import { toast } from "react-toastify";
+import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -115,10 +116,222 @@ const ProductDetails = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [designPreviewVisible, setDesignPreviewVisible] = useState(false);
   // geo locaton
-  const [pincode, setPincode] = useState("");
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [individualBox, setIndividualBox] = useState(false);
   const [quantityDropdownVisible, setQuantityDropdownVisible] = useState(false);
+  // Add these state variables at the top with your other states
+  const [pincode, setPincode] = useState("");
+  const [state, setState] = useState("");
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isPincodeValid, setIsPincodeValid] = useState(null);
+  const [isValidatingPincode, setIsValidatingPincode] = useState(false);
+  const [deliveryTime, setDeliveryTime] = useState(0);
+
+  // Add these functions
+  const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ""); // Remove non-digit characters
+    setPincode(value);
+    setIsPincodeValid(null); // Reset validation when user types
+
+    // Auto-validate when pincode is 6 digits
+    if (value.length === 6) {
+      validatePincode(value);
+    }
+  };
+
+  const validatePincode = async (pincodeToValidate) => {
+    setIsValidatingPincode(true);
+    try {
+      // Simple regex validation for Indian pincode (6 digits)
+      const indianPincodeRegex = /^[1-9][0-9]{5}$/;
+
+      if (!indianPincodeRegex.test(pincodeToValidate)) {
+        setIsPincodeValid(false);
+        toast.error("Invalid pincode format. Must be 6 digits.");
+        return;
+      }
+
+      // Simulate API validation (replace with actual API call)
+      const isValid = await simulatePincodeValidation(pincodeToValidate);
+
+      if (isValid) {
+        setIsPincodeValid(true);
+        // toast.success("✓ Pincode is valid and serviceable");
+      } else {
+        setIsPincodeValid(false);
+        toast.error("❌ Sorry, we don't deliver to this pincode yet");
+      }
+    } catch (error) {
+      console.error("Pincode validation error:", error);
+      setIsPincodeValid(false);
+      toast.error("Error validating pincode");
+    } finally {
+      setIsValidatingPincode(false);
+    }
+  };
+
+  const simulatePincodeValidation = async (pincode) => {
+    // This is a mock validation - replace with actual API call
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Simulate: pincodes starting with 1-6 are valid (for demo)
+        const isValid = /^[1-6]/.test(pincode);
+        resolve(isValid);
+      }, 1000);
+    });
+  };
+
+  const getPincodeByGPS = async () => {
+    setIsGettingLocation(true);
+    setIsPincodeValid(null);
+
+    try {
+      // First check if geolocation is available
+      if (!navigator.geolocation) {
+        toast.error("Geolocation is not supported by your browser");
+        setIsGettingLocation(false);
+        return;
+      }
+
+      // Check if we're on HTTPS (required for geolocation on mobile)
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+      if (
+        isMobile &&
+        window.location.protocol !== "https:" &&
+        window.location.hostname !== "localhost"
+      ) {
+        toast.error("Please use HTTPS for location access on mobile devices");
+        setIsGettingLocation(false);
+        return;
+      }
+
+      // Get current position with timeout
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          (error) => {
+            handleGeolocationError(error);
+            reject(error);
+          },
+          {
+            timeout: 15000,
+            enableHighAccuracy: true,
+            maximumAge: 300000, // 5 minutes cache
+          }
+        );
+      });
+
+      const { latitude, longitude } = position.coords;
+
+      // Use OpenStreetMap Nominatim API (free, no API key required)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            "Accept-Language": "en",
+            "User-Agent": "YourApp/1.0 (your@email.com)", // Required by Nominatim
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const detectedPincode = data.address?.postcode;
+      const detectedState = data.address?.state;
+
+      if (detectedPincode) {
+        setPincode(detectedPincode);
+        setState(detectedState);
+        calculateDeliveryTime(state)
+        console.log(state);
+
+        toast.success(`📍 Pincode detected: ${detectedPincode}`);
+        validatePincode(detectedPincode);
+      } else {
+        // Fallback: try to extract from display_name
+        const fallbackPincode = extractPincodeFromDisplayName(
+          data.display_name
+        );
+        if (fallbackPincode) {
+          setPincode(fallbackPincode);
+          toast.success(`📍 Pincode detected: ${fallbackPincode}`);
+          validatePincode(fallbackPincode);
+        } else {
+          toast.error("Could not detect pincode from your location");
+          setIsPincodeValid(false);
+        }
+      }
+    } catch (error) {
+      console.error("GPS location detection failed:", error);
+      setIsPincodeValid(false);
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
+  const extractPincodeFromDisplayName = (displayName) => {
+    const pincodeMatch = displayName.match(/\b\d{5,6}\b/);
+    return pincodeMatch ? pincodeMatch[0] : null;
+  };
+
+  const handleGeolocationError = (error) => {
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        toast.error(
+          "Location access denied. Please enable location permissions in your browser settings."
+        );
+        break;
+      case error.POSITION_UNAVAILABLE:
+        toast.error(
+          "Location information unavailable. Please check your GPS settings."
+        );
+        break;
+      case error.TIMEOUT:
+        toast.error("Location request timed out. Please try again.");
+        break;
+      default:
+        toast.error("Failed to get location. Please enter pincode manually.");
+    }
+  };
+
+  const checkLocationPermission = async () => {
+    if (navigator.permissions) {
+      try {
+        const permissionStatus = await navigator.permissions.query({
+          name: "geolocation",
+        });
+
+        if (permissionStatus.state === "denied") {
+          toast.error(
+            "Location access is blocked. Please enable it in browser settings."
+          );
+          return false;
+        }
+
+        if (permissionStatus.state === "prompt") {
+          toast.info("Please allow location access when prompted");
+        }
+
+        return permissionStatus.state !== "denied";
+      } catch (error) {
+        console.warn("Permission API not supported:", error);
+        return true;
+      }
+    }
+    return true;
+  };
+
+  const getPincodeByGPSWithPermissionCheck = async () => {
+    const hasPermission = await checkLocationPermission();
+    if (hasPermission) {
+      await getPincodeByGPS();
+    }
+  };
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -136,9 +349,13 @@ const ProductDetails = ({
   useEffect(() => {
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
       // Set initial quantity from the first discount option
-      const initialQuantity = Number(_.get(quantityDiscounts, "[0].quantity", 500));
-      const initialDiscount = Number(_.get(quantityDiscounts, "[0].discount", 0));
-      
+      const initialQuantity = Number(
+        _.get(quantityDiscounts, "[0].quantity", 500)
+      );
+      const initialDiscount = Number(
+        _.get(quantityDiscounts, "[0].discount", 0)
+      );
+
       setQuantity(initialQuantity);
       setDiscountPercentage({
         uuid: _.get(quantityDiscounts, "[0].uniqe_id", ""),
@@ -315,10 +532,127 @@ const ProductDetails = ({
     }
   };
 
+  const calculateDeliveryTime = (state) => {
+  switch (state) {
+    case "Andhra Pradesh":
+      setDeliveryTime(3);
+      break;
+    case "Arunachal Pradesh":
+      setDeliveryTime(5);
+      break;
+    case "Assam":
+      setDeliveryTime(4);
+      break;
+      case "Bihar":
+      setDeliveryTime(3);
+      break;
+    case "Chhattisgarh":
+      setDeliveryTime(3);
+      break;
+    case "Goa":
+      setDeliveryTime(3);
+      break;
+    case "Gujarat":
+      setDeliveryTime(3);
+      break;
+    case "Haryana":
+      setDeliveryTime(8);
+      break;
+    case "Himachal Pradesh":
+      setDeliveryTime(8);
+      break;
+    case "Jharkhand":
+      setDeliveryTime(8);
+      break;
+    case "Karnataka":
+      setDeliveryTime(3);
+      break;
+    case "Kerala":
+      setDeliveryTime(3);
+      break;
+      case "Madhya Pradesh":
+      setDeliveryTime(6);
+      break;
+    case "Maharashtra":
+      setDeliveryTime(6);
+      break;
+    case "Manipur":
+      setDeliveryTime(6);
+      break;
+    case "Meghalaya":
+      setDeliveryTime(6);
+      break;
+    case "Mizoram":
+      setDeliveryTime(5);
+      break;
+    case "Nagaland":
+      setDeliveryTime(5);
+      break;
+    case "Odisha":
+      setDeliveryTime(6);
+      break;
+    case "Punjab":
+      setDeliveryTime(6);
+      break;
+    case "Rajasthan":
+      setDeliveryTime(6);
+      break;
+    case "Sikkim":
+      setDeliveryTime(6);
+      break;
+    case "Tamil Nadu":
+      setDeliveryTime(2);
+      break;
+    case "Telangana":
+      setDeliveryTime(3);
+      break;
+       case "Tripura":
+      setDeliveryTime(3);
+      break;
+    case "Uttar Pradesh":
+      setDeliveryTime(8);
+      break;
+    case "Uttarakhand":
+      setDeliveryTime(8);
+      break;
+    case "West Bengal":
+      setDeliveryTime(8);
+      break;
+    // Union Territories
+    case "Andaman and Nicobar Islands":
+      setDeliveryTime(6);
+      break;
+    case "Chandigarh":
+      setDeliveryTime(8);
+      break;
+    case "Dadra and Nagar Haveli and Daman and Diu":
+      setDeliveryTime(3);
+      break;
+    case "Delhi":
+      setDeliveryTime(8);
+      break;
+    case "Jammu and Kashmir":
+      setDeliveryTime(8);
+      break;
+    case "Ladakh":
+      setDeliveryTime(8);
+      break;
+      case "Lakshadweep":
+      setDeliveryTime(7);
+      break;
+    case "Puducherry":
+      setDeliveryTime(3);
+      break;
+    default:
+      setDeliveryTime(3); // Default delivery time if state not matched
+      break;
+  }
+};
+
   const calculateDeliveryDate = (days) => {
     const today = new Date();
     const deliveryDate = new Date(today);
-    deliveryDate.setDate(today.getDate() + (Number(days) + 1));
+    deliveryDate.setDate(today.getDate() + (Number(days) + Number(processing_item)));
 
     return deliveryDate.toLocaleDateString("en-US", {
       weekday: "long",
@@ -428,49 +762,7 @@ const ProductDetails = ({
     return (original - discounted).toFixed(2);
   };
 
-  //  handle geolocation
-  const getLocationFromBrowser = () => {
-    setIsGettingLocation(true);
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
-      setIsGettingLocation(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-          );
-          const data = await response.json();
-
-          const foundPincode = data.address?.postcode;
-          if (foundPincode) {
-            setPincode(foundPincode);
-            toast.success(`Pincode detected: ${foundPincode}`);
-          } else {
-            toast.error("Could not detect pincode from your location");
-          }
-        } catch (error) {
-          console.error("Error getting location:", error);
-          toast.error("Failed to get location information");
-        } finally {
-          setIsGettingLocation(false);
-        }
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        toast.error("Please allow location access to detect your pincode");
-        setIsGettingLocation(false);
-      },
-      {
-        timeout: 10000,
-        enableHighAccuracy: true,
-      }
-    );
-  };
+  
 
   // Generate quantity options based on backend data
   const generateQuantityOptions = () => {
@@ -498,39 +790,39 @@ const ProductDetails = ({
     if (quantityType === "textbox") {
       // For textbox type, find the appropriate discount
       const selectedDiscount = quantityDiscounts
-        .filter(item => Number(item.quantity) <= selectedQuantity)
+        .filter((item) => Number(item.quantity) <= selectedQuantity)
         .sort((a, b) => Number(b.quantity) - Number(a.quantity))[0];
-      
+
       setQuantity(selectedQuantity);
-      setCheckOutState(prev => ({
+      setCheckOutState((prev) => ({
         ...prev,
-        product_quantity: selectedQuantity
+        product_quantity: selectedQuantity,
       }));
-      
+
       if (selectedDiscount) {
         setDiscountPercentage({
           uuid: selectedDiscount.uniqe_id,
-          percentage: Number(selectedDiscount.discount)
+          percentage: Number(selectedDiscount.discount),
         });
       } else {
         setDiscountPercentage({ uuid: "", percentage: 0 });
       }
     } else {
       // For dropdown type, find the exact match
-      const selectedDiscount = quantityDiscounts.find(item => 
-        Number(item.quantity) === selectedQuantity
+      const selectedDiscount = quantityDiscounts.find(
+        (item) => Number(item.quantity) === selectedQuantity
       );
-      
+
       setQuantity(selectedQuantity);
-      setCheckOutState(prev => ({
+      setCheckOutState((prev) => ({
         ...prev,
-        product_quantity: selectedQuantity
+        product_quantity: selectedQuantity,
       }));
-      
+
       if (selectedDiscount) {
         setDiscountPercentage({
           uuid: selectedDiscount.uniqe_id,
-          percentage: Number(selectedDiscount.discount)
+          percentage: Number(selectedDiscount.discount),
         });
       }
     }
@@ -539,39 +831,57 @@ const ProductDetails = ({
 
   // Custom dropdown renderer for quantity selection
   const quantityDropdownRender = (menu) => (
-                  
-    <div style={{ padding: '12px', minWidth: '350px' } } onMouseLeave={() => setQuantityDropdownVisible(false)}  >
+    <div
+      style={{ padding: "12px", minWidth: "350px" }}
+      onMouseLeave={() => setQuantityDropdownVisible(false)}
+    >
       <div>
         <Text strong>Quantity Options</Text>
       </div>
       <div className="max-h-60 overflow-y-auto">
         {quantityOptions.map((item) => {
           const unitPrice = DISCOUNT_HELPER(
-            quantityType === "dropdown" ? item.discount : discountPercentage.percentage,
+            quantityType === "dropdown"
+              ? item.discount
+              : discountPercentage.percentage,
             Number(_.get(checkOutState, "product_price", 0))
           );
           const totalPrice = unitPrice * item.value;
-          
+
           return (
             <div
               key={item.value}
-              className={`flex justify-between items-center p-3 cursor-pointer hover:bg-blue-50 ${quantity === item.value ? 'bg-blue-100' : ''}`}
+              className={`flex justify-between items-center p-3 cursor-pointer hover:bg-blue-50 ${
+                quantity === item.value ? "bg-blue-100" : ""
+              }`}
               onClick={() => handleQuantitySelect(item.value)}
             >
               <div className="flex-1">
-                <Text className={quantity === item.value ? 'font-semibold text-blue-600' : ''}>
+                <Text
+                  className={
+                    quantity === item.value ? "font-semibold text-blue-600" : ""
+                  }
+                >
                   {item.value}
                 </Text>
                 {quantityType === "dropdown" && (
                   <div>
                     <Text type="success" className="text-sm">
-                      {item.discount==0?<></>:<>{item.discount}% discount</>}
+                      {item.discount == 0 ? (
+                        <></>
+                      ) : (
+                        <>{item.discount}% discount</>
+                      )}
                     </Text>
                   </div>
                 )}
               </div>
               <div className="text-right">
-                <Text className={quantity === item.value ? 'font-semibold text-blue-600' : ''}>
+                <Text
+                  className={
+                    quantity === item.value ? "font-semibold text-blue-600" : ""
+                  }
+                >
                   {formatPrice(totalPrice)}
                 </Text>
                 <div>
@@ -612,24 +922,30 @@ const ProductDetails = ({
             className="bg-green-100 border border-green-300 rounded-lg p-3 shadow-lg text-right"
           >
             <Title level={4} className="!m-0 !text-green-600">
-              {quantity ? formatPrice(
-                DISCOUNT_HELPER(
-                  discountPercentage.percentage,
-                  Number(_.get(checkOutState, "product_price", 0))
-                )
-              ) : "Select quantity"}
+              {quantity
+                ? formatPrice(
+                    DISCOUNT_HELPER(
+                      discountPercentage.percentage,
+                      Number(_.get(checkOutState, "product_price", 0))
+                    )
+                  )
+                : "Select quantity"}
             </Title>
           </motion.div>
         </div>
 
         {/* Product Description */}
         <div>
-          <h1 className="text-xl font-semibold">{_.get(data, "product_description_tittle", "")}</h1>
+          <h1 className="text-xl font-semibold">
+            {_.get(data, "product_description_tittle", "")}
+          </h1>
           <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5">
             <li>{_.get(data, "Point_one", "")}</li>
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
-            <li>{_.get(data, "Point_four", "")} <a href="">read more</a></li>
+            <li>
+              {_.get(data, "Point_four", "")} <a href="">read more</a>
+            </li>
           </ul>
         </div>
 
@@ -655,8 +971,10 @@ const ProductDetails = ({
                   optionLabelProp="label"
                   dropdownRender={quantityDropdownRender}
                   open={quantityDropdownVisible}
-                  onDropdownVisibleChange={(visible) => setQuantityDropdownVisible(visible)}
-                  dropdownStyle={{ minWidth: '350px' }}
+                  onDropdownVisibleChange={(visible) =>
+                    setQuantityDropdownVisible(visible)
+                  }
+                  dropdownStyle={{ minWidth: "350px" }}
                 />
                 {quantityType === "textbox" && quantity && (
                   <Text type="secondary" className="text-xs mt-1">
@@ -739,7 +1057,7 @@ const ProductDetails = ({
                   ))}
                 </>
               )}
-            
+
             {/* Individual Box Checkbox */}
             <Col
               xs={24}
@@ -771,14 +1089,18 @@ const ProductDetails = ({
                   </Text>
                 )}
                 <Title level={4} className="!m-0 !text-green-600">
-                  {quantity ? formatPrice(calculateTotalPrice()) : "Select quantity"}
+                  {quantity
+                    ? formatPrice(calculateTotalPrice())
+                    : "Select quantity"}
                 </Title>
               </div>
             </div>
 
             {quantity && calculateSavings() > 0 && (
               <Alert
-                message={`You save ${formatPrice(calculateSavings())} (${discountPercentage.percentage}% discount)`}
+                message={`You save ${formatPrice(calculateSavings())} (${
+                  discountPercentage.percentage
+                }% discount)`}
                 type="success"
                 showIcon
                 className="!py-2"
@@ -788,7 +1110,8 @@ const ProductDetails = ({
             {quantity && (
               <div className="text-sm text-gray-600">
                 <Text>
-                  Inclusive of all taxes for <Text strong>{quantity}</Text> Qty (
+                  Inclusive of all taxes for <Text strong>{quantity}</Text> Qty
+                  (
                   <Text strong>
                     {formatPrice(
                       DISCOUNT_HELPER(
@@ -796,7 +1119,7 @@ const ProductDetails = ({
                         Number(_.get(checkOutState, "product_price", 0))
                       )
                     )}
-                  </Text>{" "}
+                  </Text>
                   / piece)
                 </Text>
               </div>
@@ -806,7 +1129,7 @@ const ProductDetails = ({
           <div className="flex flex-col w-full justify-between mt-3">
             <div className="flex items-center gap-2 ">
               <Text strong className="text-gray-700">
-                Processing Time:
+                Production Time:
               </Text>
               <Tooltip title="Learn more about processing time">
                 <Button
@@ -817,7 +1140,7 @@ const ProductDetails = ({
                 />
               </Tooltip>
               <span className="font-bold">
-                {processing_item} days + Production 1 day{" "}
+                {processing_item} days 
               </span>
             </div>
 
@@ -859,7 +1182,7 @@ const ProductDetails = ({
                 </ul>
                 <Paragraph className="mt-4">
                   In case you still have any questions, let's connect? Contact
-                  us on WhatsApp, call us at +91-9876543210, or email
+                  us on WhatsApp, call us at +91-7373610000, or email
                   business@printe.in.
                 </Paragraph>
               </div>
@@ -882,6 +1205,7 @@ const ProductDetails = ({
             <Text strong className="block mb-2 text-gray-700">
               Estimated Delivery
             </Text>
+
             <motion.div
               whileHover={{ scale: 1.01 }}
               className="mb-2 flex rounded-lg relative overflow-hidden"
@@ -889,23 +1213,59 @@ const ProductDetails = ({
               <Input
                 className="h-10 rounded-lg w-full"
                 value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
+                onChange={handlePincodeChange}
                 placeholder="Enter Pincode"
+                maxLength={6}
+                suffix={
+                  <div className="flex items-center">
+                    {isValidatingPincode && (
+                      <Spin size="small" className="mr-2" />
+                    )}
+                    {isPincodeValid === true && (
+                      <CheckCircleOutlined className="text-green-500 mr-2" />
+                    )}
+                    {isPincodeValid === false && (
+                      <CloseCircleOutlined className="text-red-500 mr-2" />
+                    )}
+                  </div>
+                }
               />
               <button
-                onClick={getLocationFromBrowser}
-                className="absolute right-0 top-0 text-white p-3 bg-black h-full"
+                onClick={getPincodeByGPSWithPermissionCheck}
+                disabled={isGettingLocation}
+                className="absolute right-0 top-0 text-black font-semibold p-3 bg-yellow-300 hover:bg-yellow-500 h-full disabled:bg-gray-400 flex items-center justify-center min-w-[100px]"
               >
-                Get Pincode
+                {isGettingLocation ? (
+                  <Spin size="small" className="text-white" />
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <GPS_ICON className="mr-1" />
+                    get pincode
+                  </span>
+                )}
               </button>
             </motion.div>
+
+            {pincode && isPincodeValid !== null && (
+              <Alert
+                message={
+                  isPincodeValid
+                    ? "We deliver to this pincode"
+                    : "Sorry, we don't deliver to this pincode yet"
+                }
+                type={isPincodeValid ? "success" : "error"}
+                showIcon
+                className="mb-2"
+              />
+            )}
+
             <motion.div
-              className="text-gray-700 flex gap-2 items-center"
+              className={`text-gray-700 flex gap-2 items-center`}
               whileHover={{ x: 5 }}
             >
               <IconHelper.DELIVERY_TRUCK_ICON className="text-blue-500" />
               Standard Delivery by
-              <Text strong>{calculateDeliveryDate(processing_item)}</Text>
+              <Text strong>{calculateDeliveryDate(deliveryTime)}</Text>
               <Divider type="vertical" />
               <Text type="success" strong>
                 ₹ 75
@@ -992,7 +1352,7 @@ const ProductDetails = ({
                 onClick={() => setDesignPreviewVisible(false)}
               >
                 Close
-              </Button>
+              </Button>,
             ]}
             width={700}
           >
@@ -1013,7 +1373,6 @@ const ProductDetails = ({
               <Spin size="large" />
             </div>
           ) : (
-            
             <div className="text-gray-600">
               <Button
                 type="primary"
@@ -1024,9 +1383,11 @@ const ProductDetails = ({
                 loading={loading}
                 disabled={!quantity || !handleQuantityDetails(stock, quantity)}
               >
-                {!quantity ? "Select quantity first" : 
-                 !handleQuantityDetails(stock, quantity) ? "Out of stock" : 
-                 "Add To Cart"}
+                {!quantity
+                  ? "Select quantity first"
+                  : !handleQuantityDetails(stock, quantity)
+                  ? "Out of stock"
+                  : "Add To Cart"}
               </Button>
             </div>
           )}
@@ -1057,3 +1418,10 @@ const ProductDetails = ({
 };
 
 export default ProductDetails;
+
+// In your IconHelper.js or similar file
+export const GPS_ICON = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
+  </svg>
+);

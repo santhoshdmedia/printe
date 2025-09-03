@@ -68,7 +68,6 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-  
   // show search bar
   useEffect(() => {
     const handleScroll = () => {
@@ -98,26 +97,17 @@ const Navbar = () => {
     });
   }, [searchProduct, dispatch]);
 
-  // Function to fetch cart data
-  const fetchCartData = async () => {
-    try {
-      const result = await getMyShoppingCart();
-      let data = _.get(result, "data.data", []);
-      dispatch(ADD_TO_CART(data.length));
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
   useEffect(() => {
-    // Initial fetch
-    fetchCartData();
-    
-    // Set up polling for cart updates every 5 seconds
-    const cartPollingInterval = setInterval(fetchCartData, 100);
-    
-    // Clean up interval on component unmount
-    return () => clearInterval(cartPollingInterval);
+    const fetchData = async () => {
+      try {
+        const result = await getMyShoppingCart();
+        let data = _.get(result, "data.data", []);
+        dispatch(ADD_TO_CART(data.length));
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchData();
   }, [dispatch]);
 
   // Menu handlers

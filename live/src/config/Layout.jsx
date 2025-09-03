@@ -12,7 +12,6 @@ import { ToastContainer } from "react-toastify";
 const Layout = () => {
   const [showIcon,setShowIcon]=useState(false)
   const path = useHref();
-  const navigate=useNavigate()
   // bg-gradient-to-b from-slate-50 via-pink-100 to-sky-300
   useEffect(() => {
     window.scrollTo({
@@ -63,7 +62,7 @@ const Layout = () => {
       <NavMenu />
       </div>
 
-      <div className="lg:pt-0 pt-10 overflow-x-hidden ">
+      <div className="lg:pt-0 pt-10 overflow-x-hidden max-w-[2000px] mx-auto ">
         <Outlet />
       </div>
 
