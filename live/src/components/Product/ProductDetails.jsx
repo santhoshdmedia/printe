@@ -539,7 +539,8 @@ const ProductDetails = ({
 
   // Custom dropdown renderer for quantity selection
   const quantityDropdownRender = (menu) => (
-    <div style={{ padding: '12px', minWidth: '350px' }}>
+                  
+    <div style={{ padding: '12px', minWidth: '350px' } } onMouseLeave={() => setQuantityDropdownVisible(false)}  >
       <div>
         <Text strong>Quantity Options</Text>
       </div>
@@ -623,13 +624,13 @@ const ProductDetails = ({
 
         {/* Product Description */}
         <div>
-          <Paragraph className="text-gray-700 text-base leading-relaxed !mb-0">
-            <div
-              dangerouslySetInnerHTML={{
-                __html: _.get(data, "short_description", ""),
-              }}
-            />
-          </Paragraph>
+          <h1 className="text-xl font-semibold">{_.get(data, "product_description_tittle", "")}</h1>
+          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5">
+            <li>{_.get(data, "Point_one", "")}</li>
+            <li>{_.get(data, "Point_two", "")}</li>
+            <li>{_.get(data, "Point_three", "")}</li>
+            <li>{_.get(data, "Point_four", "")} <a href="">read more</a></li>
+          </ul>
         </div>
 
         {/* Quantity and Variants Section */}
@@ -816,7 +817,7 @@ const ProductDetails = ({
                 />
               </Tooltip>
               <span className="font-bold">
-                {processing_item} days + Production 1day{" "}
+                {processing_item} days + Production 1 day{" "}
               </span>
             </div>
 
@@ -1012,8 +1013,7 @@ const ProductDetails = ({
               <Spin size="large" />
             </div>
           ) : (
-            // Always show Add to Cart button regardless of stock status
-            // The button will be disabled if quantity is not selected or stock is insufficient
+            
             <div className="text-gray-600">
               <Button
                 type="primary"

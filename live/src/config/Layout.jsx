@@ -2,7 +2,7 @@
 import React,{useEffect, useState} from "react";
 import Footer from "../components/Footer";
 import Navbar from "../components/Nav/Navbar";
-import { Outlet } from "react-router-dom";
+import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import { useHref } from "react-router-dom";
 import { ImageHelper } from "../helper/ImageHelper";
 import QuickAccess from "./QuickAccess";
@@ -12,7 +12,14 @@ import { ToastContainer } from "react-toastify";
 const Layout = () => {
   const [showIcon,setShowIcon]=useState(false)
   const path = useHref();
+  const navigate=useNavigate()
   // bg-gradient-to-b from-slate-50 via-pink-100 to-sky-300
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }, [location.pathname]); 
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -63,7 +70,7 @@ const Layout = () => {
       <Footer />
       <div className={`${showIcon?"":"hidden"} fixed bottom-8 right-8 cursor-pointer z-50 bg-green-500 rounded-full lg:p-4 p-3`} >
         <a
-          href="https://wa.me/919789583097?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
+          href="https://wa.me/917373610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
           target="_blank"
           rel="noopener noreferrer "
         >
