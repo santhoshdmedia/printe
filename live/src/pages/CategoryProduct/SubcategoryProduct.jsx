@@ -46,7 +46,7 @@ const SubcategoryProduct = () => {
           <div className="rounded-xl overflow-hidden shadow-lg bg-gray-200 flex items-center justify-center min-h-[200px]">
             <img 
               src={_.get(productDatas, "[0].sub_category_details.sub_category_banner_image", "")} 
-              className="w-full h-auto max-h-[400px] object-contain" 
+              className="w-full h-auto max-h-[280px] object-[90%]" 
               alt={_.get(params, "subcategory", "")}
               onError={(e) => {
                 e.target.style.display = 'none';

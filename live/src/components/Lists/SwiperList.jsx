@@ -500,13 +500,11 @@ const SwiperList = ({
     <div>
       {product_type === "2" && (
         <div className=" my-10">
-          {" "}
           <Bannear />
         </div>
       )}
       {product_type === "3" && (
         <div className="my-20">
-          {" "}
           <ThreeStep />
         </div>
       )}
@@ -664,7 +662,7 @@ export const Bannear = () => {
       <div className="absolute h-full w-full bg-[#1c1c1c94] z-1 top-0"></div>
       <div className="max-w-[90%] mx-auto">
         <motion.div
-          className="flex flex-col md:flex-row h-[70vh] items-center justify-between gap-12 p-6 rounded-xl  relative"
+          className="flex flex-col md:flex-row lg:h-[55vh] items-center justify-between gap-12 p-6 rounded-xl  relative"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
