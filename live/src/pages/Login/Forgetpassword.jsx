@@ -2,8 +2,8 @@ import { Button, Form, Input } from "antd";
 import { emailValidation } from "../../helper/form_validation";
 import { ERROR_NOTIFICATION, SUCCESS_NOTIFICATION } from "../../helper/notification_helper";
 import { resetPassword, sendForgetPassowrdMail } from "../../helper/api_helper";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { MailOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import abc from "../../assets/logo/ABC.jpg";
 import logo from "../../assets/logo/without_bg.png"
@@ -11,6 +11,21 @@ import logo from "../../assets/logo/without_bg.png"
 const Forgetpassword = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [isExiting, setIsExiting] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // Trigger enter animation after component mounts
+    setIsMounted(true);
+  }, []);
+
+  const handleNavigation = (path) => {
+    setIsExiting(true);
+    setTimeout(() => {
+      navigate(path);
+    }, 500);
+  };
 
   const handleFinish = async (values) => {
     try {
@@ -25,9 +40,9 @@ const Forgetpassword = () => {
   };
 
   return (
-    <div className="w-full h-screen flex !font-primary">
+    <div className={`w-full h-screen flex !font-primary transition-all duration-500 ${isMounted ? (isExiting ? "exit-animation" : "enter-animation") : "opacity-0"}`}>
       {/* Left side - Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center px-6 bg-white relative">
+      <div className={`w-full md:w-1/2 flex items-center justify-center px-6 bg-white relative transition-all duration-500 ${isMounted ? (isExiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100") : "translate-x-full opacity-0"}`}>
         {/* Logo in top left corner */}
         <div className="absolute top-6 left-6">
           <div className=" p-3 bg-yellow-400 flex items-center justify-center rounded-md">
@@ -79,6 +94,10 @@ const Forgetpassword = () => {
               <Link 
                 to="/login" 
                 className="text-black hover:text-yellow-500 font-medium inline-flex items-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavigation("/login");
+                }}
               >
                 <ArrowLeftOutlined className="mr-2" />
                 Back to Login
@@ -90,7 +109,7 @@ const Forgetpassword = () => {
       
       {/* Right side - Illustration with background image */}
       <div 
-        className="hidden md:flex w-1/2 p-12 flex-col justify-center items-center relative"
+        className={`hidden md:flex w-1/2 p-12 flex-col justify-center items-center relative transition-all duration-500 ${isMounted ? (isExiting ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100") : "-translate-x-full opacity-0"}`}
         style={{
           backgroundImage: `url(${abc})`,
           backgroundSize: 'cover',
