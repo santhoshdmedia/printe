@@ -7,21 +7,33 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { EnvHelper } from "../../helper/EnvHelper";
 import abc from "../../assets/logo/ABC.jpg";
-import logo from "../../assets/logo/without_bg.png"
+import logo from "../../assets/logo/without_bg.png";
 
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [errorMessage, setErrorMessage] = useState("");
   const { isLogingIn, isAuth } = useSelector((state) => state.authSlice);
+  const [isExiting, setIsExiting] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // Trigger enter animation after component mounts
+    setIsMounted(true);
+    
     if (isAuth) {
       let local_item = localStorage.getItem("redirect_url");
       if (local_item) {
-        navigate(`/product/${local_item}`);
+        // Add exit animation before navigation
+        setIsExiting(true);
+        setTimeout(() => {
+          navigate(`/product/${local_item}`);
+        }, 500);
       } else {
-        navigate("/");
+        setIsExiting(true);
+        setTimeout(() => {
+          navigate("/");
+        }, 500);
       }
     }
   }, [isAuth]);
@@ -30,6 +42,13 @@ const Login = () => {
     email: "",
     password: "",
   });
+
+  const handleNavigation = (path) => {
+    setIsExiting(true);
+    setTimeout(() => {
+      navigate(path);
+    }, 500);
+  };
 
   const handleOnChange = (e) => {
     const { name, value } = e.target;
@@ -57,7 +76,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className={`w-full h-screen flex !font-primary transition-all duration-500 ${isMounted ? (isExiting ? "exit-animation" : "enter-animation") : "opacity-0"}`}>
       {/* Logo in top right corner with gold background */}
       <div className="absolute top-6 right-6 z-50">
         <div className="p-3 bg-yellow-400 flex items-center justify-center rounded-md">
@@ -71,9 +90,9 @@ const Login = () => {
 
       {/* Left Section - Background Image */}
       <div 
-        className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative"
+        className={`hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative transition-all duration-500 ${isMounted ? (isExiting ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100") : "-translate-x-full opacity-0"}`}
         style={{
-          backgroundImage: `url(${abc})`, // Changed from abc to logo
+          backgroundImage: `url(${abc})`,
           backgroundSize: "cover",
           backgroundPosition: "center"
         }}
@@ -105,11 +124,11 @@ const Login = () => {
       </div>
 
       {/* Right Section - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div className={`w-full lg:w-1/2 flex items-center justify-center p-8 transition-all duration-500 ${isMounted ? (isExiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100") : "translate-x-full opacity-0"}`}>
         <div className="w-full max-w-md">
           <div className="mb-8">
             <button 
-              onClick={() => navigate("/sign-up")}
+              onClick={() => handleNavigation("/sign-up")}
               className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200 mb-6"
             >
               <FaArrowLeft className="mr-2" /> Register Here
@@ -137,7 +156,14 @@ const Login = () => {
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-gray-700 font-medium">Password</label>
-                  <Link to="/forget-password" className="text-blue-600 hover:text-blue-800 text-sm">
+                  <Link 
+                    to="/forget-password" 
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavigation("/forget-password");
+                    }}
+                  >
                     Forgot password?
                   </Link>
                 </div>
@@ -181,6 +207,10 @@ const Login = () => {
                   <Link 
                     to="/sign-up" 
                     className="text-blue-600 hover:text-blue-800 font-medium"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavigation("/sign-up");
+                    }}
                   >
                     Register here
                   </Link>
@@ -193,6 +223,10 @@ const Login = () => {
             <Link 
               to="/help" 
               className="inline-flex items-center text-gray-500 hover:text-gray-700 text-sm"
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavigation("/help");
+              }}
             >
               <MdHelpOutline className="mr-1" /> Need help?
             </Link>

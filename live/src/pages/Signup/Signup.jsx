@@ -13,14 +13,26 @@ const Signup = () => {
   const dispatch = useDispatch();
   const { isLogingIn, isAuth } = useSelector((state) => state.authSlice);
   const navigate = useNavigate();
+  const [isExiting, setIsExiting] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
   useEffect(() => {
+    // Trigger enter animation after component mounts
+    setIsMounted(true);
+    
     let local_item = localStorage.getItem("redirect_url");
     if (isAuth) {
       if (local_item) {
-        navigate(`/product/${local_item}`);
+        // Add exit animation before navigation
+        setIsExiting(true);
+        setTimeout(() => {
+          navigate(`/product/${local_item}`);
+        }, 500);
       } else {
-        navigate("/");
+        setIsExiting(true);
+        setTimeout(() => {
+          navigate("/");
+        }, 500);
       }
     }
   }, [isAuth]);
@@ -44,6 +56,13 @@ const Signup = () => {
     message: "",
     color: "transparent"
   });
+
+  const handleNavigation = (path) => {
+    setIsExiting(true);
+    setTimeout(() => {
+      navigate(path);
+    }, 500);
+  };
 
   const handleOnChange = (e) => {
     const { name, value } = e.target;
@@ -194,9 +213,9 @@ const Signup = () => {
   );
 
   return (
-    <div className="min-h-screen flex">
+    <div className={`w-full h-screen flex !font-primary transition-all duration-500 ${isMounted ? (isExiting ? "exit-animation" : "enter-animation") : "opacity-0"}`}>
       {/* Left Section - Signup Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 overflow-hidden relative">
+      <div className={`w-full lg:w-1/2 flex items-center justify-center p-8 overflow-hidden relative transition-all duration-500 ${isMounted ? (isExiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100") : "translate-x-full opacity-0"}`}>
         {/* Logo in top left corner with gold background */}
         <div className="absolute top-6 left-6">
           <div className=" p-3 bg-yellow-400 flex items-center justify-center rounded-md">
@@ -211,7 +230,7 @@ const Signup = () => {
         <div className="w-full max-w-md mt-16">
           <div className="mb-8 flex justify-end">
             <button 
-              onClick={() => navigate("/")} 
+              onClick={() => handleNavigation("/")} 
               className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200"
             >
               Home <FaArrowRight className="ml-1" /> 
@@ -329,6 +348,10 @@ const Signup = () => {
                   <Link 
                     to="/login" 
                     className="text-blue-600 hover:text-blue-800 font-medium"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavigation("/login");
+                    }}
                   >
                     Login here
                   </Link>
@@ -341,6 +364,10 @@ const Signup = () => {
             <Link 
               to="/help" 
               className="inline-flex items-center text-gray-500 hover:text-gray-700 text-sm"
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavigation("/help");
+              }}
             >
               <MdHelpOutline className="mr-1" /> Need help?
             </Link>
@@ -350,7 +377,7 @@ const Signup = () => {
       
       {/* Right Section - Illustration (Fixed position, won't expand) */}
       <div 
-        className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 fixed right-0 top-0 h-full"
+        className={`hidden lg:flex lg:w-1/2 items-center justify-center p-12 fixed right-0 top-0 h-full transition-all duration-500 ${isMounted ? (isExiting ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100") : "-translate-x-full opacity-0"}`}
         style={{
           backgroundImage: `url(${abc})`,
           backgroundSize: 'cover',
