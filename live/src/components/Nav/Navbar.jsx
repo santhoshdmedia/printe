@@ -108,7 +108,7 @@ const Navbar = () => {
       }
     };
     fetchData();
-  }, [dispatch]);
+  }, []);
 
   // Menu handlers
   const toggleSubMenu = (key) => {

@@ -51,7 +51,8 @@ const OverViewDetails = ({
 
   return (
     <Spin spinning={loading} indicator={<IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />}>
-      <div id="overview" className="scroll-m-[10vh]">
+      <div id="product" className=""></div>
+      <div id="overview" className="scroll-m-[10vh] " >
         {!_.isEmpty(tabItems) && (
           <>
             <Tabs
@@ -60,6 +61,7 @@ const OverViewDetails = ({
               onChange={(keys) => {
                 setActiveKey(keys);
               }}
+             
               items={tabItems}
               type="card"
             />

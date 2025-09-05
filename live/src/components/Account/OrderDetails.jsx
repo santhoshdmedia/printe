@@ -323,7 +323,6 @@ const OrderDetails = () => {
   };
 
   const renderInvoice = (orders, invoiceNo) => {
-    console.log(orders);
     const subtotal = _.sumBy(orders, order => 
       order.cart_items?.product_price * order.cart_items?.product_quantity || 0
     );
@@ -340,7 +339,7 @@ const OrderDetails = () => {
       paymentStatusJSX = (
         <div className="flex justify-between font-bold text-green-600 mt-2">
           <span>Payment Status:</span>
-          <span>No Pending</span>
+          <span>No Pending amount</span>
         </div>
       );
     } else if (firstOrder.payment_status === "advance_paid") {
@@ -508,7 +507,7 @@ const OrderDetails = () => {
 
         {/* Payment Status */}
         <div className="flex justify-end">
-          <div className="w-full md:w-1/3 bg-gray-50 p-4 rounded">
+          <div className="w-full md:w-[40%] bg-gray-50 p-4 rounded-lg">
             {paymentStatusJSX}
           </div>
         </div>
@@ -516,32 +515,52 @@ const OrderDetails = () => {
     );
   };
 
-  // Track order status functionality from code2
+  // Track order status functionality
   const items = [
     { key: "1", label: "placed" },
-    { key: "2", label: "accounting team" },
-    { key: "3", label: "designing team" },
-    { key: "4", label: "production team" },
-    { key: "5", label: "delivery team" },
-    { key: "6", label: "out For Delivery" },
+    { key: "2", label: "design" },
+    { key: "3", label: "production" },
+    { key: "4", label: "quality check" },
+    { key: "5", label: "packing" },
+    { key: "6", label: "out for delivery" },
     { key: "7", label: "completed" },
   ];
   
+  // Create a mapping between UI labels and database status names
+  const statusMapping = {
+    "placed": "placed",
+    "design": "designing team",
+    "production": "production team",
+    "quality check": "quality_check",
+    "packing": "packing",
+    "out for delivery": "out_for_delivery",
+    "completed": "completed"
+  };
+
   const ORDER_TIME_LINE = (status) => {
+    const dbStatus = statusMapping[status.toLowerCase()] || status;
     const orderTimeline = _.get(filterOrderData, "order_delivery_timeline", []);
-    return orderTimeline.find((timeline) => timeline.order_status === status);
+    return orderTimeline.find((timeline) => 
+      timeline.order_status === dbStatus
+    );
   };
 
   let completed_timelines = _.get(filterOrderData, "order_delivery_timeline", []).map((res) => {
     return res.order_status;
   });
 
-  completed_timelines.push("placed");
+  // Make sure "placed" is included if it's not already in the timeline
+  if (!completed_timelines.includes("placed")) {
+    completed_timelines.push("placed");
+  }
 
-  let GET_COLOR_STATUS = (res) => {
+  const GET_COLOR_STATUS = (res) => {
     try {
-      return completed_timelines.includes(res?.label) ? "green" : "gray";
-    } catch (err) {}
+      const dbStatus = statusMapping[res?.label?.toLowerCase()] || res?.label;
+      return completed_timelines.includes(dbStatus) ? "green" : "gray";
+    } catch (err) {
+      return "gray";
+    }
   };
 
   // Group orders by invoice number

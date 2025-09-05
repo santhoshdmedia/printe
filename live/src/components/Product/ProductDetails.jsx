@@ -22,7 +22,7 @@ import {
   Col,
   List,
 } from "antd";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import _ from "lodash";
 import { useDispatch, useSelector } from "react-redux";
 import UploadFileButton from "../UploadFileButton";
@@ -640,6 +640,22 @@ const validatePincodeAndGetState = async (pincode) => {
       console.log(err);
     }
   };
+  const scrollToproductDetails =  useCallback((e) => {
+    e.preventDefault();
+    const targetId = e.target.getAttribute('href').substring(1);
+    const targetElement = document.getElementById(targetId);
+    
+    if (targetElement) {
+      // Calculate position with 100px offset
+      const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - 180;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
 
   const handleUploadImage = (fileString) => {
     setCheckOutState((prev) => ({ ...prev, product_design_file: fileString }));
@@ -677,10 +693,7 @@ const validatePincodeAndGetState = async (pincode) => {
       setError("");
       checkOutState.sgst = Number((checkOutState?.product_price * 4) / 100);
       checkOutState.cgst = Number((checkOutState?.product_price * 4) / 100);
-      checkOutState.final_total = Number(
-        Number((checkOutState?.product_price * 4) / 100) * 2 +
-          Number(checkOutState?.product_price * checkOutState.product_quantity)
-      );
+      checkOutState.final_total =Number(checkOutState?.product_price * checkOutState.product_quantity);
 
       const result = await addToShoppingCart(checkOutState);
 
@@ -698,6 +711,7 @@ const validatePincodeAndGetState = async (pincode) => {
       });
 
       dispatch(ADD_TO_CART(_.get(result, "data.data.data", "")));
+      window.location.reload();
     } catch (err) {
       if (err?.response?.status === 401) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
@@ -1129,7 +1143,7 @@ const validatePincodeAndGetState = async (pincode) => {
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
             <li>
-              {_.get(data, "Point_four", "")} <a href="">read more</a>
+              {_.get(data, "Point_four", "")} <a href="#product" onClick={scrollToproductDetails}>read more</a>
             </li>
           </ul>
         </div>
@@ -1451,7 +1465,7 @@ const validatePincodeAndGetState = async (pincode) => {
               <Text strong>{calculateDeliveryDate(deliveryTime)}</Text>
               <Divider type="vertical" />
               <Text type="success" strong>
-                ₹ 75
+                ₹ 100
               </Text>
             </motion.div>
           </motion.div>

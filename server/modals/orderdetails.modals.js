@@ -20,7 +20,7 @@ const Order = model(
       order_status: {
         type: String,
         required: true,
-        default: "placed",
+        default: "accounting team",
       },
       total_price: {
         type: String, // Changed to String to preserve decimal format

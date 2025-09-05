@@ -47,7 +47,7 @@ const CheckOut = () => {
     notes: "",
     cgst: 0,
     sgst: 0,
-    delivery_price: 75,
+    delivery_price: 100,
     total_price: 0,
   };
   const [createOrder, setCreateOrder] = useState(initialCreateOrderState);
@@ -62,6 +62,7 @@ const CheckOut = () => {
     const product_price = checkOutState?.product_price ?? 0;
     const cgst = Number(((product_price / 100) * 0.4).toFixed(2));
     const sgst = Number(((product_price / 100) * 0.4).toFixed(2));
+    const delivery = Number((100).toFixed(2));
     const total_price = Number((product_price + cgst + sgst + createOrder.delivery_price).toFixed(2));
 
     setCreateOrder((prev) => ({
