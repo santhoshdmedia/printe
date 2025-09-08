@@ -40,15 +40,7 @@ const getAllDashbardCounts = async (req, res) => {
     ]);
 
     let combineAllCounts = [
-      {
-        name: "Products",
-        count: productCount,
-      },
-      {
-        name: "Customers",
-        count: customersCount,
-      },
-      {
+       {
         name: "Main Categories",
         count: mainCategoryCount,
       },
@@ -57,21 +49,22 @@ const getAllDashbardCounts = async (req, res) => {
         count: subCategoryCount,
       },
       {
-        name: "Vendors Count",
-        count: vendorcount,
-      },
+        name: "Products",
+        count: productCount,
+      },    
       {
         name: "Admin Users",
         count: adminUsersCount,
+      },  
+      {
+        name: "Vendors Count",
+        count: vendorcount,
       },
       {
         name: "Orders",
         count: orderDetailsCount,
       },
-      {
-        name: "Banners",
-        count: bannercount,
-      },
+    
       {
         name: "Product Types",
         count: productTypesCount,

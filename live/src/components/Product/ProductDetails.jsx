@@ -711,7 +711,6 @@ const validatePincodeAndGetState = async (pincode) => {
       });
 
       dispatch(ADD_TO_CART(_.get(result, "data.data.data", "")));
-      window.location.reload();
     } catch (err) {
       if (err?.response?.status === 401) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));

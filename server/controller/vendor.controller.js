@@ -46,6 +46,24 @@ const getSingleVendor = async (req, res) => {
     }
   }
 };
+const getSingleVendorName = async (req, res) => {
+  try {
+    const result = await VendorSchemas.findById(req.params.id);
+    
+    if (!result) {
+      return errorResponse(res, "Vendor not found", 404);
+    }
+    
+    // ✅ Return JUST the vendor name as response
+    return successResponse(res, "Vendor fetched successfully", {
+      vendor_name: result.vendor_name
+    });
+    
+  } catch (err) {
+    console.error("Error fetching vendor:", err);
+    return errorResponse(res, "Something went wrong while fetching the vendor", 500);
+  }
+};
 
 const deleteVendor = async (req, res) => {
   try {
@@ -56,4 +74,4 @@ const deleteVendor = async (req, res) => {
   }
 };
 
-module.exports = { addVendors, editVendor, getAllVendors, deleteVendor, getSingleVendor };
+module.exports = { addVendors, editVendor, getAllVendors, deleteVendor, getSingleVendor,getSingleVendorName };

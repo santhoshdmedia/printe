@@ -18,6 +18,8 @@ app.use(morgan("dev"));
 const allowedOrigins = [
   "https://printe.in",
   "https://www.printe.in",
+  "https://www.admin.printe.in",
+  "https://admin.printe.in",
   "http://62.72.58.252",
   "https://62.72.58.252",
   "http://localhost:5173",

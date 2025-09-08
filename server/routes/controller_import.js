@@ -5,12 +5,12 @@ const { addAdmin, getAdmin, deleteAdmin, updateAdmin } = require("../controller/
 const { clientLogin, clientSignup, clientCheckloginstatus, getAllClientUsers, updateClientUser, deleteClientUser, getSingleClient, addtoHistory } = require("../controller/user.controller");
 const { addSubProductCategory, editSubproductCategroy, deleteSubproductCategory, getSubProductCategory } = require("../controller/subproduct.controller");
 const { getProduct, addProduct, deleteProduct, editProduct, getProductVariantPrice, getHistoryProducts, getBannerProducts, addProductDescription, getProductDescription, updateProductDescription, deleteProductDescription } = require("../controller/product.controller");
-const { CreateOrder, CollectAllOrder, CollectMyOrders, UpdateOrderStatus, getOrderStates } = require("../controller/order.controller");
+const { CreateOrder, CollectAllOrder, CollectMyOrders, UpdateOrderStatus, getOrderStates,UpdateOrderDesign,UpdateOrderVendor } = require("../controller/order.controller");
 const { getAllDashbardCounts } = require("../controller/dashboard.controller");
 const { getAllBannerProducts, addBanners, editBanner, getAllBanners, deleteBanner } = require("../controller/banner.controller");
 const { addReview, getreveiewbyproduct, getmyreviewall, getadminsideReview, deleteMyReview, updateMyReview } = require("../controller/review.controller");
 const { addblog, getblog, editblog, deleteblog } = require("../controller/blog.controller");
-const { addVendors, editVendor, getAllVendors, deleteVendor, getSingleVendor } = require("../controller/vendor.controller");
+const { addVendors, editVendor, getAllVendors, deleteVendor, getSingleVendor,getSingleVendorName } = require("../controller/vendor.controller");
 const { sendForgetPasswordMail, resetPassword, verfiyLink, craeteOrderId } = require("../controller/mail.controller");
 const { getAllCategoryProducts, getAllSubCategoryProducts } = require("../controller/categoryproduct.controller");
 const { addenquires, getenquires, getsinglnquires } = require("../controller/enquires.controllers");
@@ -72,6 +72,8 @@ module.exports = {
   CollectMyOrders,
   UpdateOrderStatus,
   getOrderStates,
+  UpdateOrderDesign,
+  UpdateOrderVendor,
 
   // Dashboard
   getAllDashbardCounts,
@@ -103,6 +105,7 @@ module.exports = {
   getAllVendors,
   deleteVendor,
   getSingleVendor,
+  getSingleVendorName,
 
   // mail
   sendForgetPasswordMail,

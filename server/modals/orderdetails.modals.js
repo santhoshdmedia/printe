@@ -23,52 +23,60 @@ const Order = model(
         default: "accounting team",
       },
       total_price: {
-        type: String, // Changed to String to preserve decimal format
+        type: Number,
         required: true,
       },
       payment_type: {
         type: String,
         required: true,
       },
+      account_id: {
+        type: String,
+      },
+      designerId: {
+        type: String,
+      },
+      designFile: {
+        type: String,
+      },
+      design_time:{
+        type: String,
+      },
+      production_id: {
+        type: String,
+      },
+      vender_id: {
+        type: String,
+      },
+      Quality_check_id: {
+        type: String,
+      },
+      package_team_id: {
+        type: String,
+      },
+      delivery_team_id: {
+        type: String,
+      },
       invoice_no: {
         type: String,
         required: true,
       },
-      payment_ids: {
-        type: [String],
-        default: []
-      },
-      transaction_ids: {
-        type: [String],
-        default: []
-      },
-      gst_no: {
+      payment_id: {
         type: String,
       },
       payment_status: {
         type: String,
-        enum: ["pending", "advance_paid", "completed", "failed"],
-        default: "pending",
+        default: "pending"
       },
       payment_date: {
         type: Date
       },
-      payment_mode: {
+      transaction_id: {
+        type: String
+      },
+      gst_no: {
         type: String,
-        enum: ["card", "netbanking", "upi", "wallet"],
       },
-      advance_payment: {
-        type: String, // Changed to String
-        default: "0.00",
-      },
-      full_payment: {
-        type: String, // Changed to String
-        default: "0.00",
-      },
-      remaining_amount: {
-        type: String, // Changed to String
-        default: "0.00"
-      }
     },
     {
       collection: "order_details",
@@ -76,7 +84,6 @@ const Order = model(
     }
   )
 );
-
 
 const order_delivery_timeline = model(
   "order_delivery_timeline",
@@ -87,10 +94,37 @@ const order_delivery_timeline = model(
         ref: "order_details",
         required: true,
       },
-      order_status: {
-        type: String,
-        required: true,
-        default: "placed",
+      order_status: String,
+      team_status: String,
+      changed_by: {
+        type: Schema.Types.ObjectId,
+        ref: "admin_users",
+      },
+      changed_by_name: String,
+      changed_by_role: String,
+      notes: String,
+      team_participation: {
+        type: Map,
+        of: new Schema({
+          user_id: {
+            type: Schema.Types.ObjectId,
+            ref: "admin_users",
+          },
+          name: String,
+          role: String,
+          action: {
+            type: String,
+            enum: ["processed", "verified", "approved", "rejected"],
+          },
+          timestamp: {
+            type: Date,
+            default: Date.now,
+          },
+          assigned_by: {
+            type: Schema.Types.ObjectId,
+            ref: "admin_users",
+          },
+        }),
       },
     },
     {
