@@ -30,7 +30,7 @@ const getAllDashbardCounts = async (req, res) => {
       },
     ]);
 
-    const orderTimelineCount = await orderdeliverytimelineSchema.aggregate([
+    const orderTimelineCount = await OrderDetailsSchema.aggregate([
       {
         $group: {
           _id: { type: "$order_status" },

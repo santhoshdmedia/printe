@@ -964,7 +964,7 @@ const validatePincodeAndGetState = async (pincode) => {
 
   // Generate quantity options based on backend data
   const generateQuantityOptions = () => {
-    if (quantityType === "textbox") {
+    if (quantityType === "Dropdown") {
       // For textbox type, create options using dropdown_gap
       const options = [];
       for (let i = dropdownGap; i <= maxQuantity; i += dropdownGap) {
@@ -985,7 +985,7 @@ const validatePincodeAndGetState = async (pincode) => {
   const quantityOptions = generateQuantityOptions();
 
   const handleQuantitySelect = (selectedQuantity) => {
-    if (quantityType === "textbox") {
+    if (quantityType === "Dropdown") {
       // For textbox type, find the appropriate discount
       const selectedDiscount = quantityDiscounts
         .filter((item) => Number(item.quantity) <= selectedQuantity)
