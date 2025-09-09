@@ -41,17 +41,45 @@ module.exports = mongoose.model(
       },
       type: {
         type: String,
-        enum: ["Single Product", "Variant Product"],
+        enum: ["Stand Alone Product", "Variable Product"],
         required: true,
       },
-      processing_time: {
+      HSMcode_time: {
         type: String,
         required: true,
       },
+      Production_time: {
+        type: String,
+        required: true,
+      },
+      Stock_Arrangement_time: {
+        type: String,
+        required: true,
+      },
+      GST: {
+        type: String,
+        required: true,
+      },
+      GST: {
+        type: String,
+      },
+      Tax_prefernce: {
+        type: String,
+      },
+      Visiblity: {
+        type: Boolean,
+      },
+      unit_splitup: { type: Array },
       name: { type: String, require: true },
+      Point_one: { type: String, require: true },
+      Point_two: { type: String, require: true },
+      Point_three: { type: String, require: true },
+      Point_four: { type: String, require: true },
       stocks_status: { type: String, require: true },
       stock_count: { type: Number },
+      dropdown_gap: { type: Number },
       product_code: { type: String, require: true },
+      product_description_tittle: { type: String, require: true },
       images: { type: Array },
       label: [{ type: String }],
       description: { type: String },
@@ -63,7 +91,10 @@ module.exports = mongoose.model(
       max_quantity: { type: Number },
       seo_url: { type: String, require: true },
       seo_description: { type: String, require: true },
+      seo_keywords: { type: String, require: true },
       single_product_price: { type: Number, default: 0 },
+      Seller_price: { type: Number, default: 0 },
+      Cost: { type: Number, default: 0 },
       variants: [variantSchema],
       variants_price: { type: Array },
       description_tabs: { type: Array },
