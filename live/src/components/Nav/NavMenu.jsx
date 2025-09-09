@@ -17,14 +17,14 @@ const NavMenu = () => {
     megaMenu: false,
     categories: {},
   });
-  
-  const [isAnyMegaMenuOpen,setIsAnyMegaMenuOpen] =useState(false) 
+
+  const [isAnyMegaMenuOpen, setIsAnyMegaMenuOpen] = useState(false);
   const [hoverStates, setHoverStates] = useState({
     category_id: null,
     side_category_id: null,
     sideSubcatId: null,
   });
-  
+
   // Close all dropdowns
   const closeAllDropdowns = () => {
     setActiveDropdown({
@@ -42,13 +42,13 @@ const NavMenu = () => {
   // Control body overflow
   useEffect(() => {
     if (isAnyMegaMenuOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
 
     return () => {
-      document.body.style.overflow = ''; // Cleanup on unmount
+      document.body.style.overflow = ""; // Cleanup on unmount
     };
   }, [isAnyMegaMenuOpen]);
 
@@ -94,84 +94,102 @@ const NavMenu = () => {
     <div className="hidden lg:block xl:block 2xl:block bg-primary h-full capitalize text-base lg:px-10 2xl:px-40 w-full p-4">
       <style jsx>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
-        
+
         @keyframes slideIn {
-          from { opacity: 0; transform: translateX(20px); }
-          to { opacity: 1; transform: translateX(0); }
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
         }
-        
+
         .animate-fade-in {
           animation: fadeIn 0.3s ease forwards;
         }
-        
+
         .animate-slide-in {
           animation: slideIn 0.2s ease forwards;
         }
-        
+
         .nav-gradient {
           background: transparent;
         }
-        
+
         .nav-shadow {
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 8px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1),
+            0 1px 8px rgba(0, 0, 0, 0.05);
         }
-        
+
         .category-card {
           transition: all 0.3s ease;
           border-radius: 12px;
           overflow: hidden;
           background: transparent;
         }
-        
+
         .category-card:hover {
           transform: translateY(-5px);
           box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
           background: transparent;
         }
-        
+
         .subcategory-item {
           transition: all 0.2s ease;
           border-left: 3px solid transparent;
         }
-        
+
         .subcategory-item:hover {
           border-left-color: #3b82f6;
           background-color: rgba(241, 245, 249, 0.3);
         }
-        
+
         .product-item {
           transition: all 0.2s ease;
         }
-        
+
         .product-item:hover {
           background-color: rgba(248, 250, 252, 0.3);
           transform: translateX(5px);
         }
-        
+
         .menu-divider {
           height: 1px;
-          background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.3) 50%, transparent 100%);
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(226, 232, 240, 0.3) 50%,
+            transparent 100%
+          );
         }
-        
+
         .dropdown-panel {
           background: transparent;
           backdrop-filter: blur(5px);
         }
-        
+
         .mega-menu-container {
           background: transparent;
           backdrop-filter: blur(5px);
         }
-        
+
         /* Added styles for yellow hover effect */
         .nav-item-hover:hover {
-          color: #FFD700 !important; /* Yellow color */
+          color: #ffd700 !important; /* Yellow color */
         }
       `}</style>
-      
+
       <div className="flex gap-x-4 !h-full justify-center items-center w-full relative">
         {/* All Categories Mega Menu */}
         <div className="w-[200px] center_div rounded-md !text-white">
@@ -182,7 +200,6 @@ const NavMenu = () => {
                 e.preventDefault();
                 toggleDropdown("megaMenu");
                 handleHoverState("side_category_id", "view");
-                setIsAnyMegaMenuOpen(true);
               }}
               className="!text-[#fdfdfd] center_div gap-x-2 text-[16px] font-bold nav-item-hover transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white hover:bg-opacity-10"
             >
@@ -202,7 +219,9 @@ const NavMenu = () => {
                 {menu.map((result) => (
                   <div key={result._id} className="category-card p-4">
                     <div
-                      onMouseEnter={() => handleHoverState("side_category_id", result._id)}
+                      onMouseEnter={() =>
+                        handleHoverState("side_category_id", result._id)
+                      }
                       className="flex flex-col gap-3"
                     >
                       <div className="flex justify-between items-center">
@@ -248,15 +267,22 @@ const NavMenu = () => {
 
                     {/* Subcategory Panel */}
                     {hoverStates.side_category_id === result._id && (
-                      <div 
+                      <div
                         className="absolute min-w-[300px] min-h-full dropdown-panel nav-shadow top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl overflow-hidden animate-slide-in"
-                        onMouseLeave={() => handleHoverState("side_category_id", null)}
+                        onMouseLeave={() =>
+                          handleHoverState("side_category_id", null)
+                        }
                       >
                         <div className="p-4">
-                          <h3 className="font-bold text-gray-800 mb-3 text-lg">Subcategories</h3>
+                          <h3 className="font-bold text-gray-800 mb-3 text-lg">
+                            Subcategories
+                          </h3>
                           <div className="menu-divider my-2"></div>
                           {result.sub_categories_details?.map((subcat) => (
-                            <div key={subcat._id} className="subcategory-item pl-3 py-2">
+                            <div
+                              key={subcat._id}
+                              className="subcategory-item pl-3 py-2"
+                            >
                               <div
                                 onMouseEnter={() =>
                                   handleHoverState("sideSubcatId", subcat._id)
@@ -283,11 +309,15 @@ const NavMenu = () => {
 
                               {/* Products Panel */}
                               {hoverStates.sideSubcatId === subcat._id && (
-                                <div 
+                                <div
                                   className="absolute min-w-[300px] !bg-white min-h-full top-0 left-full border-l border-gray-200 border-opacity-20 rounded-r-xl p-4 animate-slide-in"
-                                  onMouseLeave={() => handleHoverState("sideSubcatId", null)}
+                                  onMouseLeave={() =>
+                                    handleHoverState("sideSubcatId", null)
+                                  }
                                 >
-                                  <h4 className="font-semibold text-gray-800 mb-3">Products</h4>
+                                  <h4 className="font-semibold text-gray-800 mb-3">
+                                    Products
+                                  </h4>
                                   <div className=" my-2"></div>
                                   <div className="max-h-[350px] overflow-y-auto">
                                     {result.product_details
@@ -304,28 +334,35 @@ const NavMenu = () => {
                                             <div className="flex-shrink-0 relative w-12 h-12">
                                               <div className="absolute inset-0 rounded-md overflow-hidden border border-gray-200 border-opacity-30">
                                                 <img
-                                                  src={_.get(product, "images[0].path", "/placeholder-product.jpg")}
+                                                  src={_.get(
+                                                    product,
+                                                    "images[0].path",
+                                                    "/placeholder-product.jpg"
+                                                  )}
                                                   alt={product.name}
                                                   className="w-full h-full object-cover"
                                                   onError={(e) => {
-                                                    e.target.src = "/placeholder-product.jpg";
+                                                    e.target.src =
+                                                      "/placeholder-product.jpg";
                                                     e.target.onerror = null;
                                                   }}
                                                 />
                                               </div>
                                             </div>
-                                            
-                                            <span 
+
+                                            <span
                                               className="text-sm font-medium text-gray-800 truncate nav-item-hover cursor-pointer flex-grow"
                                               onClick={() => {
-                                                navigation(`/product/${product.seo_url}`);
+                                                navigation(
+                                                  `/product/${product.seo_url}`
+                                                );
                                                 closeAllDropdowns();
                                               }}
                                             >
                                               {product.name}
                                             </span>
                                           </div>
-                                          
+
                                           <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs" />
                                         </div>
                                       ))}
@@ -370,17 +407,21 @@ const NavMenu = () => {
                   onMouseEnter={() => {
                     toggleDropdown("categories", category._id);
                     handleHoverState("category_id", category._id);
-                    setIsAnyMegaMenuOpen(true);
                   }}
                 >
-                  <span className="!center_div gap-x-2 font-bold">
+                  <Link
+                    to={`/category/${encodeURIComponent(
+                      category.main_category_name
+                    )}/${category._id}`}
+                    className="!center_div gap-x-2 font-bold"
+                  >
                     {category.main_category_name}{" "}
                     {activeDropdown.categories[category._id] ? (
                       <IconHelper.UPARROW_ICON />
                     ) : (
                       <IconHelper.DOWNARROW_ICON />
                     )}
-                  </span>
+                  </Link>
                 </div>
 
                 {showAsMegaMenu ? (
@@ -394,7 +435,9 @@ const NavMenu = () => {
                     onMouseLeave={closeAllDropdowns}
                   >
                     <div className="max-w-7xl mx-auto">
-                      <h2 className="text-2xl font-bold text-gray-800 mb-6">{category.main_category_name}</h2>
+                      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                        {category.main_category_name}
+                      </h2>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {subCategories.map((subcat) => (
                           <div

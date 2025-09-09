@@ -342,7 +342,7 @@ If your order is still in the initial stages of production (designing or pre-pre
       },
       {
         title: "Cancellation Process",
-        desc: `To cancel an order, please contact our customer support team at [917373610000 / info@printe.com] as soon as possible.
+        desc: `To cancel an order, please contact our customer support team at [919585610000 / info@printe.com] as soon as possible.
 Provide your order details (order number, customer name, and reason for cancellation) to help us process your request quickly.
 `,
       },
@@ -702,7 +702,7 @@ Delivery timelines may vary depending on your location and external factors such
       },
       {
         title: "Delivery Issues",
-        desc: `If you experience any delays or issues with your delivery, please contact our customer support team at [support info@printe.in/917373610000] within [7 days] of the expected delivery date.`,
+        desc: `If you experience any delays or issues with your delivery, please contact our customer support team at [support info@printe.in/919585610000] within [7 days] of the expected delivery date.`,
       },
       {
         title: "Undelivered Packages",

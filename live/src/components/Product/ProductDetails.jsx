@@ -1378,7 +1378,7 @@ const validatePincodeAndGetState = async (pincode) => {
                 </ul>
                 <Paragraph className="mt-4">
                   In case you still have any questions, let's connect? Contact
-                  us on WhatsApp, call us at +91-7373610000, or email
+                  us on WhatsApp, call us at +91-9585610000, or email
                   business@printe.in.
                 </Paragraph>
               </div>

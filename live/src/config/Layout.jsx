@@ -69,7 +69,7 @@ const Layout = () => {
       <Footer />
       <div className={`${showIcon?"":"hidden"} fixed bottom-8 right-8 cursor-pointer z-50 bg-green-500 rounded-full lg:p-4 p-3`} >
         <a
-          href="https://wa.me/917373610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
+          href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
           target="_blank"
           rel="noopener noreferrer "
         >

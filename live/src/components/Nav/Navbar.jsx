@@ -253,15 +253,15 @@ const Navbar = () => {
         <div>
           <h1 className="!text-[#121621] hover:cursor-pointer group">
             <a
-              href="https://wa.me/917373610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
+              href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
               target="_blank"
               rel="noopener noreferrer"
               className="center_div justify-start hover:!text-[#121621] w-fit text-nowrap"
             >
-              +91 7373610000
+              +91 9585610000
             </a>
           </h1>
-          <h1 className="!text-[#121621]">24/7 Support</h1>
+          <h1 className="!text-[#121621] capitalize">customer Support</h1>
         </div>
       </Tooltip>
     </div>
