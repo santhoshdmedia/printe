@@ -76,9 +76,9 @@ const ProductDetails = ({
     label: [],
   },
 }) => {
-  const product_type = _.get(data, "type", "Single Product");
+  const product_type = _.get(data, "type", "Stand Alone Product");
   const price =
-    product_type === "Single Product"
+    product_type === "Stand Alone Product"
       ? _.get(data, "single_product_price", 0)
       : _.get(data, "variants_price[0].price", "");
 
@@ -577,8 +577,8 @@ const validatePincodeAndGetState = async (pincode) => {
   }, [reviewData]);
 
   useEffect(() => {
-    // For single products, set the initial price and stock
-    if (product_type === "Single Product") {
+    // For Stand Alone Products, set the initial price and stock
+    if (product_type === "Stand Alone Product") {
       setCheckOutState((prevState) => ({
         ...prevState,
         product_price: price,
@@ -1155,7 +1155,7 @@ const validatePincodeAndGetState = async (pincode) => {
             className="justify-between w-[100%] "
           >
             {/* Quantity Selection */}
-            <Col xs={16} md={product_type !== "Single Product" ? 5 : 5}>
+            <Col xs={16} md={product_type !== "Stand Alone Product" ? 5 : 5}>
               <div className="flex flex-col ">
                 <Text strong className="block mb-2">
                   Quantity:
@@ -1183,7 +1183,7 @@ const validatePincodeAndGetState = async (pincode) => {
             </Col>
 
             {/* Variants Selection */}
-            {product_type !== "Single Product" &&
+            {product_type !== "Stand Alone Product" &&
               !_.isEmpty(currentPriceSplitup) && (
                 <>
                   {_.get(data, "variants", []).map((variant, index) => (
@@ -1259,7 +1259,7 @@ const validatePincodeAndGetState = async (pincode) => {
             {/* Individual Box Checkbox */}
             <Col
               xs={24}
-              md={product_type !== "Single Product" ? 12 : 24}
+              md={product_type !== "Stand Alone Product" ? 12 : 24}
               className="flex items-center justify-start w-[200px]"
             >
               <Checkbox

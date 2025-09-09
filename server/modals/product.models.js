@@ -44,7 +44,7 @@ module.exports = mongoose.model(
         enum: ["Stand Alone Product", "Variable Product"],
         required: true,
       },
-      HSMcode_time: {
+      HSNcode_time: {
         type: String,
         required: true,
       },
@@ -53,10 +53,6 @@ module.exports = mongoose.model(
         required: true,
       },
       Stock_Arrangement_time: {
-        type: String,
-        required: true,
-      },
-      GST: {
         type: String,
         required: true,
       },
@@ -103,6 +99,7 @@ module.exports = mongoose.model(
       new_product: { type: Boolean, require: true },
       recommended_product: { type: Boolean, require: true },
       popular_product: { type: Boolean, require: true },
+      product_price: { type: String, require: true },
       parent_product_id: {
         type: String,
       },
