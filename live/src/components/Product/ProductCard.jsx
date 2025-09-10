@@ -7,7 +7,7 @@ import _ from "lodash";
 import { useDispatch, useSelector } from "react-redux";
 
 const ProductCard = ({ data }) => {
-  //config
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -101,7 +101,7 @@ const ProductCard = ({ data }) => {
   //     border: "border-amber-400",
   //   },
   // };
-  const price = _.get(data, "variants_price[0].price", "") || _.get(data, "single_product_price", "");
+  const price = _.get(data, "variants_price[0].price", "") || _.get(data, "customer_product_price", "");
 
   useEffect(() => {
     setIsFav(user?.wish_list?.includes(data._id) ?? false);
@@ -123,7 +123,9 @@ const ProductCard = ({ data }) => {
   };
 
   return (
-    <div className={`group ${bg} shadow-[#78c5d65b]   h-[320px] gap-4 center_div shadow-lg rounded-lg transition ease-in-out delay-150 duration-300 z-10 relative`}>
+    <div className="">
+      {data.is_visible?
+      <div className={`group ${bg} shadow-[#78c5d65b]   h-[320px] gap-4 center_div shadow-lg rounded-lg transition ease-in-out delay-150 duration-300 z-10 relative`}>
       <div className="flex-1 flex flex-col relative justify-end pb-5 gap-y-2 text-center size-full cursor-pointer" onClick={() => navigate(`/product/${data._id}`)}>
         <img src={_.get(data.images, "[0].path", "")} alt="img" className="size-52 absolute !z-20 -top-5 left-12 group-hover:-top-10 object-contain drop-shadow group-hover:scale-105 transition-all duration-700" />
         <div className="flex px-5 items-center">
@@ -158,6 +160,7 @@ const ProductCard = ({ data }) => {
           </button>
         </Tooltip> */}
       </div>
+    </div>:<></>}
     </div>
   );
 };

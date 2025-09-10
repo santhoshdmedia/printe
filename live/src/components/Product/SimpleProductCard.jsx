@@ -82,7 +82,8 @@ const SimpleProductCard = ({ data }) => {
     _.get(data, "single_product_price", "");
 
   return (
-    <motion.div
+    <div className="">
+      {data.is_visible?<motion.div
       ref={cardRef}
       className="relative h-[420px] w-full overflow-hidden cursor-pointer rounded-2xl"
       onClick={handleCardClick}
@@ -265,7 +266,8 @@ const SimpleProductCard = ({ data }) => {
           ))}
         </>
       )}
-    </motion.div>
+    </motion.div>:<></>}
+    </div>
   );
 };
 

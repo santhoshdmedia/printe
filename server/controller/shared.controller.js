@@ -3,12 +3,11 @@ const _ = require('lodash');
 const { successResponse } = require("../helper/response.helper");
 require("dotenv").config();
 
-// Configure Cloudinary
+// Configure Cloudinary - better to use environment variables
 cloudinary.config({
-  cloud_name: "dmvc40kyp",
-  api_key: "753129661365923",
-  api_secret: "6ElCTLSl3stnTo1C6wPomXIMtJU",
-  // secure: true,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dmvc40kyp",
+  api_key: process.env.CLOUDINARY_API_KEY || "753129661365923",
+  api_secret: process.env.CLOUDINARY_API_SECRET || "6ElCTLSl3stnTo1C6wPomXIMtJU",
 });
 
 const UploadImage = (req, res) => {
@@ -16,19 +15,32 @@ const UploadImage = (req, res) => {
     return res.status(400).json({ success: false, error: "No file uploaded" });
   }
 
-  // Upload from memory buffer instead of file path
+  // Generate a unique public_id with timestamp
+  const publicId = `printee_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  // Upload from memory buffer
   cloudinary.uploader.upload_stream(
     {
       folder: "printee",
-      public_id: `${Date.now()}`,
+      public_id: publicId,
       resource_type: "auto",
-       format: "webp", 
+      format: "webp", 
       quality: "auto", 
-      fetch_format: "auto", 
+      fetch_format: "auto",
+      timestamp: Math.round(Date.now() / 1000), // Explicit timestamp
     },
     (err, result) => {
       if (err) {
         console.error("Cloudinary upload error:", err);
+        
+        // Handle specific stale request error
+        if (err.http_code === 400 && err.message.includes('Stale request')) {
+          return res.status(400).json({ 
+            success: false, 
+            error: "Upload request expired. Please try again." 
+          });
+        }
+        
         return res.status(500).json({ 
           success: false, 
           error: "Image upload failed" 
@@ -47,7 +59,7 @@ const UploadImage = (req, res) => {
         },
       });
     }
-  ).end(req.file.buffer); // Send the buffer to Cloudinary
+  ).end(req.file.buffer);
 };
 
 module.exports = { UploadImage };

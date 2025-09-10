@@ -62,10 +62,10 @@ module.exports = mongoose.model(
       Tax_prefernce: {
         type: String,
       },
-      Visiblity: {
+      is_visible: {
         type: Boolean,
       },
-      unit_splitup: { type: Array },
+      unit: { type: String },
       name: { type: String, require: true },
       Point_one: { type: String, require: true },
       Point_two: { type: String, require: true },
@@ -100,6 +100,9 @@ module.exports = mongoose.model(
       recommended_product: { type: Boolean, require: true },
       popular_product: { type: Boolean, require: true },
       product_price: { type: String, require: true },
+      Deler_product_price: { type: String, require: true },
+      customer_product_price: { type: String, require: true },
+      corporate_product_price: { type: String, require: true },
       parent_product_id: {
         type: String,
       },

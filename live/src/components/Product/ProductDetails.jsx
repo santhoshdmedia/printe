@@ -79,7 +79,8 @@ const ProductDetails = ({
   const product_type = _.get(data, "type", "Stand Alone Product");
   const price =
     product_type === "Stand Alone Product"
-      ? _.get(data, "single_product_price", 0)
+      ? _.get(data, "single_product_price", 0) ||
+        _.get(data, "customer_product_price", 0)
       : _.get(data, "variants_price[0].price", "");
 
   // State
@@ -127,207 +128,208 @@ const ProductDetails = ({
   const [deliveryTime, setDeliveryTime] = useState(0);
   const [deliveryDate, setDeliveryDate] = useState(0);
 
-
   // Add these functions
-const handlePincodeChange = (e) => {
-  const value = e.target.value.replace(/\D/g, ""); // Remove non-digit characters
-  setPincode(value);
-  setIsPincodeValid(null); // Reset validation when user types
-  setState(""); // Reset state when pincode changes
+  const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ""); // Remove non-digit characters
+    setPincode(value);
+    setIsPincodeValid(null); // Reset validation when user types
+    setState(""); // Reset state when pincode changes
 
-  // Auto-validate when pincode is 6 digits
-  if (value.length === 6) {
-    validatePincode(value);
-  }
-};
-
-const validatePincode = async (pincodeToValidate) => {
-  setIsValidatingPincode(true);
-  try {
-    // Simple regex validation for Indian pincode (6 digits)
-    const indianPincodeRegex = /^[1-9][0-9]{5}$/;
-
-    if (!indianPincodeRegex.test(pincodeToValidate)) {
-      isPincodeValid(false);
-      toast.error("Invalid pincode format. Must be 6 digits.");
-      return;
+    // Auto-validate when pincode is 6 digits
+    if (value.length === 6) {
+      validatePincode(value);
     }
-
-    // Validate pincode and get state information
-    const validationResult = await validatePincodeAndGetState(pincodeToValidate);
-
-    if (validationResult.isValid) {
-      setIsPincodeValid(true);
-      setState(validationResult.state); // Set the state
-      toast.success(`✓ Pincode is valid (${validationResult.state})`);
-      calculateDeliveryTime(state)
-    } else {
-      setIsPincodeValid(false);
-      setState(""); // Clear state if invalid
-      toast.error("❌ Sorry, we don't deliver to this pincode yet");
-    }
-  } catch (error) {
-    console.error("Pincode validation error:", error);
-    setIsPincodeValid(false);
-    setState(""); // Clear state on error
-    toast.error("Error validating pincode");
-  } finally {
-    setIsValidatingPincode(false);
-  }
-};
-
-// Function to validate pincode and get state information
-const validatePincodeAndGetState = async (pincode) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Mock pincode to state mapping (Replace with actual API call)
-      const pincodeStateMap = {
-        // Northern Region
-        "110001": "Delhi",
-        "110002": "Delhi",
-        "110003": "Delhi",
-        "122001": "Haryana",
-        "122002": "Haryana",
-        "141001": "Punjab",
-        "141002": "Punjab",
-        "143001": "Punjab",
-        "160001": "Chandigarh",
-        "160002": "Chandigarh",
-        
-        // Western Region
-        "302001": "Rajasthan",
-        "302002": "Rajasthan",
-        "380001": "Gujarat",
-        "380002": "Gujarat",
-        "400001": "Maharashtra",
-        "400002": "Maharashtra",
-        "411001": "Maharashtra",
-        "411002": "Maharashtra",
-        
-        // Southern Region
-        "560001": "Karnataka",
-        "560002": "Karnataka",
-        "600001": "Tamil Nadu",
-        "600002": "Tamil Nadu",
-        "682001": "Kerala",
-        "682002": "Kerala",
-        "500001": "Telangana",
-        "500002": "Telangana",
-        
-        // Eastern Region
-        "700001": "West Bengal",
-        "700002": "West Bengal",
-        "800001": "Bihar",
-        "800002": "Bihar",
-        "751001": "Odisha",
-        "751002": "Odisha",
-        
-        // Central Region
-        "452001": "Madhya Pradesh",
-        "452002": "Madhya Pradesh",
-        "482001": "Madhya Pradesh",
-        "208001": "Uttar Pradesh",
-        "208002": "Uttar Pradesh",
-        "226001": "Uttar Pradesh",
-      };
-
-      // Get first 3 digits to determine region
-      const firstThreeDigits = pincode.substring(0, 3);
-      
-      // Region-based validation (you can expand this)
-      const regionMap = {
-        // Northern (11-16)
-        "11": "Delhi",
-        "12": "Haryana",
-        "13": "Haryana/Punjab",
-        "14": "Punjab",
-        "15": "Punjab/Himachal",
-        "16": "Chandigarh",
-        
-        // Western (30-39, 40-44)
-        "30": "Rajasthan",
-        "31": "Rajasthan",
-        "32": "Rajasthan",
-        "36": "Gujarat",
-        "37": "Gujarat",
-        "38": "Gujarat",
-        "39": "Gujarat",
-        "40": "Maharashtra",
-        "41": "Maharashtra",
-        "42": "Maharashtra",
-        "43": "Maharashtra",
-        "44": "Maharashtra",
-        
-        // Southern (50-53, 56-59, 60-64, 67-69)
-        "50": "Telangana",
-        "51": "Andhra Pradesh",
-        "52": "Andhra Pradesh",
-        "53": "Andhra Pradesh",
-        "56": "Karnataka",
-        "57": "Karnataka",
-        "58": "Karnataka",
-        "59": "Karnataka",
-        "60": "Tamil Nadu",
-        "61": "Tamil Nadu",
-        "62": "Tamil Nadu",
-        "63": "Tamil Nadu",
-        "64": "Tamil Nadu",
-        "67": "Kerala",
-        "68": "Kerala",
-        "69": "Kerala",
-      };
-
-      // Check exact match first
-      if (pincodeStateMap[pincode]) {
-        resolve({
-          isValid: true,
-          state: pincodeStateMap[pincode],
-          pincode: pincode
-        });
-        return;
-      }
-
-      // Check region-based validation
-      const regionPrefix = pincode.substring(0, 2);
-      if (regionMap[regionPrefix]) {
-        resolve({
-          isValid: true,
-          state: regionMap[regionPrefix],
-          pincode: pincode,
-          isRegionBased: true
-        });
-        return;
-      }
-
-      // Default validation (pincodes starting with 1-6 are valid for demo)
-      const isValid = /^[1-6]/.test(pincode);
-      
-      resolve({
-        isValid: isValid,
-        state: isValid ? getStateFromFirstDigit(pincode[0]) : "",
-        pincode: pincode
-      });
-    }, 1000);
-  });
-};
-
-// Helper function to get state from first digit (rough approximation)
-const getStateFromFirstDigit = (firstDigit) => {
-  const digitStateMap = {
-    "1": "Northern Region",
-    "2": "Northern Region",
-    "3": "Western Region",
-    "4": "Western Region",
-    "5": "Southern Region",
-    "6": "Southern Region",
-    "7": "Eastern Region",
-    "8": "Eastern Region",
   };
-  return digitStateMap[firstDigit] || "Serviceable Area";
-};
 
-// REAL API INTEGRATION EXAMPLE (Uncomment and use this instead)
-/*
+  const validatePincode = async (pincodeToValidate) => {
+    setIsValidatingPincode(true);
+    try {
+      // Simple regex validation for Indian pincode (6 digits)
+      const indianPincodeRegex = /^[1-9][0-9]{5}$/;
+
+      if (!indianPincodeRegex.test(pincodeToValidate)) {
+        isPincodeValid(false);
+        toast.error("Invalid pincode format. Must be 6 digits.");
+        return;
+      }
+
+      // Validate pincode and get state information
+      const validationResult = await validatePincodeAndGetState(
+        pincodeToValidate
+      );
+
+      if (validationResult.isValid) {
+        setIsPincodeValid(true);
+        setState(validationResult.state); // Set the state
+        toast.success(`✓ Pincode is valid (${validationResult.state})`);
+        calculateDeliveryTime(state);
+      } else {
+        setIsPincodeValid(false);
+        setState(""); // Clear state if invalid
+        toast.error("❌ Sorry, we don't deliver to this pincode yet");
+      }
+    } catch (error) {
+      console.error("Pincode validation error:", error);
+      setIsPincodeValid(false);
+      setState(""); // Clear state on error
+      toast.error("Error validating pincode");
+    } finally {
+      setIsValidatingPincode(false);
+    }
+  };
+
+  // Function to validate pincode and get state information
+  const validatePincodeAndGetState = async (pincode) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Mock pincode to state mapping (Replace with actual API call)
+        const pincodeStateMap = {
+          // Northern Region
+          110001: "Delhi",
+          110002: "Delhi",
+          110003: "Delhi",
+          122001: "Haryana",
+          122002: "Haryana",
+          141001: "Punjab",
+          141002: "Punjab",
+          143001: "Punjab",
+          160001: "Chandigarh",
+          160002: "Chandigarh",
+
+          // Western Region
+          302001: "Rajasthan",
+          302002: "Rajasthan",
+          380001: "Gujarat",
+          380002: "Gujarat",
+          400001: "Maharashtra",
+          400002: "Maharashtra",
+          411001: "Maharashtra",
+          411002: "Maharashtra",
+
+          // Southern Region
+          560001: "Karnataka",
+          560002: "Karnataka",
+          600001: "Tamil Nadu",
+          600002: "Tamil Nadu",
+          682001: "Kerala",
+          682002: "Kerala",
+          500001: "Telangana",
+          500002: "Telangana",
+
+          // Eastern Region
+          700001: "West Bengal",
+          700002: "West Bengal",
+          800001: "Bihar",
+          800002: "Bihar",
+          751001: "Odisha",
+          751002: "Odisha",
+
+          // Central Region
+          452001: "Madhya Pradesh",
+          452002: "Madhya Pradesh",
+          482001: "Madhya Pradesh",
+          208001: "Uttar Pradesh",
+          208002: "Uttar Pradesh",
+          226001: "Uttar Pradesh",
+        };
+
+        // Get first 3 digits to determine region
+        const firstThreeDigits = pincode.substring(0, 3);
+
+        // Region-based validation (you can expand this)
+        const regionMap = {
+          // Northern (11-16)
+          11: "Delhi",
+          12: "Haryana",
+          13: "Haryana/Punjab",
+          14: "Punjab",
+          15: "Punjab/Himachal",
+          16: "Chandigarh",
+
+          // Western (30-39, 40-44)
+          30: "Rajasthan",
+          31: "Rajasthan",
+          32: "Rajasthan",
+          36: "Gujarat",
+          37: "Gujarat",
+          38: "Gujarat",
+          39: "Gujarat",
+          40: "Maharashtra",
+          41: "Maharashtra",
+          42: "Maharashtra",
+          43: "Maharashtra",
+          44: "Maharashtra",
+
+          // Southern (50-53, 56-59, 60-64, 67-69)
+          50: "Telangana",
+          51: "Andhra Pradesh",
+          52: "Andhra Pradesh",
+          53: "Andhra Pradesh",
+          56: "Karnataka",
+          57: "Karnataka",
+          58: "Karnataka",
+          59: "Karnataka",
+          60: "Tamil Nadu",
+          61: "Tamil Nadu",
+          62: "Tamil Nadu",
+          63: "Tamil Nadu",
+          64: "Tamil Nadu",
+          67: "Kerala",
+          68: "Kerala",
+          69: "Kerala",
+        };
+
+        // Check exact match first
+        if (pincodeStateMap[pincode]) {
+          resolve({
+            isValid: true,
+            state: pincodeStateMap[pincode],
+            pincode: pincode,
+          });
+          return;
+        }
+
+        // Check region-based validation
+        const regionPrefix = pincode.substring(0, 2);
+        if (regionMap[regionPrefix]) {
+          resolve({
+            isValid: true,
+            state: regionMap[regionPrefix],
+            pincode: pincode,
+            isRegionBased: true,
+          });
+          return;
+        }
+
+        // Default validation (pincodes starting with 1-6 are valid for demo)
+        const isValid = /^[1-6]/.test(pincode);
+
+        resolve({
+          isValid: isValid,
+          state: isValid ? getStateFromFirstDigit(pincode[0]) : "",
+          pincode: pincode,
+        });
+      }, 1000);
+    });
+  };
+
+  // Helper function to get state from first digit (rough approximation)
+  const getStateFromFirstDigit = (firstDigit) => {
+    const digitStateMap = {
+      1: "Northern Region",
+      2: "Northern Region",
+      3: "Western Region",
+      4: "Western Region",
+      5: "Southern Region",
+      6: "Southern Region",
+      7: "Eastern Region",
+      8: "Eastern Region",
+    };
+    return digitStateMap[firstDigit] || "Serviceable Area";
+  };
+
+  // REAL API INTEGRATION EXAMPLE (Uncomment and use this instead)
+  /*
 const validatePincodeAndGetState = async (pincode) => {
   try {
     const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
@@ -366,7 +368,7 @@ const validatePincodeAndGetState = async (pincode) => {
     try {
       // First check if geolocation is available
       if (!navigator.geolocation) {
-        toast.error("Geolocation is not supported by your browser");
+        toast.error("location is not supported by your browser");
         setIsGettingLocation(false);
         return;
       }
@@ -640,19 +642,20 @@ const validatePincodeAndGetState = async (pincode) => {
       console.log(err);
     }
   };
-  const scrollToproductDetails =  useCallback((e) => {
+  const scrollToproductDetails = useCallback((e) => {
     e.preventDefault();
-    const targetId = e.target.getAttribute('href').substring(1);
+    const targetId = e.target.getAttribute("href").substring(1);
     const targetElement = document.getElementById(targetId);
-    
+
     if (targetElement) {
       // Calculate position with 100px offset
-      const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+      const elementPosition =
+        targetElement.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - 180;
-      
+
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   }, []);
@@ -693,7 +696,9 @@ const validatePincodeAndGetState = async (pincode) => {
       setError("");
       checkOutState.sgst = Number((checkOutState?.product_price * 4) / 100);
       checkOutState.cgst = Number((checkOutState?.product_price * 4) / 100);
-      checkOutState.final_total =Number(checkOutState?.product_price * checkOutState.product_quantity);
+      checkOutState.final_total = Number(
+        checkOutState?.product_price * checkOutState.product_quantity
+      );
 
       const result = await addToShoppingCart(checkOutState);
 
@@ -839,13 +844,13 @@ const validatePincodeAndGetState = async (pincode) => {
         setDeliveryTime(3);
         break;
       default:
-        setDeliveryTime(8); // Default delivery time if state not matched
+        setDeliveryTime(3);
         break;
     }
   };
-  useEffect(()=>{
-    calculateDeliveryDate(deliveryTime)
-  },[state])
+  useEffect(() => {
+    calculateDeliveryDate(deliveryTime);
+  }, [state]);
 
   const calculateDeliveryDate = (days) => {
     const today = new Date();
@@ -882,7 +887,14 @@ const validatePincodeAndGetState = async (pincode) => {
     } catch (err) {}
   };
 
-  const processing_item = _.get(data, "processing_time", "");
+  const unit = _.get(data, "unit", "");
+  console.log("unit", unit);
+
+  const productionTime = _.get(data, "Production_time", "");
+  const ArrangeTime = _.get(data, "Stock_Arrangement_time", "");
+
+  const processing_item = Number(productionTime) + Number(ArrangeTime);
+  console.log(productionTime);
   let path = encodeURI(`${PUBLIC_URL}/product/${data.seo_url}`);
   let product_name = _.get(data, "name", "");
   let product_description = _.get(data, "short_description", "");
@@ -973,11 +985,13 @@ const validatePincodeAndGetState = async (pincode) => {
       return options;
     } else {
       // For dropdown type, use the quantity_discount_splitup from backend
+
       return quantityDiscounts.map((item) => ({
         value: Number(item.quantity),
         label: `${item.quantity}`,
         discount: Number(item.discount),
         uuid: item.uniqe_id,
+        stats: item.recommended_stats,
       }));
     }
   };
@@ -1055,13 +1069,18 @@ const validatePincodeAndGetState = async (pincode) => {
               onClick={() => handleQuantitySelect(item.value)}
             >
               <div className="flex-1">
-                <Text
-                  className={
-                    quantity === item.value ? "font-semibold text-blue-600" : ""
-                  }
-                >
-                  {item.value}
-                </Text>
+                <div className="flex flex-col">
+                  <Text
+                    className={
+                      quantity === item.value
+                        ? "font-semibold text-blue-600"
+                        : ""
+                    }
+                  >
+                    {item.value}/{unit}
+                  </Text>
+                  <span>{item.stats == "No comments" ? "" : item.stats}</span>
+                </div>
                 {quantityType === "dropdown" && (
                   <div>
                     <Text type="success" className="text-sm">
@@ -1142,7 +1161,10 @@ const validatePincodeAndGetState = async (pincode) => {
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
             <li>
-              {_.get(data, "Point_four", "")} <a href="#product" onClick={scrollToproductDetails}>read more</a>
+              {_.get(data, "Point_four", "")}{" "}
+              <a href="#product" onClick={scrollToproductDetails} className="ml-10 text-blue-600">
+                read more
+              </a>
             </li>
           </ul>
         </div>
@@ -1257,19 +1279,23 @@ const validatePincodeAndGetState = async (pincode) => {
               )}
 
             {/* Individual Box Checkbox */}
-            <Col
-              xs={24}
-              md={product_type !== "Stand Alone Product" ? 12 : 24}
-              className="flex items-center justify-start w-[200px]"
-            >
-              <Checkbox
-                checked={individualBox}
-                onChange={(e) => setIndividualBox(e.target.checked)}
-                className="py-2 text-[1rem]"
+            {_.get(data, "name", "") === "Matt Finish" ? (
+              <Col
+                xs={24}
+                md={product_type !== "Stand Alone Product" ? 12 : 24}
+                className="flex items-center justify-start w-[200px]"
               >
-                Individual Box for 100 Cards
-              </Checkbox>
-            </Col>
+                <Checkbox
+                  checked={individualBox}
+                  onChange={(e) => setIndividualBox(e.target.checked)}
+                  className="py-2 text-[1rem]"
+                >
+                  Individual Box for 100 Cards
+                </Checkbox>
+              </Col>
+            ) : (
+              <></>
+            )}
           </Row>
         </div>
 
