@@ -63,6 +63,7 @@ import { CiFaceSmile } from "react-icons/ci";
 import { CgSmileSad } from "react-icons/cg";
 import { toast } from "react-toastify";
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import TextArea from "antd/es/input/TextArea";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -127,6 +128,7 @@ const ProductDetails = ({
   const [isValidatingPincode, setIsValidatingPincode] = useState(false);
   const [deliveryTime, setDeliveryTime] = useState(0);
   const [deliveryDate, setDeliveryDate] = useState(0);
+  const [instructionsVisible,setInstructionsVisible]=useState(false)
 
   // Add these functions
   const handlePincodeChange = (e) => {
@@ -1042,77 +1044,85 @@ const validatePincodeAndGetState = async (pincode) => {
   };
 
   // Custom dropdown renderer for quantity selection
-  const quantityDropdownRender = (menu) => (
-    <div
-      style={{ padding: "12px", minWidth: "350px" }}
-      onMouseLeave={() => setQuantityDropdownVisible(false)}
-    >
-      <div>
-        <Text strong>Quantity Options</Text>
-      </div>
-      <div className="max-h-60 overflow-y-auto">
-        {quantityOptions.map((item) => {
-          const unitPrice = DISCOUNT_HELPER(
-            quantityType === "dropdown"
-              ? item.discount
-              : discountPercentage.percentage,
-            Number(_.get(checkOutState, "product_price", 0))
-          );
-          const totalPrice = unitPrice * item.value;
+const quantityDropdownRender = (menu) => (
+  <div
+    className="p-2  rounded-lg shadow-xl "
+    onMouseLeave={() => setQuantityDropdownVisible(false)}
+  >
+    {/* Header */}
+   
 
-          return (
-            <div
-              key={item.value}
-              className={`flex justify-between items-center p-3 cursor-pointer hover:bg-blue-50 ${
-                quantity === item.value ? "bg-blue-100" : ""
-              }`}
-              onClick={() => handleQuantitySelect(item.value)}
-            >
-              <div className="flex-1">
-                <div className="flex flex-col">
-                  <Text
-                    className={
-                      quantity === item.value
-                        ? "font-semibold text-blue-600"
-                        : ""
-                    }
-                  >
-                    {item.value}/{unit}
-                  </Text>
-                  <span>{item.stats == "No comments" ? "" : item.stats}</span>
-                </div>
-                {quantityType === "dropdown" && (
-                  <div>
-                    <Text type="success" className="text-sm">
-                      {item.discount == 0 ? (
-                        <></>
-                      ) : (
-                        <>{item.discount}% discount</>
-                      )}
-                    </Text>
-                  </div>
+    {/* Options List */}
+    <div className="overflow-y-auto h-80  space-y-3">
+      {quantityOptions.map((item) => {
+        const unitPrice = DISCOUNT_HELPER(
+          quantityType === "dropdown" ? item.discount : discountPercentage.percentage,
+          Number(_.get(checkOutState, "product_price", 0))
+        );
+        const totalPrice = unitPrice * item.value;
+        const isSelected = quantity === item.value;
+
+        return (
+          <div
+            key={item.value}
+            className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+              isSelected
+                ? 'border-blue-500 bg-blue-50 shadow-sm'
+                : 'border-gray-100 hover:border-blue-300 hover:bg-blue-50'
+            }`}
+            onClick={() => handleQuantitySelect(item.value)}
+          >
+            {/* Left Section - Quantity and Discount */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span
+                  className={`text-base font-medium ${
+                    isSelected ? 'text-blue-700' : 'text-gray-800'
+                  }`}
+                >
+                  {item.value} {unit}
+                </span>
+                {item.stats && item.stats !== "No comments" && (
+                  <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                    {item.stats}
+                  </span>
                 )}
               </div>
-              <div className="text-right">
-                <Text
-                  className={
-                    quantity === item.value ? "font-semibold text-blue-600" : ""
-                  }
-                >
-                  {formatPrice(totalPrice)}
-                </Text>
-                <div>
-                  <Text className="text-sm text-gray-500">
-                    {formatPrice(unitPrice)}/unit
-                  </Text>
-                </div>
-              </div>
+              
+              {quantityType === "dropdown" && item.discount > 0 && (
+                <span className="text-green-600 text-sm font-medium inline-flex items-center mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {item.discount}% discount
+                </span>
+              )}
             </div>
-          );
-        })}
-      </div>
+
+            {/* Right Section - Pricing */}
+            <div className="text-right">
+              <p
+                className={`font-semibold ${
+                  isSelected ? 'text-blue-700' : 'text-gray-900'
+                }`}
+              >
+                {formatPrice(totalPrice)}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {formatPrice(unitPrice)}/{unit}
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
-  );
+    
+    {/* Footer */}
+    <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500">
+      <p>Prices include all applicable taxes</p>
+    </div>
+  </div>
+);
 
   return (
     <Spin
@@ -1194,7 +1204,7 @@ const validatePincodeAndGetState = async (pincode) => {
                   onDropdownVisibleChange={(visible) =>
                     setQuantityDropdownVisible(visible)
                   }
-                  dropdownStyle={{ minWidth: "350px" }}
+                  dropdownStyle={{ minWidth: "450px" }}
                 />
                 {quantityType === "textbox" && quantity && (
                   <Text type="secondary" className="text-xs mt-1">
@@ -1518,6 +1528,7 @@ const validatePincodeAndGetState = async (pincode) => {
                 }}
               />
             </div>
+           
           </div>
 
           {needDesignUpload ? (
@@ -1586,6 +1597,29 @@ const validatePincodeAndGetState = async (pincode) => {
               />
             </div>
           </Modal>
+        </div>
+        <div className="">
+           <div className="flex gap-3 mb-2 ">
+              <Text className="text-gray-800 font-bold">Instructions</Text>
+              <Switch
+                onChange={(checked) => {
+                  setInstructionsVisible(checked);
+                  if (!checked) {
+                    setCheckOutState((prev) => ({
+                      ...prev,
+                    instructionproduct_design_file: "",
+                    }));
+                    setChecked(false);
+                  }
+                }}
+              />
+            </div>
+          {instructionsVisible&&<TextArea
+                className="h-20 rounded-lg w-full"
+                onChange={handlePincodeChange}
+                placeholder="Please provide the instructions for this product. Your response should be clear, concise, and must not exceed 180 words"
+                maxLength={180}
+                ></TextArea>}
         </div>
 
         {/* Add to Cart Section */}
