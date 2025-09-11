@@ -50,7 +50,7 @@ const NavMenu = () => {
     return () => {
       document.body.style.overflow = ""; // Cleanup on unmount
     };
-  }, [isAnyMegaMenuOpen]);
+  }, []);
 
   // Toggle dropdowns
   const toggleDropdown = (dropdownName, categoryId = null) => {

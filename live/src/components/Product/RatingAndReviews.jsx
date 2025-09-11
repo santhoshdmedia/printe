@@ -8,6 +8,23 @@ import _ from "lodash";
 import { useDispatch, useSelector } from "react-redux";
 import { updateMyReview } from "../../helper/api_helper";
 import { SUCCESS_NOTIFICATION } from "../../helper/notification_helper";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Navigation } from "swiper/modules";
+const swiperConfig = {
+  slidesPerView: {
+    default: 1,
+    640: 1,
+    768: 1,
+    1024: 1,
+    1440: 1
+  },
+  spaceBetween: 20,
+  autoplay: {
+    delay: 5000,
+    disableOnInteraction: true,
+    pauseOnMouseEnter: true
+  }
+};
 
 const RatingAndReviews = () => {
   //config
@@ -19,7 +36,7 @@ const RatingAndReviews = () => {
   // const reviewData = ;
   const loadingStatus = productRateAndReview?.loading || false;
 
-  const [dummy, setDummy] = useState(false);
+  const [dummy, setDummy] = useState(true);
 
   //state
   const [reviewData, setReviewData] = useState([]);
@@ -162,8 +179,8 @@ const RatingAndReviews = () => {
 
   return (
     <Spin spinning={loadingStatus}>
-      <div className="flex gap-2 lg:flex-row flex-col">
-        <div className={`flex-1 ${review.length >= 5 && "h-[40rem]"} p-2 flex flex-col gap-2`}>
+      <div className="flex gap-2  flex-col-reverse">
+        {/* <div className={`flex-1 ${review.length >= 5 && "h-[40rem]"} p-2 flex flex-col gap-2`}>
           <h1 className="sub_title">
             Reviews <span className="text-gray-500 !para">{review.length}</span>
           </h1>
@@ -171,18 +188,29 @@ const RatingAndReviews = () => {
             {_.isEmpty(review) ? (
               <Empty />
             ) : (
-              review.map((data) => {
-                return (
-                  <div key={data._id}>
-                    <ReviewCard data={data} dummy={dummy} setDummy={setDummy} setId={setId} />
-                  </div>
-                );
-              })
+              <Swiper
+              spaceBetween={swiperConfig.spaceBetween}
+              breakpoints={{
+                0: { slidesPerView: swiperConfig.slidesPerView.default },
+                640: { slidesPerView: swiperConfig.slidesPerView[640] },
+                768: { slidesPerView: swiperConfig.slidesPerView[768] },
+                1024: { slidesPerView: swiperConfig.slidesPerView[1024] },
+                1440: { slidesPerView: swiperConfig.slidesPerView[1440] }
+              }}
+              modules={[Autoplay, Navigation]}
+              autoplay={swiperConfig.autoplay}
+            >
+              {review.map((review) => (
+                <SwiperSlide key={review._id}>
+                  <ReviewCard data={review} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
             )}
           </div>
-        </div>
+        </div> */}
 
-        <div className={`lg:w-[50%] w-full bg-tr ${review.length >= 5 && "h-[24rem] sticky top-24"}  p-2`}>
+        <div className={` w-full bg-tr ${review.length >= 5 && " sticky top-24"}  p-2`}>
           <h1 className="sub_title capitalize">Rating</h1>
           <div className="p-2 flex gap-2 lg:flex-row flex-col">
             <div className="flex-1">
