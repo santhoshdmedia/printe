@@ -1260,7 +1260,7 @@ const shareProduct = (platform) => {
               repeatType: "loop",
               ease: "easeInOut",
             }}
-            className="bg-green-100 border border-green-300 rounded-lg p-2 lg:p-2 shadow-lg text-right  h-fit w-fit absolute top-20 right-0  "
+            className="bg-green-100 border border-green-300 rounded-lg p-2 lg:p-2 shadow-lg text-right  h-fit w-fit absolute top-16 right-0  "
           >
             <h3  className="!m-0 !text-green-600 text-sm md:text-xl font-semibold">
               {quantity
@@ -1281,8 +1281,8 @@ const shareProduct = (platform) => {
           <h1 className="text-xl font-semibold w-[80%]">
             {_.get(data, "product_description_tittle", "")}
           </h1>
-          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5">
-            <li>{_.get(data, "Point_one", "")}</li>
+          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 ">
+            <li className="w-[70%]">{_.get(data, "Point_one", "")}</li>
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
             <li>
