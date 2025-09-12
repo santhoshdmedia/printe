@@ -20,6 +20,27 @@ const variantSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const stockInfoSchema = new mongoose.Schema(
+  {
+    date: { 
+      type: Date, 
+      required: true,
+      default: Date.now 
+    },
+    add_stock: { 
+      type: Number, 
+      required: true 
+    },
+    invoice: { 
+      type: String 
+    },
+    notes: { 
+      type: String 
+    },
+  },
+  { _id: false }
+);
+
 module.exports = mongoose.model(
   "product",
   new mongoose.Schema(
@@ -106,6 +127,7 @@ module.exports = mongoose.model(
       parent_product_id: {
         type: String,
       },
+      stock_info: [stockInfoSchema],
       is_cloned: {
         type: Boolean,
         default: false,
