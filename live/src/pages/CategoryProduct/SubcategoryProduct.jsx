@@ -43,10 +43,10 @@ const SubcategoryProduct = () => {
       {/* Banner Section - Fixed image display */}
       {_.get(productDatas, "[0].sub_category_details.sub_category_banner_image", "") && (
         <div className="lg:px-40 px-4 py-6">
-          <div className="rounded-xl overflow-hidden shadow-lg bg-gray-200 flex items-center justify-center min-h-[200px]">
+          <div className="rounded-xl overflow-hidden shadow-lg bg-gray-200 flex items-center justify-center max-h-[280px]">
             <img 
               src={_.get(productDatas, "[0].sub_category_details.sub_category_banner_image", "")} 
-              className="w-full h-auto max-h-[280px] object-[90%]" 
+              className="w-full h-auto  object-[100%]" 
               alt={_.get(params, "subcategory", "")}
               onError={(e) => {
                 e.target.style.display = 'none';

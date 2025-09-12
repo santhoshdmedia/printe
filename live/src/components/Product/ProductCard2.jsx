@@ -54,7 +54,7 @@ const ProductCard2 = ({ data }) => {
 
   const price =
     _.get(data, `variants_price[${lowest_price_index}].price`, "") ||
-    _.get(data, "single_product_price", "");
+    _.get(data, "single_product_price", null) ||_.get(data, "customer_product_price", null);
 
   // Animation variants
   const cardVariants = {

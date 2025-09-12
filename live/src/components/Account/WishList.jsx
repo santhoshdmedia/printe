@@ -146,7 +146,7 @@ const WishList = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {wish_list.data.map((data, index) => {
               const img = data.images?.[0]?.path;
-              const price = _.get(data, "single_product_price", null);
+              const price = _.get(data, "single_product_price", null) ||_.get(data, "customer_product_price", null);
               
               return (
                 <div 

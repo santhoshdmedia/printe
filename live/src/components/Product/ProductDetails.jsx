@@ -37,6 +37,7 @@ import {
   WhatsappIcon,
   WhatsappShareButton,
 } from "react-share";
+import { IoShareSocial } from "react-icons/io5";
 import { MdOutlineMailOutline } from "react-icons/md";
 import {
   addToShoppingCart,
@@ -1123,6 +1124,50 @@ const quantityDropdownRender = (menu) => (
     </div>
   </div>
 );
+ const [showShareMenu, setShowShareMenu] = useState(false);
+
+// share
+const shareProduct = (platform) => {
+    const productUrl = encodeURIComponent(window.location.href);
+    const productName = encodeURIComponent("Premium Wireless Headphones");
+    const productPrice = encodeURIComponent(formatPrice(
+      DISCOUNT_HELPER(
+        discountPercentage.percentage,
+        Number(_.get(checkOutState, "product_price", 0))
+      )
+    ));
+
+    const shareUrls = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${productUrl}`,
+      twitter: `https://twitter.com/intent/tweet?text=Check out this product: ${productName} for ${productPrice}&url=${productUrl}`,
+      pinterest: `https://pinterest.com/pin/create/button/?url=${productUrl}&description=${productName}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${productUrl}`,
+      whatsapp: `https://api.whatsapp.com/send?text=Check out this product: ${productName} for ${productPrice} ${productUrl}`,
+      email: `mailto:?subject=${productName}&body=Check out this product: ${productName} for ${productPrice} - ${productUrl}`
+    };
+
+    if (shareUrls[platform]) {
+      window.open(shareUrls[platform], '_blank');
+    }
+    
+    setShowShareMenu(false);
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Premium Wireless Headphones",
+          text: "Check out this amazing product!",
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Error sharing:', err);
+      }
+    } else {
+      setShowShareMenu(true);
+    }
+  };
 
   return (
     <Spin
@@ -1131,14 +1176,83 @@ const quantityDropdownRender = (menu) => (
         <IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />
       }
     >
-      <div className="font-primary w-full space-y-2">
+      <div className="font-primary w-full space-y-2 relative">
         {/* Product Header */}
         <div className="space-y-1 flex justify-between">
-          <Title level={1} className="!text-gray-900 !font-bold !mb-2">
+          <h1 className="!text-gray-900 !font-bold !mb-2 w-[80%] text-3xl md:text-5xl">
             {data.name}
-          </Title>
+          </h1>
 
-          <motion.div
+         <div className="">
+            {/* Share button and dropdown */}
+          <div className="relative">
+            {/* Share button */}
+            <button 
+              onClick={handleNativeShare}
+              className="bg-[#f9c114] hover:bg-[#f9c114] text-black hover:text-white p-3 rounded-full shadow-md transition-all duration-300 "
+            >
+              <IoShareSocial className=""/>
+            </button>
+            
+            {/* Share options dropdown */}
+            {showShareMenu && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-lg shadow-xl z-10 p-2 border border-gray-200"
+              >
+                <p className="text-xs text-gray-500 font-semibold p-2">Share via</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={() => shareProduct('facebook')}
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
+                  >
+                    <FacebookIcon className="!size-[35px] rounded-full !text-white p-1  bg-[#0965fd]" />
+                    <span className="text-xs">Facebook</span>
+                  </button>
+                  <button 
+                    onClick={() => shareProduct('twitter')}
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-400 transition-all"
+                  >
+                    <i className="fab fa-twitter text-lg mb-1"></i>
+                    <span className="text-xs">Twitter</span>
+                  </button>
+                  <button 
+                    onClick={() => shareProduct('pinterest')}
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-all"
+                  >
+                    <i className="fab fa-pinterest text-lg mb-1"></i>
+                    <span className="text-xs">Pinterest</span>
+                  </button>
+                  <button 
+                    onClick={() => shareProduct('linkedin')}
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition-all"
+                  >
+                    <i className="fab fa-linkedin text-lg mb-1"></i>
+                    <span className="text-xs">LinkedIn</span>
+                  </button>
+                  <button 
+                    onClick={() => shareProduct('whatsapp')}
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
+                  >
+                    <i className="fab fa-whatsapp text-lg mb-1"></i>
+                    <span className="text-xs">WhatsApp</span>
+                  </button>
+                  <button 
+                    onClick={() => shareProduct('email')}
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 transition-all"
+                  >
+                    <i className="fas fa-envelope text-lg mb-1"></i>
+                    <span className="text-xs">Email</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        
+        
+           <motion.div
             animate={{ scale: [1, 1.1, 1] }}
             transition={{
               duration: 0.6,
@@ -1146,9 +1260,9 @@ const quantityDropdownRender = (menu) => (
               repeatType: "loop",
               ease: "easeInOut",
             }}
-            className="bg-green-100 border border-green-300 rounded-lg p-3 shadow-lg text-right"
+            className="bg-green-100 border border-green-300 rounded-lg p-2 lg:p-2 shadow-lg text-right  h-fit w-fit absolute top-20 right-0  "
           >
-            <Title level={4} className="!m-0 !text-green-600">
+            <h3  className="!m-0 !text-green-600 text-sm md:text-xl font-semibold">
               {quantity
                 ? formatPrice(
                     DISCOUNT_HELPER(
@@ -1157,13 +1271,14 @@ const quantityDropdownRender = (menu) => (
                     )
                   )
                 : "Select quantity"}
-            </Title>
+            </h3>
           </motion.div>
+         </div>
         </div>
 
         {/* Product Description */}
-        <div>
-          <h1 className="text-xl font-semibold">
+        <div >
+          <h1 className="text-xl font-semibold w-[80%]">
             {_.get(data, "product_description_tittle", "")}
           </h1>
           <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5">

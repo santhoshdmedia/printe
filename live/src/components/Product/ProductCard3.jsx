@@ -6,7 +6,7 @@ const PrintProductCard3 = ({ data }) => {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   
-  const price = data.variants_price?.[0]?.price || data.single_product_price;
+  const price = data.variants_price?.[0]?.price || data.single_product_price||data.customer_product_price;
   const productUrl = `/product/${data.seo_url}`;
   const imageUrl = data.images?.[0]?.path || "";
   const hasVariants = data.variants_price?.length > 0;
