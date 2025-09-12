@@ -66,6 +66,8 @@ import { toast } from "react-toastify";
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
 
+import Cat from "../../assets/intractions/Cat.gif";
+
 const { Title, Text, Paragraph } = Typography;
 
 const ProductDetails = ({
@@ -129,7 +131,18 @@ const ProductDetails = ({
   const [isValidatingPincode, setIsValidatingPincode] = useState(false);
   const [deliveryTime, setDeliveryTime] = useState(0);
   const [deliveryDate, setDeliveryDate] = useState(0);
-  const [instructionsVisible,setInstructionsVisible]=useState(false)
+  const [instructionsVisible, setInstructionsVisible] = useState(false);
+  const [lazy, setLazy] = useState(false);
+
+  useEffect(() => {
+    // Set a timeout to show the div after 30 seconds
+    const timer = setTimeout(() => {
+      setLazy(true);
+    }, 3000); // 30 seconds in milliseconds
+
+    // Cleanup the timer if the component unmounts
+    return () => clearTimeout(timer);
+  }, []); // Empty dependency array ensures this runs once on mount
 
   // Add these functions
   const handlePincodeChange = (e) => {
@@ -645,9 +658,8 @@ const validatePincodeAndGetState = async (pincode) => {
       console.log(err);
     }
   };
-  const scrollToproductDetails = useCallback((e) => {
-    e.preventDefault();
-    const targetId = e.target.getAttribute("href").substring(1);
+  const scrollToproductDetails = useCallback(() => {
+    const targetId = "overview";
     const targetElement = document.getElementById(targetId);
 
     if (targetElement) {
@@ -891,13 +903,11 @@ const validatePincodeAndGetState = async (pincode) => {
   };
 
   const unit = _.get(data, "unit", "");
-  console.log("unit", unit);
 
   const productionTime = _.get(data, "Production_time", "");
   const ArrangeTime = _.get(data, "Stock_Arrangement_time", "");
 
   const processing_item = Number(productionTime) + Number(ArrangeTime);
-  console.log(productionTime);
   let path = encodeURI(`${PUBLIC_URL}/product/${data.seo_url}`);
   let product_name = _.get(data, "name", "");
   let product_description = _.get(data, "short_description", "");
@@ -1045,97 +1055,111 @@ const validatePincodeAndGetState = async (pincode) => {
   };
 
   // Custom dropdown renderer for quantity selection
-const quantityDropdownRender = (menu) => (
-  <div
-    className="p-2  rounded-lg shadow-xl "
-    onMouseLeave={() => setQuantityDropdownVisible(false)}
-  >
-    {/* Header */}
-   
+  const quantityDropdownRender = (menu) => (
+    <div
+      className="p-2  rounded-lg shadow-xl "
+      onMouseLeave={() => setQuantityDropdownVisible(false)}
+    >
+      {/* Header */}
 
-    {/* Options List */}
-    <div className="overflow-y-auto h-80  space-y-3">
-      {quantityOptions.map((item) => {
-        const unitPrice = DISCOUNT_HELPER(
-          quantityType === "dropdown" ? item.discount : discountPercentage.percentage,
-          Number(_.get(checkOutState, "product_price", 0))
-        );
-        const totalPrice = unitPrice * item.value;
-        const isSelected = quantity === item.value;
+      {/* Options List */}
+      <div className="overflow-y-auto h-80  space-y-3">
+        {quantityOptions.map((item) => {
+          const unitPrice = DISCOUNT_HELPER(
+            quantityType === "dropdown"
+              ? item.discount
+              : discountPercentage.percentage,
+            Number(_.get(checkOutState, "product_price", 0))
+          );
+          const totalPrice = unitPrice * item.value;
+          const isSelected = quantity === item.value;
 
-        return (
-          <div
-            key={item.value}
-            className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-              isSelected
-                ? 'border-blue-500 bg-blue-50 shadow-sm'
-                : 'border-gray-100 hover:border-blue-300 hover:bg-blue-50'
-            }`}
-            onClick={() => handleQuantitySelect(item.value)}
-          >
-            {/* Left Section - Quantity and Discount */}
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span
-                  className={`text-base font-medium ${
-                    isSelected ? 'text-blue-700' : 'text-gray-800'
-                  }`}
-                >
-                  {item.value} {unit}
-                </span>
-                {item.stats && item.stats !== "No comments" && (
-                  <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
-                    {item.stats}
+          return (
+            <div
+              key={item.value}
+              className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                isSelected
+                  ? "border-blue-500 bg-blue-50 shadow-sm"
+                  : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
+              }`}
+              onClick={() => handleQuantitySelect(item.value)}
+            >
+              {/* Left Section - Quantity and Discount */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className={`text-base font-medium ${
+                      isSelected ? "text-blue-700" : "text-gray-800"
+                    }`}
+                  >
+                    {item.value} {unit}
+                  </span>
+                  {item.stats && item.stats !== "No comments" && (
+                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                      {item.stats}
+                    </span>
+                  )}
+                </div>
+
+                {quantityType === "dropdown" && item.discount > 0 && (
+                  <span className="text-green-600 text-sm font-medium inline-flex items-center mt-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    {item.discount}% discount
                   </span>
                 )}
               </div>
-              
-              {quantityType === "dropdown" && item.discount > 0 && (
-                <span className="text-green-600 text-sm font-medium inline-flex items-center mt-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {item.discount}% discount
-                </span>
-              )}
-            </div>
 
-            {/* Right Section - Pricing */}
-            <div className="text-right">
-              <p
-                className={`font-semibold ${
-                  isSelected ? 'text-blue-700' : 'text-gray-900'
-                }`}
-              >
-                {formatPrice(totalPrice)}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                {formatPrice(unitPrice)}/{unit}
-              </p>
+              {/* Right Section - Pricing */}
+              <div className="text-right">
+                <p
+                  className={`font-semibold ${
+                    isSelected ? "text-blue-700" : "text-gray-900"
+                  }`}
+                >
+                  {formatPrice(totalPrice)}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {formatPrice(unitPrice)}/{unit}
+                </p>
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
-    
-    {/* Footer */}
-    <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500">
-      <p>Prices include all applicable taxes</p>
-    </div>
-  </div>
-);
- const [showShareMenu, setShowShareMenu] = useState(false);
+          );
+        })}
+      </div>
 
-// share
-const shareProduct = (platform) => {
+      {/* Footer */}
+      <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500">
+        <p>Prices include all applicable taxes</p>
+      </div>
+    </div>
+  );
+  const [showShareMenu, setShowShareMenu] = useState(false);
+
+  // share
+  const shareProduct = (platform) => {
     const productUrl = encodeURIComponent(window.location.href);
     const productName = encodeURIComponent("Premium Wireless Headphones");
-    const productPrice = encodeURIComponent(formatPrice(
-      DISCOUNT_HELPER(
-        discountPercentage.percentage,
-        Number(_.get(checkOutState, "product_price", 0))
+    const productPrice = encodeURIComponent(
+      formatPrice(
+        DISCOUNT_HELPER(
+          discountPercentage.percentage,
+          Number(_.get(checkOutState, "product_price", 0))
+        )
       )
-    ));
+    );
 
     const shareUrls = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${productUrl}`,
@@ -1143,13 +1167,13 @@ const shareProduct = (platform) => {
       pinterest: `https://pinterest.com/pin/create/button/?url=${productUrl}&description=${productName}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${productUrl}`,
       whatsapp: `https://api.whatsapp.com/send?text=Check out this product: ${productName} for ${productPrice} ${productUrl}`,
-      email: `mailto:?subject=${productName}&body=Check out this product: ${productName} for ${productPrice} - ${productUrl}`
+      email: `mailto:?subject=${productName}&body=Check out this product: ${productName} for ${productPrice} - ${productUrl}`,
     };
 
     if (shareUrls[platform]) {
-      window.open(shareUrls[platform], '_blank');
+      window.open(shareUrls[platform], "_blank");
     }
-    
+
     setShowShareMenu(false);
   };
 
@@ -1162,7 +1186,7 @@ const shareProduct = (platform) => {
           url: window.location.href,
         });
       } catch (err) {
-        console.log('Error sharing:', err);
+        console.log("Error sharing:", err);
       }
     } else {
       setShowShareMenu(true);
@@ -1177,119 +1201,125 @@ const shareProduct = (platform) => {
       }
     >
       <div className="font-primary w-full space-y-2 relative">
+        {/* {lazy&&<div className="fixed top-56 left-4 z-20">
+          <img src={Cat} alt="cat" className="size-44" />
+        </div>} */}
+
         {/* Product Header */}
         <div className="space-y-1 flex justify-between">
           <h1 className="!text-gray-900 !font-bold !mb-2 w-[80%] text-3xl md:text-5xl">
             {data.name}
           </h1>
 
-         <div className="">
+          <div className="">
             {/* Share button and dropdown */}
-          <div className="relative">
-            {/* Share button */}
-            <button 
-              onClick={handleNativeShare}
-              className="bg-[#f9c114] hover:bg-[#f9c114] text-black hover:text-white p-3 rounded-full shadow-md transition-all duration-300 "
-            >
-              <IoShareSocial className=""/>
-            </button>
-            
-            {/* Share options dropdown */}
-            {showShareMenu && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-lg shadow-xl z-10 p-2 border border-gray-200"
+            <div className="relative">
+              {/* Share button */}
+              <button
+                onClick={handleNativeShare}
+                className="bg-[#f9c114] hover:bg-[#f9c114] text-black hover:text-white p-3 rounded-full shadow-md transition-all duration-300 "
               >
-                <p className="text-xs text-gray-500 font-semibold p-2">Share via</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button 
-                    onClick={() => shareProduct('facebook')}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
-                  >
-                    <FacebookIcon className="!size-[35px] rounded-full !text-white p-1  bg-[#0965fd]" />
-                    <span className="text-xs">Facebook</span>
-                  </button>
-                  <button 
-                    onClick={() => shareProduct('twitter')}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-400 transition-all"
-                  >
-                    <i className="fab fa-twitter text-lg mb-1"></i>
-                    <span className="text-xs">Twitter</span>
-                  </button>
-                  <button 
-                    onClick={() => shareProduct('pinterest')}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-all"
-                  >
-                    <i className="fab fa-pinterest text-lg mb-1"></i>
-                    <span className="text-xs">Pinterest</span>
-                  </button>
-                  <button 
-                    onClick={() => shareProduct('linkedin')}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition-all"
-                  >
-                    <i className="fab fa-linkedin text-lg mb-1"></i>
-                    <span className="text-xs">LinkedIn</span>
-                  </button>
-                  <button 
-                    onClick={() => shareProduct('whatsapp')}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
-                  >
-                    <i className="fab fa-whatsapp text-lg mb-1"></i>
-                    <span className="text-xs">WhatsApp</span>
-                  </button>
-                  <button 
-                    onClick={() => shareProduct('email')}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 transition-all"
-                  >
-                    <i className="fas fa-envelope text-lg mb-1"></i>
-                    <span className="text-xs">Email</span>
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        
-        
-           <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{
-              duration: 0.6,
-              repeat: Infinity,
-              repeatType: "loop",
-              ease: "easeInOut",
-            }}
-            className="bg-green-100 border border-green-300 rounded-lg p-2 lg:p-2 shadow-lg text-right  h-fit w-fit absolute top-16 right-0  "
-          >
-            <h3  className="!m-0 !text-green-600 text-sm md:text-xl font-semibold">
-              {quantity
-                ? formatPrice(
-                    DISCOUNT_HELPER(
-                      discountPercentage.percentage,
-                      Number(_.get(checkOutState, "product_price", 0))
+                <IoShareSocial className="" />
+              </button>
+
+              {/* Share options dropdown */}
+              {showShareMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-lg shadow-xl z-10 p-2 border border-gray-200"
+                >
+                  <p className="text-xs text-gray-500 font-semibold p-2">
+                    Share via
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => shareProduct("facebook")}
+                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
+                    >
+                      <FacebookIcon className="!size-[35px] rounded-full !text-white p-1  bg-[#0965fd]" />
+                      <span className="text-xs">Facebook</span>
+                    </button>
+                    <button
+                      onClick={() => shareProduct("twitter")}
+                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-400 transition-all"
+                    >
+                      <i className="fab fa-twitter text-lg mb-1"></i>
+                      <span className="text-xs">Twitter</span>
+                    </button>
+                    <button
+                      onClick={() => shareProduct("pinterest")}
+                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-all"
+                    >
+                      <i className="fab fa-pinterest text-lg mb-1"></i>
+                      <span className="text-xs">Pinterest</span>
+                    </button>
+                    <button
+                      onClick={() => shareProduct("linkedin")}
+                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition-all"
+                    >
+                      <i className="fab fa-linkedin text-lg mb-1"></i>
+                      <span className="text-xs">LinkedIn</span>
+                    </button>
+                    <button
+                      onClick={() => shareProduct("whatsapp")}
+                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
+                    >
+                      <i className="fab fa-whatsapp text-lg mb-1"></i>
+                      <span className="text-xs">WhatsApp</span>
+                    </button>
+                    <button
+                      onClick={() => shareProduct("email")}
+                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-500 transition-all"
+                    >
+                      <i className="fas fa-envelope text-lg mb-1"></i>
+                      <span className="text-xs">Email</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{
+                duration: 0.6,
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "easeInOut",
+              }}
+              className="bg-green-100 border border-green-300 rounded-lg p-2 lg:p-2 shadow-lg text-right  h-fit w-fit absolute top-16 right-0  "
+            >
+              <h3 className="!m-0 !text-green-600 text-sm md:text-xl font-semibold">
+                {quantity
+                  ? formatPrice(
+                      DISCOUNT_HELPER(
+                        discountPercentage.percentage,
+                        Number(_.get(checkOutState, "product_price", 0))
+                      )
                     )
-                  )
-                : "Select quantity"}
-            </h3>
-          </motion.div>
-         </div>
+                  : "Select quantity"}
+              </h3>
+            </motion.div>
+          </div>
         </div>
 
         {/* Product Description */}
-        <div >
-          <h1 className="text-xl font-semibold w-[80%]">
+        <div>
+          <h1 className="text-xl font-semibold w-[60%] lg:w-full">
             {_.get(data, "product_description_tittle", "")}
           </h1>
           <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 ">
             <li className="w-[70%]">{_.get(data, "Point_one", "")}</li>
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
-            <li>
-              {_.get(data, "Point_four", "")}{" "}
-              <a href="#product" onClick={scrollToproductDetails} className="ml-10 text-blue-600">
-                read more
-              </a>
+            <li>{_.get(data, "Point_four", "")} </li>
+            <li
+              className="list-none text-blue-600 cursor-pointer"
+              onClick={scrollToproductDetails}
+            >
+              read more
             </li>
           </ul>
         </div>
@@ -1553,71 +1583,7 @@ const shareProduct = (platform) => {
               Estimated Delivery
             </Text>
 
-            <motion.div
-              whileHover={{ scale: 1.01 }}
-              className="mb-2 flex rounded-lg relative overflow-hidden"
-            >
-              <Input
-                className="h-10 rounded-lg w-full"
-                value={pincode}
-                onChange={handlePincodeChange}
-                placeholder="Enter Pincode"
-                maxLength={6}
-                suffix={
-                  <div className="flex items-center">
-                    {isValidatingPincode && (
-                      <Spin size="small" className="mr-2" />
-                    )}
-                    {isPincodeValid === true && (
-                      <CheckCircleOutlined className="text-green-500 mr-2" />
-                    )}
-                    {isPincodeValid === false && (
-                      <CloseCircleOutlined className="text-red-500 mr-2" />
-                    )}
-                  </div>
-                }
-              />
-              <button
-                onClick={getPincodeByGPSWithPermissionCheck}
-                disabled={isGettingLocation}
-                className="absolute right-0 top-0 text-black font-semibold p-3 bg-yellow-300 hover:bg-yellow-500 h-full disabled:bg-gray-400 flex items-center justify-center min-w-[100px]"
-              >
-                {isGettingLocation ? (
-                  <Spin size="small" className="text-white" />
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <GPS_ICON className="mr-1" />
-                    get pincode
-                  </span>
-                )}
-              </button>
-            </motion.div>
-
-            {pincode &&
-              isPincodeValid !== null &&
-              (isPincodeValid ? (
-                <></>
-              ) : (
-                <Alert
-                  message={"Sorry, we don't deliver to this pincode yet"}
-                  type={"error"}
-                  showIcon
-                  className="mb-2"
-                />
-              ))}
-
-            <motion.div
-              className={`text-gray-700 flex gap-2 items-center`}
-              whileHover={{ x: 5 }}
-            >
-              <IconHelper.DELIVERY_TRUCK_ICON className="text-blue-500" />
-              Standard Delivery by
-              <Text strong>{calculateDeliveryDate(deliveryTime)}</Text>
-              <Divider type="vertical" />
-              <Text type="success" strong>
-                ₹ 100
-              </Text>
-            </motion.div>
+            <PincodeDeliveryCalculator  Production={processing_item}/>
           </motion.div>
         </Card>
 
@@ -1643,7 +1609,6 @@ const shareProduct = (platform) => {
                 }}
               />
             </div>
-           
           </div>
 
           {needDesignUpload ? (
@@ -1714,27 +1679,29 @@ const shareProduct = (platform) => {
           </Modal>
         </div>
         <div className="">
-           <div className="flex gap-3 mb-2 ">
-              <Text className="text-gray-800 font-bold">Instructions</Text>
-              <Switch
-                onChange={(checked) => {
-                  setInstructionsVisible(checked);
-                  if (!checked) {
-                    setCheckOutState((prev) => ({
-                      ...prev,
+          <div className="flex gap-3 mb-2 ">
+            <Text className="text-gray-800 font-bold">Instructions</Text>
+            <Switch
+              onChange={(checked) => {
+                setInstructionsVisible(checked);
+                if (!checked) {
+                  setCheckOutState((prev) => ({
+                    ...prev,
                     instructionproduct_design_file: "",
-                    }));
-                    setChecked(false);
-                  }
-                }}
-              />
-            </div>
-          {instructionsVisible&&<TextArea
-                className="h-20 rounded-lg w-full"
-                onChange={handlePincodeChange}
-                placeholder="Please provide the instructions for this product. Your response should be clear, concise, and must not exceed 180 words"
-                maxLength={180}
-                ></TextArea>}
+                  }));
+                  setChecked(false);
+                }
+              }}
+            />
+          </div>
+          {instructionsVisible && (
+            <TextArea
+              className="h-20 rounded-lg w-full"
+              onChange={handlePincodeChange}
+              placeholder="Please provide the instructions for this product. Your response should be clear, concise, and must not exceed 180 words"
+              maxLength={180}
+            ></TextArea>
+          )}
         </div>
 
         {/* Add to Cart Section */}
@@ -1790,9 +1757,252 @@ const shareProduct = (platform) => {
 
 export default ProductDetails;
 
-// In your IconHelper.js or similar file
-export const GPS_ICON = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
-  </svg>
-);
+import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
+
+export const PincodeDeliveryCalculator = ( Production ) => {
+  const [pincode, setPincode] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [state, setState] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isValidatingPincode, setIsValidatingPincode] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isPincodeValid, setIsPincodeValid] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const stateDeliveryDays = {
+    maharashtra: { days: 2, name: "Maharashtra" },
+    gujarat: { days: 3, name: "Gujarat" },
+    karnataka: { days: 4, name: "Karnataka" },
+    "tamil nadu": { days: 3, name: "Tamil Nadu" },
+    kerala: { days: 6, name: "Kerala" },
+    delhi: { days: 7, name: "Delhi" },
+    default: { days: 3, name: "Other States" },
+  };
+
+  const pincodeToStateMap = {
+    400: "maharashtra",
+    395: "gujarat",
+    560: "karnataka",
+    600: "tamil nadu",
+    682: "kerala",
+    110: "delhi",
+  };
+
+  const getStateFromPincode = (pincode) => {
+    const prefix = pincode.substring(0, 3);
+    return pincodeToStateMap[prefix] || "default";
+  };
+
+  
+
+  const calculateDeliveryDate = (state) => {
+    const { days: daysToAdd } = stateDeliveryDays[state] || stateDeliveryDays.default;
+    const today = new Date();
+    const productionTime = Production.Production || 0;
+    
+    let deliveryDate = new Date(today);
+    deliveryDate.setDate(deliveryDate.getDate() + Number(productionTime));
+    
+    let addedDays = 0;
+    while (addedDays < daysToAdd) {
+      deliveryDate.setDate(deliveryDate.getDate() + 1);
+      if (deliveryDate.getDay() !== 0 && deliveryDate.getDay() !== 6) {
+        addedDays++;
+      }
+    }
+
+    return deliveryDate.toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
+  const validatePincode = async (pincode) => {
+    setIsValidatingPincode(true);
+    
+    // Simulate API validation
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    const isValid = /^\d{6}$/.test(pincode);
+    setIsPincodeValid(isValid);
+
+    if (isValid) {
+      const stateKey = getStateFromPincode(pincode);
+      setState(stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name);
+      const date = calculateDeliveryDate(stateKey);
+      setDeliveryDate(date);
+      setError("");
+    } else {
+      setError("Please enter a valid 6-digit pincode");
+      setDeliveryDate("");
+      setState("");
+    }
+    
+    setIsValidatingPincode(false);
+  };
+
+  const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "");
+    setPincode(value.slice(0, 6));
+    setIsPincodeValid(null);
+    setState("");
+    setDeliveryDate("");
+    setError("");
+
+    if (value.length === 6) {
+      validatePincode(value);
+    }
+  };
+
+  const extractPincodeFromDisplayName = (displayName) => {
+    const pincodeMatch = displayName.match(/\b\d{6}\b/);
+    return pincodeMatch ? pincodeMatch[0] : null;
+  };
+
+  const handleGeolocationError = (error) => {
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        toast.error("Location access denied. Please enable location permissions.");
+        break;
+      case error.POSITION_UNAVAILABLE:
+        toast.error("Location information unavailable. Please check your GPS settings.");
+        break;
+      case error.TIMEOUT:
+        toast.error("Location request timed out. Please try again.");
+        break;
+      default:
+        toast.error("Failed to get location. Please enter pincode manually.");
+    }
+  };
+
+  const checkLocationPermission = async () => {
+    if (!navigator.permissions) return true;
+    
+    try {
+      const permissionStatus = await navigator.permissions.query({
+        name: "geolocation"
+      });
+      return permissionStatus.state !== "denied";
+    } catch {
+      return true;
+    }
+  };
+
+  const getPincodeByGPS = async () => {
+    setIsGettingLocation(true);
+    setError("");
+
+    try {
+      if (!navigator.geolocation) {
+        throw new Error("Geolocation not supported");
+      }
+
+      const position = await new Promise((resolve, reject) => 
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            timeout: 15000,
+            enableHighAccuracy: true,
+            maximumAge: 300000
+          }
+        )
+      );
+
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
+      );
+
+      const data = await response.json();
+      const detectedPincode = data.address?.postcode || extractPincodeFromDisplayName(data.display_name);
+
+      if (detectedPincode) {
+        setPincode(detectedPincode);
+        validatePincode(detectedPincode);
+        toast.success(`📍 Pincode detected: ${detectedPincode}`);
+      } else {
+        throw new Error("No pincode found");
+      }
+    } catch (error) {
+      handleGeolocationError(error);
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
+  const getPincodeByGPSWithPermissionCheck = async () => {
+    const hasPermission = await checkLocationPermission();
+    hasPermission ? await getPincodeByGPS() : toast.error("Location permission denied");
+  };
+
+  return (
+    <div className="pincode-delivery-calculator">
+      <div className="pincode-input-container">
+        <motion.div whileHover={{ scale: 1.01 }} className="input-wrapper relative overflow-hidden rounded-lg">
+          <Input
+            className="pincode-input"
+            value={pincode}
+            onChange={handlePincodeChange}
+            placeholder="Enter 6-digit Pincode"
+            maxLength={6}
+            suffix={
+              <div className="input-suffix">
+                {isValidatingPincode && <Spin size="small" />}
+                {isPincodeValid && <CheckCircleOutlined className="success-icon" />}
+                {isPincodeValid === false && <CloseCircleOutlined className="error-icon" />}
+              </div>
+            }
+          />
+          <button
+            onClick={getPincodeByGPSWithPermissionCheck}
+            disabled={isGettingLocation}
+            className="location-button absolute flex top-0 right-0 bg-yellow-500 h-full p-2"
+          >
+            {isGettingLocation ? (
+              <Spin size="small" />
+            ) : (
+              <span className="button-content flex items-center gap-2 ">
+                <FaMapMarkerAlt className="" /> Get Location
+              </span>
+            )}
+          </button>
+        </motion.div>
+
+        {error && <div className="error-message">{error}</div>}
+
+        {deliveryDate && (
+          <motion.div 
+            className="delivery-info"
+            whileHover={{ x: 5 }}
+          >
+            <span className="delivery-text">
+              Standard Delivery by <Text strong>{deliveryDate}</Text>
+            </span>
+            <Divider type="vertical" />
+            <Text type="success" strong>₹ 100</Text>
+          </motion.div>
+        )}
+
+        <Modal
+          title="Delivery Information"
+          open={isModalOpen}
+          onCancel={() => setIsModalOpen(false)}
+          footer={null}
+          centered
+          width={700}
+        >
+          <div className="delivery-info-content">
+            <ul>
+              <li>Delivery times vary by state and region</li>
+              <li>Orders placed after 3 PM will be processed next business day</li>
+              <li>Weekends and holidays are not counted as business days</li>
+            </ul>
+          </div>
+        </Modal>
+      </div>
+    </div>
+  );
+};

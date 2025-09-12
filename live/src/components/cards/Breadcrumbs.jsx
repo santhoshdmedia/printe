@@ -10,18 +10,18 @@ const Breadcrumbs = ({ title, title2, titleto, title2to, title3 }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="!font-primary pb-4 ">
+    <div className="!font-primary pb-2 mt-4 ">
       <Breadcrumb separator={<span className="!text-[#000000] ">{<IoArrowRedoCircle  className="!mt-1" />}</span>}>
         <Breadcrumb.Item>
           <Link to="/" className="!font-primary !text-[#000000] !font-light flex">
-            <div className="center_div gap-x-1 !text-[#f9c114] font-semibold">
+            <div className="center_div gap-x-1 !text-[#c09000] font-semibold">
               <IconHelper.HOME_ICON className="!text-sm !text-[#000000] font-semibold" /> Home
             </div>
           </Link>
         </Breadcrumb.Item>
 
         <Breadcrumb.Item
-          className={`!font-primary ${titleto ? "!text-[#f9c114]  cursor-pointer font-semibold" : "!text-[#f5f5f5] font-semibold"} font-light`}
+          className={`!font-primary ${titleto ? "!text-[#c09000]  cursor-pointer font-semibold" : "!text-[#f5f5f5] font-semibold"} font-light`}
           onClick={() => {
             titleto && navigate(titleto);
           }}
@@ -31,7 +31,7 @@ const Breadcrumbs = ({ title, title2, titleto, title2to, title3 }) => {
         {title2 && (
           <Breadcrumb.Item>
             <div
-              className={`!font-primary ${title2to ? "!text-[#f9c114]  cursor-pointer font-semibold" : "!text-slate-500"} font-light`}
+              className={`!font-primary ${title2to ? "!text-[#c09000]  cursor-pointer font-semibold" : "!text-slate-500"} font-light`}
               onClick={() => {
                 title2to && navigate(title2to);
               }}
