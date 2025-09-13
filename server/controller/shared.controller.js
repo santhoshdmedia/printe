@@ -5,9 +5,9 @@ require("dotenv").config();
 
 // Configure Cloudinary - better to use environment variables
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dmvc40kyp",
-  api_key: process.env.CLOUDINARY_API_KEY || "753129661365923",
-  api_secret: process.env.CLOUDINARY_API_SECRET || "6ElCTLSl3stnTo1C6wPomXIMtJU",
+  cloud_name: process.env.cloud_name || "du7etum9n",
+  api_key: process.env.api_key || "326778573543668",
+  api_secret: process.env.api_secret || "0aLqiw-lPNiBBI_BXWj4X0-FEYs",
 });
 
 const UploadImage = (req, res) => {
