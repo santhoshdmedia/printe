@@ -27,7 +27,7 @@ import { SET_CART_COUNT } from "../../redux/slices/cart.slice";
 
 // Components
 import SearchProductCard from "../Product/SearchProductCard";
-import Logo from "../../assets/logo/without_bg.gif";
+import Logo from "../../assets/logo/without_bg.png";
 
 const Navbar = () => {
   // Redux
@@ -289,7 +289,7 @@ const Navbar = () => {
               <img
                 src={Logo}
                 alt="printee logo"
-                className="w-auto lg:h-[300px] h-[50px] bg-center bg-contain rounded-md"
+                className="w-auto xl:h-[70px] h-[50px] bg-center bg-contain rounded-md"
               />
             </div>
           </Link>
