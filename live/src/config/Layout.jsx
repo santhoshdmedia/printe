@@ -54,6 +54,13 @@ const Layout = () => {
           aria-hidden="true"
         />
       </div>
+
+      <div className="sticky top-0 z-[999] w-full ">
+       <marquee behavior="scroll" direction="left"  className="flex items-center text-[#000000] bg-[#f5f5f5] p-2 font-semibold">
+            WE'RE LIVE! Get FREE Shipping on All Orders Over ₹5000 Today Only!
+        </marquee>
+      </div>
+      
       <div className="sticky top-0 z-[999] w-full">
         <Navbar />
       </div>
@@ -90,3 +97,32 @@ const Layout = () => {
 };
 
 export default Layout;
+
+
+export const ScrollingText = () => {
+  return (
+    <div className="sticky top-0 z-[999] w-full p-2 overflow-hidden bg-gray-100">
+      <div className="scrolling-text">
+        WE'RE LIVE! Get FREE Shipping on All Orders Over ₹5000 Today Only!
+      </div>
+    </div>
+  );
+};
+
+
+<style jsx>{`
+  .scrolling-text {
+    display: inline-block;
+    white-space: nowrap;
+    animation: scroll 10s linear infinite;
+  }
+
+  @keyframes scroll {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+`}</style>

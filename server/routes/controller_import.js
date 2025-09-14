@@ -8,6 +8,7 @@ const { getProduct, addProduct, deleteProduct, editProduct, getProductVariantPri
 const { CreateOrder, CollectAllOrder, CollectMyOrders, UpdateOrderStatus, getOrderStates,UpdateOrderDesign,UpdateOrderVendor } = require("../controller/order.controller");
 const { getAllDashbardCounts } = require("../controller/dashboard.controller");
 const { getAllBannerProducts, addBanners, editBanner, getAllBanners, deleteBanner } = require("../controller/banner.controller");
+const { addTextBanners,getBannersText, editTextBanner,  deleteTextBanner } = require("../controller/bannerTextcontroller");
 const { addReview, getreveiewbyproduct, getmyreviewall, getadminsideReview, deleteMyReview, updateMyReview } = require("../controller/review.controller");
 const { addblog, getblog, editblog, deleteblog } = require("../controller/blog.controller");
 const { addVendors, editVendor, getAllVendors, deleteVendor, getSingleVendor,getSingleVendorName } = require("../controller/vendor.controller");
@@ -84,6 +85,12 @@ module.exports = {
   editBanner,
   getAllBanners,
   deleteBanner,
+
+  // bannear text
+  getBannersText,
+  addTextBanners,
+  editTextBanner,
+  deleteTextBanner,
 
   //review
   addReview,

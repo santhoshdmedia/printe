@@ -6,6 +6,7 @@ const product_routers = require("./product.routers");
 const order_routers = require("./order.routes");
 const dashboard_routers = require("./dashboard.routes");
 const banner_routes = require("./banner.routes");
+const banner_Text_routes = require("./bannerText");
 const review_routes = require("./review.routes");
 const blog_routes = require("./blog.routes");
 const vendor_routes = require("./vendor.routers");
@@ -24,6 +25,7 @@ module.exports = {
   order_routers,
   dashboard_routers,
   banner_routes,
+  banner_Text_routes,
   review_routes,
   vendor_routes,
   blog_routes,

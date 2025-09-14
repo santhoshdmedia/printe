@@ -28,6 +28,8 @@ module.exports = model(
         type: String,
         enum: [
           "super admin",
+          "Frontend admin",
+          "Backend admin",
           "accounting team",
           "designing team",
           "quality check team ",

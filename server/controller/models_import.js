@@ -6,6 +6,7 @@ const SubProductcategory = require("../modals/subproductcategory");
 const Product = require("../modals/product.models");
 const { Order, order_delivery_timeline } = require("../modals/orderdetails.modals");
 const bannerModals = require("../modals/banner.modals");
+const bannerTextModals = require("../modals/bannerTextmodel");
 const reviewModals = require("../modals/review.modals");
 const blogMoidals = require("../modals/blog.moidals");
 const vendorModal = require("../modals/vendor.models");
@@ -26,6 +27,7 @@ module.exports = {
   OrderDetailsSchema: Order,
   orderdeliverytimelineSchema: order_delivery_timeline,
   BannerSchemas: bannerModals,
+  BannerTextSchemas: bannerTextModals,
   ReviewSchemas: reviewModals,
   BlogSchema: blogMoidals,
   VendorSchemas: vendorModal,
