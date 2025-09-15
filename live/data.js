@@ -189,7 +189,7 @@ export const designerAppDescription = [
   },
 ];
 
-export const FrequentlyAskedQuestions = {
+export const FrequentlyAskedQuestions_one = {
   name: "Frequently Asked Questions",
   children: [
     {
@@ -212,7 +212,7 @@ export const FrequentlyAskedQuestions = {
     },
     {
       key: "4",
-      label: "What if I canâ€™t find the product Iâ€™m looking for?",
+      label: "What if I remove the product from shipping cart how to find the product I am looking for?",
       children:
         "Use the search bar or contact customer support for help. They may assist you in locating or suggesting similar products.",
     },
@@ -222,6 +222,11 @@ export const FrequentlyAskedQuestions = {
       children:
         "Common payment options include credit/debit cards, net banking, digital wallets, UPI, and cash on delivery (if available).",
     },
+  ],
+};
+export const FrequentlyAskedQuestions_two = {
+  name: "Frequently Asked Questions",
+  children: [
     {
       key: "6",
       label: "What EMI options are available?",
@@ -244,7 +249,7 @@ export const FrequentlyAskedQuestions = {
       key: "9",
       label: "Can I change my delivery address after placing an order?",
       children:
-        "You can change the address only if the order hasnâ€™t been shipped. Contact customer support immediately for assistance.",
+        "You can change the address only if the order hasn't been shipped. Contact customer support immediately for assistance.",
     },
     {
       key: "10",
@@ -325,7 +330,7 @@ export const footerItems = [
     sub: [
       { value: "Return Policy", link: "/return-policy" },
       { value: "Cancelling Policy", link: "/cancelling-policy" },
-      { value: "Careers", link: "/careers" },
+      // { value: "Careers", link: "/careers" },
     ],
   },
 ];

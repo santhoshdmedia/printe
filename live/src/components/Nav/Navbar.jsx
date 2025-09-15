@@ -17,8 +17,8 @@ import { Link, useNavigate } from "react-router-dom";
 import _ from "lodash";
 
 // Icons
-import { BsCart3 } from "react-icons/bs";
-import { IoHeartOutline } from "react-icons/io5";
+import { BsCart3, BsSearch, BsXLg } from "react-icons/bs";
+import { IoHeartOutline, IoMenu } from "react-icons/io5";
 import { IconHelper } from "../../helper/IconHelper";
 
 // API & Redux
@@ -33,7 +33,7 @@ const Navbar = () => {
   // Redux
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+
   const { isSearchingProducts, searchingProducts, menu } = useSelector(
     (state) => state.publicSlice
   );
@@ -49,6 +49,7 @@ const Navbar = () => {
   const [searchProduct, setSearchProduct] = useState("");
   const [menuStatus, setMenuStatus] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false);
 
   // Fetch cart data
   const fetchCartData = useCallback(async () => {
@@ -94,10 +95,26 @@ const Navbar = () => {
   const handleSearchFocus = () => {
     setIsExpanded(true);
     setSearchProduct("");
+    setShowSearchBar(true);
   };
 
   const handleSearchBlur = () => {
-    setTimeout(() => setIsExpanded(false), 200);
+    setTimeout(() => {
+      setIsExpanded(false);
+      setShowSearchBar(false);
+    }, 200);
+  };
+
+  const toggleSearchBar = () => {
+    setShowSearchBar(!showSearchBar);
+    setIsExpanded(!showSearchBar);
+    if (!showSearchBar) {
+      setTimeout(() => {
+        document.getElementById("mobile-search-input")?.focus();
+      }, 100);
+    } else {
+      setSearchProduct("");
+    }
   };
 
   const logout = () => {
@@ -131,27 +148,16 @@ const Navbar = () => {
     },
   ], [logout]);
 
-  const supportTooltip = useMemo(() => (
-    <div className="center_div gap-x-4">
-      <IconHelper.WHATSAPP_ICON className="!text-green-400 !text-2xl" />
-      Tap the mobile number to reach us.
-    </div>
-  ), []);
-
   // Components
   const SearchResultsDropdown = () => (
     <div
-      className={`absolute top-14 z-[55] bg-white/95 backdrop-blur-md rounded-xl shadow-xl overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
-        isExpanded
-          ? "opacity-100 translate-y-0 scale-100 w-full h-[350px] visible"
-          : "opacity-0 -translate-y-2 scale-95 h-0 invisible"
+      className={`absolute top-full left-0 z-[55] bg-white/95 backdrop-blur-md rounded-b-xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out ${
+        isExpanded && searchProduct
+          ? "opacity-100 max-h-96 w-full visible border-t border-gray-200"
+          : "opacity-0 max-h-0 invisible"
       }`}
-      style={{
-        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
-        border: "1px solid rgba(249, 193, 20, 0.2)",
-      }}
     >
-      <div className={`h-full overflow-y-auto custom-scrollbar transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0"}`}>
+      <div className="h-96 overflow-y-auto custom-scrollbar">
         <Spin
           spinning={isSearchingProducts}
           indicator={
@@ -192,57 +198,22 @@ const Navbar = () => {
   );
 
   const AuthButtons = () => (
-    <div className="flex center_div items-center">
-      <div className="center_div font-medium !text-[#121621] !text-sm !font-primary">
-        <Link
-          to="/login"
-          className="center_div gap-x-2 !font-normal text-[#121621] py-2 px-3 transition-all duration-300 hover:text-primary hover:bg-slate-50 rounded"
-        >
-          <IconHelper.LOGIN_ICON className="!text-xl !text-[#121621]" />
-          Login
-        </Link>
-        <Divider type="vertical" className="!bg-slate-400" />
-        <Link
-          to="/sign-up"
-          className="center_div !font-normal text-[#121621] gap-x-2 py-2 px-3 transition-all duration-300 hover:text-primary hover:bg-slate-50 rounded"
-        >
-          <IconHelper.REGISTER_USER_ICON className="!text-xl !text-[#121621]" />
-          Register
-        </Link>
-      </div>
+    <div className="flex items-center">
+      <Link
+        to="/login"
+        className="text-[#121621] p-2 transition-all duration-300 hover:text-primary rounded"
+      >
+        <IconHelper.LOGIN_ICON className="text-xl" />
+      </Link>
+      <Link
+        to="/sign-up"
+        className="text-[#121621] p-2 transition-all duration-300 hover:text-primary rounded"
+      >
+        <IconHelper.REGISTER_USER_ICON className="text-xl" />
+      </Link>
     </div>
   );
 
-  const UserMenu = () => (
-    <div className="center_div justify-end gap-3">
-      <Link to="/account/wishlist">
-        <Badge count={heartCount} size="small" offset={[-5, 5]}>
-          <div className="w-[40px] h-[40px] rounded-full bg-slate-50 text-primary flex items-center justify-center transition-all duration-300 hover:bg-slate-100 hover:scale-105">
-            <IoHeartOutline className="text-[20px]" />
-          </div>
-        </Badge>
-      </Link>
-
-      <Link to="/shopping-cart" onClick={fetchCartData}>
-        <Badge count={cartCount} size="small" color="hotpink" offset={[-5, 5]}>
-          <div className="w-[40px] h-[40px] rounded-full bg-slate-50 text-primary flex items-center justify-center transition-all duration-300 hover:bg-slate-100 hover:scale-105">
-            <BsCart3 className="text-[20px] text-[#121621]" />
-          </div>
-        </Badge>
-      </Link>
-
-      <Dropdown menu={{ items: dropdownItems }} placement="bottom" arrow>
-        <Avatar
-          src={user.profile_pic}
-          size="large"
-          shape="circle"
-          className="text-white !bg-primary border capitalize text-lg title transition-all duration-300 hover:scale-105"
-        >
-          {profileImageName}
-        </Avatar>
-      </Dropdown>
-    </div>
-  );
 
   const SupportSection = () => (
     <div className="text-sm center_div gap-x-2 hidden lg:flex">
@@ -258,7 +229,7 @@ const Navbar = () => {
               rel="noopener noreferrer"
               className="center_div justify-start hover:!text-[#121621] w-fit text-nowrap"
             >
-              +91 9585610000
+              +91 95856 10000
             </a>
           </h1>
           <h1 className="!text-[#121621] capitalize">customer Support</h1>
@@ -267,7 +238,13 @@ const Navbar = () => {
     </div>
   );
 
-  const HelpCenterLink = () => (
+   const supportTooltip = useMemo(() => (
+    <div className="center_div gap-x-4">
+      <IconHelper.WHATSAPP_ICON className="!text-green-400 !text-2xl" />
+      Tap the mobile number to reach us.
+    </div>
+  ), []);
+const HelpCenterLink = () => (
     <Link
       to="/help"
       className="center_div gap-x-1 border border-[#121621] py-2 px-3 transition-all duration-300 hover:bg-[#121621] hover:text-[#f9c114] rounded group ml-2"
@@ -279,9 +256,40 @@ const Navbar = () => {
     </Link>
   );
 
+  const UserMenu = () => (
+    <div className="flex items-center justify-end gap-3">
+      <Link to="/account/wishlist" className="p-1">
+        <Badge count={heartCount} size="small" offset={[-5, 5]}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 lg:hover:bg-slate-100">
+            <IoHeartOutline className="text-xl text-[#121621]" />
+          </div>
+        </Badge>
+      </Link>
+
+      <Link to="/shopping-cart" onClick={fetchCartData} className="p-1">
+        <Badge count={cartCount} size="small" color="hotpink" offset={[-5, 5]}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 lg:hover:bg-slate-100">
+            <BsCart3 className="text-xl text-[#121621]" />
+          </div>
+        </Badge>
+      </Link>
+
+      <Dropdown menu={{ items: dropdownItems }} placement="bottomRight" arrow trigger={['click']}>
+        <Avatar
+          src={user.profile_pic}
+          size="default"
+          shape="circle"
+          className="w-8 h-8 text-white bg-primary border capitalize text-lg transition-all duration-300"
+        >
+          {profileImageName}
+        </Avatar>
+      </Dropdown>
+    </div>
+  );
+
   return (
     <div>
-      {/* Desktop Navbar */}
+      {/* Desktop Navbar  */}
       <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f9c114] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-10">
         <div className="flex items-center gap-x-4 xl:gap-x-32 w-auto xl:w-[70%] justify-start">
           <Link to="/" className="title text-[#121621] uppercase cursor-pointer !line-clamp-1">
@@ -320,95 +328,140 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Navbar */}
-      <div className="block lg:hidden w-full fixed top-0 left-0 z-[1001] bg-[#f9c114] shadow-md">
-        <div className="w-full h-[60px] border-b center_div justify-between px-4">
-          <Link to="/" className="title text-[#121621] hover:text-hot_pink uppercase cursor-pointer !line-clamp-1">
-            <div className="flex flex-row items-center">
-              <img src={Logo} alt="Printe Logo" className="w-auto h-[35px] bg-center bg-contain" />
-            </div>
-          </Link>
+      {/* Mobile Navbar - Redesigned */}
+      <div className="block lg:hidden w-full fixed top-[40px] left-0 z-[1001] bg-[#f9c114] shadow-md">
+        {/* Main Navbar Row */}
+        <div className="w-full h-14 flex items-center justify-between px-3">
           <div className="flex items-center gap-2">
-            {isAuth && (
-              <Link to="/shopping-cart" className="relative" onClick={fetchCartData}>
-                <Badge count={cartCount} size="small" offset={[-5, 5]}>
-                  <BsCart3 className="text-[20px] text-[#121621]" />
-                </Badge>
-              </Link>
-            )}
-            <IconHelper.MENU_ICON2
+            <button
               onClick={() => setMenuStatus(true)}
-              className="!text-xl transition-transform duration-300 hover:scale-110 text-[#121621]"
+              className="p-2 transition-transform duration-300 hover:scale-110 text-[#121621]"
+            >
+              <IoMenu className="text-xl" />
+            </button>
+            <Link to="/" className="flex items-center">
+              <img 
+                src={Logo} 
+                alt="Printe Logo" 
+                className="h-8 w-auto object-contain" 
+              />
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={toggleSearchBar}
+              className="p-2 transition-colors duration-300 hover:bg-[#00000010] rounded-full"
+            >
+              {showSearchBar ? <BsXLg className="text-md" /> : <BsSearch className="text-md" />}
+            </button>
+            
+            {isAuth ? <UserMenu /> : <AuthButtons />}
+          </div>
+        </div>
+
+        {/* Expandable Search Bar */}
+        <div className={`w-full bg-[#f9c114] transition-all duration-300 overflow-hidden ${showSearchBar ? 'max-h-16 py-2' : 'max-h-0'}`}>
+          <div className="px-3">
+            <Input
+              id="mobile-search-input"
+              placeholder="Search Product..."
+              value={searchProduct}
+              onChange={(e) => setSearchProduct(e.target.value)}
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
+              suffix={
+                <IconHelper.SEARCH_ICON className="text-[#1c1c1c] transition-colors duration-300" />
+              }
+              allowClear
+              className="rounded-full bg-white border-none"
+              size="large"
             />
           </div>
+        </div>
+
+        {/* Search Results */}
+        <div className="relative w-full">
+          <SearchResultsDropdown />
         </div>
       </div>
 
       {/* Mobile Drawer */}
       <Drawer
         open={menuStatus}
-        title="Quick Access"
+        title={
+          <div className="flex items-center gap-2">
+            <img src={Logo} alt="Logo" className="h-6" />
+            <span className="font-medium">Menu</span>
+          </div>
+        }
         onClose={() => setMenuStatus(false)}
         placement="left"
-        className="transition-all duration-300"
+        className="mobile-nav-drawer"
+        bodyStyle={{ padding: '16px' }}
+        width={280}
       >
-        <div className="w-full flex flex-col gap-y-3">
-          <Tag
-            onClick={() => handleDestination("/")}
-            className="givemeitall transition-colors duration-300 hover:bg-slate-100"
-          >
-            Home
-          </Tag>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <div 
+              onClick={() => handleDestination("/")}
+              className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100 font-medium"
+            >
+              Home
+            </div>
+            
+            {isAuth ? (
+              <>
+                <div 
+                  onClick={() => handleDestination("/account")}
+                  className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100"
+                >
+                  My Account
+                </div>
+                <div 
+                  onClick={() => {
+                    fetchCartData();
+                    handleDestination("/shopping-cart");
+                  }}
+                  className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100"
+                >
+                  My Cart
+                </div>
+                <div 
+                  onClick={() => handleDestination("/account/wishlist")}
+                  className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100"
+                >
+                  My Wishlist
+                </div>
+              </>
+            ) : (
+              <>
+                <div 
+                  onClick={() => handleDestination("/login")}
+                  className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100"
+                >
+                  Login
+                </div>
+                <div 
+                  onClick={() => handleDestination("/sign-up")}
+                  className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100"
+                >
+                  Register
+                </div>
+              </>
+            )}
+          </div>
           
-          {isAuth ? (
-            <div className="space-y-1">
-              <Tag
-                className="givemeitall transition-colors duration-300 hover:bg-slate-100"
-                onClick={() => handleDestination("/account")}
-              >
-                My Account
-              </Tag>
-              <Tag
-                className="givemeitall transition-colors duration-300 hover:bg-slate-100"
-                onClick={() => {
-                  fetchCartData();
-                  handleDestination("/shopping-cart");
-                }}
-              >
-                My Cart
-              </Tag>
-              <Tag
-                className="givemeitall transition-colors duration-300 hover:bg-slate-100"
-                onClick={() => handleDestination("/account/wishlist")}
-              >
-                My Wishlist
-              </Tag>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <Tag
-                className="givemeitall transition-colors duration-300 hover:bg-slate-100"
-                onClick={() => handleDestination("/login")}
-              >
-                Login
-              </Tag>
-              <Tag
-                className="givemeitall transition-colors duration-300 hover:bg-slate-100"
-                onClick={() => handleDestination("/sign-up")}
-              >
-                Register
-              </Tag>
-            </div>
-          )}
+          <Divider className="my-2" />
           
           <div>
-            <h1>Categories</h1>
-            <Menu mode="inline">
+            <h3 className="px-3 py-1 font-medium text-gray-700">Categories</h3>
+            <Menu mode="inline" className="border-none">
               {menu.map((res, index) => (
                 <Menu.SubMenu
                   key={index}
                   title={_.get(res, "main_category_name", "")}
-                  className="transition-colors duration-300"
+                  className="font-medium"
                 >
                   {_.get(res, "sub_categories_details", []).map((subRes, subIndex) => (
                     <Menu.Item
@@ -422,9 +475,9 @@ const Navbar = () => {
                           )}/${_.get(res, "_id", "")}/${_.get(subRes, "_id", "")}`
                         )
                       }
-                      className="transition-colors duration-300 hover:!bg-slate-50"
+                      className="text-sm"
                     >
-                      <div>{_.get(subRes, "sub_category_name", "")}</div>
+                      {_.get(subRes, "sub_category_name", "")}
                     </Menu.Item>
                   ))}
                 </Menu.SubMenu>
@@ -432,14 +485,14 @@ const Navbar = () => {
             </Menu>
           </div>
           
-          <div>
-            <Tag
-              onClick={() => handleDestination("/help")}
-              className="givemeitall gap-x-2 transition-colors duration-300 hover:bg-slate-100"
-            >
-              <IconHelper.HELP_ICON className="!text-xl !text-primary" />
-              <h1>Help Center</h1>
-            </Tag>
+          <Divider className="my-2" />
+          
+          <div 
+            onClick={() => handleDestination("/help")}
+            className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100"
+          >
+            <IconHelper.HELP_ICON className="text-lg text-[#f9c114]" />
+            <span>Help Center</span>
           </div>
         </div>
       </Drawer>

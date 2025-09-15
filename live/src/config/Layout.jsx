@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React,{useEffect, useState} from "react";
 import Footer from "../components/Footer";
-import Navbar from "../components/Nav/Navbar";
+import Navbar from "../components/Nav/Navbar.jsx";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import { useHref } from "react-router-dom";
 import { ImageHelper } from "../helper/ImageHelper";
@@ -12,13 +12,14 @@ import { ToastContainer } from "react-toastify";
 const Layout = () => {
   const [showIcon,setShowIcon]=useState(false)
   const path = useHref();
-  // bg-gradient-to-b from-slate-50 via-pink-100 to-sky-300
+  
   useEffect(() => {
     window.scrollTo({
       top: 0,
       behavior: "smooth"
     });
   }, [location.pathname]); 
+  
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -26,7 +27,7 @@ const Layout = () => {
     });
   };
 
- useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 700) {
         setShowIcon(true);
@@ -35,17 +36,16 @@ const Layout = () => {
       }
     };
 
-    // Add scroll event listener
     window.addEventListener("scroll", handleScroll);
-
-    // Clean up the event listener when component unmounts
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []); // Empty dependency array means this runs only once on mount
+  }, []);
+  
   const isProduct = [
     "product"
   ].some((route) => location.pathname.includes(route));
+  
   return (
     <div className={` w-full mx-auto !transition-all !duration-700 `}>
       <div className={`fixed top-0 left-0 -z-10 h-[100vh] w-full  ${isProduct?"hidden":""}`}>
@@ -55,18 +55,19 @@ const Layout = () => {
         />
       </div>
 
-      <div className="sticky top-0 z-[999] w-full ">
-       <marquee behavior="scroll" direction="left"  className="flex items-center text-[#000000] bg-[#f5f5f5] p-2 font-semibold">
-            WE'RE LIVE! Get FREE Shipping on All Orders Over ₹5000 Today Only!
-        </marquee>
+      <div className="sticky top-0 z-[999] w-full overflow-hidden bg-[#f5f5f5] p-2">
+        <div className="scrolling-text-container">
+          <div className="scrolling-text !font-[450] whitespace-nowrap">
+            ✨ Special Launch Offer – Flat 25% OFF on all items. Shop now and be part of our grand beginning!
+          </div>
+        </div>
       </div>
       
-      <div className="sticky top-0 z-[999] w-full">
+      <div className="sticky top-[40px] z-[999] w-full">
         <Navbar />
       </div>
-      <div className="sticky top-[80px] z-[20]">
-
-      <NavMenu />
+      <div className="sticky top-[130px] z-[20]">
+        <NavMenu />
       </div>
 
       <div className="lg:pt-0 pt-10 overflow-x-hidden max-w-[2000px] mx-auto ">
@@ -92,37 +93,35 @@ const Layout = () => {
           <span className=""><ImageHelper.UP_arrow className="text-yellow-400 text-5xl hover:animate-bounce"onClick={scrollToTop}/></span>
       </div>
       <ToastContainer/>
+      
+      <style jsx>{`
+        .scrolling-text-container {
+          width: 100%;
+          overflow: hidden;
+          position: relative;
+        }
+        
+        .scrolling-text {
+          display: inline-block;
+          padding-left: 100%;
+          animation: scroll 15s linear infinite;
+          font-weight: 600;
+          color: #000000;
+        }
+        
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-100%);
+          }
+        }
+        
+     
+      `}</style>
     </div>
   );
 };
 
 export default Layout;
-
-
-export const ScrollingText = () => {
-  return (
-    <div className="sticky top-0 z-[999] w-full p-2 overflow-hidden bg-gray-100">
-      <div className="scrolling-text">
-        WE'RE LIVE! Get FREE Shipping on All Orders Over ₹5000 Today Only!
-      </div>
-    </div>
-  );
-};
-
-
-<style jsx>{`
-  .scrolling-text {
-    display: inline-block;
-    white-space: nowrap;
-    animation: scroll 10s linear infinite;
-  }
-
-  @keyframes scroll {
-    0% {
-      transform: translateX(100%);
-    }
-    100% {
-      transform: translateX(-100%);
-    }
-  }
-`}</style>

@@ -75,7 +75,7 @@ const Footer = () => {
               <div className="p-2 bg-gray-800 rounded-lg group-hover:bg-[#f9c114] transition-colors duration-300">
                 <IoCallOutline size={16} className="text-[#f9c114] group-hover:text-gray-900 transition-colors duration-300" />
               </div>
-              <span><a href="tel:+919585610000" className="hover:text-[#f9c114]">+919585610000</a></span>
+              <span><a href="tel:+919585610000" className="hover:text-[#f9c114]">+91 95856 10000</a></span>
             </li>
             <li className="flex justify-start items-center gap-3 transition-all duration-200 hover:text-[#f9c114] group">
               <div className="p-2 bg-gray-800 rounded-lg group-hover:bg-[#f9c114] transition-colors duration-300">
