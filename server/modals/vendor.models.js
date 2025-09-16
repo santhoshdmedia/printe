@@ -36,6 +36,10 @@ module.exports = model(
         type: Number,
         required: true,
       },
+      password:{
+        type: Number,
+        required: true
+      }
     },
     {
       timestamps: true,

@@ -298,7 +298,7 @@ const HelpCenterLink = () => (
               <img
                 src={gif}
                 alt="printee logo"
-                className="w-auto xl:h-[150px] h-[50px] bg-center bg-contain rounded-md"
+                className="!w-auto xl:!w-[300px] lg:!w-[500px]  lg:h-[150px] h-[100px] bg-center bg-contain rounded-md"
               />
             </div>
           </Link>
