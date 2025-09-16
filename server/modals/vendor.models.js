@@ -8,10 +8,6 @@ module.exports = model(
         type: String,
         required: true,
       },
-      vendor_image: {
-        type: String,
-        required: true,
-      },
       vendor_email: {
         type: String,
         required: true,
@@ -28,7 +24,11 @@ module.exports = model(
         type: String,
         required: true,
       },
-      business_address: {
+      shipping_address: {
+        type: String,
+        required: true,
+      },
+      billing_address: {
         type: String,
         required: true,
       },

@@ -28,6 +28,7 @@ import { SET_CART_COUNT } from "../../redux/slices/cart.slice";
 // Components
 import SearchProductCard from "../Product/SearchProductCard";
 import Logo from "../../assets/logo/without_bg.png";
+import gif from "../../assets/logo/printe_logo.gif";
 
 const Navbar = () => {
   // Redux
@@ -162,7 +163,7 @@ const Navbar = () => {
           spinning={isSearchingProducts}
           indicator={
             <div className="flex justify-center py-8">
-              <div className="w-8 h-8 border-4 border-[#f9c114] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-4 border-[#f2c41a] border-t-transparent rounded-full animate-spin"></div>
             </div>
           }
         >
@@ -177,7 +178,7 @@ const Navbar = () => {
                 imageStyle={{
                   height: 80,
                   filter: "grayscale(100%) opacity(50%)",
-                  color: "#f9c114",
+                  color: "#f2c41a",
                 }}
               />
             </div>
@@ -187,7 +188,7 @@ const Navbar = () => {
                 <SearchProductCard
                   data={data}
                   key={data._id}
-                  className="hover:bg-[#f9c114]/5 transition-colors duration-200"
+                  className="hover:bg-[#f2c41a]/5 transition-colors duration-200"
                 />
               ))}
             </div>
@@ -247,10 +248,10 @@ const Navbar = () => {
 const HelpCenterLink = () => (
     <Link
       to="/help"
-      className="center_div gap-x-1 border border-[#121621] py-2 px-3 transition-all duration-300 hover:bg-[#121621] hover:text-[#f9c114] rounded group ml-2"
+      className="center_div gap-x-1 border border-[#121621] py-2 px-3 transition-all duration-300 hover:bg-[#121621] hover:text-[#f2c41a] rounded group ml-2"
     >
-      <IconHelper.HELP_ICON className="!text-xl !text-[#121621] group-hover:!text-[#f9c114]" />
-      <h1 className="!font-normal text-[12px] text-[#121621] group-hover:text-[#f9c114] text-nowrap hidden lg:block">
+      <IconHelper.HELP_ICON className="!text-xl !text-[#121621] group-hover:!text-[#f2c41a]" />
+      <h1 className="!font-normal text-[12px] text-[#121621] group-hover:text-[#f2c41a] text-nowrap hidden lg:block">
         Help Center
       </h1>
     </Link>
@@ -290,14 +291,14 @@ const HelpCenterLink = () => (
   return (
     <div>
       {/* Desktop Navbar  */}
-      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f9c114] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-10">
+      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-10 overflow-hidden">
         <div className="flex items-center gap-x-4 xl:gap-x-32 w-auto xl:w-[70%] justify-start">
           <Link to="/" className="title text-[#121621] uppercase cursor-pointer !line-clamp-1">
             <div className="flex flex-row items-center">
               <img
-                src={Logo}
+                src={gif}
                 alt="printee logo"
-                className="w-auto xl:h-[70px] h-[50px] bg-center bg-contain rounded-md"
+                className="w-auto xl:h-[150px] h-[50px] bg-center bg-contain rounded-md"
               />
             </div>
           </Link>
@@ -314,7 +315,7 @@ const HelpCenterLink = () => (
                 <IconHelper.SEARCH_ICON className="text-[#1c1c1c] transition-colors duration-300" />
               }
               allowClear
-              className="rounded-full hover:border-[#f9c114] focus:border-[#f9c114] bg-[#f1f1efbb] transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] w-full"
+              className="rounded-full hover:border-[#f2c41a] focus:border-[#f2c41a] bg-[#f1f1efbb] transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] w-full"
               size="large"
             />
             <SearchResultsDropdown />
@@ -329,7 +330,7 @@ const HelpCenterLink = () => (
       </div>
 
       {/* Mobile Navbar - Redesigned */}
-      <div className="block lg:hidden w-full fixed top-[40px] left-0 z-[1001] bg-[#f9c114] shadow-md">
+      <div className="block lg:hidden w-full fixed top-[40px] left-0 z-[1001] !bg-[#f2c41a] shadow-md overflow-hidden">
         {/* Main Navbar Row */}
         <div className="w-full h-14 flex items-center justify-between px-3">
           <div className="flex items-center gap-2">
@@ -341,9 +342,9 @@ const HelpCenterLink = () => (
             </button>
             <Link to="/" className="flex items-center">
               <img 
-                src={Logo} 
+                src={gif} 
                 alt="Printe Logo" 
-                className="h-8 w-auto object-contain" 
+                className="h-20 w-auto object-contain" 
               />
             </Link>
           </div>
@@ -361,7 +362,7 @@ const HelpCenterLink = () => (
         </div>
 
         {/* Expandable Search Bar */}
-        <div className={`w-full bg-[#f9c114] transition-all duration-300 overflow-hidden ${showSearchBar ? 'max-h-16 py-2' : 'max-h-0'}`}>
+        <div className={`w-full bg-[#f2c41a] transition-all duration-300 overflow-hidden ${showSearchBar ? 'max-h-16 py-2' : 'max-h-0'}`}>
           <div className="px-3">
             <Input
               id="mobile-search-input"
@@ -491,7 +492,7 @@ const HelpCenterLink = () => (
             onClick={() => handleDestination("/help")}
             className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100"
           >
-            <IconHelper.HELP_ICON className="text-lg text-[#f9c114]" />
+            <IconHelper.HELP_ICON className="text-lg text-[#f2c41a]" />
             <span>Help Center</span>
           </div>
         </div>

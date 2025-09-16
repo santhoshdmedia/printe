@@ -149,7 +149,7 @@ export const WGDesigns = () => {
           className="w-[350px]  p-6 rounded-lg  transition-shadow">
             <div className="flex items-center mb-4">
               <FaGlobe className="text-4xl text-blue-600 mr-4" />
-              <h2 className="text-lg lg:text-2xl font-semibold text-[#f9c114]">
+              <h2 className="text-lg lg:text-2xl font-semibold text-[#f2c41a]">
                Shop Worldwide
               </h2>
             </div>
@@ -177,7 +177,7 @@ export const WGDesigns = () => {
           className="w-[350px]  p-6 rounded-lg  transition-shadow">
             <div className="flex items-center mb-4">
               <FaPiggyBank className="text-4xl text-green-600 mr-4" />
-              <h2 className="text-lg lg:text-2xl font-semibold text-[#f9c114]">
+              <h2 className="text-lg lg:text-2xl font-semibold text-[#f2c41a]">
                 Big Saving Shop
               </h2>
             </div>
@@ -211,7 +211,7 @@ export const WGDesigns = () => {
           className="w-[350px]  p-6 rounded-lg  transition-shadow">
             <div className="flex  items-center mb-4">
               <FaHeadset className="text-3xl text-purple-600 mr-4" />
-              <h2 className="text-lg lg:text-2xl font-semibold text-[#f9c114]">
+              <h2 className="text-lg lg:text-2xl font-semibold text-[#f2c41a]">
                 24/7 Support
               </h2>
             </div>
@@ -245,7 +245,7 @@ export const WGDesigns = () => {
             <div 
              className="flex items-center mb-4">
               <FaMoneyBillWave className="text-3xl text-yellow-600 mr-4" />
-              <h2 className="text-lg lg:text-2xl font-semibold text-[#f9c114]">
+              <h2 className="text-lg lg:text-2xl font-semibold text-[#f2c41a]">
                 Money Back Guarantee
               </h2>
             </div>
@@ -279,7 +279,7 @@ export const WGDesigns = () => {
            className="w-[350px]  p-6 rounded-lg  transition-shadow">
             <div className="flex items-center mb-4">
               <FaGift className="text-3xl text-red-600 mr-4" />
-              <h2 className="text-lg lg:text-2xl font-semibold text-[#f9c114]">
+              <h2 className="text-lg lg:text-2xl font-semibold text-[#f2c41a]">
                 Personalized Gift
               </h2>
             </div>
@@ -310,7 +310,7 @@ export const WGDesigns = () => {
           className="w-[350px]  p-6 rounded-lg  transition-shadow">
             <div className="flex items-center mb-4">
               <FaHandsHelping className="text-3xl text-teal-600 mr-4" />
-              <h2 className="text-lg lg:text-2xl font-semibold text-[#f9c114]">
+              <h2 className="text-lg lg:text-2xl font-semibold text-[#f2c41a]">
                 Free Consultancy
               </h2>
             </div>

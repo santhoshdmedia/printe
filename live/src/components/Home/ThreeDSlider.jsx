@@ -133,7 +133,7 @@ const ThreeDSlider = () => {
                   ))}
                 </p>
                 <button
-                  className={`px-8 py-3 bg-[#f9c114] text-white font-medium rounded-full transition-all duration-500 ${
+                  className={`px-8 py-3 bg-[#f2c41a] text-white font-medium rounded-full transition-all duration-500 ${
                     index === currentSlide && !isAnimating ? 
                     'translate-y-0 opacity-100' : 
                     'translate-y-5 opacity-0'
@@ -155,7 +155,7 @@ const ThreeDSlider = () => {
               onClick={() => goToSlide(index)}
               className={`w-3 h-3 rounded-full transition-all duration-300 ${
                 index === currentSlide
-                  ? "bg-[#f9c114] w-8"
+                  ? "bg-[#f2c41a] w-8"
                   : "bg-gray-300 hover:bg-gray-400"
               }`}
               aria-label={`Go to slide ${index + 1}`}

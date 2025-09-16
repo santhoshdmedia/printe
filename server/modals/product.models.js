@@ -86,6 +86,15 @@ module.exports = mongoose.model(
       is_visible: {
         type: Boolean,
       },
+      is_customer: {
+        type: Boolean,
+      },
+      is_dealer: {
+        type: Boolean,
+      },
+      is_corporate: {
+        type: Boolean,
+      },
       unit: { type: String },
       name: { type: String, require: true },
       Point_one: { type: String, require: true },
@@ -112,8 +121,8 @@ module.exports = mongoose.model(
       new_product: { type: Boolean, require: true },
       recommended_product: { type: Boolean, require: true },
       popular_product: { type: Boolean, require: true },
-      Deler_product_price: { type: String, require: true },
       customer_product_price: { type: String, require: true },
+      Deler_product_price: { type: String, require: true },
       corporate_product_price: { type: String, require: true },
       parent_product_id: {
         type: String,

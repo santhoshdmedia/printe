@@ -80,7 +80,7 @@ const Profile = () => {
      <div className="w-full max-w-3xl">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
           {/* Header Section with Yellow Background */}
-          <div className="bg-[#f9c114] py-6 px-8 text-center">
+          <div className="bg-[#f2c41a] py-6 px-8 text-center">
             <h1 className="text-2xl font-bold text-black">Profile Information</h1>
             <p className="text-black opacity-80 mt-1">Manage your personal details</p>
           </div>
@@ -222,7 +222,7 @@ const Profile = () => {
               <div className="flex gap-5">
   <button 
     type="button" 
-    className="px-4 py-2 bg-[#f9c114] text-black font-medium rounded-l-lg hover:bg-[#f9c114] transition-colors"
+    className="px-4 py-2 bg-[#f2c41a] text-black font-medium rounded-l-lg hover:bg-[#f2c41a] transition-colors"
     onClick={() => setIsEditDisabled(!isEditDisabled)}
   >
     {isEditDisabled ? "Edit Profile" : "Cancel Editing"}

@@ -57,7 +57,7 @@ const Layout = () => {
 
       <div className="sticky top-0 z-[999] w-full overflow-hidden bg-[#f5f5f5] p-2">
         <div className="scrolling-text-container">
-          <div className="scrolling-text !font-[450] whitespace-nowrap">
+          <div className="scrolling-text !font-[300] whitespace-nowrap">
             ✨ Special Launch Offer – Flat 25% OFF on all items. Shop now and be part of our grand beginning!
           </div>
         </div>
@@ -104,8 +104,7 @@ const Layout = () => {
         .scrolling-text {
           display: inline-block;
           padding-left: 100%;
-          animation: scroll 15s linear infinite;
-          font-weight: 600;
+          animation: scroll 22s linear infinite;
           color: #000000;
         }
         

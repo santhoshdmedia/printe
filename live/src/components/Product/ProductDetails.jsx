@@ -1217,7 +1217,7 @@ const validatePincodeAndGetState = async (pincode) => {
               {/* Share button */}
               <button
                 onClick={handleNativeShare}
-                className="bg-[#f9c114] hover:bg-[#f9c114] text-black hover:text-white p-3 rounded-full shadow-md transition-all duration-300 "
+                className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black hover:text-white p-3 rounded-full shadow-md transition-all duration-300 "
               >
                 <IoShareSocial className="" />
               </button>

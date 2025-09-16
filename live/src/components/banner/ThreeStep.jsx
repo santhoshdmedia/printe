@@ -48,7 +48,7 @@ const ThreeStep = () => {
               <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight tracking-wide">
                 Make It Simple with Printe <br className="hidden sm:block" />
               </h1>
-              <h1 className="text-[#f9c114] mt-0 text-4xl sm:text-5xl font-bold leading-tight tracking-wide">
+              <h1 className="text-[#f2c41a] mt-0 text-4xl sm:text-5xl font-bold leading-tight tracking-wide">
                 Only 3 Easy Steps
               </h1>
               <p className="text-xl text-white/90 leading-10">
@@ -69,7 +69,7 @@ const ThreeStep = () => {
                 className="  h-full w-full bg-cover z-10 transition-transform spinning "
               />
                 </div>
-                {/* <div className="absolute inset-0 bg-[#f9c114]/10 rounded-full animate-pulse-slow"></div> */}
+                {/* <div className="absolute inset-0 bg-[#f2c41a]/10 rounded-full animate-pulse-slow"></div> */}
                 {/* <div className="absolute inset-0 rounded-full shadow-[0_0_30px_10px_rgba(249,193,20,0.3)] animate-glow"></div> */}
               </div>
               <img
@@ -87,9 +87,9 @@ const ThreeStep = () => {
                 <div className="flex gap-4 items-center px-6 py-4 rounded-lg bg-[#121621]/80  transition-all duration-300">
                   {/* Icon with animation */}
                   <div className="relative flex-shrink-0">
-                    {/* <div className="absolute h-20 w-20 bg-[#f9c114]/10 left-0 rounded-full animate-ping-slow" style={{ animationDelay: `${index * 0.2}s` }} ></div> */}
-                    <div className="flex items-center justify-center h-16 w-16 bg-[#f9c114]/20 rounded-full backdrop-blur-sm border border-[#f9c114]/30">
-                      <step.Icon className="text-3xl text-[#f9c114]" />
+                    {/* <div className="absolute h-20 w-20 bg-[#f2c41a]/10 left-0 rounded-full animate-ping-slow" style={{ animationDelay: `${index * 0.2}s` }} ></div> */}
+                    <div className="flex items-center justify-center h-16 w-16 bg-[#f2c41a]/20 rounded-full backdrop-blur-sm border border-[#f2c41a]/30">
+                      <step.Icon className="text-3xl text-[#f2c41a]" />
                     </div>
                   </div>
 
@@ -104,7 +104,7 @@ const ThreeStep = () => {
                   {/* Arrow icon - only show between steps */}
                   {index < steps.length - 1 && (
                     <div className="absolute -right-7 top-1/2 transform -translate-y-1/2 hidden lg:block">
-                      <LuArrowRight className="text-2xl text-[#f9c114]/60 group-hover:text-[#f9c114] transition-colors duration-300" />
+                      <LuArrowRight className="text-2xl text-[#f2c41a]/60 group-hover:text-[#f2c41a] transition-colors duration-300" />
                     </div>
                   )}
                 </div>
@@ -112,7 +112,7 @@ const ThreeStep = () => {
                 {/* Mobile arrow (below card) */}
                 {index < steps.length - 1 && (
                   <div className="lg:hidden flex justify-center py-4">
-                    <LuArrowRight className="text-2xl text-[#f9c114]/60 rotate-90" />
+                    <LuArrowRight className="text-2xl text-[#f2c41a]/60 rotate-90" />
                   </div>
                 )}
               </div>

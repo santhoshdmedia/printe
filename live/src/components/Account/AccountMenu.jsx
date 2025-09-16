@@ -49,8 +49,8 @@
 //                 className={({ isActive }) =>
 //                   `flex items-center px-4 py-3 rounded-xl transition-all duration-200 ease-in-out group ${
 //                     isActive
-//                       ? "bg-gradient-to-r from-[#f9c114] to-[#f9c114] text-white shadow-lg"
-//                       : "text-gray-600 hover:bg-[#f9c114] hover:text-black"
+//                       ? "bg-gradient-to-r from-[#f2c41a] to-[#f2c41a] text-white shadow-lg"
+//                       : "text-gray-600 hover:bg-[#f2c41a] hover:text-black"
 //                   }`
 //                 }
 //               >
@@ -176,8 +176,8 @@ const AccountMenu = () => {
                 className={({ isActive }) =>
                   `flex items-center px-4 py-3 rounded-xl transition-all duration-200 ease-in-out group ${
                     isActive
-                      ? "bg-gradient-to-r from-[#f9c114] to-[#f9c114] text-white shadow-lg"
-                      : "text-gray-600 hover:bg-[#f9c114] hover:text-black"
+                      ? "bg-gradient-to-r from-[#f2c41a] to-[#f2c41a] text-white shadow-lg"
+                      : "text-gray-600 hover:bg-[#f2c41a] hover:text-black"
                   }`
                 }
               >

@@ -20,7 +20,7 @@ const DividerCards = ({ name, subtitle, to, left = false }) => {
               initial={{ width: 0 }}
               whileInView={{ width: "100%" }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="absolute bottom-0 left-0 h-1 bg-[#f9c114]"
+              className="absolute bottom-0 left-0 h-1 bg-[#f2c41a]"
             />
           </div>
 
@@ -39,7 +39,7 @@ const DividerCards = ({ name, subtitle, to, left = false }) => {
           >
             <Link
               to={to}
-              className="flex items-center gap-1 text-sm font-medium text-[#f9c114] hover:text-[#d8ad2d] transition-colors"
+              className="flex items-center gap-1 text-sm font-medium text-[#f2c41a] hover:text-[#d8ad2d] transition-colors"
             >
               See More
               <motion.span

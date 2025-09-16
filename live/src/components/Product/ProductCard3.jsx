@@ -83,7 +83,7 @@ const PrintProductCard3 = ({ data }) => {
             }}
           >
             <span className="text-gray-700">Rs.</span>{" "}
-            <span className="text-[#f9c114]">{price}</span>
+            <span className="text-[#f2c41a]">{price}</span>
           </motion.div>
 
           {/* Badge for Variants */}
@@ -112,7 +112,7 @@ const PrintProductCard3 = ({ data }) => {
               transition={{ duration: 0.3 }}
             >
               <button 
-                className="px-5 py-2 bg-[#f9c114] text-black text-sm font-medium rounded-full shadow-lg hover:bg-[#e6b310] transition-colors flex items-center gap-1"
+                className="px-5 py-2 bg-[#f2c41a] text-black text-sm font-medium rounded-full shadow-lg hover:bg-[#e6b310] transition-colors flex items-center gap-1"
                 onClick={handleQuickViewClick}
                 aria-label={`Quick view ${data.name}`}
               >
@@ -165,7 +165,7 @@ const PrintProductCard3 = ({ data }) => {
             }}
           >
             <motion.div 
-              className="h-full bg-[#f9c114] rounded-full"
+              className="h-full bg-[#f2c41a] rounded-full"
               initial={{ width: "0%" }}
               animate={{ width: isHovered ? "70%" : "40%" }}
               transition={{ duration: 1.2, ease: "easeOut" }}

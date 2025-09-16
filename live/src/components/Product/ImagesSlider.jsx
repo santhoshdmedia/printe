@@ -108,7 +108,7 @@ const ImagesSlider = ({ imageList, data }) => {
               style={{ zIndex: 40 }}
             >
               {isFav ? (
-                <IconHelper.HEART_ICON_FILLED className="!text-[#f9c114]" size={24} />
+                <IconHelper.HEART_ICON_FILLED className="!text-[#f2c41a]" size={24} />
               ) : (
                 <IconHelper.HEART_ICON size={24} />
               )}

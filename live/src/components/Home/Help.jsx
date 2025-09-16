@@ -62,8 +62,8 @@ const prefixSelector = (
 
   const customExpandIcon = (props) => {
     return props.isActive ? 
-      <MinusOutlined style={{ color: '#f9c114' }} /> : 
-      <PlusOutlined style={{ color: '#f9c114' }} />;
+      <MinusOutlined style={{ color: '#f2c41a' }} /> : 
+      <PlusOutlined style={{ color: '#f2c41a' }} />;
   };
 
   useEffect(() => {
@@ -146,7 +146,7 @@ const prefixSelector = (
         {/* FAQ Section */}
         <section className="mb-16">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#f9c114] rounded-full mb-4 mx-auto">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#f2c41a] rounded-full mb-4 mx-auto">
               <CustomerServiceOutlined className="text-2xl text-white" />
             </div>
             <Title level={2} className="!text-2xl md:!text-3xl font-bold text-black mb-3">
@@ -190,7 +190,7 @@ const prefixSelector = (
             <Button 
               type="primary" 
               size="large"
-              className="bg-[#f9c114] hover:bg-[#e0ab0a] border-0 h-12 font-medium rounded-lg shadow-md hover:shadow-lg transition-all px-6"
+              className="bg-[#f2c41a] hover:bg-[#e0ab0a] border-0 h-12 font-medium rounded-lg shadow-md hover:shadow-lg transition-all px-6"
               onClick={() => document.getElementById('contact-form').scrollIntoView({ behavior: 'smooth' })}
             >
               Contact Support

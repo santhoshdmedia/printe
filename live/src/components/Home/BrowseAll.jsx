@@ -30,7 +30,7 @@ const BrowseAll = () => {
     <div className=" py-10 relative px-20">
       <div className="w-full flex flex-col">
         <Divider>
-          <h1 className="font-bold text-primary text-center text-2xl ">Browse All <span className="text-[#f9c114]"> Categories</span></h1>
+          <h1 className="font-bold text-primary text-center text-2xl ">Browse All <span className="text-[#f2c41a]"> Categories</span></h1>
         </Divider>
         <span className="text-center -mt-3 pb-5">Discover Everything You Need!</span>
       </div>

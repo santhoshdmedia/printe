@@ -101,7 +101,7 @@ const CarouselBanner = () => {
                 {/* Image Section */}
                 <div className="w-full lg:w-1/2 relative min-h-[500px] lg:min-h-[600px] flex flex-col justify-center items-center">
                   <motion.div
-                    className="absolute h-[300px] w-[300px] md:h-[500px] md:w-[500px] top-[6%] lg:top-14 left-[8%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f9c114]/10"
+                    className="absolute h-[300px] w-[300px] md:h-[500px] md:w-[500px] top-[6%] lg:top-14 left-[8%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f2c41a]/10"
                     initial={{ scale: 0.8, opacity: 1 }}
                     animate={{
                       scale: [1, 1.05, 1],
@@ -114,7 +114,7 @@ const CarouselBanner = () => {
                       },
                     }}
                   >
-                    <div className="absolute inset-0 rounded-full border border-[#f9c114]/20 carousal_overlay"></div>
+                    <div className="absolute inset-0 rounded-full border border-[#f2c41a]/20 carousal_overlay"></div>
                   </motion.div>
 
                   <motion.div
@@ -177,7 +177,7 @@ const CarouselBanner = () => {
                       >
                         {/* Badge/tag with enhanced animation */}
                         <motion.div
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#f9c114]/20 rounded-full w-fit"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#f2c41a]/20 rounded-full w-fit"
                           variants={{
                             hidden: { opacity: 0, y: 20, scale: 0.8 },
                             visible: {
@@ -194,12 +194,12 @@ const CarouselBanner = () => {
                           whileHover={{ scale: 1.05 }}
                         >
                           <motion.span
-                            className="h-2 w-2 rounded-full bg-[#f9c114]"
+                            className="h-2 w-2 rounded-full bg-[#f2c41a]"
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ delay: 0.3 }}
                           />
-                          <span className="text-sm font-medium text-[#f9c114]">
+                          <span className="text-sm font-medium text-[#f2c41a]">
                             {banner.tag || "Limited Time Offer"}
                           </span>
                         </motion.div>
@@ -255,7 +255,7 @@ const CarouselBanner = () => {
                               whileHover={{ x: 5 }}
                             >
                               <motion.svg
-                                className="w-5 h-5 text-[#f9c114]"
+                                className="w-5 h-5 text-[#f2c41a]"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -358,7 +358,7 @@ const CarouselBanner = () => {
                           >
                             <Link
                               to={`/banner-product/${banner._id}`}
-                              className="relative flex items-center gap-1 px-5 py-3 text-[#f9c114] font-semibold text-base rounded-full bg-transparent border-4 border-transparent shadow-[0_0_0_2px_#f9c114] cursor-pointer overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group hover:shadow-[0_0_0_12px_transparent] hover:text-black hover:rounded-3xl active:scale-95 active:shadow-[0_0_0_4px_#f9c114] w-fit ml-2"
+                              className="relative flex items-center gap-1 px-5 py-3 text-[#f2c41a] font-semibold text-base rounded-full bg-transparent border-4 border-transparent shadow-[0_0_0_2px_#f2c41a] cursor-pointer overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group hover:shadow-[0_0_0_12px_transparent] hover:text-black hover:rounded-3xl active:scale-95 active:shadow-[0_0_0_4px_#f2c41a] w-fit ml-2"
                             >
                               <motion.svg
                                 viewBox="0 0 24 24"
@@ -387,7 +387,7 @@ const CarouselBanner = () => {
                               </motion.span>
 
                               <motion.span
-                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-[#f9c114] rounded-full opacity-0 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100"
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-[#f2c41a] rounded-full opacity-0 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:w-[220px] group-hover:h-[220px] group-hover:opacity-100"
                                 animate={{
                                   opacity: [0, 0.2, 0],
                                   scale: [1, 30, 1],
@@ -422,7 +422,7 @@ const CarouselBanner = () => {
                             <motion.span
                               className="text-black"
                               animate={{
-                                color: ["#000000", "#f9c114", "#000000"],
+                                color: ["#000000", "#f2c41a", "#000000"],
                                 transition: {
                                   delay: 2.7,
                                   duration: 2,

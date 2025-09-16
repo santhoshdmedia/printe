@@ -252,7 +252,7 @@ const RatingAndReviews = () => {
             <h5 className="text-sm">Your Review</h5>
             <TextArea placeholder="Write your review" value={productRateAndReviewFormData.review} onChange={handleOnChangeReview} />
             <div className="flex items-center gap-x-2 lg:flex-row flex-col">
-              <button type="button" className="button !bg-[#f9c114] hover:bg-black " onClick={handleSubmitProductRateAndReview}>
+              <button type="button" className="button !bg-[#f2c41a] hover:bg-black " onClick={handleSubmitProductRateAndReview}>
                 {_.isEmpty(id) ? "Submit" : "Update"} Rate & Review
               </button>
 
