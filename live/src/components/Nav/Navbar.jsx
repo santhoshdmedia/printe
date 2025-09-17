@@ -28,7 +28,7 @@ import { SET_CART_COUNT } from "../../redux/slices/cart.slice";
 // Components
 import SearchProductCard from "../Product/SearchProductCard";
 import Logo from "../../assets/logo/without_bg.png";
-import gif from "../../assets/logo/printe_logo.gif";
+// import gif from "../../assets/logo/printe_logo.gif";
 
 const Navbar = () => {
   // Redux
@@ -296,9 +296,9 @@ const HelpCenterLink = () => (
           <Link to="/" className="title text-[#121621] uppercase cursor-pointer !line-clamp-1">
             <div className="flex flex-row items-center">
               <img
-                src={gif}
+                src={Logo}
                 alt="printee logo"
-                className="!w-auto xl:!w-[300px] lg:!w-[500px]  lg:h-[150px] h-[100px] bg-center bg-contain rounded-md"
+                className="!w-auto  lg:h-[70px] h-[100px] bg-center bg-contain rounded-md"
               />
             </div>
           </Link>
@@ -342,9 +342,9 @@ const HelpCenterLink = () => (
             </button>
             <Link to="/" className="flex items-center">
               <img 
-                src={gif} 
+                src={Logo} 
                 alt="Printe Logo" 
-                className="h-20 w-auto object-contain" 
+                className="h-10 w-auto object-contain" 
               />
             </Link>
           </div>
