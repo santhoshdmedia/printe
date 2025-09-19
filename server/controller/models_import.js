@@ -15,6 +15,7 @@ const userenquireModals = require("../modals/userenquire.modals");
 const customerSection = require("../modals/customer_section.models");
 const shopping_cart_model = require("../modals/cart.modals");
 const product_description = require("../modals/productdescription.models");
+const VendorProduct = require("../modals/vendorProduct.model");
 
 
 module.exports = {
@@ -36,4 +37,5 @@ module.exports = {
   CustomerSectionSchema: customerSection,
   ShoppingCardSchema: shopping_cart_model,
   ProdutDescriptionSchema: product_description,
+  ProductVendorSchema: VendorProduct,
 };

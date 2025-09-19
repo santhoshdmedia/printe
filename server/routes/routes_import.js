@@ -15,6 +15,8 @@ const enquires_routes = require("./enquires.routes");
 const section_routes = require("./customersection.routes");
 const shopping_cart = require("./shopping_cartroutes");
 const teamRoutes = require("./GetteamRoute")
+const vendorProductRoutes = require("./venderproduct.routes")
+
 
 module.exports = {
   auth_routes,
@@ -33,5 +35,6 @@ module.exports = {
   enquires_routes,
   section_routes,
   shopping_cart,
-  teamRoutes
+  teamRoutes,
+  vendorProductRoutes
 };

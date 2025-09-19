@@ -36,6 +36,86 @@ const clientLogin = async (req, res) => {
   }
 };
 
+const customSignup = async (req, res) => {
+  const {
+    email,
+    password,
+    name,
+    unique_code,
+    business_name,
+    role,
+    phone
+  } = req.body;
+  
+  // Basic validation
+  if (!email || !password || !name) {
+    return errorResponse(res, "Missing required fields: email, password, name");
+  }
+  
+  // Validate role against enum values
+  const validRoles = ["user", "Corporate", "Dealer"];
+  if (role && !validRoles.includes(role)) {
+    return errorResponse(res, "Invalid role specified");
+  }
+  
+  try {
+    // Check for existing user (case-insensitive)
+    const existingUser = await UserSchema.findOne({ 
+      email: email.toLowerCase().trim() 
+    });
+    if (existingUser) {
+      return errorResponse(res, CLIENT_USER_ACCOUNT_ALREADY_EXISTS);
+    }
+
+    // Create new user
+    const newUser = new UserSchema({
+      email: email.toLowerCase().trim(),
+      password: await EncryptPassword(password),
+      name: name.trim(),
+      role,
+      ...(unique_code && { unique_code }),
+      ...(business_name && { business_name })
+    });
+
+    const savedUser = await newUser.save();
+
+    // Prepare payload for token
+    const payload = {
+      id: savedUser._id,
+      email: savedUser.email,
+      role: savedUser.role,
+      ...(savedUser.business_name && { business_name: savedUser.business_name }),
+      ...(savedUser.unique_code && { unique_code: savedUser.unique_code })
+    };
+
+    // Generate JWT token
+    const token = await GenerateToken(payload);
+
+    // Return success response (omit password from response)
+    const userResponse = _.omit(savedUser.toObject(), "password");
+    return successResponse(res, SIGNUP_SUCCESS, {
+      ...userResponse,
+      token
+    });
+  } catch (error) {
+    console.error("Signup Error:", error);
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return errorResponse(res, "Account already exists with this email");
+    }
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      // For debugging, you might want to log the specific validation errors
+      console.error("Validation errors:", error.errors);
+      return errorResponse(res, "Validation failed. Please check your input.");
+    }
+
+    return errorResponse(res, "An error occurred during signup");
+  }
+};
+
 const clientSignup = async (req, res) => {
   console.log(req.body);
 
@@ -73,6 +153,15 @@ const getAllClientUsers = async (req, res) => {
   try {
     const { limit } = JSON.parse(_.get(req, "params.id", ""));
     const result = await UserSchema.aggregate([{ $match: { role: "user" } }, ...(limit ? [{ $limit: 5 }] : [])]);
+    return successResponse(res, CLIENT_USERS_GETTING_SUCESS, result);
+  } catch (error) {
+    console.log(error);
+    return errorResponse(res, CLIENT_USERS_GETTING_FAILED);
+  }
+};
+const getAllCustomUsers = async (req, res) => {
+  try {
+    const result = await UserSchema.aggregate([{ $match: { role: "Corporate" } }]);
     return successResponse(res, CLIENT_USERS_GETTING_SUCESS, result);
   } catch (error) {
     console.log(error);
@@ -213,6 +302,8 @@ const addtoHistory = async (req, res) => {
 module.exports = {
   clientLogin,
   clientSignup,
+  customSignup,
+  getAllCustomUsers,
   clientCheckloginstatus,
   getAllClientUsers,
   updateClientUser,

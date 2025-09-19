@@ -291,7 +291,7 @@ const HelpCenterLink = () => (
   return (
     <div>
       {/* Desktop Navbar  */}
-      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-10 overflow-hidden">
+      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-10 ">
         <div className="flex items-center gap-x-4 xl:gap-x-32 w-auto xl:w-[70%] justify-start">
           <Link to="/" className="title text-[#121621] uppercase cursor-pointer !line-clamp-1">
             <div className="flex flex-row items-center">
@@ -330,7 +330,7 @@ const HelpCenterLink = () => (
       </div>
 
       {/* Mobile Navbar - Redesigned */}
-      <div className="block lg:hidden w-full fixed top-[40px] left-0 z-[1001] !bg-[#f2c41a] shadow-md overflow-hidden">
+      <div className="block lg:hidden w-full fixed top-[40px] left-0 z-[1001] !bg-[#f2c41a] shadow-md ">
         {/* Main Navbar Row */}
         <div className="w-full h-14 flex items-center justify-between px-3">
           <div className="flex items-center gap-2">

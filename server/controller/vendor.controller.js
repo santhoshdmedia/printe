@@ -1,6 +1,79 @@
+const _ = require("lodash");
 const { errorResponse, successResponse } = require("../helper/response.helper");
 const { VendorSchemas } = require("./models_import");
-const { EncryptPassword } = require("../helper/shared.helper"); // Fixed import syntax
+const { INVALID_ACCOUNT_DETAILS, INCORRECT_PASSWORD, LOGIN_SUCCESS, PASSWORD_CHANGED_SUCCESSFULLY, SIGNUP_SUCCESS, PASSWORD_CHANGED_FAILED, CLIENT_USERS_GETTING_SUCESS, CLIENT_USERS_GETTING_FAILED, CLIENT_USER_UPDATED_SUCCESS, CLIENT_USER_UPDATED_FAILED, CLIENT_USER_DELETED_SUCCESS, CLIENT_USER_DELETED_FAILED, CLIENT_USER_ACCOUNT_ALREADY_EXISTS } = require("../helper/message.helper");
+const { PlaintoHash, GenerateToken, EncryptPassword,VerfiyToken } = require("../helper/shared.helper");
+
+
+const VendorLogin = async (req, res) => {
+  console.log(req.body)
+  try {
+    const { email, password } = req.body;
+    const vendor_email=email;
+    const user = await VendorSchemas.aggregate([{ $match: { vendor_email } }]);
+    if (!user) {
+      return errorResponse(res, INVALID_ACCOUNT_DETAILS);
+    }
+
+    const isPasswordValid = await PlaintoHash(password, _.get(user, "[0].password", ""));
+
+    if (isPasswordValid) {
+      const payload = {
+        id: _.get(user, "[0]._id", ""),
+        vendor_email: _.get(user, "[0].vendor_email", ""),
+        role: _.get(user, "[0].role", ""),
+      };
+      const token = await GenerateToken(payload);
+      return successResponse(res, LOGIN_SUCCESS, {
+        ...user[0],
+        token,
+      });
+    } else {
+      return errorResponse(res, INCORRECT_PASSWORD);
+    }
+  } catch (err) {
+    console.error(err);
+    return errorResponse(res, "An error occurred while logging in");
+  }
+};
+
+const VendorGetProfile = async (req, res) => {
+  try {
+    // Extract token from Authorization header
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return errorResponse(res, "Access denied. No token provided.", 401);
+    }
+
+    // Verify token and decode payload
+    const decoded = await VerfiyToken(token); // Implement your token verification logic
+    if (!decoded) {
+      return errorResponse(res, "Invalid or expired token.", 401);
+    }
+
+    // Find vendor by ID from decoded token
+    const vendor = await VendorSchemas.findById(decoded.id).select('-password'); // Exclude password field
+    if (!vendor) {
+      return errorResponse(res, "Vendor not found.", 404);
+    }
+
+    // Return vendor data
+    return successResponse(res, "Profile retrieved successfully.", vendor);
+  } catch (err) {
+    console.error(err);
+    if (err.name === 'JsonWebTokenError') {
+      return errorResponse(res, "Invalid token.", 401);
+    }
+    if (err.name === 'TokenExpiredError') {
+      return errorResponse(res, "Token expired.", 401);
+    }
+    return errorResponse(res, "Server error while fetching profile.");
+  }
+};
+
+
+
 
 const addVendors = async (req, res) => {
   const {
@@ -166,6 +239,8 @@ const deleteVendor = async (req, res) => {
 // Export the correct function name
 module.exports = {
   addVendors, // Changed from addVendors to addVendor
+  VendorLogin,
+  VendorGetProfile,
   editVendor,
   getAllVendors,
   deleteVendor,

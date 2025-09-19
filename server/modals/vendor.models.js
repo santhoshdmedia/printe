@@ -39,7 +39,22 @@ module.exports = model(
       password:{
         type: String,
         required: true
-      }
+      },
+      gstNo:{
+        type: String,
+      },
+      state:{
+        type: String,
+      },
+      city:{
+        type: String,
+      },
+      country:{
+        type: String,
+      },
+      profile_img:{
+        type: String,
+      },
     },
     {
       timestamps: true,

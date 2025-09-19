@@ -253,7 +253,7 @@ const NavMenu = () => {
                               "sub_categories_details[0].sub_category_name",
                               "Category"
                             )}
-                            className="object-cover w-full h-32"
+                            className="object-cover w-full h-56"
                             onClick={() => {
                               navigation(
                                 `/category/${result.main_category_name}/${result._id}`

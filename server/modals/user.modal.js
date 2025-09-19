@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       default: "user",
-      enum: ["user", "admin"],
+      enum: ["user", "Corporate", "Dealer"],
     },
     phone: { type: String },
 
@@ -54,6 +54,13 @@ const userSchema = new mongoose.Schema(
       },
     ],
     addresses: [addressSchema],
+    // corporate and dealer
+    unique_code: {
+      type: String,
+    },
+    business_name: {
+      type: String,
+    }
   },
   {
     timestamps: true,
