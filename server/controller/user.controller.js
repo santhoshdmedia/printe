@@ -72,6 +72,7 @@ const customSignup = async (req, res) => {
       email: email.toLowerCase().trim(),
       password: await EncryptPassword(password),
       name: name.trim(),
+      phone:phone,
       role,
       ...(unique_code && { unique_code }),
       ...(business_name && { business_name })
@@ -161,7 +162,13 @@ const getAllClientUsers = async (req, res) => {
 };
 const getAllCustomUsers = async (req, res) => {
   try {
-    const result = await UserSchema.aggregate([{ $match: { role: "Corporate" } }]);
+    const result = await UserSchema.aggregate([
+  { 
+    $match: { 
+      role: { $ne: "user" }  
+    } 
+  }
+]);
     return successResponse(res, CLIENT_USERS_GETTING_SUCESS, result);
   } catch (error) {
     console.log(error);

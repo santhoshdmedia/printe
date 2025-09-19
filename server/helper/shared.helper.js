@@ -30,7 +30,7 @@ const VerfiyToken = async (req, res, next) => {
       if (_.isEmpty(result)) {
         return res.status(401).send({ message: "Invalid token" });
       }
-      req.userData = result;
+      req.userData = result;      
       next();
     }
     return false;

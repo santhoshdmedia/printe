@@ -51,19 +51,30 @@ function* signUp(action) {
 function* checkLogin() {
   try {
     yield put(authenticatingStarted());
-    const res = yield call(custom_request.get, `${baseURL}/client_user/check_login`);
+    const res = yield call(custom_request.get, `${baseURL}/client_user/check_login`);    
     const user = _.get(res, "data.data", {});
-    if (_.isEmpty(user)) localStorage.removeItem(authToken);
+    
+    if (_.isEmpty(user)) {
+      localStorage.removeItem(authToken);
+    } else {
+      // Store user data in localStorage when available
+      localStorage.setItem('userData', JSON.stringify(user.role));
+    }
+    
     yield put(authenticatingSuccess(user));
   } catch (err) {
     console.log(err);
     localStorage.removeItem(authToken);
+    // Also clear user data on error
+    localStorage.removeItem('userData');
     yield put(authenticatingFailed());
   }
 }
 
 function* logOut() {
   localStorage.removeItem("authToken");
+  localStorage.removeItem("userData");
+  sessionStorage.removeItem("reloaded");
   yield put(logoutSuccess());
 }
 

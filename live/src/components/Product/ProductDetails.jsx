@@ -80,14 +80,29 @@ const ProductDetails = ({
     label: [],
   },
 }) => {
-  const product_type = _.get(data, "type", "Stand Alone Product");
-  const price =
-    product_type === "Stand Alone Product"
-      ? _.get(data, "single_product_price", 0) ||
-        _.get(data, "customer_product_price", 0)
-      : _.get(data, "variants_price[0].price", "");
+    const { user } = useSelector((state) => state.authSlice);
 
-  // State
+
+  
+ const product_type = _.get(data, "type", "Stand Alone Product");
+let price = "";
+
+if (user.role === "Dealer") {
+  price = product_type === "Stand Alone Product" 
+    ? _.get(data, "Deler_product_price", 0) || _.get(data, "single_product_price", 0)
+    : _.get(data, "variants_price[0].Deler_product_price", "");
+} else if (user.role === "Corporate") {
+  price = product_type === "Stand Alone Product"
+    ? _.get(data, "single_product_price", 0) || _.get(data, "corporate_product_price", 0)
+    : _.get(data, "variants_price[0].corporate_product_price", "");
+} else {
+  price = product_type === "Stand Alone Product"
+    ? _.get(data, "single_product_price", 0) || _.get(data, "customer_product_price", 0)
+    : _.get(data, "variants_price[0].customer_product_price", "");
+}
+
+
+
   const [totalPrice, setTotalPrice] = useState(price);
   const [quantity, setQuantity] = useState(null);
   const [discountPercentage, setDiscountPercentage] = useState({
@@ -133,6 +148,7 @@ const ProductDetails = ({
   const [deliveryDate, setDeliveryDate] = useState(0);
   const [instructionsVisible, setInstructionsVisible] = useState(false);
   const [lazy, setLazy] = useState(false);
+  
 
   useEffect(() => {
     // Set a timeout to show the div after 30 seconds
@@ -144,398 +160,15 @@ const ProductDetails = ({
     return () => clearTimeout(timer);
   }, []); // Empty dependency array ensures this runs once on mount
 
-  // Add these functions
-  const handlePincodeChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ""); // Remove non-digit characters
-    setPincode(value);
-    setIsPincodeValid(null); // Reset validation when user types
-    setState(""); // Reset state when pincode changes
 
-    // Auto-validate when pincode is 6 digits
-    if (value.length === 6) {
-      validatePincode(value);
-    }
-  };
 
-  const validatePincode = async (pincodeToValidate) => {
-    setIsValidatingPincode(true);
-    try {
-      // Simple regex validation for Indian pincode (6 digits)
-      const indianPincodeRegex = /^[1-9][0-9]{5}$/;
-
-      if (!indianPincodeRegex.test(pincodeToValidate)) {
-        isPincodeValid(false);
-        toast.error("Invalid pincode format. Must be 6 digits.");
-        return;
-      }
-
-      // Validate pincode and get state information
-      const validationResult = await validatePincodeAndGetState(
-        pincodeToValidate
-      );
-
-      if (validationResult.isValid) {
-        setIsPincodeValid(true);
-        setState(validationResult.state); // Set the state
-        toast.success(`✓ Pincode is valid (${validationResult.state})`);
-        calculateDeliveryTime(state);
-      } else {
-        setIsPincodeValid(false);
-        setState(""); // Clear state if invalid
-        toast.error("❌ Sorry, we don't deliver to this pincode yet");
-      }
-    } catch (error) {
-      console.error("Pincode validation error:", error);
-      setIsPincodeValid(false);
-      setState(""); // Clear state on error
-      toast.error("Error validating pincode");
-    } finally {
-      setIsValidatingPincode(false);
-    }
-  };
-
-  // Function to validate pincode and get state information
-  const validatePincodeAndGetState = async (pincode) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock pincode to state mapping (Replace with actual API call)
-        const pincodeStateMap = {
-          // Northern Region
-          110001: "Delhi",
-          110002: "Delhi",
-          110003: "Delhi",
-          122001: "Haryana",
-          122002: "Haryana",
-          141001: "Punjab",
-          141002: "Punjab",
-          143001: "Punjab",
-          160001: "Chandigarh",
-          160002: "Chandigarh",
-
-          // Western Region
-          302001: "Rajasthan",
-          302002: "Rajasthan",
-          380001: "Gujarat",
-          380002: "Gujarat",
-          400001: "Maharashtra",
-          400002: "Maharashtra",
-          411001: "Maharashtra",
-          411002: "Maharashtra",
-
-          // Southern Region
-          560001: "Karnataka",
-          560002: "Karnataka",
-          600001: "Tamil Nadu",
-          600002: "Tamil Nadu",
-          682001: "Kerala",
-          682002: "Kerala",
-          500001: "Telangana",
-          500002: "Telangana",
-
-          // Eastern Region
-          700001: "West Bengal",
-          700002: "West Bengal",
-          800001: "Bihar",
-          800002: "Bihar",
-          751001: "Odisha",
-          751002: "Odisha",
-
-          // Central Region
-          452001: "Madhya Pradesh",
-          452002: "Madhya Pradesh",
-          482001: "Madhya Pradesh",
-          208001: "Uttar Pradesh",
-          208002: "Uttar Pradesh",
-          226001: "Uttar Pradesh",
-        };
-
-        // Get first 3 digits to determine region
-        const firstThreeDigits = pincode.substring(0, 3);
-
-        // Region-based validation (you can expand this)
-        const regionMap = {
-          // Northern (11-16)
-          11: "Delhi",
-          12: "Haryana",
-          13: "Haryana/Punjab",
-          14: "Punjab",
-          15: "Punjab/Himachal",
-          16: "Chandigarh",
-
-          // Western (30-39, 40-44)
-          30: "Rajasthan",
-          31: "Rajasthan",
-          32: "Rajasthan",
-          36: "Gujarat",
-          37: "Gujarat",
-          38: "Gujarat",
-          39: "Gujarat",
-          40: "Maharashtra",
-          41: "Maharashtra",
-          42: "Maharashtra",
-          43: "Maharashtra",
-          44: "Maharashtra",
-
-          // Southern (50-53, 56-59, 60-64, 67-69)
-          50: "Telangana",
-          51: "Andhra Pradesh",
-          52: "Andhra Pradesh",
-          53: "Andhra Pradesh",
-          56: "Karnataka",
-          57: "Karnataka",
-          58: "Karnataka",
-          59: "Karnataka",
-          60: "Tamil Nadu",
-          61: "Tamil Nadu",
-          62: "Tamil Nadu",
-          63: "Tamil Nadu",
-          64: "Tamil Nadu",
-          67: "Kerala",
-          68: "Kerala",
-          69: "Kerala",
-        };
-
-        // Check exact match first
-        if (pincodeStateMap[pincode]) {
-          resolve({
-            isValid: true,
-            state: pincodeStateMap[pincode],
-            pincode: pincode,
-          });
-          return;
-        }
-
-        // Check region-based validation
-        const regionPrefix = pincode.substring(0, 2);
-        if (regionMap[regionPrefix]) {
-          resolve({
-            isValid: true,
-            state: regionMap[regionPrefix],
-            pincode: pincode,
-            isRegionBased: true,
-          });
-          return;
-        }
-
-        // Default validation (pincodes starting with 1-6 are valid for demo)
-        const isValid = /^[1-6]/.test(pincode);
-
-        resolve({
-          isValid: isValid,
-          state: isValid ? getStateFromFirstDigit(pincode[0]) : "",
-          pincode: pincode,
-        });
-      }, 1000);
-    });
-  };
-
-  // Helper function to get state from first digit (rough approximation)
-  const getStateFromFirstDigit = (firstDigit) => {
-    const digitStateMap = {
-      1: "Northern Region",
-      2: "Northern Region",
-      3: "Western Region",
-      4: "Western Region",
-      5: "Southern Region",
-      6: "Southern Region",
-      7: "Eastern Region",
-      8: "Eastern Region",
-    };
-    return digitStateMap[firstDigit] || "Serviceable Area";
-  };
-
-  // REAL API INTEGRATION EXAMPLE (Uncomment and use this instead)
-  /*
-const validatePincodeAndGetState = async (pincode) => {
-  try {
-    const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
-    const data = await response.json();
-    
-    if (data[0].Status === "Success" && data[0].PostOffice) {
-      const state = data[0].PostOffice[0].State;
-      return {
-        isValid: true,
-        state: state,
-        pincode: pincode,
-        district: data[0].PostOffice[0].District
-      };
-    } else {
-      return {
-        isValid: false,
-        state: "",
-        pincode: pincode
-      };
-    }
-  } catch (error) {
-    console.error("API validation error:", error);
-    return {
-      isValid: false,
-      state: "",
-      pincode: pincode
-    };
-  }
-};
-*/
-
-  const getPincodeByGPS = async () => {
-    setIsGettingLocation(true);
-    setIsPincodeValid(null);
-
-    try {
-      // First check if geolocation is available
-      if (!navigator.geolocation) {
-        toast.error("location is not supported by your browser");
-        setIsGettingLocation(false);
-        return;
-      }
-
-      // Check if we're on HTTPS (required for geolocation on mobile)
-      const isMobile =
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent
-        );
-      if (
-        isMobile &&
-        window.location.protocol !== "https:" &&
-        window.location.hostname !== "localhost"
-      ) {
-        toast.error("Please use HTTPS for location access on mobile devices");
-        setIsGettingLocation(false);
-        return;
-      }
-
-      // Get current position with timeout
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          (error) => {
-            handleGeolocationError(error);
-            reject(error);
-          },
-          {
-            timeout: 15000,
-            enableHighAccuracy: true,
-            maximumAge: 300000, // 5 minutes cache
-          }
-        );
-      });
-
-      const { latitude, longitude } = position.coords;
-
-      // Use OpenStreetMap Nominatim API (free, no API key required)
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-        {
-          headers: {
-            "Accept-Language": "en",
-            "User-Agent": "YourApp/1.0 (your@email.com)", // Required by Nominatim
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const detectedPincode = data.address?.postcode;
-      const detectedState = data.address?.state;
-
-      if (detectedPincode) {
-        setPincode(detectedPincode);
-        setState(detectedState);
-        calculateDeliveryTime(state);
-        console.log(state);
-
-        toast.success(`📍 Pincode detected: ${detectedPincode}`);
-        validatePincode(detectedPincode);
-      } else {
-        // Fallback: try to extract from display_name
-        const fallbackPincode = extractPincodeFromDisplayName(
-          data.display_name
-        );
-        if (fallbackPincode) {
-          setPincode(fallbackPincode);
-          toast.success(`📍 Pincode detected: ${fallbackPincode}`);
-          validatePincode(fallbackPincode);
-        } else {
-          toast.error("Could not detect pincode from your location");
-          setIsPincodeValid(false);
-        }
-      }
-    } catch (error) {
-      console.error("GPS location detection failed:", error);
-      setIsPincodeValid(false);
-    } finally {
-      setIsGettingLocation(false);
-    }
-  };
-
-  const extractPincodeFromDisplayName = (displayName) => {
-    const pincodeMatch = displayName.match(/\b\d{5,6}\b/);
-    return pincodeMatch ? pincodeMatch[0] : null;
-  };
-
-  const handleGeolocationError = (error) => {
-    switch (error.code) {
-      case error.PERMISSION_DENIED:
-        toast.error(
-          "Location access denied. Please enable location permissions in your browser settings."
-        );
-        break;
-      case error.POSITION_UNAVAILABLE:
-        toast.error(
-          "Location information unavailable. Please check your GPS settings."
-        );
-        break;
-      case error.TIMEOUT:
-        toast.error("Location request timed out. Please try again.");
-        break;
-      default:
-        toast.error("Failed to get location. Please enter pincode manually.");
-    }
-  };
-
-  const checkLocationPermission = async () => {
-    if (navigator.permissions) {
-      try {
-        const permissionStatus = await navigator.permissions.query({
-          name: "geolocation",
-        });
-
-        if (permissionStatus.state === "denied") {
-          toast.error(
-            "Location access is blocked. Please enable it in browser settings."
-          );
-          return false;
-        }
-
-        if (permissionStatus.state === "prompt") {
-          toast.info("Please allow location access when prompted");
-        }
-
-        return permissionStatus.state !== "denied";
-      } catch (error) {
-        console.warn("Permission API not supported:", error);
-        return true;
-      }
-    }
-    return true;
-  };
-
-  const getPincodeByGPSWithPermissionCheck = async () => {
-    const hasPermission = await checkLocationPermission();
-    if (hasPermission) {
-      await getPincodeByGPS();
-    }
-  };
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isGettingVariantPrice, product, productRateAndReview } = useSelector(
     (state) => state.publicSlice
   );
-  const { user } = useSelector((state) => state.authSlice);
+ 
 
   // Get quantity discounts from backend
   const quantityDiscounts = _.get(data, "quantity_discount_splitup", []);
@@ -960,6 +593,9 @@ const validatePincodeAndGetState = async (pincode) => {
   const formatPrice = (price) => {
     return `₹${parseFloat(price).toFixed(2)}`;
   };
+  const formatMRPPrice = (price) => {
+    return `MRP ₹${parseFloat(price).toFixed(2)}`;
+  };
 
   // Calculate total price
   const calculateTotalPrice = () => {
@@ -968,7 +604,7 @@ const validatePincodeAndGetState = async (pincode) => {
       discountPercentage.percentage,
       Number(_.get(checkOutState, "product_price", 0))
     );
-    return Number(unitPrice * quantity).toFixed(2);
+    return  Number(unitPrice * quantity).toFixed(2);
   };
 
   // Calculate original price (before discount)
@@ -1307,7 +943,7 @@ const validatePincodeAndGetState = async (pincode) => {
 
         {/* Product Description */}
         <div>
-          <h1 className="text-xl font-semibold w-[60%] lg:w-full">
+          <h1 className="text-xl font-semibold w-[70%] ">
             {_.get(data, "product_description_tittle", "")}
           </h1>
           <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 ">
@@ -1464,13 +1100,13 @@ const validatePincodeAndGetState = async (pincode) => {
               <div className="text-right flex">
                 {quantity && calculateSavings() > 0 && (
                   <Text delete className="text-md text-gray-500 mr-2">
-                    {formatPrice(calculateOriginalPrice())}
+                    MRP{formatPrice(calculateOriginalPrice())}
                   </Text>
                 )}
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
                     ? formatPrice(calculateTotalPrice())
-                    : "Select quantity"}
+                    : formatMRPPrice(calculateTotalPrice())}
                 </Title>
               </div>
             </div>
