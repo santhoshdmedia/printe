@@ -97,7 +97,7 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link 
-                    to={'https://www.instagram.com/printe_in/'} 
+                    to={'https://www.instagram.com/the.printe/'} 
                     target="_blank"
                     className="flex items-center justify-center p-2 bg-gray-800 rounded-lg hover:bg-[#f2c41a] transition-all duration-300 group"
                   >

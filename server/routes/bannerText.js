@@ -10,10 +10,3 @@ router.delete("/delete_banner_text/:id", deleteTextBanner);
 module.exports = router
 
 
-
-
-
-
-
-
-
