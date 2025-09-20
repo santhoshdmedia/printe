@@ -24,6 +24,7 @@ const {
 } = require("../controller/admin.controller");
 const {
   clientLogin,
+  clientgoogleLogin,
   clientSignup,
   getAllCustomUsers,
   customSignup,
@@ -169,6 +170,7 @@ module.exports = {
   updateClientUser,
   getSingleClient,
   addtoHistory,
+  clientgoogleLogin,
   // custom user
   customSignup,
   getAllCustomUsers,

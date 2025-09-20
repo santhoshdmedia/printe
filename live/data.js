@@ -591,7 +591,7 @@ export const reviewData = [
     _id: "1",
     user: {
       name: "Pradeepkumar",
-      profile_pic: img1,
+      picture: img1,
     },
     rating: 3,
     review:
@@ -602,7 +602,7 @@ export const reviewData = [
     _id: "2",
     user: {
       name: "Krish",
-      profile_pic: img2,
+      picture: img2,
     },
     rating: 2,
     review:
@@ -613,7 +613,7 @@ export const reviewData = [
     _id: "3",
     user: {
       name: "chanse",
-      profile_pic: img1,
+      picture: img1,
     },
     rating: 4.2,
     review:
@@ -624,7 +624,7 @@ export const reviewData = [
     _id: "4",
     user: {
       name: "ramesh",
-      profile_pic: img3,
+      picture: img3,
     },
     rating: 3.6,
     review:
@@ -635,7 +635,7 @@ export const reviewData = [
     _id: "5",
     user: {
       name: "Mounika",
-      profile_pic: img1,
+      picture: img1,
     },
     rating: 5,
     review:
@@ -646,7 +646,7 @@ export const reviewData = [
     _id: "6",
     user: {
       name: "Ranjeeth",
-      profile_pic: img1,
+      picture: img1,
     },
     rating: 5,
     review: "",
@@ -656,7 +656,7 @@ export const reviewData = [
     _id: "7",
     user: {
       name: "Kumar",
-      profile_pic: img1,
+      picture: img1,
     },
     rating: 5,
     review: "",
@@ -666,7 +666,7 @@ export const reviewData = [
     _id: "8",
     user: {
       name: "pradeep",
-      profile_pic: img1,
+      picture: img1,
     },
     rating: 1,
     review: "",

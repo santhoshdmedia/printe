@@ -62,7 +62,7 @@ const UserAuth = () => {
             className="cursor-pointer"
           >
             {/* <Badge count={1}> */}
-            <Avatar src={user.profile_pic} size="large" className="text-primary capitalize bg-purple-300 title">
+            <Avatar src={user.picture} size="large" className="text-primary capitalize bg-purple-300 title">
               {profileImageName}
             </Avatar>
             {/* </Badge> */}

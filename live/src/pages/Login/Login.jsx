@@ -1,15 +1,15 @@
-
-import { Divider, Input, Spin } from "antd";
+import { Divider, Input, Spin, message } from "antd";
 import React, { useEffect, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
-import { MdHelpOutline } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { EnvHelper } from "../../helper/EnvHelper";
+import { jwtDecode } from "jwt-decode";
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import abc from "../../assets/logo/ABC.jpg";
 import logo from "../../assets/logo/without_bg.png";
-
+import { googleLogin } from "../../helper/api_helper";
+import { saveTokenToLocalStorage } from "../../redux/middleware";
+// Main Login Component
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -17,27 +17,19 @@ const Login = () => {
   const { isLogingIn, isAuth } = useSelector((state) => state.authSlice);
   const [isExiting, setIsExiting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   useEffect(() => {
-    // Trigger enter animation after component mounts
     setIsMounted(true);
     
     if (isAuth) {
-      let local_item = localStorage.getItem("redirect_url");
-      if (local_item) {
-        // Add exit animation before navigation
-        setIsExiting(true);
-        setTimeout(() => {
-          navigate(`/product/${local_item}`);
-        }, 500);
-      } else {
-        setIsExiting(true);
-        setTimeout(() => {
-          navigate("/");
-        }, 500);
-      }
+      const redirectUrl = localStorage.getItem("redirect_url");
+      setIsExiting(true);
+      setTimeout(() => {
+        navigate(redirectUrl ? `/product/${redirectUrl}` : "/");
+      }, 500);
     }
-  }, [isAuth]);
+  }, [isAuth, navigate]);
 
   const [form, setForm] = useState({
     email: "",
@@ -53,7 +45,7 @@ const Login = () => {
 
   const handleOnChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const emailValidation = (value) => {
@@ -61,18 +53,55 @@ const Login = () => {
     return pattern.test(value);
   };
 
-  const passwordValidation = (value) => {
-    const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{8,}$/;
-    return pattern.test(value);
-  };
-
   const handleOnSubmit = (e) => {
     e.preventDefault();
-    if (!emailValidation(form.email)) setErrorMessage("Invalid Email Id");
-    else {
+    if (!emailValidation(form.email)) {
+      setErrorMessage("Invalid Email Id");
+    } else {
       setErrorMessage("");
       dispatch({ type: "LOGIN", data: form });
     }
+  };
+
+  // Handle Google Login Success
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsGoogleLoading(true);
+    try {
+      const decoded = jwtDecode(credentialResponse.credential);
+      const { name, email, picture, sub } = decoded;
+
+      const response = await googleLogin({
+        googleId: sub,
+        name,
+        email,
+        picture,
+      });
+
+      if (response.status === 200) {
+        const data = response.data;
+        // saveTokenToLocalStorage()
+        // console.log
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        
+        dispatch({ type: "LOGIN_SUCCESS", payload: data.user });
+        message.success("Logged in successfully with Google!");
+      } else {
+        throw new Error(response.data?.message || "Failed to authenticate with Google");
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      message.error(error.message || "Google login failed. Please try again.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  // Handle Google Login Error
+  const handleGoogleError = () => {
+    console.error("Google Login Failed");
+    message.error("Google login failed. Please try again.");
+    setIsGoogleLoading(false);
   };
 
   return (
@@ -81,10 +110,10 @@ const Login = () => {
       <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50">
         <Link to={"/"} className="p-2 md:p-3 bg-yellow-400 flex items-center justify-center rounded-md cursor-pointer">
           <img 
-              src={logo} 
-              alt="Logo" 
-              className="h-6 md:h-8 w-auto object-contain"
-            />
+            src={logo} 
+            alt="Logo" 
+            className="h-6 md:h-8 w-auto object-contain"
+          />
         </Link>
       </div>
 
@@ -97,7 +126,6 @@ const Login = () => {
           backgroundPosition: "center"
         }}
       >
-        {/* Overlay with opacity */}
         <div className="absolute inset-0 bg-black opacity-70"></div>
         
         <div className="max-w-md relative z-10 text-white px-4">
@@ -137,7 +165,7 @@ const Login = () => {
             <p className="text-gray-600 text-sm md:text-base">Enter your credentials to access your account</p>
           </div>
 
-          <Spin spinning={isLogingIn}>
+          <Spin spinning={isLogingIn || isGoogleLoading}>
             <form onSubmit={handleOnSubmit} className="bg-white rounded-lg">
               <div className="mb-4 md:mb-6">
                 <label className="block text-gray-700 mb-2 font-medium text-sm md:text-base">Email Address</label>
@@ -193,13 +221,19 @@ const Login = () => {
               
               <Divider className="my-4 md:my-6 text-xs md:text-sm">Or</Divider>
               
-              <button
-                type="button"
-                className="w-full flex items-center justify-center gap-2 border border-gray-300 hover:border-gray-400 rounded-lg py-3 px-4 text-gray-700 hover:text-gray-900 transition duration-200 font-medium mb-4 md:mb-6 text-sm md:text-base"
-              >
-                <FcGoogle className="text-lg" />
-                Sign in with Google
-              </button>
+              <div className="flex justify-center mb-4 md:mb-6">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  useOneTap
+                  theme="filled_blue"
+                  size="large"
+                  text="signin_with"
+                  shape="rectangular"
+                  logo_alignment="left"
+                  width="100%"
+                />
+              </div>
               
               <div className="text-center">
                 <p className="text-gray-600 text-xs md:text-sm">
@@ -228,7 +262,7 @@ const Login = () => {
                 handleNavigation("/help");
               }}
             >
-              <MdHelpOutline className="mr-1" /> Need help?
+               Need help?
             </Link>
           </div>
         </div>
@@ -237,4 +271,9 @@ const Login = () => {
   );
 };
 
-export default Login;
+// Wrap the component with GoogleOAuthProvider
+export const LoginWithProvider = () => (
+  <GoogleOAuthProvider clientId="323773820042-ube4qhfaig1dbrgvl85gchkrlvphnlv9.apps.googleusercontent.com">
+    <Login />
+  </GoogleOAuthProvider>
+);

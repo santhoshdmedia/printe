@@ -6,8 +6,8 @@ import Product from "../pages/Product/Product";
 import Contact from "../pages/Contact/Contact";
 import Information from "../pages/Information/Information";
 import { termsAndConditions, privacyPolicy, returnPolicy, cancellingPolicy, aboutUs, shippingAndDeliveryPolicy } from "../../data.js";
-import Login from "../pages/Login/Login.jsx";
-import Signup from "../pages/Signup/Signup.jsx";
+import {LoginWithProvider} from "../pages/Login/Login.jsx";
+import {SignupWithProvider} from "../pages/Signup/Signup.jsx";
 import Account from "../pages/Account/Account.jsx";
 import Profile from "../components/Account/Profile.jsx";
 import ManageAddress from "../components/Account/ManageAddress.jsx";
@@ -118,11 +118,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/login",
-    element: <Login />,
+    element: <LoginWithProvider />,
   },
   {
     path: "/sign-up",
-    element: <Signup />,
+    element: <SignupWithProvider />,
   },
   {
     path: "/forget-password",

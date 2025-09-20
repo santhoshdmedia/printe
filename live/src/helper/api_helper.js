@@ -21,6 +21,15 @@ export const getAllBlogs = async () => {
 export const sendForgetPassowrdMail = async (formData) => {
   return await axios.post(`${baseURL}/mail/send_forgetpassoword_mail`, formData);
 };
+export const googleLogin = async (formData) => {
+  try {
+    const response = await axios.post(`${baseURL}/client_user/google_login`, formData);
+    return response;
+  } catch (error) {
+    console.error("Google login API error:", error);
+    throw error;
+  }
+};
 
 export const resetPassword = async (formdata) => {
   return await axios.post(`${baseURL}/mail/reset_password`, formdata);

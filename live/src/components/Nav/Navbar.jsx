@@ -277,7 +277,7 @@ const HelpCenterLink = () => (
 
       <Dropdown menu={{ items: dropdownItems }} placement="bottomRight" arrow trigger={['click']}>
         <Avatar
-          src={user.profile_pic}
+          src={user.picture}
           size="default"
           shape="circle"
           className="w-8 h-8 text-white bg-primary border capitalize text-lg transition-all duration-300"

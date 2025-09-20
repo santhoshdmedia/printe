@@ -23,7 +23,12 @@ const userSchema = new mongoose.Schema(
       maxlength: 50,
       trim: true,
     },
-    profile_pic: { type: String },
+   googleId: {
+    type: String,
+    unique: true,
+    sparse: true // Allows null values while maintaining uniqueness for non-null values
+  },
+    picture: { type: String },
     email: {
       type: String,
       required: true,
@@ -33,7 +38,6 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
       minlength: 6,
     },
     gst_no: {

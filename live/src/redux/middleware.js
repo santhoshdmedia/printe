@@ -9,7 +9,7 @@ const baseURL = EnvHelper.BASE_API_URL;
 const UPLOAD_BASE_URL = EnvHelper.UPLOAD_BASE_API_URL;
 export const authToken = "authToken";
 
-const saveTokenToLocalStorage = (token) => {
+export const saveTokenToLocalStorage = (token) => {
   localStorage.setItem(authToken, token);
 };
 
@@ -40,7 +40,13 @@ function* signUp(action) {
     yield put(isSignUpStarted());
     const res = yield call(axios.post, `${baseURL}/client_user/signup`, action.data);
 
-    yield call(saveTokenToLocalStorage, _.get(res, "data.data.token", ""));
+    const token = _.get(res, "data.data.token", "");
+    const user = _.get(res, "data.data.user", {}); // Adjust according to your API response structure
+
+    yield call(saveTokenToLocalStorage, token);
+    // Store user data in localStorage
+    localStorage.setItem('userData', JSON.stringify(user));
+
     yield put(isSignUpSuccess(_.get(res, "data", { _doc: {}, message: "" })));
   } catch (err) {
     yield put(isSignUpFailed(_.get(err, "response.data.message", "")));

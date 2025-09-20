@@ -6,14 +6,14 @@ import { IconHelper } from "../../helper/IconHelper";
 const Profile = () => {
   const { user } = useSelector((state) => state.authSlice);
   console.log(user);
-  const { name, email, phone, profile_pic, gst_no } = user;
+  const { name, email, phone, picture, gst_no } = user;
   const [isEditDisabled, setIsEditDisabled] = useState(true);
   const dispatch = useDispatch();
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
-    profile_pic: "",
+    picture: "",
     gst_no: "",
   });
 
@@ -24,7 +24,7 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    setForm({ name, email, phone, profile_pic, gst_no });
+    setForm({ name, email, phone, picture, gst_no });
   }, [user]);
 
   const handleOnChange = (e) => {
@@ -71,7 +71,7 @@ const Profile = () => {
   const handleUploadImage = (image) => {
     console.log(image);
 
-    setForm((prev) => ({ ...prev, profile_pic: image }));
+    setForm((prev) => ({ ...prev, picture: image }));
   };
 
   const profileImageName = user?.name[0] || "";
@@ -90,7 +90,7 @@ const Profile = () => {
             <div className="flex flex-col items-center mb-8">
               <div className="relative group w-32 h-32 mb-4">
                 <Avatar
-                  src={form.profile_pic}
+                  src={form.picture}
                   style={{
                     width: "128px",
                     height: "128px",

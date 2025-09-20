@@ -37,7 +37,7 @@ const ReviewCard = ({ data, dummy, setDummy, setId }) => {
     <Card className="!w-full !min-h-[100px] group hover:bg-[#cb7ace4d] relative">
       <Card.Meta
         avatar={
-          <Avatar src={_.get(data, "user_data[0].profile_pic", "") || null} size="small" className="text-white !text-sm capitalize bg-hot_pink title">
+          <Avatar src={_.get(data, "user_data[0].picture", "") || null} size="small" className="text-white !text-sm capitalize bg-hot_pink title">
             {profileImageName}
           </Avatar>
         }

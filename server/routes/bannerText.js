@@ -8,3 +8,12 @@ router.put("/edit_banner_text/:id", editTextBanner);
 router.delete("/delete_banner_text/:id", deleteTextBanner); 
 
 module.exports = router
+
+
+
+
+
+
+
+
+
