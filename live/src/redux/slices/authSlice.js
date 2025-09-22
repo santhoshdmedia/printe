@@ -106,15 +106,16 @@ const authSlice = createSlice({
     isSignUpStarted: (state) => {
       state.isSigningUp = true;
     },
-    isSignUpSuccess: (state, action) => {
-      state.isAuth = true;
-      state.isSigningUp = false;
-      state.user = action.payload.data._doc;
-      message.success({
-        key: "sign-up",
-        content: action.payload.message,
-      });
-    },
+ isSignUpSuccess: (state, action) => {
+  state.isAuth = true;
+  state.isSigningUp = false;
+  state.user = action.payload.data._doc;
+  // Save token if present
+  if (action.payload.data.token) {
+    saveTokenToLocalStorage(action.payload.data.token);
+  }
+  message.success("...");
+},
     isSignUpFailed: (state, action) => {
       state.isSigningUp = false;
       message.error({

@@ -7,7 +7,6 @@ module.exports = model(
       user_id: {
         type: Schema.Types.ObjectId,
         ref: "user",
-        required: true,
       },
       product_id: {
         type: Schema.Types.ObjectId,

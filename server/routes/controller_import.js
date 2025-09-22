@@ -126,6 +126,7 @@ const {
   addToShoppingCart,
   getMyShoppingCart,
   removeMyShoppingCart,
+  mergeCartsAfterLogin
 } = require("../controller/shoppingcart.controller");
 const {
   createvendorProduct,
@@ -272,6 +273,7 @@ module.exports = {
   addToShoppingCart,
   getMyShoppingCart,
   removeMyShoppingCart,
+  mergeCartsAfterLogin,
 
   // product descriptions
   addProductDescription,

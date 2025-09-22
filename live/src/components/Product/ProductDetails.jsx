@@ -148,6 +148,7 @@ if (user.role === "Dealer") {
   const [deliveryDate, setDeliveryDate] = useState(0);
   const [instructionsVisible, setInstructionsVisible] = useState(false);
   const [lazy, setLazy] = useState(false);
+  const [hasDiscount, setHasDiscount] = useState(false);
   
 
   useEffect(() => {
@@ -226,6 +227,18 @@ if (user.role === "Dealer") {
       setRate(reviewData?.filter((data) => data.rating > 0) || []);
     }
   }, [reviewData]);
+    const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "");
+    setPincode(value.slice(0, 6));
+    setIsPincodeValid(null);
+    setState("");
+    setDeliveryDate("");
+    setError("");
+
+    if (value.length === 6) {
+      validatePincode(value);
+    }
+  };
 
   useEffect(() => {
     // For Stand Alone Products, set the initial price and stock
@@ -377,125 +390,7 @@ if (user.role === "Dealer") {
     }
   };
 
-  const calculateDeliveryTime = (state) => {
-    switch (state) {
-      case "Andhra Pradesh":
-        setDeliveryTime(3);
-        break;
-      case "Arunachal Pradesh":
-        setDeliveryTime(5);
-        break;
-      case "Assam":
-        setDeliveryTime(4);
-        break;
-      case "Bihar":
-        setDeliveryTime(3);
-        break;
-      case "Chhattisgarh":
-        setDeliveryTime(3);
-        break;
-      case "Goa":
-        setDeliveryTime(3);
-        break;
-      case "Gujarat":
-        setDeliveryTime(3);
-        break;
-      case "Haryana":
-        setDeliveryTime(8);
-        break;
-      case "Himachal Pradesh":
-        setDeliveryTime(8);
-        break;
-      case "Jharkhand":
-        setDeliveryTime(8);
-        break;
-      case "Karnataka":
-        setDeliveryTime(3);
-        break;
-      case "Kerala":
-        setDeliveryTime(3);
-        break;
-      case "Madhya Pradesh":
-        setDeliveryTime(6);
-        break;
-      case "Maharashtra":
-        setDeliveryTime(6);
-        break;
-      case "Manipur":
-        setDeliveryTime(6);
-        break;
-      case "Meghalaya":
-        setDeliveryTime(6);
-        break;
-      case "Mizoram":
-        setDeliveryTime(5);
-        break;
-      case "Nagaland":
-        setDeliveryTime(5);
-        break;
-      case "Northern Region":
-        setDeliveryTime(8);
-        break;
-      case "Odisha":
-        setDeliveryTime(6);
-        break;
-      case "Punjab":
-        setDeliveryTime(6);
-        break;
-      case "Rajasthan":
-        setDeliveryTime(6);
-        break;
-      case "Sikkim":
-        setDeliveryTime(6);
-        break;
-      case "Tamil Nadu":
-        setDeliveryTime(2);
-        break;
-      case "Telangana":
-        setDeliveryTime(3);
-        break;
-      case "Tripura":
-        setDeliveryTime(3);
-        break;
-      case "Uttar Pradesh":
-        setDeliveryTime(8);
-        break;
-      case "Uttarakhand":
-        setDeliveryTime(8);
-        break;
-      case "West Bengal":
-        setDeliveryTime(8);
-        break;
-      // Union Territories
-      case "Andaman and Nicobar Islands":
-        setDeliveryTime(6);
-        break;
-      case "Chandigarh":
-        setDeliveryTime(8);
-        break;
-      case "Dadra and Nagar Haveli and Daman and Diu":
-        setDeliveryTime(3);
-        break;
-      case "Delhi":
-        setDeliveryTime(8);
-        break;
-      case "Jammu and Kashmir":
-        setDeliveryTime(8);
-        break;
-      case "Ladakh":
-        setDeliveryTime(8);
-        break;
-      case "Lakshadweep":
-        setDeliveryTime(7);
-        break;
-      case "Puducherry":
-        setDeliveryTime(3);
-        break;
-      default:
-        setDeliveryTime(3);
-        break;
-    }
-  };
+  
   useEffect(() => {
     calculateDeliveryDate(deliveryTime);
   }, [state]);
@@ -707,6 +602,8 @@ if (user.role === "Dealer") {
               : discountPercentage.percentage,
             Number(_.get(checkOutState, "product_price", 0))
           );
+
+          console.log(discountPercentage.percentage,"dis")
           const totalPrice = unitPrice * item.value;
           const isSelected = quantity === item.value;
 
@@ -1104,9 +1001,10 @@ if (user.role === "Dealer") {
                   </Text>
                 )}
                 <Title level={4} className="!m-0 !text-green-600">
+                  {discountPercentage.percentage === 0 ? "MRP " : ""}
                   {quantity
-                    ? formatPrice(calculateTotalPrice())
-                    : formatMRPPrice(calculateTotalPrice())}
+                    ? `${formatPrice(calculateTotalPrice())}`
+                    : `${formatMRPPrice(calculateTotalPrice())}`}
                 </Title>
               </div>
             </div>

@@ -192,7 +192,7 @@ const NavMenu = () => {
         }
       `}</style>
 
-      <div className="flex gap-x-4 !h-full justify-center items-center w-full relative">
+      <div className="flex gap-x-4 !h-full w-full justify-center items-center w-full relative">
         {/* All Categories Mega Menu */}
         <div className="w-[200px] center_div rounded-md !text-white">
           <div ref={(el) => (dropdownRefs.current.megaMenu = { current: el })}>
@@ -211,10 +211,10 @@ const NavMenu = () => {
             {/* Mega Menu Content */}
             {activeDropdown.megaMenu && (
               <div
-                className="absolute animate-fade-in max-h-fit w-full z-50 top-[55px] left-0 bg-white rounded-xl overflow-hidden border border-gray-100 border-opacity-20"
+                className="absolute animate-fade-in max-h-fit !w-[1400px]  z-50 top-[55px] left-[-80%] bg-white rounded-xl overflow-hidden border border-gray-100 border-opacity-20"
                 onMouseLeave={closeAllDropdowns}
               >
-                <div className="grid grid-cols-5 px-8 py-8 gap-6">
+                <div className="grid grid-cols-5 px-8 py-8 gap-6  mx-auto">
                   {menu.map((result) => (
                     <div key={result._id} className="category-card p-4">
                       <div

@@ -47,7 +47,15 @@ function* signUp(action) {
     // Store user data in localStorage
     localStorage.setItem('userData', JSON.stringify(user));
 
-    yield put(isSignUpSuccess(_.get(res, "data", { _doc: {}, message: "" })));
+    
+
+   yield put(isSignUpSuccess({
+  data: {
+    _doc: user,
+    token: token
+  },
+  message: _.get(res, "data.message", "")
+}));
   } catch (err) {
     yield put(isSignUpFailed(_.get(err, "response.data.message", "")));
     console.log(err);

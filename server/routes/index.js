@@ -42,7 +42,7 @@ router.use("/customer_section", VerfiyToken, section_routes);
 router.use("/home", section_routes);
 
 // cart
-router.use("/shopping", VerfiyToken, shopping_cart);
+router.use("/shopping", shopping_cart);
 
 // team
 

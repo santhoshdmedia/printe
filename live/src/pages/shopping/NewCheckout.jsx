@@ -731,11 +731,19 @@ const NewCheckout = () => {
   const { user } = useSelector((state) => state.authSlice);
   const location = useLocation();
   const selectedProducts = location.state?.selectedProducts || [];
+
   
   const [isEditable, setIsEditable] = useState(false);
   const [gstNo, setGstNo] = useState(user.gst_no || "");
   const navigation = useNavigate();
 
+
+  console.log(user)
+  useEffect(()=>{
+    if (user.name=="") {
+      navigation("/login")
+    }
+  },[])
   const PAYMENT_TYPE = [
     {
       id: 2,

@@ -199,20 +199,39 @@ const Navbar = () => {
   );
 
   const AuthButtons = () => (
-    <div className="flex items-center">
-      <Link
-        to="/login"
-        className="text-[#121621] p-2 transition-all duration-300 hover:text-primary rounded"
-      >
-        <IconHelper.LOGIN_ICON className="text-xl" />
+   <div className="flex items-center space-x-2">
+     <Link to="/shopping-cart" onClick={fetchCartData} className="p-1">
+        <Badge count={cartCount} size="small" color="hotpink" offset={[-5, 5]}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 lg:hover:bg-slate-100">
+            <BsCart3 className="text-xl text-[#121621]" />
+          </div>
+        </Badge>
       </Link>
-      <Link
-        to="/sign-up"
-        className="text-[#121621] p-2 transition-all duration-300 hover:text-primary rounded"
-      >
-        <IconHelper.REGISTER_USER_ICON className="text-xl" />
-      </Link>
-    </div>
+  <Link
+    to="/login"
+    className="relative bg-gradient-to-r from-yellow-600 to-yellow-600 text-white px-6 py-2 rounded-lg group overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/30 hidden md:block"
+  >
+    {/* Shine effect */}
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+    
+    <span className="relative z-10 flex items-center gap-2 font-bold">
+      <IconHelper.LOGIN_ICON className="text-xl group-hover:scale-110 transition-transform duration-300 text-white hover:!text-white" />
+      <span className="hidden md:block group-hover:translate-x-1 transition-transform duration-300 text-white hover:!text-white">Login</span>
+    </span>
+  </Link>
+  <Link
+    to="/sign-up"
+    className="relative lg:bg-gradient-to-r from-yellow-600 to-yellow-600 text-black px-6 py-2  group overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/30 rounded-lg"
+  >
+    {/* Shine effect */}
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+    
+    <span className="relative z-10 flex items-center gap-2 font-bold">
+      <IconHelper.REGISTER_USER_ICON className="text-xl group-hover:scale-110 transition-transform duration-300 !text-black lg:!text-white lg:hover:!text-white" />
+      <span className="hidden md:block group-hover:translate-x-1 transition-transform duration-300 lg:text-white  lg:hover:!text-white">Register</span>
+    </span>
+  </Link>
+</div>
   );
 
 
@@ -333,14 +352,14 @@ const HelpCenterLink = () => (
       <div className="block lg:hidden w-full fixed top-[40px] left-0 z-[1001] !bg-[#f2c41a] shadow-md ">
         {/* Main Navbar Row */}
         <div className="w-full h-14 flex items-center justify-between px-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0">
             <button
               onClick={() => setMenuStatus(true)}
-              className="p-2 transition-transform duration-300 hover:scale-110 text-[#121621]"
+              className="lg:p-2 pl-2 transition-transform duration-300 hover:scale-110 text-[#121621]"
             >
               <IoMenu className="text-xl" />
             </button>
-            <Link to="/" className="flex items-center">
+            <Link to="/" className="flex items-center mx-0">
               <img 
                 src={Logo} 
                 alt="Printe Logo" 

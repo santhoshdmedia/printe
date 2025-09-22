@@ -90,7 +90,7 @@ const ImagesSlider = ({ imageList, data }) => {
           <img
             ref={imgRef}
             src={imageSelected}
-            className="absolute inset-0 w-full h-full object-contain rounded-xl transition-transform duration-300 hover:scale-105"
+            className="absolute inset-0 w-full h-full object-cover rounded-xl transition-transform duration-300 hover:scale-105"
             alt="product"
            
           />
