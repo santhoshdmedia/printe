@@ -2,7 +2,7 @@
 import StepProcess from "../../components/Home/StepProcess";
 import CarouselBanner from "../../components/Home/CarouselBanner";
 import { useEffect, useState } from "react";
-import { getCustomHomeSections } from "../../helper/api_helper";
+import { getCustomHomeSections,mergeCart } from "../../helper/api_helper";
 import { Divider, Spin } from "antd";
 import { IconHelper } from "../../helper/IconHelper";
 import _ from "lodash";
@@ -19,6 +19,10 @@ const Home = () => {
   const [sectionData, setSectionData] = useState([]);
   const { user } = useSelector((state) => state.authSlice);
 
+  const mergeCartItems=async()=>{
+    const result=await mergeCart();
+    console.log(result)
+  }
   const fetchData = async () => {
     try {
       const result = await getCustomHomeSections();

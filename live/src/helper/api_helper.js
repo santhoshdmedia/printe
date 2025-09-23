@@ -100,6 +100,10 @@ export const getMyShoppingCart = async () => {
   return await custom_axios.get(`${baseURL}/shopping/get_my_cart`);
 };
 
+export const mergeCart=async (cartData)=>{
+  return await custom_axios.post(`${baseURL}/shopping/merge_cart`, cartData);
+}
+
 export const removeMyShoppingCart = async (data) => {
   // Handle both cases: single ID string or array of IDs
   const requestData = typeof data === 'string' ? { ids: [data] } : data;

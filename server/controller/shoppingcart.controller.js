@@ -164,7 +164,7 @@ const removeMyShoppingCart = async (req, res) => {
 
 const mergeCartsAfterLogin = async (req, res) => {
   try {
-    const { id } = req.userData;
+    const { id } = req.userData?.id || req.body.id?._id || req.body.userId;
     const { guestId } = req.body;
 
     if (!guestId) {
@@ -173,9 +173,9 @@ const mergeCartsAfterLogin = async (req, res) => {
 
     const guestCartItems = await ShoppingCardSchema.find({ guest_id: guestId });
 
-    if (guestCartItems.length === 0) {
-      return successResponse(res, "No guest cart items to merge");
-    }
+    // if (guestCartItems.length === 0) {
+    //   return successResponse(res, "No guest cart items to merge");
+    // }
 
     for (const guestItem of guestCartItems) {
       const existingUserItem = await ShoppingCardSchema.findOne({

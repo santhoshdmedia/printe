@@ -4,6 +4,9 @@ module.exports = model(
   "shopping_cart",
   Schema(
     {
+      guest_id: {
+        type: String,
+      },
       user_id: {
         type: Schema.Types.ObjectId,
         ref: "user",

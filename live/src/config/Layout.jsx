@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React,{useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import Footer from "../components/Footer";
 import Navbar from "../components/Nav/Navbar.jsx";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
@@ -10,20 +10,20 @@ import NavMenu from "../components/Nav/NavMenu.jsx";
 import { ToastContainer } from "react-toastify";
 
 const Layout = () => {
-  const [showIcon,setShowIcon]=useState(false)
+  const [showIcon, setShowIcon] = useState(false);
   const path = useHref();
-  
+
   useEffect(() => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth"
+      behavior: "smooth",
     });
-  }, [location.pathname]); 
-  
+  }, [location.pathname]);
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth"
+      behavior: "smooth",
     });
   };
 
@@ -41,15 +41,19 @@ const Layout = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-  
-  const isProduct = [
-    "product"
-  ].some((route) => location.pathname.includes(route));
-  
+
+  const isProduct = ["product"].some((route) =>
+    location.pathname.includes(route)
+  );
+
   return (
     <div className={` w-full mx-auto !transition-all !duration-700 `}>
-      <div className={`fixed top-0 left-0 -z-10 h-[100vh] w-full  ${isProduct?"hidden":""}`}>
-        <div 
+      <div
+        className={`fixed top-0 left-0 -z-10 h-[100vh] w-full  ${
+          isProduct ? "hidden" : ""
+        }`}
+      >
+        <div
           className="absolute inset-0 h-full w-full bg-gradient-to-b from-white to-[#FFF9C7] "
           aria-hidden="true"
         />
@@ -58,11 +62,12 @@ const Layout = () => {
       <div className="sticky top-0 z-[999] w-full overflow-hidden bg-[#f5f5f5] p-2">
         <div className="scrolling-text-container">
           <div className="scrolling-text !font-[300] whitespace-nowrap">
-            ✨ Special Launch Offer – Flat 25% OFF on all items. Shop now and be part of our grand beginning!
+            ✨ Special Launch Offer – Flat 25% OFF on all items. Shop now and be
+            part of our grand beginning!
           </div>
         </div>
       </div>
-      
+
       <div className="sticky top-[40px] z-[999] w-full">
         <Navbar />
       </div>
@@ -75,7 +80,11 @@ const Layout = () => {
       </div>
 
       <Footer />
-      <div className={`${showIcon?"":"hidden"} fixed bottom-8 right-8 cursor-pointer z-50 bg-green-500 rounded-full lg:p-4 p-3`} >
+      <div
+        className={`${
+          showIcon ? "" : "hidden"
+        } fixed bottom-8 right-8 cursor-pointer z-50 bg-green-500 rounded-full lg:p-4 p-3`}
+      >
         <a
           href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
           target="_blank"
@@ -88,26 +97,35 @@ const Layout = () => {
           />
         </a>
       </div>
-      
-      <div className={`${showIcon?"":"hidden"}  transition-all transition-500  fixed bottom-24 right-6 cursor-pointer z-50   rounded-full lg:p-4 p-3`}>
-          <span className=""><ImageHelper.UP_arrow className="text-yellow-400 text-5xl hover:animate-bounce"onClick={scrollToTop}/></span>
+
+      <div
+        className={`${
+          showIcon ? "" : "hidden"
+        }  transition-all transition-500  fixed bottom-24 right-6 cursor-pointer z-50   rounded-full lg:p-4 p-3`}
+      >
+        <span className="">
+          <ImageHelper.UP_arrow
+            className="text-yellow-400 text-5xl hover:animate-bounce"
+            onClick={scrollToTop}
+          />
+        </span>
       </div>
-      <ToastContainer/>
-      
+     <ToastContainer position="top-right" />
+
       <style jsx>{`
         .scrolling-text-container {
           width: 100%;
           overflow: hidden;
           position: relative;
         }
-        
+
         .scrolling-text {
           display: inline-block;
           padding-left: 100%;
           animation: scroll 22s linear infinite;
           color: #000000;
         }
-        
+
         @keyframes scroll {
           0% {
             transform: translateX(0);
@@ -116,8 +134,6 @@ const Layout = () => {
             transform: translateX(-100%);
           }
         }
-        
-     
       `}</style>
     </div>
   );

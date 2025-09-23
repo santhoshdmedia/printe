@@ -334,23 +334,23 @@ if (user.role === "Dealer") {
       setLoading(true);
 
       if (!quantity) {
-        toast.error("Please select quantity first");
+        toast.error("Please select quantity first",{ position: "top-right",});
         return;
       }
 
       if (needDesignUpload && !checkOutState.product_design_file) {
-        toast.error("Please upload your design file first");
+        toast.error("Please upload your design file first",{ position: "top-right",});
         return;
       }
 
       if (needDesignUpload && !checked) {
-        toast.error("Please Confirm Your Designs");
+        toast.error("Please Confirm Your Designs",{ position: "top-right",});
         return;
       }
 
       if (_.isEmpty(user)) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
-        toast.error("Please Login");
+        toast.error("Please Login",{ position: "top-right",});
         return navigate("/login");
       }
 
@@ -380,10 +380,10 @@ if (user.role === "Dealer") {
     } catch (err) {
       if (err?.response?.status === 401) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
-        toast.error("Login to place order");
+        toast.error("Login to place order",{ position: "top-right",});
         navigate("/sign-up");
       } else {
-        toast.error(err.message || "An error occurred");
+        toast.error(err.message || "An error occurred",{ position: "top-right",});
       }
     } finally {
       setLoading(false);
@@ -1399,16 +1399,16 @@ export const PincodeDeliveryCalculator = ( Production ) => {
   const handleGeolocationError = (error) => {
     switch (error.code) {
       case error.PERMISSION_DENIED:
-        toast.error("Location access denied. Please enable location permissions.");
+        toast.error("Location access denied. Please enable location permissions.",{ position: "top-right",});
         break;
       case error.POSITION_UNAVAILABLE:
-        toast.error("Location information unavailable. Please check your GPS settings.");
+        toast.error("Location information unavailable. Please check your GPS settings.",{ position: "top-right",});
         break;
       case error.TIMEOUT:
-        toast.error("Location request timed out. Please try again.");
+        toast.error("Location request timed out. Please try again.",{ position: "top-right",});
         break;
       default:
-        toast.error("Failed to get location. Please enter pincode manually.");
+        toast.error("Failed to get location. Please enter pincode manually.",{ position: "top-right",});
     }
   };
 
@@ -1456,7 +1456,7 @@ export const PincodeDeliveryCalculator = ( Production ) => {
       if (detectedPincode) {
         setPincode(detectedPincode);
         validatePincode(detectedPincode);
-        toast.success(`📍 Pincode detected: ${detectedPincode}`);
+        toast.success(`📍 Pincode detected: ${detectedPincode}`,{ position: "top-right",});
       } else {
         throw new Error("No pincode found");
       }
@@ -1469,7 +1469,7 @@ export const PincodeDeliveryCalculator = ( Production ) => {
 
   const getPincodeByGPSWithPermissionCheck = async () => {
     const hasPermission = await checkLocationPermission();
-    hasPermission ? await getPincodeByGPS() : toast.error("Location permission denied");
+    hasPermission ? await getPincodeByGPS() : toast.error("Location permission denied",{ position: "top-right",});
   };
 
   return (

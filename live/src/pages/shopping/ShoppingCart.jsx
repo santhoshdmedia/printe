@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Breadcrumbs from "../../components/cards/Breadcrumbs";
-import { getMyShoppingCart, removeMyShoppingCart } from "../../helper/api_helper";
+import { getMyShoppingCart, removeMyShoppingCart, } from "../../helper/api_helper";
 import _ from "lodash";
 import { Button, Divider, Modal, Spin, Table } from "antd";
 import { IconHelper } from "../../helper/IconHelper";
@@ -16,27 +16,29 @@ const ShoppingCart = () => {
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(null); // Separate loading for delete
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [designModalVisible, setDesignModalVisible] = useState(false);
-  const navigate=useNavigate();
-  console.log(user)
-  // useEffect(()=>{
-  //   if (user.name=="") {
-  //     navigate("/login")
-  //   }
-  // },[])
+  const [designModalVisible, setDesignModalVisible] = useState(false);  
 
   const dispatch = useDispatch();
   const navigation = useNavigate();
+  const storeGuestId=()=>{
+    
+  }
 
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchData();
   }, []);
+  
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const result = await getMyShoppingCart();
+      if(user.name==""&&result.data.data[0]._id){
+        localStorage.setItem("guest",result.data.data[0]._id)
+      }
+
+     
       let data = _.get(result, "data.data", []);
       setCardData(data);
       // Corrected dispatch - use SET_CART_ITEMS instead of ADD_TO_CART
