@@ -62,7 +62,7 @@ import {
 } from "@ant-design/icons";
 import { CiFaceSmile } from "react-icons/ci";
 import { CgSmileSad } from "react-icons/cg";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast"; // Changed from sonner to react-hot-toast
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
 
@@ -81,7 +81,6 @@ const ProductDetails = ({
   },
 }) => {
     const { user } = useSelector((state) => state.authSlice);
-
 
   
  const product_type = _.get(data, "type", "Stand Alone Product");
@@ -334,23 +333,23 @@ if (user.role === "Dealer") {
       setLoading(true);
 
       if (!quantity) {
-        toast.error("Please select quantity first",{ position: "top-right",});
+        toast.error("Please select quantity first");
         return;
       }
 
       if (needDesignUpload && !checkOutState.product_design_file) {
-        toast.error("Please upload your design file first",{ position: "top-right",});
+        toast.error("Please upload your design file first");
         return;
       }
 
       if (needDesignUpload && !checked) {
-        toast.error("Please Confirm Your Designs",{ position: "top-right",});
+        toast.error("Please Confirm Your Designs");
         return;
       }
 
       if (_.isEmpty(user)) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
-        toast.error("Please Login",{ position: "top-right",});
+        toast.error("Please Login");
         return navigate("/login");
       }
 
@@ -380,10 +379,10 @@ if (user.role === "Dealer") {
     } catch (err) {
       if (err?.response?.status === 401) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
-        toast.error("Login to place order",{ position: "top-right",});
+        toast.error("Login to place order");
         navigate("/sign-up");
       } else {
-        toast.error(err.message || "An error occurred",{ position: "top-right",});
+        toast.error(err.message || "An error occurred");
       }
     } finally {
       setLoading(false);
@@ -1399,16 +1398,16 @@ export const PincodeDeliveryCalculator = ( Production ) => {
   const handleGeolocationError = (error) => {
     switch (error.code) {
       case error.PERMISSION_DENIED:
-        toast.error("Location access denied. Please enable location permissions.",{ position: "top-right",});
+        toast.error("Location access denied. Please enable location permissions.");
         break;
       case error.POSITION_UNAVAILABLE:
-        toast.error("Location information unavailable. Please check your GPS settings.",{ position: "top-right",});
+        toast.error("Location information unavailable. Please check your GPS settings.");
         break;
       case error.TIMEOUT:
-        toast.error("Location request timed out. Please try again.",{ position: "top-right",});
+        toast.error("Location request timed out. Please try again.");
         break;
       default:
-        toast.error("Failed to get location. Please enter pincode manually.",{ position: "top-right",});
+        toast.error("Failed to get location. Please enter pincode manually.");
     }
   };
 
@@ -1456,7 +1455,7 @@ export const PincodeDeliveryCalculator = ( Production ) => {
       if (detectedPincode) {
         setPincode(detectedPincode);
         validatePincode(detectedPincode);
-        toast.success(`📍 Pincode detected: ${detectedPincode}`,{ position: "top-right",});
+        toast.success(`📍 Pincode detected: ${detectedPincode}`);
       } else {
         throw new Error("No pincode found");
       }
@@ -1469,7 +1468,7 @@ export const PincodeDeliveryCalculator = ( Production ) => {
 
   const getPincodeByGPSWithPermissionCheck = async () => {
     const hasPermission = await checkLocationPermission();
-    hasPermission ? await getPincodeByGPS() : toast.error("Location permission denied",{ position: "top-right",});
+    hasPermission ? await getPincodeByGPS() : toast.error("Location permission denied");
   };
 
   return (

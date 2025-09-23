@@ -7,7 +7,7 @@ import { useHref } from "react-router-dom";
 import { ImageHelper } from "../helper/ImageHelper";
 import QuickAccess from "./QuickAccess";
 import NavMenu from "../components/Nav/NavMenu.jsx";
-import { ToastContainer } from "react-toastify";
+import { Toaster } from "react-hot-toast";
 
 const Layout = () => {
   const [showIcon, setShowIcon] = useState(false);
@@ -110,7 +110,41 @@ const Layout = () => {
           />
         </span>
       </div>
-     <ToastContainer position="top-right" />
+      
+      {/* React Hot Toast Configuration - Fixed z-index */}
+      <Toaster 
+        position="top-right"
+        reverseOrder={true}
+        containerStyle={{
+          position: 'fixed',
+          top: '400px', // Adjust this value based on your navbar height
+          right: '20px',
+          zIndex: 1000, // Higher than navbar z-index (999)
+        }}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#28aa59',
+            color: '#fff',
+            zIndex: 1001, // Even higher than container
+          },
+          success: {
+            duration: 3000,
+            theme: {
+              primary: 'green',
+              secondary: 'black',
+            },
+          },
+          error: {
+            duration: 5000,
+            style: {
+              background: '#ff4d4f',
+              color: '#fff',
+              zIndex: 1001,
+            },
+          },
+        }}
+      />
 
       <style jsx>{`
         .scrolling-text-container {

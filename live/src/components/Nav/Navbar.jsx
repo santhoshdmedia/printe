@@ -15,6 +15,8 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import _ from "lodash";
+// login
+import { LoginWithProvider } from "../../pages/Login/Login";
 
 // Icons
 import { BsCart3, BsSearch, BsXLg } from "react-icons/bs";
@@ -225,32 +227,19 @@ const Navbar = () => {
       </Link>
       <Link
         to="/login"
-        className="relative bg-gradient-to-r from-yellow-600 to-yellow-600 text-white px-6 py-2 rounded-lg group overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/30 hidden md:block"
+        className="relative  text-black hover:!text-black px-6 py-2 rounded-lg group overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/30 hidden md:block"
       >
         {/* Shine effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
 
         <span className="relative z-10 flex items-center gap-2 font-bold">
-          <IconHelper.LOGIN_ICON className="text-xl group-hover:scale-110 transition-transform duration-300 text-white hover:!text-white" />
-          <span className="hidden md:block group-hover:translate-x-1 transition-transform duration-300 text-white hover:!text-white">
+          <IconHelper.REGISTER_USER_ICON className="text-xl group-hover:scale-110 transition-transform duration-300 " />
+          <span className="hidden md:block group-hover:translate-x-1 transition-transform duration-300 ">
             Login
           </span>
         </span>
       </Link>
-      <Link
-        to="/sign-up"
-        className="relative lg:bg-gradient-to-r from-yellow-600 to-yellow-600 text-black px-6 py-2  group overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/30 rounded-lg"
-      >
-        {/* Shine effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-
-        <span className="relative z-10 flex items-center gap-2 font-bold">
-          <IconHelper.REGISTER_USER_ICON className="text-xl group-hover:scale-110 transition-transform duration-300 !text-black lg:!text-white lg:hover:!text-white" />
-          <span className="hidden md:block group-hover:translate-x-1 transition-transform duration-300 lg:text-white  lg:hover:!text-white">
-            Register
-          </span>
-        </span>
-      </Link>
+      
     </div>
   );
 
@@ -338,7 +327,7 @@ const Navbar = () => {
     <div>
       {/* Desktop Navbar  */}
       <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-10 ">
-        <div className="flex items-center gap-x-4 xl:gap-x-32 w-auto xl:w-[70%] justify-start">
+        <div className="flex items-center gap-x-4 xl:gap-x-32 w-auto lg:!w-[100%] xl:w-[70%] justify-start">
           <Link
             to="/"
             className="title text-[#121621] uppercase cursor-pointer !line-clamp-1"

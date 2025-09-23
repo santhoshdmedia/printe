@@ -93,6 +93,59 @@ const clientgoogleLogin = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+const clientEmailLogin = async (req, res) => {
+  try {
+    const {  name, email } = req.body;
+
+    // Validate required fields
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Check if user already exists - using the User model, not UserSchema
+    let user = await UserSchema.findOne({ 
+      $or: [{ email }] 
+    });
+
+    if (user) {
+      // Update user if they signed up with email previously
+      if (!user.name) {
+        user.name = name;
+        // Only update picture if not already set
+  
+        await user.save();
+      }
+    } else {
+      // Create new user
+      user = new UserSchema({
+        name,
+        email,
+      });
+      await user.save();
+    }
+     const payload = {
+        id: _.get(user, "[0]._id", ""),
+        email: _.get(user, "[0].email", ""),
+        role: _.get(user, "[0].role", ""),
+      };
+
+    // Create JWT token
+   const token = await GenerateToken(payload);
+
+    // Return user and token
+    res.status(200).json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      }
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 const customSignup = async (req, res) => {
   const {

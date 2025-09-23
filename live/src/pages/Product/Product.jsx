@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import ImagesSlider from "../../components/Product/ImagesSlider";
 import ProductDetails from "../../components/Product/ProductDetails";
 import { useParams } from "react-router-dom";
@@ -9,122 +8,125 @@ import { Spin } from "antd";
 import OverViewDetails from "../../components/Product/OverViewDetails";
 import Breadcrumbs from "../../components/cards/Breadcrumbs";
 import _ from "lodash";
-import { addTohistory, getRelateProducts } from "../../helper/api_helper";
+import { addTohistory } from "../../helper/api_helper";
 import SimilarProducts from "./SimilarProducts";
 import HistoryProducts from "./HistoryProducts";
+import { Helmet } from "react-helmet-async";
 
 const Product = () => {
-  //config
   const params = useParams();
   const dispatch = useDispatch();
   const { id } = params;
   const { user } = useSelector((state) => state.authSlice);
-
-  //mount
-  useEffect(() => {
-    dispatch({ type: "GET_PRODUCT", data: { id } });
-    dispatch({ type: "GET_PRODUCT_REVIEW", data: { id } });
-    localStorage.removeItem("redirect_url");
-  }, [id]);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  //redux
   const { product, isGettingProduct, isUploadingFile } = useSelector(
     (state) => state.publicSlice
   );
 
-  const addToHistoryDb = async () => {
-    try {
-      if (_.get(user, "_id", "") && _.get(product, "_id", "")) {
-        await addTohistory({ product_id: _.get(product, "_id", "") });
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  // Safe value getter
+  const getProductValue = useCallback((path, defaultValue = "") => {
+    return _.get(product, path, defaultValue);
+  }, [product]);
 
+  // Add to history function
+  const addToHistoryDb = useCallback(async () => {
+    try {
+      const userId = _.get(user, "_id", "");
+      const productId = _.get(product, "_id", "");
+      
+      if (userId && productId) {
+        await addTohistory({ product_id: productId });
+      }
+    } catch (error) {
+      console.error("Failed to add to history:", error);
+    }
+  }, [user?._id, product?._id]);
+
+  // Fetch product data
+  useEffect(() => {
+    const fetchProductData = async () => {
+      try {
+        await Promise.all([
+          dispatch({ type: "GET_PRODUCT", data: { id } }),
+          dispatch({ type: "GET_PRODUCT_REVIEW", data: { id } })
+        ]);
+        localStorage.removeItem("redirect_url");
+      } catch (error) {
+        console.error("Failed to fetch product data:", error);
+      }
+    };
+
+    if (id) {
+      fetchProductData();
+      window.scrollTo(0, 0);
+    }
+  }, [id, dispatch]);
+
+  // Add to history
   useEffect(() => {
     addToHistoryDb();
-  }, [_.get(user, "_id", ""), _.get(product, "_id", "")]);
+  }, [addToHistoryDb]);
+
+  if (isGettingProduct) {
+    return <ProductPageLoadingSkeleton />;
+  }
+
+  if (!product) {
+    return <div>Product not found</div>;
+  }
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
+      <Helmet>
+        <title>{getProductValue("seo_title", "Product Page")}</title>
+        <meta name="description" content={getProductValue("short_description", "")} />
+        <meta name="keywords" content={getProductValue("seo_keywords", "")} />
+      </Helmet>
+
       <div className="pt-5 pb-0">
         <Breadcrumbs
-          title3={_.get(product, "name", "")}
-          title={_.get(product, "category_details.main_category_name", "")}
-          titleto={`/category/${_.get(
-            product,
-            "category_details.main_category_name",
-            ""
-          )}/${_.get(product, "category_details._id", "")}`}
-          title2={_.get(product, "sub_category_details.sub_category_name", "")}
-          title2to={`/category/${_.get(
-            product,
-            "category_details.main_category_name",
-            ""
-          )}/${_.get(
-            product,
-            "sub_category_details.sub_category_name",
-            ""
-          )}/${_.get(product, "category_details._id", "")}/${_.get(
-            product,
-            "sub_category_details._id",
-            ""
-          )}`}
+          title3={getProductValue("name", "Product")}
+          title={getProductValue("category_details.main_category_name", "")}
+          titleto={`/category/${getProductValue("category_details.main_category_name", "")}/${getProductValue("category_details._id", "")}`}
+          title2={getProductValue("sub_category_details.sub_category_name", "")}
+          title2to={`/category/${getProductValue("category_details.main_category_name", "")}/${getProductValue("sub_category_details.sub_category_name", "")}/${getProductValue("category_details._id", "")}/${getProductValue("sub_category_details._id", "")}`}
         />
       </div>
-      <div>
-        {isGettingProduct ? (
-          <ProductPageLoadingSkeleton />
-        ) : (
-          <Spin spinning={isUploadingFile}>
-            <div className="flex flex-col">
-              {/* Main Product Container */}
-              <div className="flex w-full flex-col justify-start gap-8 lg:flex-row lg:py-2  rounded-xl  py-2  ">
-                {/* Image Slider Section - Sticky on desktop */}
-                <div className="w-full lg:w-1/2  self-start">
-                  <ImagesSlider imageList={product?.images} data={product} />
-                </div>
 
-                {/* Product Details Section */}
-                <div className="w-full lg:w-1/2 lg:pl-8">
-                  <ProductDetails data={product} />
-                </div>
-              </div>
-
-              {/* Product Overview Section */}
-              <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
-                <OverViewDetails data={product} />
-              </div>
-
-              {/* Spacer */}
-              <div className="h-8"></div>
-
-              {/* Similar Products Section */}
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <SimilarProducts
-                  left={true}
-                  category_id={product?.category_details?._id || ""}
-                />
-              </div>
-
-              {/* Recently Viewed Section (only for logged-in users) */}
-              {user?._id && (
-                <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
-                  <HistoryProducts left={true} />
-                </div>
-              )}
-
-              {/* Bottom Spacer */}
-              <div className="h-8"></div>
+      <Spin spinning={isUploadingFile}>
+        <div className="flex flex-col">
+          {/* Main Product Container */}
+          <div className="flex w-full flex-col justify-start gap-8 lg:flex-row lg:py-2 rounded-xl py-2">
+            <div className="w-full lg:w-1/2 self-start">
+              <ImagesSlider imageList={product?.images || []} data={product} />
             </div>
-          </Spin>
-        )}
-      </div>
+
+            <div className="w-full lg:w-1/2 lg:pl-8">
+              <ProductDetails data={product} />
+            </div>
+          </div>
+
+          <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
+            <OverViewDetails data={product} />
+          </div>
+
+          <div className="h-8"></div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <SimilarProducts
+              left={true}
+              category_id={getProductValue("category_details._id", "")}
+            />
+          </div>
+
+          {user?._id && (
+            <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
+              <HistoryProducts left={true} />
+            </div>
+          )}
+
+          <div className="h-8"></div>
+        </div>
+      </Spin>
     </div>
   );
 };
