@@ -210,7 +210,7 @@ const ProductCard2 = ({ data }) => {
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 400 }}
           >
-            <span className="text-base sm:text-lg md:text-xl font-bold text-gray-900">${price}</span>
+            <span className="text-base sm:text-lg md:text-xl font-bold text-gray-900">₹{price}</span>
             {data.original_price && (
               <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-500 line-through">
                 ₹ 
