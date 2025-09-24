@@ -192,9 +192,9 @@ const NavMenu = () => {
         }
       `}</style>
 
-      <div className="flex gap-x-4 !h-full w-full justify-center items-center w-full relative">
+      <div className="flex gap-x-2 !h-full  justify-center items-center w-full relative">
         {/* All Categories Mega Menu */}
-        <div className="w-[200px] center_div rounded-md !text-white">
+        <div className="w-fit center_div rounded-md !text-white">
           <div ref={(el) => (dropdownRefs.current.megaMenu = { current: el })}>
             <Link
               to="/all-categories"
@@ -203,7 +203,7 @@ const NavMenu = () => {
                 toggleDropdown("megaMenu");
                 handleHoverState("side_category_id", "view");
               }}
-              className="!text-[#fdfdfd] center_div gap-x-2 text-[16px] font-bold nav-item-hover transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white hover:bg-opacity-10"
+              className="!text-[#fdfdfd] center_div gap-x-2 text-[14px] font-bold nav-item-hover transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white hover:bg-opacity-10"
             >
               All categories <IconHelper.DOWNARROW_ICON />
             </Link>
@@ -211,7 +211,7 @@ const NavMenu = () => {
             {/* Mega Menu Content */}
             {activeDropdown.megaMenu && (
               <div
-                className="absolute animate-fade-in max-h-fit !w-[90vw]  z-50 top-[55px] left-[0%] bg-white rounded-xl overflow-hidden border border-gray-100 border-opacity-20"
+                className="absolute animate-fade-in max-h-fit !w-[90vw]  z-50 top-[55px] lg:left-[0%] bg-white rounded-xl overflow-hidden border border-gray-100 border-opacity-20"
                 onMouseLeave={closeAllDropdowns}
               >
                 <div className="grid grid-cols-5 px-8 py-8 gap-6  mx-auto">

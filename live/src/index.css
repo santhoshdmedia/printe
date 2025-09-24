@@ -457,7 +457,19 @@ span.swiper-pagination-bullet.swiper-pagination-bullet-active {
 
 @media (min-width:1290px) {
  .logo_printe{
-  width: 12vw !important;
+  width: 12vw;
+  height: auto;
+} 
+}
+@media (max-width:1029px) {
+ .logo_printe{
+  width: 20vw !important;
+  height: auto;
+} 
+}
+@media (max-width:1290px) {
+ .logo_printe{
+  width: 10vw ;
   height: auto;
 } 
 }

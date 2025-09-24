@@ -357,7 +357,7 @@ const Navbar = () => {
       </Modal>
 
       {/* Desktop Navbar  */}
-      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-10 ">
+      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 py-3 sticky top-0 z-10 ">
         <div className="flex items-center gap-x-4 xl:gap-x-32 w-auto lg:!w-[100%] xl:w-[70%] justify-start">
           <Link
             to="/"
