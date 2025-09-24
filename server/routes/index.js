@@ -1,6 +1,6 @@
 const router = require("express").Router();
 
-const { UploadImage } = require("../controller/shared.controller");
+const { UploadImage,UploadVideo } = require("../controller/shared.controller");
 const { upload } = require("../helper/multer.helper");
 const { VerfiyToken } = require("../helper/shared.helper");
 
@@ -29,6 +29,7 @@ router.use("/client_review", review_routes);
 
 //Image Upload EndPoints
 router.post("/upload_images", upload.single("image"), UploadImage);
+router.post("/upload_video", upload.single("video"), UploadVideo);
 
 // mail
 router.use("/mail", mail_routes);

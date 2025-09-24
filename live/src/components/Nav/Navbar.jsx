@@ -11,6 +11,7 @@ import {
   Spin,
   Tag,
   Tooltip,
+  Modal
 } from "antd";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
@@ -53,6 +54,7 @@ const Navbar = () => {
   const [menuStatus, setMenuStatus] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
+  const [loginModalVisible, setLoginModalVisible] = useState(false); 
 
   // Fetch cart data
   const fetchCartData = useCallback(async () => {
@@ -141,6 +143,20 @@ const Navbar = () => {
     setMenuStatus(false);
   };
 
+  // Login modal handlers
+  const showLoginModal = () => {
+    setLoginModalVisible(true);
+  };
+
+  const handleLoginModalClose = () => {
+    setLoginModalVisible(false);
+  };
+
+  const handleLoginSuccess = () => {
+    setLoginModalVisible(false);
+    // You can add any additional logic after successful login
+  };
+
   // Memoized values
   const dropdownItems = useMemo(
     () => [
@@ -225,9 +241,9 @@ const Navbar = () => {
           </div>
         </Badge>
       </Link>
-      <Link
-        to="/login"
-        className="relative  text-black hover:!text-black px-6 py-2 rounded-lg group overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/30 hidden md:block"
+      <button
+        onClick={showLoginModal}
+        className="relative text-black hover:!text-black px-6 py-2 rounded-lg group overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/30 block"
       >
         {/* Shine effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
@@ -238,8 +254,7 @@ const Navbar = () => {
             Login
           </span>
         </span>
-      </Link>
-      
+      </button>
     </div>
   );
 
@@ -325,6 +340,22 @@ const Navbar = () => {
 
   return (
     <div>
+      {/* Login Modal */}
+      <Modal
+        title="Login to Your Account"
+        open={loginModalVisible}
+        onCancel={handleLoginModalClose}
+        footer={null}
+        width={400}
+        centered
+        destroyOnClose
+      >
+        <LoginWithProvider 
+          onSuccess={handleLoginSuccess}
+          onClose={handleLoginModalClose}
+        />
+      </Modal>
+
       {/* Desktop Navbar  */}
       <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-10 ">
         <div className="flex items-center gap-x-4 xl:gap-x-32 w-auto lg:!w-[100%] xl:w-[70%] justify-start">
@@ -336,7 +367,7 @@ const Navbar = () => {
               <img
                 src={Logo}
                 alt="printee logo"
-                className="!w-auto  lg:h-[70px] h-[100px] bg-center bg-contain rounded-md"
+                className="logo_printe  lg:h-auto h-[80px] bg-center bg-contain rounded-md"
               />
             </div>
           </Link>
@@ -484,7 +515,7 @@ const Navbar = () => {
             ) : (
               <>
                 <div
-                  onClick={() => handleDestination("/login")}
+                  onClick={showLoginModal}
                   className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100"
                 >
                   Login

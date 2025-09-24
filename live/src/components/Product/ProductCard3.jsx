@@ -18,7 +18,7 @@ const PrintProductCard3 = ({ data }) => {
   };
 
   return (
-    <div className="flex flex-col items-center w-full h-[380px]">
+    <div className="flex flex-col items-center w-full lg:h-[380px] md:h-[300px] h-[200px]">
       {/* Card Container */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -31,9 +31,9 @@ const PrintProductCard3 = ({ data }) => {
         onClick={handleCardClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="relative cursor-pointer rounded-xl bg-white shadow-lg hover:shadow-xl transition-all w-full overflow-hidden"
+        className={`relative cursor-pointer rounded-xl bg-white shadow-lg hover:shadow-xl transition-all w-full overflow-hidden`}
         style={{
-          height: isHovered ? "420px" : "360px",
+          height: isHovered ? "100%" : "90%",
           transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
         }}
         aria-label={`View ${data.name} product details`}
@@ -49,9 +49,9 @@ const PrintProductCard3 = ({ data }) => {
         
         {/* Product Image Container */}
         <motion.div 
-          className="absolute h-[240px] w-[85%] top-6 left-1/2 -translate-x-1/2 rounded-xl overflow-hidden"
+          className="absolute !h-28 md:!h-44 lg:!h-56 w-[85%] top-6 left-1/2 -translate-x-1/2 rounded-xl overflow-hidden"
           animate={{
-            height: isHovered ? "260px" : "240px",
+            height: isHovered ? "80%" : "70%",
           }}
           transition={{ duration: 0.4 }}
         >
@@ -70,7 +70,7 @@ const PrintProductCard3 = ({ data }) => {
 
           {/* Price Tag */}
           <motion.div
-            className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-semibold shadow-sm z-10"
+            className="absolute lg:top-3 top-0 right-0 lg:right-3 bg-white/95 backdrop-blur-sm lg:px-3 px-1 py-0.5 lg:py-1.5 rounded-lg text-xs lg:text-sm font-semibold shadow-sm z-10"
             initial={{ opacity: 0.9, y: 0 }}
             animate={{
               opacity: isHovered ? 1 : 0.9,
@@ -82,14 +82,14 @@ const PrintProductCard3 = ({ data }) => {
               ease: "easeOut"
             }}
           >
-            <span className="text-gray-700">Rs.</span>{" "}
-            <span className="text-[#f2c41a]">{price}</span>
+            <span className="text-gray-700 text-[8px] md:text-sm">Rs.</span>{" "}
+            <span className="text-[#f2c41a] text-[8px] md:text-sm">{price}</span>
           </motion.div>
 
           {/* Badge for Variants */}
           {hasVariants && (
             <motion.div
-              className="absolute top-3 left-3 bg-[#fff5d9] text-[#8a6e0d] text-xs px-2 py-1 rounded-full font-medium"
+              className="absolute lg:top-3 top-2 left-0 lg:left-3 bg-[#fff5d9] text-[#8a6e0d] text-[6px] lg:text-xs lg:px-2 px-1 py-0.5 lg:py-1 rounded-full font-medium"
               animate={{
                 opacity: isHovered ? 0.9 : 1,
                 y: isHovered ? -2 : 0
@@ -105,18 +105,18 @@ const PrintProductCard3 = ({ data }) => {
         <AnimatePresence>
           {isHovered && (
             <motion.div
-              className="absolute bottom-28 left-0 right-0 flex justify-center"
+              className="absolute bottom-16 md:bottom-24  left-0 right-0 flex justify-center !text-xs lg:text-lg"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
             >
               <button 
-                className="px-5 py-2 bg-[#f2c41a] text-black text-sm font-medium rounded-full shadow-lg hover:bg-[#e6b310] transition-colors flex items-center gap-1"
+                className="px-2 py-1 lg:px-5 lg:py-2 bg-[#f2c41a] text-black text-xs md:text-sm font-medium rounded-full shadow-lg hover:bg-[#e6b310] transition-colors flex items-center gap-1"
                 onClick={handleQuickViewClick}
                 aria-label={`Quick view ${data.name}`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="md:h-4 h-3 md:w-4 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
@@ -139,14 +139,14 @@ const PrintProductCard3 = ({ data }) => {
             ease: "easeOut"
           }}
         >
-          <h3 className="text-lg font-semibold text-black line-clamp-2 mb-1">
+          <h3 className="text-xs md:text-lg font-semibold text-black line-clamp-2 mb-1 ">
             {data.name}
           </h3>
           
           <AnimatePresence>
             {isHovered && (
               <motion.p
-                className="text-sm text-gray-600 mb-3"
+                className="text-sm text-gray-600 mb-3 hidden md:block"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}

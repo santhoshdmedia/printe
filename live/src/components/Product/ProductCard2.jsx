@@ -53,7 +53,7 @@ const ProductCard2 = ({ data }) => {
   let lowest_price_index = items.indexOf(Math.min(...items));
 
   const price =
-    _.get(data, `variants_price[${lowest_price_index}].price`, "") ||
+    _.get(data, `variants_price[${lowest_price_index}].customer_product_price`, "") ||
     _.get(data, "single_product_price", null) ||_.get(data, "customer_product_price", null);
 
   // Animation variants
@@ -90,7 +90,7 @@ const ProductCard2 = ({ data }) => {
       layout
     >
       {/* Image container */}
-      <div className="relative h-72 w-full overflow-hidden">
+      <div className="relative h-34  sm:h-60 md:h-42 w-full overflow-hidden">
         <motion.img
           className="h-full w-full object-cover"
           src={_.get(data.images, "[0].path", "")}
@@ -101,7 +101,7 @@ const ProductCard2 = ({ data }) => {
 
         {/* Floating wishlist button with animation */}
         <motion.div
-          className="absolute top-3 right-3 z-10"
+          className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: isHovered ? 1 : 0.7, y: isHovered ? 0 : 10 }}
           transition={{ duration: 0.3 }}
@@ -109,12 +109,12 @@ const ProductCard2 = ({ data }) => {
           <Tooltip title={isFav ? "Remove from wishlist" : "Add to wishlist"}>
             <button
               onClick={handleAddWishList}
-              className={`flex h-10 w-10 items-center justify-center rounded-full bg-white p-2 shadow-md transition-all ${isFav ? 'text-red-500' : 'text-gray-600'}`}
+              className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white p-1 sm:p-2 shadow-md transition-all ${isFav ? 'text-red-500' : 'text-gray-600'}`}
             >
               {isFav ? (
-                <IconHelper.HEART_ICON_FILLED size={20} />
+                <IconHelper.HEART_ICON_FILLED size={16} className="sm:w-5 sm:h-5 w-4 h-4" />
               ) : (
-                <IconHelper.HEART_ICON size={20} />
+                <IconHelper.HEART_ICON size={16} className="sm:w-5 sm:h-5 w-4 h-4" />
               )}
             </button>
           </Tooltip>
@@ -122,7 +122,7 @@ const ProductCard2 = ({ data }) => {
 
         {/* Tag with animation */}
         <motion.div
-          className="absolute left-3 top-3 z-10"
+          className="absolute left-2 top-2 sm:left-3 sm:top-3 z-10"
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
@@ -130,18 +130,18 @@ const ProductCard2 = ({ data }) => {
           <ExitementTag product={data} />
         </motion.div>
 
-        {/* Quick view overlay with animation */}
+        {/* Quick view overlay with animation - Hide on mobile */}
         <AnimatePresence>
           {isHovered && (
             <motion.div
-              className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30"
+              className="absolute inset-0 hidden sm:flex items-center justify-center bg-black bg-opacity-30"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
               <motion.span
-                className="rounded-full bg-white px-6 py-2 font-medium text-black shadow-lg"
+                className="rounded-full bg-white px-4 py-1 sm:px-6 sm:py-2 text-sm sm:text-base font-medium text-black shadow-lg"
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 500 }}
@@ -154,16 +154,16 @@ const ProductCard2 = ({ data }) => {
       </div>
 
       {/* Product info */}
-      <div className="p-5">
+      <div className="p-3 sm:p-4 md:p-5">
         <motion.h3 
-          className="mb-2 text-lg font-semibold text-gray-900 line-clamp-1"
+          className="mb-1 sm:mb-2 text-sm sm:text-base md:text-lg font-semibold text-gray-900 line-clamp-2"
           whileHover={{ color: "#3b82f6" }}
           transition={{ duration: 0.2 }}
         >
           {data.name}
         </motion.h3>
 
-        <div className="mb-3 flex items-center">
+        <div className="mb-2 sm:mb-3 flex items-center">
           <motion.div
             whileHover={{ scale: 1.05 }}
             className="flex items-center"
@@ -171,7 +171,7 @@ const ProductCard2 = ({ data }) => {
             {[1, 2, 3, 4, 5].map((star) => (
               <motion.svg
                 key={star}
-                className="h-4 w-4 text-yellow-400"
+                className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400"
                 fill="currentColor"
                 viewBox="0 0 20 20"
                 whileHover={{ scale: 1.3 }}
@@ -181,16 +181,16 @@ const ProductCard2 = ({ data }) => {
               </motion.svg>
             ))}
           </motion.div>
-          <span className="ml-2 text-xs text-gray-500">(24 reviews)</span>
+          <span className="ml-1 sm:ml-2 text-xs text-gray-500">(24)</span>
         </div>
 
-        {/* Color options with spring animation */}
+        {/* Color options with spring animation - Hide on very small screens */}
         {data.color_options && (
-          <motion.div className="mb-4 flex space-x-2">
-            {data.color_options.slice(0, 5).map((color, index) => (
+          <motion.div className="mb-3 sm:mb-4 flex space-x-1 sm:space-x-2">
+            {data.color_options.slice(0, 4).map((color, index) => (
               <motion.button
                 key={index}
-                className={`h-6 w-6 rounded-full border-2 border-white shadow-md ${selectedColor === index ? 'ring-2 ring-black' : ''}`}
+                className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 rounded-full border-2 border-white shadow-md ${selectedColor === index ? 'ring-1 sm:ring-2 ring-black' : ''}`}
                 style={{ backgroundColor: color.hex }}
                 variants={colorDotVariants}
                 whileHover="hover"
@@ -210,9 +210,9 @@ const ProductCard2 = ({ data }) => {
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 400 }}
           >
-            <span className="text-xl font-bold text-gray-900">${price}</span>
+            <span className="text-base sm:text-lg md:text-xl font-bold text-gray-900">${price}</span>
             {data.original_price && (
-              <span className="ml-2 text-sm text-gray-500 line-through">
+              <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-500 line-through">
                 ₹ 
               </span>
             )}
@@ -223,7 +223,7 @@ const ProductCard2 = ({ data }) => {
               e.stopPropagation();
               // Add to cart logic here
             }}
-            className="relative overflow-hidden rounded-full bg-black px-5 py-2 text-sm font-medium text-white"
+            className="relative overflow-hidden rounded-full bg-black px-3 py-1 sm:px-4 sm:py-2 md:px-5 text-xs sm:text-sm font-medium text-white"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -238,9 +238,9 @@ const ProductCard2 = ({ data }) => {
         </div>
       </div>
 
-      {/* 3D hover effect layer */}
+      {/* 3D hover effect layer - Only on desktop */}
       <motion.div
-        className="absolute inset-0 -z-10 bg-gray-100 rounded-2xl"
+        className="absolute inset-0 -z-10 bg-gray-100 rounded-2xl hidden sm:block"
         initial={{ opacity: 0, y: 20 }}
         animate={{ 
           opacity: isHovered ? 0.3 : 0,

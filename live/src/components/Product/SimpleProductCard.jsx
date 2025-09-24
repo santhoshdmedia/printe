@@ -85,7 +85,7 @@ const SimpleProductCard = ({ data }) => {
     <div className="">
       {data.is_visible?<motion.div
       ref={cardRef}
-      className="relative h-[420px] w-full overflow-hidden cursor-pointer rounded-2xl"
+      className="relative  w-full overflow-hidden cursor-pointer rounded-2xl  shadow-md"
       onClick={handleCardClick}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
@@ -111,7 +111,7 @@ const SimpleProductCard = ({ data }) => {
       <div className="relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl overflow-hidden">
         {/* Image container with floating effect */}
         <motion.div 
-          className="relative h-3/4 w-full overflow-hidden"
+          className="relative  lg:h-3/4 w-full overflow-hidden"
           animate={{
             y: isHovered ? -10 : 0,
           }}
@@ -160,7 +160,7 @@ const SimpleProductCard = ({ data }) => {
           {/* Product info */}
           <div className="overflow-hidden">
             <motion.h3 
-              className="text-lg font-bold text-gray-900 truncate"
+              className="text-sm lg:text-lg font-bold text-gray-900 truncate"
               animate={{
                 x: isHovered ? [0, 5, 0] : 0,
               }}
@@ -191,7 +191,7 @@ const SimpleProductCard = ({ data }) => {
               }}
               transition={{ type: "spring" }}
             >
-              <span className="text-xl font-bold text-primary">Rs. {price}</span>
+              <span className="text-sm lg:text-xl font-bold text-primary">Rs. {price}</span>
             </motion.div>
             
             <motion.div
@@ -199,13 +199,13 @@ const SimpleProductCard = ({ data }) => {
               whileHover={{ scale: 1.1 }}
             >
               <button 
-                className="p-2 rounded-full bg-primary text-white shadow-md"
+                className="p-2 rounded-full bg-primary text-white shadow-md text-xs lg:text-xl"
                 onClick={handleAddWishList}
               >
                 {isFav ? (
-                  <IconHelper.HEART_ICON_FILLED className="text-white" size={16} />
+                  <IconHelper.HEART_ICON_FILLED className="text-white"  />
                 ) : (
-                  <IconHelper.HEART_ICON className="text-white" size={16} />
+                  <IconHelper.HEART_ICON className="text-white"  />
                 )}
               </button>
             </motion.div>
