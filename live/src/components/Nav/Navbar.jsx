@@ -17,7 +17,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import _ from "lodash";
 // login
-import { LoginWithProvider } from "../../pages/Login/Login";
+// import { LoginWithProvider } from "../../pages/Login/Login";
 
 // Icons
 import { BsCart3, BsSearch, BsXLg } from "react-icons/bs";
@@ -241,9 +241,9 @@ const Navbar = () => {
           </div>
         </Badge>
       </Link>
-      <button
-        onClick={showLoginModal}
-        className="relative text-black hover:!text-black px-6 py-2 rounded-lg group overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/30 block"
+      <Link
+to={'/login'}
+className="relative text-black hover:!text-black px-6 py-2 rounded-lg group overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/30 block"
       >
         {/* Shine effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
@@ -254,7 +254,7 @@ const Navbar = () => {
             Login
           </span>
         </span>
-      </button>
+      </Link>
     </div>
   );
 
@@ -341,7 +341,7 @@ const Navbar = () => {
   return (
     <div>
       {/* Login Modal */}
-      <Modal
+      {/* <Modal
         title="Login to Your Account"
         open={loginModalVisible}
         onCancel={handleLoginModalClose}
@@ -350,14 +350,14 @@ const Navbar = () => {
         centered
         destroyOnClose
       >
-        <LoginWithProvider 
+        // <LoginWithProvider 
           onSuccess={handleLoginSuccess}
           onClose={handleLoginModalClose}
         />
-      </Modal>
+      </Modal> */}
 
       {/* Desktop Navbar  */}
-      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 py-3 sticky top-0 z-10 ">
+      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-10 ">
         <div className="flex items-center gap-x-4 xl:gap-x-32 w-auto lg:!w-[100%] xl:w-[70%] justify-start">
           <Link
             to="/"
@@ -367,7 +367,7 @@ const Navbar = () => {
               <img
                 src={Logo}
                 alt="printee logo"
-                className="logo_printe  lg:h-auto h-[80px] bg-center bg-contain rounded-md"
+                className="!w-auto  lg:h-[70px] h-[100px] bg-center bg-contain rounded-md"
               />
             </div>
           </Link>
@@ -572,9 +572,7 @@ const Navbar = () => {
               ))}
             </Menu>
           </div>
-
           <Divider className="my-2" />
-
           <div
             onClick={() => handleDestination("/help")}
             className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100"

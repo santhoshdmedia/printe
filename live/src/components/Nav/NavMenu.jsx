@@ -386,7 +386,8 @@ const NavMenu = () => {
           .filter((cat) => cat.category_active_status)
           .map((category) => {
             const subCategories = _.get(category, "sub_categories_details", []);
-            const totalProducts = _.get(category, "product_details", []).length;
+            const totalProducts = _.get(category, "product_details", []);
+            console.log(totalProducts,"sub")
             const showAsMegaMenu =
               subCategories.length > 3 || totalProducts > 10;
 
