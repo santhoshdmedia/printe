@@ -18,7 +18,7 @@ module.exports = model(
       },
       product_design_file: {
         type: String,
-        required: false, // This makes the field optional
+        required: false, 
       },
       product_image: {
         type: String,

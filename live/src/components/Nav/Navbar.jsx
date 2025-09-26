@@ -61,17 +61,7 @@ const Navbar = () => {
     try {
       const result = await getMyShoppingCart();
       const data = _.get(result, "data.data", []);
-      const guest = localStorage.getItem("guest");
-      if (user._id && guest != "") {
-        // console.log(`user:${user._id},guest:${guest}`);
-        const mergeData={
-          guestId:guest,
-          id:{
-            _id:user._id
-          }
-        }
-        const guest_result=await mergeCart(mergeData)
-      }
+     
       dispatch(SET_CART_COUNT(data.length));
     } catch (err) {
       console.error("Failed to fetch cart data:", err);

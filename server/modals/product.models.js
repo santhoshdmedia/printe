@@ -121,6 +121,7 @@ module.exports = mongoose.model(
       new_product: { type: Boolean, require: true },
       recommended_product: { type: Boolean, require: true },
       popular_product: { type: Boolean, require: true },
+      MRP_price: { type: String, require: true },
       customer_product_price: { type: String, require: true },
       Deler_product_price: { type: String, require: true },
       corporate_product_price: { type: String, require: true },

@@ -43,6 +43,7 @@ const addToShoppingCart = async (req, res) => {
       final_total: req.body.final_total || 0,
       cgst: req.body.cgst || 0,
       sgst: req.body.sgst || 0,
+      product_design_file:req.body.product_design_file||"",
       product_seo_url: req.body.product_seo_url || '',
       product_quantity: req.body.product_quantity || req.body.quantity || 1,
       product_price: req.body.product_price || 0,

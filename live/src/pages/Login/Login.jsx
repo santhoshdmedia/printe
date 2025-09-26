@@ -53,7 +53,7 @@ const Login = () => {
     return pattern.test(value);
   };
 
-  const handleOnSubmit = (e) => {
+  const handleOnSubmit =async (e) => {
     e.preventDefault();
     if (!emailValidation(form.email)) {
       setErrorMessage("Invalid Email Id");
@@ -61,6 +61,17 @@ const Login = () => {
       setErrorMessage("");
       dispatch({ type: "LOGIN", data: form });
     }
+     const guest = localStorage.getItem("guest");
+          if (user._id && guest != "") {
+            // console.log(`user:${user._id},guest:${guest}`);
+            const mergeData={
+              guestId:guest,
+              id:{
+                _id:user._id
+              }
+            }
+            const guest_result=await mergeCart(mergeData)
+          }
   };
 
   // Handle Google Login Success
