@@ -569,6 +569,7 @@ const NewCheckout = () => {
                     <Form.Item
                       label="Alternate Mobile Number"
                       name="Alternate_mobile_number"
+                      required={false}
                       rules={[
                         {
                           validator: (_, value) => {
@@ -591,7 +592,7 @@ const NewCheckout = () => {
                     >
                       <Input
                         type="tel"
-                        placeholder="123 45 678 90"
+                        placeholder="123 45 678 90(optional)"
                         size="large"
                         maxLength={12}
                         onInput={formatMobileNumber}
@@ -818,7 +819,7 @@ const NewCheckout = () => {
                       checked={acceptTerms}
                       onChange={(e) => setAcceptTerms(e.target.checked)}
                     />
-                    <span className="ml-2 text-sm">
+                    <span className="ml-2 text-sm" >
                       I agree to the{" "}
                       <a
                         onClick={() => setTermsClick(true)}
