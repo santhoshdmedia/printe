@@ -648,13 +648,13 @@ const NewCheckout = () => {
                   </div>
                   <div className="flex justify-between mb-2">
                     <span>
-                      saved from MRP{" "}
+                      Saved from MRP{" "}
                     </span>
                     <span>₹{Number(GET_Mrp_savings()).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between mb-2">
                     <span>
-                      additonal Savings
+                      Additonal Savings
                     </span>
                     <span>₹{Number(GET_additonal_savings()).toFixed(2)}</span>
                   </div>
