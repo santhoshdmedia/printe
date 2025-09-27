@@ -904,10 +904,9 @@ const ProductDetails = ({
         </div>
 
         {/* Quantity and Variants Section */}
-        <div className="w-full">
-          <Row gutter={[16, 16]} align="bottom" className="w-full">
-            <Col xs={24} md={product_type !== "Stand Alone Product" ? 8 : 12}>
-              <div className="flex flex-col">
+        <div className="w-full flex flex-wrap space-y-2">
+       
+              <div className="flex items-center gap-2 space-x-1">
                 <Text strong className="block mb-2">
                   Quantity:
                 </Text>
@@ -915,21 +914,20 @@ const ProductDetails = ({
                   value={quantity}
                   onChange={handleQuantitySelect}
                   options={quantityOptions}
-                  className="w-[40vw]"
+                  className="w-[30vw]"
                   placeholder="Select quantity"
                   dropdownRender={quantityDropdownRender}
                   open={quantityDropdownVisible}
                   onDropdownVisibleChange={setQuantityDropdownVisible}
                 />
               </div>
-            </Col>
 
-            {product_type !== "Stand Alone Product" &&
+            <div className="grid grid-cols-2">
+              {product_type !== "Stand Alone Product" &&
               !_.isEmpty(currentPriceSplitup) && (
                 <>
                   {_.get(data, "variants", []).map((variant, index) => (
-                    <Col xs={24} md={8} key={index}>
-                      <div className="flex flex-col">
+                      <div className="flex items-center gap-2 space-x-1">
                         <Text strong className="block mb-2">
                           {variant.variant_name}:
                         </Text>
@@ -988,22 +986,21 @@ const ProductDetails = ({
                           </div>
                         )}
                       </div>
-                    </Col>
                   ))}
                 </>
               )}
 
             {_.get(data, "name", "") === "Matt Finish" && (
-              <Col xs={24} md={24}>
+              <div className="flex items-center gap-2 space-x-1" >
                 <Checkbox
                   checked={individualBox}
                   onChange={(e) => setIndividualBox(e.target.checked)}
                 >
                   Individual Box for 100 Cards
                 </Checkbox>
-              </Col>
+              </div>
             )}
-          </Row>
+            </div>
         </div>
 
         {/* Total Price Section */}
