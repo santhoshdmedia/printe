@@ -602,7 +602,7 @@ const ProductDetails = ({
       return quantityDiscounts.map((item) => ({
         value: Number(item.quantity),
         label: `${item.quantity}`,
-        discount: Number(item.discount),
+        discount: Number(item.Customer_discount),
         uuid: item.uniqe_id,
         stats: item.recommended_stats,
       }));
@@ -615,7 +615,7 @@ const ProductDetails = ({
     if (quantityType === "textbox") {
       const selectedDiscount = quantityDiscounts
         .filter((item) => Number(item.quantity) <= selectedQuantity)
-        .sort((a, b) => Number(b.quantity) - Number(a.quantity))[0];
+        .sort((a, b) => Number(b.quantity) - Number(a.Customer_discount))[0];
 
       setQuantity(selectedQuantity);
       setCheckOutState((prev) => ({
@@ -626,7 +626,7 @@ const ProductDetails = ({
       if (selectedDiscount) {
         setDiscountPercentage({
           uuid: selectedDiscount.uniqe_id,
-          percentage: Number(selectedDiscount.discount),
+          percentage: Number(selectedDiscount.Customer_discount),
         });
       } else {
         setDiscountPercentage({ uuid: "", percentage: 0 });
@@ -645,7 +645,7 @@ const ProductDetails = ({
       if (selectedDiscount) {
         setDiscountPercentage({
           uuid: selectedDiscount.uniqe_id,
-          percentage: Number(selectedDiscount.discount),
+          percentage: Number(selectedDiscount.Customer_discount),
         });
       }
     }
@@ -925,7 +925,7 @@ const ProductDetails = ({
                   value={quantity}
                   onChange={handleQuantitySelect}
                   options={quantityOptions}
-                  className="w-full"
+                  className="w-[40vw]"
                   placeholder="Select quantity"
                   dropdownRender={quantityDropdownRender}
                   open={quantityDropdownVisible}
@@ -1339,7 +1339,7 @@ const ProductDetails = ({
         </CustomModal>
 
         {/* Product Meta Information */}
-        <div className="space-y-2 !z-0">
+        <div className="space-y-2">
           <div className="flex items-center">
             <Text strong className="!text-gray-800 !w-20">
               Categories:
