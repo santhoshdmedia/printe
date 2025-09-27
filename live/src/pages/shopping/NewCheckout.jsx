@@ -776,7 +776,7 @@ const NewCheckout = () => {
         
         /* Razorpay full screen styling */
         .razorpay-container {
-        margin-top:35vh;
+        margin-top:55vh;
           width: 100vw !important;
           height: 100vh !important;
           position: fixed !important;

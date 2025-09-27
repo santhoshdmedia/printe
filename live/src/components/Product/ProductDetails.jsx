@@ -94,23 +94,13 @@ export const CustomModal = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [open]);
+  
 
   if (!open) return null;
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
+      className={`fixed inset-0 z-50 flex items-start justify-center p-2  ${
         isMobile ? "items-end" : "items-center"
       }`}
     >
@@ -119,7 +109,7 @@ export const CustomModal = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black bg-opacity-50"
+        className="absolute inset-0  bg-opacity-50"
         onClick={onClose}
       />
 
