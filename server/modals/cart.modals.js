@@ -40,6 +40,12 @@ module.exports = model(
         type: Number,
         required: true,
       },
+      MRP_savings: {
+        type: String,
+      },
+      TotalSavings: {
+        type: String,
+      },
       product_quantity: {
         type: String,
         required: true,

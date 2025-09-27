@@ -137,6 +137,9 @@ const {
   getAllVendorProduct,
   getSingleVendorProduct
 } = require("../controller/vendorProduct");
+const {
+  addBulkOrder,getBulkOrder
+} = require("../controller/bulkOrder.controler");
 
 module.exports = {
   login,
@@ -282,4 +285,9 @@ module.exports = {
   deleteProductDescription,
 
   // clone
+
+// bulk
+getBulkOrder,
+addBulkOrder
+
 };

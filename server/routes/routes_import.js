@@ -16,6 +16,8 @@ const section_routes = require("./customersection.routes");
 const shopping_cart = require("./shopping_cartroutes");
 const teamRoutes = require("./GetteamRoute")
 const vendorProductRoutes = require("./venderproduct.routes")
+const BulkOrderRoutes = require("./bulkOrder.routers")
+
 
 
 module.exports = {
@@ -36,5 +38,6 @@ module.exports = {
   section_routes,
   shopping_cart,
   teamRoutes,
-  vendorProductRoutes
+  vendorProductRoutes,
+  BulkOrderRoutes
 };

@@ -12,6 +12,15 @@ import { addTohistory } from "../../helper/api_helper";
 import SimilarProducts from "./SimilarProducts";
 import HistoryProducts from "./HistoryProducts";
 import { Helmet } from "react-helmet-async";
+import { motion } from "motion/react";
+import {
+  HeartOutlined,
+  PlusOutlined,
+  MinusOutlined,
+  ShoppingCartOutlined,
+  EyeOutlined,
+  CloseOutlined,
+} from "@ant-design/icons";
 
 const Product = () => {
   const params = useParams();

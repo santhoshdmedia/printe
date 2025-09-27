@@ -5,7 +5,7 @@ const { upload } = require("../helper/multer.helper");
 const { VerfiyToken } = require("../helper/shared.helper");
 
 
-const { auth_routes, category_routes, admin_routers, user_routers, product_routers, order_routers, dashboard_routers, banner_routes, review_routes, blog_routes, vendor_routes, vendorProductRoutes,mail_routes, enquires_routes, section_routes, shopping_cart,teamRoutes,banner_Text_routes } = require("../routes/routes_import");
+const { auth_routes, category_routes, admin_routers, user_routers, product_routers, order_routers, dashboard_routers, banner_routes, review_routes, blog_routes, vendor_routes, vendorProductRoutes,mail_routes, enquires_routes, section_routes, shopping_cart,teamRoutes,banner_Text_routes,BulkOrderRoutes } = require("../routes/routes_import");
 
 //Admin EndPoints
 router.use("/auth", auth_routes);
@@ -50,5 +50,6 @@ router.use("/shopping", shopping_cart);
 router.use('/team',teamRoutes)
 
 //clone
-
+// bulk order
+router.use('/bulk',BulkOrderRoutes)
 module.exports = router;

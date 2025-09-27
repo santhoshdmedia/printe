@@ -211,7 +211,7 @@ const NavMenu = () => {
             {/* Mega Menu Content */}
             {activeDropdown.megaMenu && (
               <div
-                className="absolute animate-fade-in max-h-fit !w-[90vw]  z-50 top-[55px] lg:left-[0%] bg-white rounded-xl overflow-hidden border border-gray-100 border-opacity-20"
+                className="absolute animate-fade-in max-h-fit !w-[60vw]  z-50 top-16 inset-0 bg-white rounded-xl overflow-hidden border border-gray-100 border-opacity-20"
                 onMouseLeave={closeAllDropdowns}
               >
                 <div className="grid grid-cols-5 px-8 py-8 gap-6  mx-auto">

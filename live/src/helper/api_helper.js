@@ -115,6 +115,11 @@ export const createOrder = async (formData) => {
   return await custom_axios.post(`${baseURL}/order/create_order`, formData);
 };
 
+
+// bulk
+export const bulkOrder = async (formData) => {
+  return await custom_axios.post(`${baseURL}/bulk/add_bulk`, formData);
+};
 // products descriptions
 export const getProductDescription = async (id) => {
   return await axios.get(`${baseURL}/product/get_product_descriptions/${id}`);

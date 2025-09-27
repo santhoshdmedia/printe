@@ -5,7 +5,6 @@ import {
   Divider,
   Input,
   InputNumber,
-  Modal,
   Select,
   Spin,
   Tag,
@@ -23,6 +22,7 @@ import {
   List,
   Form,
   message,
+  Drawer,
 } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import _ from "lodash";
@@ -54,21 +54,151 @@ import {
 } from "../../helper/notification_helper";
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import { DISCOUNT_HELPER } from "../../helper/form_validation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   HeartOutlined,
   PlusOutlined,
   MinusOutlined,
   ShoppingCartOutlined,
   EyeOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { CiFaceSmile } from "react-icons/ci";
 import { CgSmileSad } from "react-icons/cg";
 import toast from "react-hot-toast";
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
+import { bulkOrder } from "../../helper/api_helper";
+
+export const CustomModal = ({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  width = 520,
+  className = "",
+  closable = true,
+  topPosition = "top-0",
+}) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
+        isMobile ? "items-end" : "items-center"
+      }`}
+    >
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      />
+
+      {/* Modal Content */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
+        className={`relative bg-white rounded-lg shadow-xl ${
+          isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
+        } overflow-hidden flex flex-col ${className}`}
+        style={isMobile ? {} : { width }}
+      >
+        {/* Header */}
+        {title && (
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            {closable && (
+              <button
+                onClick={onClose}
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <CloseOutlined className="text-gray-500" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Body */}
+        <div className={`flex-1 overflow-auto ${isMobile ? "p-4" : "p-6"}`}>
+          {children}
+        </div>
+
+        {/* Footer */}
+        {footer && (
+          <div className="flex justify-start gap-3 p-6 border-t border-gray-200">
+            {footer}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+};
 
 const { Title, Text, Paragraph } = Typography;
+
+// Custom Popover Component for smaller overlays
+const CustomPopover = ({
+  open,
+  onClose,
+  children,
+  placement = "bottom-right",
+  className = "",
+}) => {
+  if (!open) return null;
+
+  const placementClasses = {
+    "bottom-right": "top-full right-0 mt-2",
+    "bottom-left": "top-full left-0 mt-2",
+    "top-right": "bottom-full right-0 mb-2",
+    "top-left": "bottom-full left-0 mb-2",
+  };
+
+  return (
+    <div className="relative">
+      {/* Backdrop for mobile */}
+      <div className="fixed inset-0 z-40 md:hidden" onClick={onClose} />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+        className={`fixed md:absolute z-50 ${placementClasses[placement]} ${className}`}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+};
 
 const ProductDetails = ({
   data = {
@@ -128,6 +258,8 @@ const ProductDetails = ({
     product_quantity: 0,
     product_seo_url: _.get(data, "seo_url", ""),
     product_id: _.get(data, "_id", ""),
+    MRP_savings: 0,
+    TotalSavings: 0,
   });
   const [needDesignUpload, setNeedDesignUpload] = useState(true);
   const [reviewData, setReviewData] = useState([]);
@@ -344,8 +476,10 @@ const ProductDetails = ({
       }
 
       setError("");
-      checkOutState.sgst = Number((checkOutState?.product_price * 4) / 100);
-      checkOutState.cgst = Number((checkOutState?.product_price * 4) / 100);
+      checkOutState.sgst = Number(_.get(data, "GST", 0) / 2);
+      checkOutState.cgst = Number(_.get(data, "GST", 0) / 2);
+      checkOutState.MRP_savings =calculateMRPSavings() ;
+      checkOutState.TotalSavings =calculateSavings() ;
       checkOutState.final_total = Number(
         checkOutState?.product_price * checkOutState.product_quantity
       );
@@ -447,11 +581,14 @@ const ProductDetails = ({
     return (original - discounted).toFixed(2);
   };
 
-  const calculateMRPSavings = () => {
+ const calculateMRPSavings = () => {
     const mrpPrice = Number(_.get(data, "MRP_price", 0));
     const currentPrice = Number(_.get(checkOutState, "product_price", 0));
-    return (mrpPrice - currentPrice).toFixed(2);
-  };
+    const savings = mrpPrice - currentPrice;
+    return savings.toFixed(2);
+};
+
+  
 
   // Generate quantity options
   const generateQuantityOptions = () => {
@@ -524,7 +661,9 @@ const ProductDetails = ({
       <div className="overflow-y-auto max-h-80 space-y-3">
         {quantityOptions.map((item) => {
           const unitPrice = DISCOUNT_HELPER(
-            quantityType === "dropdown" ? item.discount : discountPercentage.percentage,
+            quantityType === "dropdown"
+              ? item.discount
+              : discountPercentage.percentage,
             Number(_.get(checkOutState, "product_price", 0))
           );
 
@@ -543,7 +682,11 @@ const ProductDetails = ({
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-base font-medium ${isSelected ? "text-blue-700" : "text-gray-800"}`}>
+                  <span
+                    className={`text-base font-medium ${
+                      isSelected ? "text-blue-700" : "text-gray-800"
+                    }`}
+                  >
                     {item.value} {unit}
                   </span>
                   {item.stats && item.stats !== "No comments" && (
@@ -562,7 +705,11 @@ const ProductDetails = ({
               </div>
 
               <div className="text-right">
-                <p className={`font-semibold ${isSelected ? "text-blue-700" : "text-gray-900"}`}>
+                <p
+                  className={`font-semibold ${
+                    isSelected ? "text-blue-700" : "text-gray-900"
+                  }`}
+                >
                   {formatPrice(totalPrice)}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
@@ -624,35 +771,49 @@ const ProductDetails = ({
   // Bulk order form submission
   const handleBulkOrderSubmit = async (values) => {
     try {
-      console.log('Bulk order submitted:', values);
-      message.success('Bulk order inquiry submitted successfully!');
+      console.log("Bulk order submitted:", values);
+      const result = await bulkOrder(values);
+      console.log(result);
+
+      message.success("Bulk order inquiry submitted successfully!");
       setShowBulkOrderForm(false);
       form.resetFields();
     } catch (error) {
-      message.error('Failed to submit bulk order inquiry');
+      message.error("Failed to submit bulk order inquiry");
     }
   };
 
-  const PincodeDeliveryCalculator = ({ Production }) => {
-    return (
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Enter pincode"
-            maxLength={6}
-            className="flex-1"
-          />
-          <Button type="primary">Check</Button>
-        </div>
-        <Text type="secondary" className="text-sm">
-          Enter pincode to check delivery date
-        </Text>
-      </div>
-    );
-  };
+  // Processing Time Info Content
+  const ProcessingTimeInfo = () => (
+    <div className="max-h-[400px] overflow-y-auto text-gray-700">
+      <Paragraph>
+        The printing time determines how long it takes us to complete your
+        order.
+      </Paragraph>
+      <Paragraph>
+        While we strive to complete the order within the committed timeframes,
+        the timings also depend on the following factors:
+      </Paragraph>
+      <ul className="list-disc pl-5 mt-2 space-y-2">
+        <li>
+          We will provide the proof file for approval before printing. Faster
+          approval will guarantee speedy processing.
+        </li>
+        <li>
+          We need 300 dpi CMYK resolution artwork uploaded along the order.
+        </li>
+        <li>Production time does not include the shipping time.</li>
+      </ul>
+    </div>
+  );
 
   return (
-    <Spin spinning={loading} indicator={<IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />}>
+    <Spin
+      spinning={loading}
+      indicator={
+        <IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />
+      }
+    >
       <div className="font-primary w-full space-y-2 relative">
         {/* Product Header */}
         <div className="space-y-1 flex justify-between items-start">
@@ -675,37 +836,58 @@ const ProductDetails = ({
               <IoShareSocial />
             </button>
 
-            {showShareMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-lg shadow-xl z-10 p-2 border border-gray-200"
-              >
-                <p className="text-xs text-gray-500 font-semibold p-2">Share via</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => shareProduct("facebook")} className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all">
-                    <FacebookIcon size={35} round />
-                    <span className="text-xs mt-1">Facebook</span>
-                  </button>
-                  <button onClick={() => shareProduct("whatsapp")} className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all">
-                    <WhatsappIcon size={35} round />
-                    <span className="text-xs mt-1">WhatsApp</span>
-                  </button>
-                </div>
-              </motion.div>
-            )}
+            <AnimatePresence>
+              {showShareMenu && (
+                <CustomPopover
+                  open={showShareMenu}
+                  onClose={() => setShowShareMenu(false)}
+                  className="w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200"
+                >
+                  <p className="text-xs text-gray-500 font-semibold p-2">
+                    Share via
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => shareProduct("facebook")}
+                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
+                    >
+                      <FacebookIcon size={35} round />
+                      <span className="text-xs mt-1">Facebook</span>
+                    </button>
+                    <button
+                      onClick={() => shareProduct("whatsapp")}
+                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
+                    >
+                      <WhatsappIcon size={35} round />
+                      <span className="text-xs mt-1">WhatsApp</span>
+                    </button>
+                  </div>
+                </CustomPopover>
+              )}
+            </AnimatePresence>
 
             <motion.div
               animate={{ scale: [1, 1.02, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "easeInOut",
+              }}
               className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-3 py-2 shadow-md text-right h-fit w-fit absolute top-16 right-0"
             >
               <div className="flex items-baseline gap-2">
                 <span className="text-white/70 text-xs line-through">
-                  ₹{_.get(data, "MRP_price", 0) || Number(_.get(checkOutState, "product_price", 0)) + 50}
+                  ₹
+                  {_.get(data, "MRP_price", 0) ||
+                    Number(_.get(checkOutState, "product_price", 0)) + 50}
                 </span>
                 <h3 className="text-white text-base font-semibold">
-                  {quantity ? formatPrice(Number(_.get(checkOutState, "product_price", 0))) : "Select Qty"}
+                  {quantity
+                    ? formatPrice(
+                        Number(_.get(checkOutState, "product_price", 0))
+                      )
+                    : "Select Qty"}
                 </h3>
               </div>
             </motion.div>
@@ -714,13 +896,18 @@ const ProductDetails = ({
 
         {/* Product Description */}
         <div>
-          <h2 className="text-xl font-semibold">{_.get(data, "product_description_tittle", "")}</h2>
+          <h2 className="text-xl font-semibold">
+            {_.get(data, "product_description_tittle", "")}
+          </h2>
           <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5">
             <li>{_.get(data, "Point_one", "")}</li>
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
             <li>{_.get(data, "Point_four", "")}</li>
-            <li className="list-none text-blue-600 cursor-pointer" onClick={scrollToproductDetails}>
+            <li
+              className="list-none text-blue-600 cursor-pointer"
+              onClick={scrollToproductDetails}
+            >
               read more
             </li>
           </ul>
@@ -731,7 +918,9 @@ const ProductDetails = ({
           <Row gutter={[16, 16]} align="bottom" className="w-full">
             <Col xs={24} md={product_type !== "Stand Alone Product" ? 8 : 12}>
               <div className="flex flex-col">
-                <Text strong className="block mb-2">Quantity:</Text>
+                <Text strong className="block mb-2">
+                  Quantity:
+                </Text>
                 <Select
                   value={quantity}
                   onChange={handleQuantitySelect}
@@ -745,48 +934,81 @@ const ProductDetails = ({
               </div>
             </Col>
 
-            {product_type !== "Stand Alone Product" && !_.isEmpty(currentPriceSplitup) && (
-              <>
-                {_.get(data, "variants", []).map((variant, index) => (
-                  <Col xs={24} md={8} key={index}>
-                    <div className="flex flex-col">
-                      <Text strong className="block mb-2">{variant.variant_name}:</Text>
-                      {variant.variant_type !== "image_variant" ? (
-                        <Select
-                          defaultValue={_.get(currentPriceSplitup, `[${variant.variant_name}]`, "")}
-                          options={variant.options.map((opt) => ({ value: opt.value, label: opt.value }))}
-                          onChange={(value) => handleOnChangeSelectOption(value, index)}
-                          placeholder={`Select ${variant.variant_name}`}
-                        />
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {variant.options.map((option, optionIndex) => (
-                            <div key={optionIndex} className="flex flex-col items-center">
+            {product_type !== "Stand Alone Product" &&
+              !_.isEmpty(currentPriceSplitup) && (
+                <>
+                  {_.get(data, "variants", []).map((variant, index) => (
+                    <Col xs={24} md={8} key={index}>
+                      <div className="flex flex-col">
+                        <Text strong className="block mb-2">
+                          {variant.variant_name}:
+                        </Text>
+                        {variant.variant_type !== "image_variant" ? (
+                          <Select
+                            defaultValue={_.get(
+                              currentPriceSplitup,
+                              `[${variant.variant_name}]`,
+                              ""
+                            )}
+                            options={variant.options.map((opt) => ({
+                              value: opt.value,
+                              label: opt.value,
+                            }))}
+                            onChange={(value) =>
+                              handleOnChangeSelectOption(value, index)
+                            }
+                            placeholder={`Select ${variant.variant_name}`}
+                          />
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {variant.options.map((option, optionIndex) => (
                               <div
-                                onClick={() => handleOnChangeSelectOption(option.value, index)}
-                                className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
-                                  _.get(currentPriceSplitup, `[${variant.variant_name}]`, "") === option.value
-                                    ? "border-blue-500 shadow-md"
-                                    : "border-gray-300 hover:border-blue-400"
-                                }`}
-                                style={{ width: "50px", height: "50px" }}
+                                key={optionIndex}
+                                className="flex flex-col items-center"
                               >
-                                <img src={option.image_name} className="w-full h-full object-contain" alt={option.value} />
+                                <div
+                                  onClick={() =>
+                                    handleOnChangeSelectOption(
+                                      option.value,
+                                      index
+                                    )
+                                  }
+                                  className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
+                                    _.get(
+                                      currentPriceSplitup,
+                                      `[${variant.variant_name}]`,
+                                      ""
+                                    ) === option.value
+                                      ? "border-blue-500 shadow-md"
+                                      : "border-gray-300 hover:border-blue-400"
+                                  }`}
+                                  style={{ width: "50px", height: "50px" }}
+                                >
+                                  <img
+                                    src={option.image_name}
+                                    className="w-full h-full object-contain"
+                                    alt={option.value}
+                                  />
+                                </div>
+                                <Text className="text-xs mt-1 text-center">
+                                  {option.value}
+                                </Text>
                               </div>
-                              <Text className="text-xs mt-1 text-center">{option.value}</Text>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </Col>
-                ))}
-              </>
-            )}
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </Col>
+                  ))}
+                </>
+              )}
 
             {_.get(data, "name", "") === "Matt Finish" && (
               <Col xs={24} md={24}>
-                <Checkbox checked={individualBox} onChange={(e) => setIndividualBox(e.target.checked)}>
+                <Checkbox
+                  checked={individualBox}
+                  onChange={(e) => setIndividualBox(e.target.checked)}
+                >
                   Individual Box for 100 Cards
                 </Checkbox>
               </Col>
@@ -798,13 +1020,17 @@ const ProductDetails = ({
         <Card className="bg-blue-50 rounded-lg border-0">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Text strong className="text-gray-800">Total Price:</Text>
+              <Text strong className="text-gray-800">
+                Total Price:
+              </Text>
               <div className="text-right flex items-baseline">
                 <Text delete className="text-md text-gray-500 mr-2">
                   MRP {formatPrice(_.get(data, "MRP_price", 0))}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
-                  {quantity ? formatPrice(calculateTotalPrice()) : formatMRPPrice(calculateTotalPrice())}
+                  {quantity
+                    ? formatPrice(calculateTotalPrice())
+                    : formatMRPPrice(calculateTotalPrice())}
                 </Title>
               </div>
             </div>
@@ -813,7 +1039,9 @@ const ProductDetails = ({
             <div className="space-y-2">
               {calculateMRPSavings() > 0 && (
                 <Alert
-                  message={`You saved ${formatPrice(calculateMRPSavings())} on MRP`}
+                  message={`You saved ${formatPrice(
+                    calculateMRPSavings()
+                  )} on MRP`}
                   type="success"
                   showIcon
                   className="!py-2"
@@ -827,7 +1055,9 @@ const ProductDetails = ({
                   transition={{ duration: 0.3 }}
                 >
                   <Alert
-                    message={`Congratulations! Additionally you saved ${formatPrice(calculateSavings())} (${discountPercentage.percentage}% quantity discount)`}
+                    message={`Congratulations! Additionally you saved ${formatPrice(
+                      calculateSavings()
+                    )} (${discountPercentage.percentage}% quantity discount)`}
                     type="info"
                     showIcon
                     className="!py-2"
@@ -839,9 +1069,15 @@ const ProductDetails = ({
             {quantity && (
               <div className="text-sm text-gray-600">
                 <Text>
-                  Exclusive of all taxes for <Text strong>{quantity}</Text> Qty (
+                  Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
+                  (
                   <Text strong>
-                    {formatPrice(DISCOUNT_HELPER(discountPercentage.percentage, Number(_.get(checkOutState, "product_price", 0))))}
+                    {formatPrice(
+                      DISCOUNT_HELPER(
+                        discountPercentage.percentage,
+                        Number(_.get(checkOutState, "product_price", 0))
+                      )
+                    )}
                   </Text>
                   / piece)
                 </Text>
@@ -851,35 +1087,43 @@ const ProductDetails = ({
 
           <div className="flex flex-col w-full justify-between mt-4">
             <div className="flex items-center gap-2">
-              <Text strong className="text-gray-700">Production Time:</Text>
+              <Text strong className="text-gray-700">
+                Production Time:
+              </Text>
               <Tooltip title="Learn more about processing time">
-                <Button type="text" icon={<IconHelper.QUESTION_MARK />} size="small" onClick={() => setIsModalOpen(true)} />
+                <Button
+                  type="text"
+                  icon={<IconHelper.QUESTION_MARK />}
+                  size="small"
+                  onClick={() => setIsModalOpen(true)}
+                />
               </Tooltip>
               <span className="font-bold">{processing_item} days</span>
             </div>
 
-            <Modal
-              title="Processing Time Information"
+            {/* Custom Modal for Processing Time */}
+            <CustomModal
               open={isModalOpen}
-              onCancel={() => setIsModalOpen(false)}
-              footer={null}
-              centered
+              onClose={() => setIsModalOpen(false)}
+              title="Processing Time Information"
               width={700}
             >
-              <div className="max-h-[400px] overflow-y-auto text-gray-700">
-                <Paragraph>The printing time determines how long it takes us to complete your order.</Paragraph>
-                <Paragraph>While we strive to complete the order within the committed timeframes, the timings also depend on the following factors:</Paragraph>
-                <ul className="list-disc pl-5 mt-2 space-y-2">
-                  <li>We will provide the proof file for approval before printing. Faster approval will guarantee speedy processing.</li>
-                  <li>We need 300 dpi CMYK resolution artwork uploaded along the order.</li>
-                  <li>Production time does not include the shipping time.</li>
-                </ul>
-              </div>
-            </Modal>
+              <ProcessingTimeInfo />
+            </CustomModal>
           </div>
 
-          <motion.div initial="hidden" animate="visible" variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }} className="mt-4">
-            <Text strong className="block mb-2 text-gray-700">Estimated Delivery</Text>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+            }}
+            className="mt-4"
+          >
+            <Text strong className="block mb-2 text-gray-700">
+              Estimated Delivery
+            </Text>
             <PincodeDeliveryCalculator Production={processing_item} />
           </motion.div>
         </Card>
@@ -887,7 +1131,9 @@ const ProductDetails = ({
         {/* File Upload Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Text strong className="text-gray-800">Upload Your Design</Text>
+            <Text strong className="text-gray-800">
+              Upload Your Design
+            </Text>
             <div className="flex items-center gap-2">
               <Text>Already have a Design</Text>
               <Switch
@@ -895,7 +1141,10 @@ const ProductDetails = ({
                 onChange={(checked) => {
                   setNeedDesignUpload(checked);
                   if (!checked) {
-                    setCheckOutState((prev) => ({ ...prev, product_design_file: "" }));
+                    setCheckOutState((prev) => ({
+                      ...prev,
+                      product_design_file: "",
+                    }));
                     setChecked(false);
                   }
                 }}
@@ -913,113 +1162,172 @@ const ProductDetails = ({
 
               {checkOutState.product_design_file && (
                 <div className="mt-2 flex items-center justify-between">
-                  <Checkbox checked={checked} onChange={(e) => setChecked(e.target.checked)}>
+                  <Checkbox
+                    checked={checked}
+                    onChange={(e) => setChecked(e.target.checked)}
+                  >
                     I confirm this design
                   </Checkbox>
-                  <Button type="link" icon={<EyeOutlined />} onClick={() => setDesignPreviewVisible(true)}>
+                  <Button
+                    type="link"
+                    icon={<EyeOutlined />}
+                    onClick={() => setDesignPreviewVisible(true)}
+                  >
                     View Design
                   </Button>
                 </div>
               )}
             </>
           ) : (
-            <Alert message="Our Designing Team will contact you within 24 Hours After Booking" type="info" showIcon />
-          )}
-
-          <Modal
-            title="Design Preview"
-            open={designPreviewVisible}
-            onCancel={() => setDesignPreviewVisible(false)}
-            footer={[<Button key="close" onClick={() => setDesignPreviewVisible(false)}>Close</Button>]}
-            width={700}
-          >
-            <div className="flex justify-center">
-              <Image src={checkOutState.product_design_file} alt="Design Preview" style={{ maxHeight: "400px" }} />
-            </div>
-          </Modal>
-        </div>
-
-        {/* Instructions Section */}
-        <div>
-          <div className="flex gap-3 mb-2">
-            <Text className="text-gray-800 font-bold">Instructions</Text>
-            <Switch checked={instructionsVisible} onChange={setInstructionsVisible} />
-          </div>
-          {instructionsVisible && (
-            <TextArea
-              rows={4}
-              placeholder="Please provide the instructions for this product. Your response should be clear, concise, and must not exceed 180 words"
-              maxLength={180}
-              onChange={(e) => setCheckOutState(prev => ({ ...prev, instructions: e.target.value }))}
+            <Alert
+              message="Our Designing Team will contact you within 24 Hours After Booking"
+              type="info"
+              showIcon
             />
           )}
-        </div>
 
-        {/* Add to Cart Button */}
-        <div className="w-full">
-          {isGettingVariantPrice ? (
-            <div className="center_div py-6">
-              <Spin size="large" />
+          {/* Instructions Section */}
+          <div>
+            <div className="flex gap-3 mb-2">
+              <Text className="text-gray-800 font-bold">Instructions</Text>
+              <Switch
+                checked={instructionsVisible}
+                onChange={setInstructionsVisible}
+              />
             </div>
-          ) : (
-            <Button
-              type="primary"
-              size="large"
-              icon={<ShoppingCartOutlined />}
-              className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
-              onClick={handlebuy}
-              loading={loading}
-              disabled={!quantity || !handleQuantityDetails(stock, quantity)}
-            >
-              {!quantity ? "Select quantity first" : !handleQuantityDetails(stock, quantity) ? "Out of stock" : "Add To Cart"}
-            </Button>
-          )}
+            {instructionsVisible && (
+              <TextArea
+                rows={4}
+                placeholder="Please provide the instructions for this product. Your response should be clear, concise, and must not exceed 180 words"
+                maxLength={180}
+                onChange={(e) =>
+                  setCheckOutState((prev) => ({
+                    ...prev,
+                    instructions: e.target.value,
+                  }))
+                }
+              />
+            )}
+          </div>
+
+          {/* Add to Cart Button */}
+          <div className="w-full">
+            {isGettingVariantPrice ? (
+              <div className="center_div py-6">
+                <Spin size="large" />
+              </div>
+            ) : (
+              <Button
+                type="primary"
+                size="large"
+                icon={<ShoppingCartOutlined />}
+                className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                onClick={handlebuy}
+                loading={loading}
+                disabled={!quantity || !handleQuantityDetails(stock, quantity)}
+              >
+                {!quantity
+                  ? "Select quantity first"
+                  : !handleQuantityDetails(stock, quantity)
+                  ? "Out of stock"
+                  : "Add To Cart"}
+              </Button>
+            )}
+          </div>
+
+          <Divider className="!my-4" />
+          {/* Custom Modal for Design Preview */}
+          <CustomModal
+            open={designPreviewVisible}
+            onClose={() => setDesignPreviewVisible(false)}
+            title="Design Preview"
+            width={700}
+            footer={[
+              <Button
+                key="close"
+                onClick={() => setDesignPreviewVisible(false)}
+              >
+                Close
+              </Button>,
+            ]}
+          >
+            <div className="flex justify-center">
+              <Image
+                src={checkOutState.product_design_file}
+                alt="Design Preview"
+                style={{ maxHeight: "400px" }}
+              />
+            </div>
+          </CustomModal>
         </div>
-
-        <Divider className="!my-4" />
-
-        {/* Bulk Order Modal */}
-        <Modal
-          title="Bulk Order Inquiry"
+        {/* Bulk Order Custom Modal */}
+        <CustomModal
           open={showBulkOrderForm}
-          onCancel={() => setShowBulkOrderForm(false)}
-          footer={null}
-          centered
+          onClose={() => setShowBulkOrderForm(false)}
+          title="Bulk Order Inquiry"
           width={600}
         >
           <Form form={form} layout="vertical" onFinish={handleBulkOrderSubmit}>
             <div className="space-y-4">
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item label="Product Code" name="product_code" initialValue={_.get(data, "product_code", "")}>
+                  <Form.Item
+                    label="Product Name"
+                    name="product_name"
+                    initialValue={_.get(data, "name", "")}
+                  >
                     <Input disabled />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="Product Name" name="product_name" initialValue={_.get(data, "name", "")}>
-                    <Input disabled />
+                  <Form.Item
+                    label="Quantity"
+                    name="quantity"
+                    rules={[
+                      { required: true, message: "Please enter quantity" },
+                    ]}
+                  >
+                    <InputNumber min={1} className="w-full" addonAfter={unit} />
                   </Form.Item>
                 </Col>
               </Row>
 
-              <Form.Item label="Quantity" name="quantity" rules={[{ required: true, message: 'Please enter quantity' }]}>
-                <InputNumber min={1} className="w-full" addonAfter={unit} />
-              </Form.Item>
-
-              <Form.Item label="Email Address" name="email" rules={[{ required: true, message: 'Please enter email' }, { type: 'email', message: 'Invalid email' }]}>
+              <Form.Item
+                label="Email Address"
+                name="email"
+                rules={[
+                  { required: true, message: "Please enter email" },
+                  { type: "email", message: "Invalid email" },
+                ]}
+              >
                 <Input placeholder="your@email.com" />
               </Form.Item>
 
-              <Form.Item label="Mobile Number" name="mobile" rules={[{ required: true, message: 'Please enter mobile number' }]}>
+              <Form.Item
+                label="Mobile Number"
+                name="mobile"
+                rules={[
+                  { required: true, message: "Please enter mobile number" },
+                ]}
+              >
                 <Input placeholder="+91 12345 67890" />
               </Form.Item>
 
-              <Form.Item label="Additional Requirements" name="additional_requirements">
-                <TextArea rows={3} placeholder="Any special requirements or notes..." />
+              <Form.Item
+                label="Additional Requirements"
+                name="additional_requirements"
+              >
+                <TextArea
+                  rows={3}
+                  placeholder="Any special requirements or notes..."
+                />
               </Form.Item>
 
               <div className="flex gap-3">
-                <Button onClick={() => setShowBulkOrderForm(false)} className="flex-1">
+                <Button
+                  onClick={() => setShowBulkOrderForm(false)}
+                  className="flex-1"
+                >
                   Cancel
                 </Button>
                 <Button type="primary" htmlType="submit" className="flex-1">
@@ -1028,15 +1336,22 @@ const ProductDetails = ({
               </div>
             </div>
           </Form>
-        </Modal>
+        </CustomModal>
 
         {/* Product Meta Information */}
-        <div className="space-y-2">
+        <div className="space-y-2 !z-0">
           <div className="flex items-center">
-            <Text strong className="!text-gray-800 !w-20">Categories:</Text>
+            <Text strong className="!text-gray-800 !w-20">
+              Categories:
+            </Text>
             <Text className="text-gray-600">
               {_.get(data, "category_details.main_category_name", "")}
-              {_.get(data, "sub_category_details.sub_category_name", "") && `, ${_.get(data, "sub_category_details.sub_category_name", "")}`}
+              {_.get(data, "sub_category_details.sub_category_name", "") &&
+                `, ${_.get(
+                  data,
+                  "sub_category_details.sub_category_name",
+                  ""
+                )}`}
             </Text>
           </div>
         </div>
@@ -1046,3 +1361,268 @@ const ProductDetails = ({
 };
 
 export default ProductDetails;
+
+import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
+
+export const PincodeDeliveryCalculator = (Production) => {
+  const [pincode, setPincode] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [state, setState] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isValidatingPincode, setIsValidatingPincode] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isPincodeValid, setIsPincodeValid] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const stateDeliveryDays = {
+    maharashtra: { days: 2, name: "Maharashtra" },
+    gujarat: { days: 3, name: "Gujarat" },
+    karnataka: { days: 4, name: "Karnataka" },
+    "tamil nadu": { days: 3, name: "Tamil Nadu" },
+    kerala: { days: 6, name: "Kerala" },
+    delhi: { days: 7, name: "Delhi" },
+    default: { days: 3, name: "Other States" },
+  };
+
+  const pincodeToStateMap = {
+    400: "maharashtra",
+    395: "gujarat",
+    560: "karnataka",
+    600: "tamil nadu",
+    682: "kerala",
+    110: "delhi",
+  };
+
+  const getStateFromPincode = (pincode) => {
+    const prefix = pincode.substring(0, 3);
+    return pincodeToStateMap[prefix] || "default";
+  };
+
+  const calculateDeliveryDate = (state) => {
+    const { days: daysToAdd } =
+      stateDeliveryDays[state] || stateDeliveryDays.default;
+    const today = new Date();
+    const productionTime = Production.Production || 0;
+
+    let deliveryDate = new Date(today);
+    deliveryDate.setDate(deliveryDate.getDate() + Number(productionTime));
+
+    let addedDays = 0;
+    while (addedDays < daysToAdd) {
+      deliveryDate.setDate(deliveryDate.getDate() + 1);
+      if (deliveryDate.getDay() !== 0 && deliveryDate.getDay() !== 6) {
+        addedDays++;
+      }
+    }
+
+    return deliveryDate.toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const validatePincode = async (pincode) => {
+    setIsValidatingPincode(true);
+
+    // Simulate API validation
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const isValid = /^\d{6}$/.test(pincode);
+    setIsPincodeValid(isValid);
+
+    if (isValid) {
+      const stateKey = getStateFromPincode(pincode);
+      setState(
+        stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name
+      );
+      const date = calculateDeliveryDate(stateKey);
+      setDeliveryDate(date);
+      setError("");
+    } else {
+      setError("Please enter a valid 6-digit pincode");
+      setDeliveryDate("");
+      setState("");
+    }
+
+    setIsValidatingPincode(false);
+  };
+
+  const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "");
+    setPincode(value.slice(0, 6));
+    setIsPincodeValid(null);
+    setState("");
+    setDeliveryDate("");
+    setError("");
+
+    if (value.length === 6) {
+      validatePincode(value);
+    }
+  };
+
+  const extractPincodeFromDisplayName = (displayName) => {
+    const pincodeMatch = displayName.match(/\b\d{6}\b/);
+    return pincodeMatch ? pincodeMatch[0] : null;
+  };
+
+  const handleGeolocationError = (error) => {
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        toast.error(
+          "Location access denied. Please enable location permissions."
+        );
+        break;
+      case error.POSITION_UNAVAILABLE:
+        toast.error(
+          "Location information unavailable. Please check your GPS settings."
+        );
+        break;
+      case error.TIMEOUT:
+        toast.error("Location request timed out. Please try again.");
+        break;
+      default:
+        toast.error("Failed to get location. Please enter pincode manually.");
+    }
+  };
+
+  const checkLocationPermission = async () => {
+    if (!navigator.permissions) return true;
+
+    try {
+      const permissionStatus = await navigator.permissions.query({
+        name: "geolocation",
+      });
+      return permissionStatus.state !== "denied";
+    } catch {
+      return true;
+    }
+  };
+
+  const getPincodeByGPS = async () => {
+    setIsGettingLocation(true);
+    setError("");
+
+    try {
+      if (!navigator.geolocation) {
+        throw new Error("Geolocation not supported");
+      }
+
+      const position = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: 15000,
+          enableHighAccuracy: true,
+          maximumAge: 300000,
+        })
+      );
+
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
+      );
+
+      const data = await response.json();
+      const detectedPincode =
+        data.address?.postcode ||
+        extractPincodeFromDisplayName(data.display_name);
+
+      if (detectedPincode) {
+        setPincode(detectedPincode);
+        validatePincode(detectedPincode);
+        toast.success(`📍 Pincode detected: ${detectedPincode}`);
+      } else {
+        throw new Error("No pincode found");
+      }
+    } catch (error) {
+      handleGeolocationError(error);
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
+  const getPincodeByGPSWithPermissionCheck = async () => {
+    const hasPermission = await checkLocationPermission();
+    hasPermission
+      ? await getPincodeByGPS()
+      : toast.error("Location permission denied");
+  };
+
+  // Delivery Info Content for Custom Modal
+  const DeliveryInfoContent = () => (
+    <div className="delivery-info-content">
+      <ul className="space-y-2">
+        <li>• Delivery times vary by state and region</li>
+        <li>• Orders placed after 3 PM will be processed next business day</li>
+        <li>• Weekends and holidays are not counted as business days</li>
+      </ul>
+    </div>
+  );
+
+  return (
+    <div className="pincode-delivery-calculator">
+      <div className="pincode-input-container">
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          className="input-wrapper relative overflow-hidden rounded-lg"
+        >
+          <Input
+            className="pincode-input"
+            value={pincode}
+            onChange={handlePincodeChange}
+            placeholder="Enter 6-digit Pincode"
+            maxLength={6}
+            suffix={
+              <div className="input-suffix">
+                {isValidatingPincode && <Spin size="small" />}
+                {isPincodeValid && (
+                  <CheckCircleOutlined className="success-icon" />
+                )}
+                {isPincodeValid === false && (
+                  <CloseCircleOutlined className="error-icon" />
+                )}
+              </div>
+            }
+          />
+          <button
+            onClick={getPincodeByGPSWithPermissionCheck}
+            disabled={isGettingLocation}
+            className="location-button absolute flex top-0 right-0 bg-yellow-500 h-full p-2"
+          >
+            {isGettingLocation ? (
+              <Spin size="small" />
+            ) : (
+              <span className="button-content flex items-center gap-2 ">
+                <FaMapMarkerAlt className="" /> Get Location
+              </span>
+            )}
+          </button>
+        </motion.div>
+
+        {error && <div className="error-message">{error}</div>}
+
+        {deliveryDate && (
+          <motion.div className="delivery-info" whileHover={{ x: 5 }}>
+            <span className="delivery-text">
+              Standard Delivery by <Text strong>{deliveryDate}</Text>
+            </span>
+            <Divider type="vertical" />
+            <Text type="success" strong>
+              ₹ 100
+            </Text>
+          </motion.div>
+        )}
+
+        {/* Custom Modal for Delivery Information */}
+        <CustomModal
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title="Delivery Information"
+          width={700}
+        >
+          <DeliveryInfoContent />
+        </CustomModal>
+      </div>
+    </div>
+  );
+};

@@ -14,7 +14,7 @@ module.exports = model(
       },
       mobile
 : {
-        type: String,
+        type: Number,
         required: true,
       },
       
@@ -23,7 +23,7 @@ email: {
         required: true,
       },
       additional_requirements: {
-        type: Number,
+        type: String,
       }
     },
     {
