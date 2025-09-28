@@ -1,24 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  Avatar,
-  Badge,
-  Divider,
-  Drawer,
-  Dropdown,
-  Empty,
-  Input,
-  Menu,
-  Spin,
-  Tooltip,
-  Modal
-} from "antd";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import _ from "lodash";
 
 // Icons
 import { BsCart3, BsSearch, BsXLg } from "react-icons/bs";
-import { IoHeartOutline, IoMenu } from "react-icons/io5";
+import { IoHeartOutline, IoMenu, IoClose } from "react-icons/io5";
 import { IconHelper } from "../../helper/IconHelper";
 
 // API & Redux
@@ -50,6 +37,16 @@ const Navbar = () => {
   const [menuStatus, setMenuStatus] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [loginModalVisible, setLoginModalVisible] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Fetch cart data
   const fetchCartData = useCallback(async () => {
@@ -184,45 +181,42 @@ const Navbar = () => {
       }`}
     >
       <div className="h-96 overflow-y-auto custom-scrollbar">
-        <Spin
-          spinning={isSearchingProducts}
-          indicator={
-            <div className="flex justify-center py-8">
-              <div className="w-8 h-8 border-4 border-[#f2c41a] border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          }
-        >
-          {searchingProducts.length === 0 && searchProduct ? (
-            <div className="flex flex-col items-center justify-center h-full py-10">
-              <Empty
-                description={
-                  <span className="text-gray-500">No products found</span>
-                }
-                imageStyle={{
-                  height: 80,
-                  filter: "grayscale(100%) opacity(50%)",
-                }}
-              />
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100/50">
-              {searchingProducts.map((data) => (
-                <div 
-                  key={data._id}
-                  onClick={() => {
-                    handleDestination(`/product/${data._id}`);
-                    closeSearchBar();
-                  }}
-                >
-                  <SearchProductCard
-                    data={data}
-                    className="hover:bg-[#f2c41a]/5 transition-colors duration-200 cursor-pointer"
-                  />
+        {isSearchingProducts ? (
+          <div className="flex justify-center py-8">
+            <div className="w-8 h-8 border-4 border-[#f2c41a] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <>
+            {searchingProducts.length === 0 && searchProduct ? (
+              <div className="flex flex-col items-center justify-center h-full py-10">
+                <div className="text-gray-400 mb-2">
+                  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
-              ))}
-            </div>
-          )}
-        </Spin>
+                <span className="text-gray-500">No products found</span>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100/50">
+                {searchingProducts.map((data) => (
+                  <div 
+                    key={data._id}
+                    onClick={() => {
+                      handleDestination(`/product/${data._id}`);
+                      closeSearchBar();
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <SearchProductCard
+                      data={data}
+                      className="hover:bg-[#f2c41a]/5 transition-colors duration-200"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -238,11 +232,16 @@ const Navbar = () => {
         }} 
         className="p-1"
       >
-        <Badge count={cartCount} size="small" color="hotpink" offset={[-5, 5]}>
+        <div className="relative">
+          {cartCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-hotpink text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {cartCount}
+            </span>
+          )}
           <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-slate-100">
             <BsCart3 className="text-xl text-[#121621]" />
           </div>
-        </Badge>
+        </div>
       </Link>
       <Link
         to="/login"
@@ -277,7 +276,7 @@ const Navbar = () => {
         <div>
           <IconHelper.SUPPORT_ICON className="!text-3xl text-[#121621]" />
         </div>
-        <Tooltip title={supportTooltip} className="!cursor-pointer">
+        <div className="tooltip-container relative group">
           <div>
             <h1 className="!text-[#121621] hover:cursor-pointer group">
               <a
@@ -291,7 +290,11 @@ const Navbar = () => {
             </h1>
             <h1 className="!text-[#121621] capitalize">customer Support</h1>
           </div>
-        </Tooltip>
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50">
+            {supportTooltip}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -311,203 +314,327 @@ const Navbar = () => {
   );
 
   // User Menu Component
-  const UserMenu = () => (
-    <div className="flex items-center justify-end gap-3">
-      <Link 
-        to="/account/wishlist" 
-        className="p-1"
-        onClick={closeSearchBar}
-      >
-        <Badge count={heartCount} size="small" offset={[-5, 5]}>
+  const UserMenu = () => {
+    const [showDropdown, setShowDropdown] = useState(false);
+
+    return (
+      <div className="flex items-center justify-end gap-3">
+        <Link 
+          to="/account/wishlist" 
+          className="p-1 relative"
+          onClick={closeSearchBar}
+        >
+          {heartCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {heartCount}
+            </span>
+          )}
           <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-slate-100">
             <IoHeartOutline className="text-xl text-[#121621]" />
           </div>
-        </Badge>
-      </Link>
+        </Link>
 
-      <Link 
-        to="/shopping-cart" 
-        onClick={() => {
-          fetchCartData();
-          closeSearchBar();
-        }} 
-        className="p-1"
-      >
-        <Badge count={cartCount} size="small" color="hotpink" offset={[-5, 5]}>
+        <Link 
+          to="/shopping-cart" 
+          onClick={() => {
+            fetchCartData();
+            closeSearchBar();
+          }} 
+          className="p-1 relative"
+        >
+          {cartCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-hotpink text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {cartCount}
+            </span>
+          )}
           <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-slate-100">
             <BsCart3 className="text-xl text-[#121621]" />
           </div>
-        </Badge>
-      </Link>
+        </Link>
 
-      <Dropdown
-        menu={{ items: dropdownItems }}
-        placement="bottomRight"
-        arrow
-        trigger={["click"]}
-      >
-        <Avatar
-          src={user?.picture}
-          size="default"
-          shape="circle"
-          className="w-8 h-8 text-white bg-primary border capitalize text-lg transition-all duration-300 cursor-pointer hover:opacity-80"
-        >
-          {profileImageName}
-        </Avatar>
-      </Dropdown>
-    </div>
-  );
+        <div className="relative">
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="focus:outline-none"
+          >
+            <div className="w-8 h-8 rounded-full bg-[#f2c41a] text-white flex items-center justify-center border border-gray-300 capitalize text-lg transition-all duration-300 cursor-pointer hover:opacity-80">
+              {profileImageName}
+            </div>
+          </button>
+          
+          {showDropdown && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+              <div className="py-1">
+                <Link
+                  to="/account"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                  onClick={() => setShowDropdown(false)}
+                >
+                  My Account
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowDropdown(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition-colors duration-200"
+                >
+                  LogOut
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Custom Modal Component
+  const CustomModal = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 z-[10003] flex items-center justify-center">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black bg-opacity-50"
+          onClick={onClose}
+        ></div>
+        
+        {/* Modal Content */}
+        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+            >
+              <IoClose className="text-xl" />
+            </button>
+          </div>
+          
+          {/* Body */}
+          <div className="p-6">
+            {children}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Mobile Menu Content
   const MobileMenuContent = () => (
-    <div className="flex flex-col gap-3 h-full">
-      <div className="flex flex-col gap-1">
-        <div
-          onClick={() => handleDestination("/")}
-          className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100 font-medium cursor-pointer"
-        >
-          Home
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col gap-1 mb-6">
+          <div
+            onClick={() => handleDestination("/")}
+            className="px-3 py-3 rounded-md transition-colors duration-300 hover:bg-slate-100 font-medium cursor-pointer text-gray-900"
+          >
+            Home
+          </div>
+
+          {isAuth ? (
+            <>
+              <div
+                onClick={() => handleDestination("/account")}
+                className="px-3 py-3 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer text-gray-700"
+              >
+                My Account
+              </div>
+              <div
+                onClick={() => {
+                  fetchCartData();
+                  handleDestination("/shopping-cart");
+                }}
+                className="px-3 py-3 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer text-gray-700"
+              >
+                My Cart {cartCount > 0 && `(${cartCount})`}
+              </div>
+              <div
+                onClick={() => handleDestination("/account/wishlist")}
+                className="px-3 py-3 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer text-gray-700"
+              >
+                My Wishlist {heartCount > 0 && `(${heartCount})`}
+              </div>
+            </>
+          ) : (
+            <>
+              <div
+                onClick={showLoginModal}
+                className="px-3 py-3 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer text-gray-700"
+              >
+                Login
+              </div>
+              <div
+                onClick={() => handleDestination("/sign-up")}
+                className="px-3 py-3 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer text-gray-700"
+              >
+                Register
+              </div>
+            </>
+          )}
         </div>
 
-        {isAuth ? (
-          <>
-            <div
-              onClick={() => handleDestination("/account")}
-              className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer"
-            >
-              My Account
-            </div>
-            <div
-              onClick={() => {
-                fetchCartData();
-                handleDestination("/shopping-cart");
-              }}
-              className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer"
-            >
-              My Cart
-            </div>
-            <div
-              onClick={() => handleDestination("/account/wishlist")}
-              className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer"
-            >
-              My Wishlist
-            </div>
-          </>
-        ) : (
-          <>
-            <div
-              onClick={showLoginModal}
-              className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer"
-            >
-              Login
-            </div>
-            <div
-              onClick={() => handleDestination("/sign-up")}
-              className="px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer"
-            >
-              Register
-            </div>
-          </>
-        )}
-      </div>
-
-      <Divider className="my-2" />
-
-      <div>
-        <h3 className="px-3 py-1 font-medium text-gray-700">Categories</h3>
-        <Menu mode="inline" className="border-none">
-          {menu.map((res, index) => (
-            <Menu.SubMenu
-              key={index}
-              title={_.get(res, "main_category_name", "")}
-              className="font-medium"
-            >
-              {_.get(res, "sub_categories_details", []).map(
-                (subRes, subIndex) => (
-                  <Menu.Item
-                    key={subIndex}
-                    onClick={() =>
-                      handleCategoryClick(
-                        _.get(res, "main_category_name", ""),
-                        _.get(subRes, "sub_category_name", ""),
-                        _.get(res, "_id", ""),
-                        _.get(subRes, "_id", "")
-                      )
-                    }
-                    className="text-sm cursor-pointer"
-                  >
-                    {_.get(subRes, "sub_category_name", "")}
-                  </Menu.Item>
-                )
-              )}
-            </Menu.SubMenu>
-          ))}
-        </Menu>
-      </div>
-
-      <Divider className="my-2" />
-
-      <div
-        onClick={() => handleDestination("/help")}
-        className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer"
-      >
-        <IconHelper.HELP_ICON className="text-lg text-[#f2c41a]" />
-        <span>Help Center</span>
-      </div>
-
-      {/* Support Section in Mobile Menu */}
-      <div className="mt-auto pt-4 border-t">
-        <div className="text-sm center_div gap-x-2">
-          <div>
-            <IconHelper.SUPPORT_ICON className="!text-2xl text-[#121621]" />
+        <div className="border-t border-gray-200 pt-4">
+          <h3 className="px-3 py-2 font-semibold text-gray-900">Categories</h3>
+          <div className="space-y-1">
+            {menu.map((res, index) => (
+              <div key={index} className="border-b border-gray-100 last:border-b-0">
+                <div className="px-3 py-3 font-medium text-gray-900">
+                  {_.get(res, "main_category_name", "")}
+                </div>
+                <div className="pl-6 space-y-1 pb-2">
+                  {_.get(res, "sub_categories_details", []).map(
+                    (subRes, subIndex) => (
+                      <div
+                        key={subIndex}
+                        onClick={() =>
+                          handleCategoryClick(
+                            _.get(res, "main_category_name", ""),
+                            _.get(subRes, "sub_category_name", ""),
+                            _.get(res, "_id", ""),
+                            _.get(subRes, "_id", "")
+                          )
+                        }
+                        className="px-3 py-2 text-sm text-gray-700 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer"
+                      >
+                        {_.get(subRes, "sub_category_name", "")}
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-          <div>
-            <h1 className="!text-[#121621]">
-              <a
-                href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:!text-[#121621]"
-              >
-                +91 95856 10000
-              </a>
-            </h1>
-            <h1 className="!text-[#121621] capitalize text-xs">Customer Support</h1>
+        </div>
+      </div>
+
+      <div className="border-t border-gray-200 pt-4 mt-4">
+        <div
+          onClick={() => handleDestination("/help")}
+          className="flex items-center gap-3 px-3 py-3 rounded-md transition-colors duration-300 hover:bg-slate-100 cursor-pointer text-gray-700 mb-4"
+        >
+          <IconHelper.HELP_ICON className="text-xl text-[#f2c41a]" />
+          <span className="font-medium">Help Center</span>
+        </div>
+
+        {/* Support Section in Mobile Menu */}
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="text-sm flex items-center gap-3">
+            <div>
+              <IconHelper.SUPPORT_ICON className="text-2xl text-[#121621]" />
+            </div>
+            <div>
+              <h1 className="text-gray-900 font-medium">
+                <a
+                  href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#121621]"
+                >
+                  +91 95856 10000
+                </a>
+              </h1>
+              <h1 className="text-gray-600 text-xs capitalize">Customer Support</h1>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 
+    // Custom Drawer Component
+  const CustomDrawer = ({ isOpen, onClose, title, children }) => {
+    return (
+      <div
+        className={`fixed inset-0 z-[10002] transition-all duration-300 ease-in-out ${
+          isOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+      >
+        {/* Backdrop */}
+        <div
+          className={`absolute inset-0 bg-black transition-opacity duration-300 ${
+            isOpen ? "opacity-50" : "opacity-0"
+          }`}
+          onClick={onClose}
+        ></div>
+        
+        {/* Drawer Content */}
+        <div
+          className={`absolute left-0 top-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ${
+            isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#f2c41a]">
+            <div className="flex items-center gap-3">
+              <img src={Logo} alt="Logo" className="h-8" />
+              <span className="font-semibold text-gray-900">{title}</span>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1 text-gray-700 hover:text-gray-900 transition-colors duration-200"
+            >
+              <IoClose className="text-xl" />
+            </button>
+          </div>
+          
+          {/* Body */}
+          <div className="h-[calc(100%-64px)] overflow-hidden">
+            {children}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Search Input Component
+  const SearchInput = ({ isMobile = false }) => (
+    <div className={`relative ${isMobile ? 'w-full' : 'w-[280px] md:w-[350px] lg:w-[400px] xl:w-[500px]'} group`}>
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search Product..."
+          value={searchProduct}
+          onChange={handleSearchChange}
+          onFocus={handleSearchFocus}
+          onBlur={handleSearchBlur}
+          className={`w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:border-[#f2c41a] bg-[#f1f1efbb] transition-all duration-300 ${
+            isMobile ? 'pr-12' : 'pr-12'
+          }`}
+        />
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+          <IconHelper.SEARCH_ICON className="text-[#1c1c1c]" />
+        </div>
+      </div>
+      <SearchResultsDropdown />
+    </div>
+  );
   return (
     <div className="w-full">
       {/* Login Modal */}
-      <Modal
+      <CustomModal
+        isOpen={loginModalVisible}
+        onClose={handleLoginModalClose}
         title="Login to Your Account"
-        open={loginModalVisible}
-        onCancel={handleLoginModalClose}
-        footer={null}
-        width={400}
-        centered
-        destroyOnClose
       >
-        {/* <LoginWithProvider 
-          onSuccess={handleLoginSuccess}
-          onClose={handleLoginModalClose}
-        /> */}
         <div className="text-center py-4">
-          <p>Login component would go here</p>
+          <p className="text-gray-600 mb-4">Login component would go here</p>
           <button 
             onClick={handleLoginModalClose}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+            className="px-6 py-2 bg-[#f2c41a] text-gray-900 rounded-full font-medium hover:bg-[#e6b80a] transition-colors duration-200"
           >
             Close
           </button>
         </div>
-      </Modal>
+      </CustomModal>
 
       {/* Desktop Navbar */}
-      <div className="w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-2xl center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-50">
+      <div className={`w-full lg:flex hidden h-[90px] gap-x-10 bg-[#f2c41a] shadow-lg center_div justify-between px-4 lg:px-8 xl:px-20 sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled ? 'shadow-xl' : 'shadow-lg'
+      }`}>
         <div className="flex items-center gap-x-4 xl:gap-x-32 w-auto lg:!w-[100%] xl:w-[70%] justify-start">
           <Link
             to="/"
@@ -522,22 +649,7 @@ const Navbar = () => {
             </div>
           </Link>
 
-          <div className="relative w-[280px] md:w-[350px] lg:w-[400px] xl:w-[500px] group">
-            <Input
-              placeholder="Search Product..."
-              value={searchProduct}
-              onChange={handleSearchChange}
-              onFocus={handleSearchFocus}
-              onBlur={handleSearchBlur}
-              suffix={
-                <IconHelper.SEARCH_ICON className="text-[#1c1c1c] transition-colors duration-300" />
-              }
-              allowClear
-              className="rounded-full hover:border-[#f2c41a] focus:border-[#f2c41a] bg-[#f1f1efbb] transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] w-full"
-              size="large"
-            />
-            <SearchResultsDropdown />
-          </div>
+          <SearchInput />
         </div>
 
         <div className="flex items-center justify-end gap-x-4 xl:gap-x-10 w-auto xl:w-[50%]">
@@ -546,100 +658,23 @@ const Navbar = () => {
           <HelpCenterLink />
         </div>
       </div>
-
-      {/* Mobile Navbar */}
-      <div className="block lg:hidden w-full fixed top-0 left-0 z-[1001] bg-[#f2c41a] shadow-md">
-        {/* Main Navbar Row */}
-        <div className="w-full h-14 flex items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMenuStatus(true)}
-              className="p-2 transition-transform duration-300 hover:scale-110 text-[#121621]"
-            >
-              <IoMenu className="text-xl" />
-            </button>
-            <Link to="/" className="flex items-center" onClick={closeSearchBar}>
-              <img
-                src={Logo}
-                alt="Printe Logo"
-                className="h-10 w-auto object-contain"
-              />
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggleSearchBar}
-              className="p-2 transition-colors duration-300 hover:bg-[#00000010] rounded-full"
-            >
-              {showSearchBar ? (
-                <BsXLg className="text-md" />
-              ) : (
-                <BsSearch className="text-md" />
-              )}
-            </button>
-
-            {isAuth ? <UserMenu /> : <AuthButtons />}
-          </div>
-        </div>
-
-        {/* Expandable Search Bar */}
-        <div
-          className={`w-full bg-[#f2c41a] transition-all duration-300 overflow-hidden ${
-            showSearchBar ? "max-h-16 py-3" : "max-h-0"
-          }`}
-        >
-          <div className="px-4">
-            <Input
-              id="mobile-search-input"
-              placeholder="Search Product..."
-              value={searchProduct}
-              onChange={handleSearchChange}
-              onFocus={handleSearchFocus}
-              onBlur={handleSearchBlur}
-              suffix={
-                <IconHelper.SEARCH_ICON className="text-[#1c1c1c]" />
-              }
-              allowClear
-              className="rounded-full bg-white border-none shadow-sm"
-              size="large"
-            />
-          </div>
-        </div>
-
-        {/* Search Results for Mobile */}
-        {showSearchBar && (
-          <div className="relative w-full">
-            <SearchResultsDropdown />
-          </div>
-        )}
-      </div>
-
+      
       {/* Mobile Drawer */}
-      <Drawer
-        open={menuStatus}
-        title={
-          <div className="flex items-center gap-2">
-            <img src={Logo} alt="Logo" className="h-6" />
-            <span className="font-medium">Menu</span>
-          </div>
-        }
+      <CustomDrawer
+        isOpen={menuStatus}
         onClose={() => setMenuStatus(false)}
-        placement="left"
-        className="mobile-nav-drawer"
-        style={{ zIndex: 10002 }}
-        bodyStyle={{ 
-          padding: "16px",
-          display: "flex",
-          flexDirection: "column"
-        }}
-        width={280}
+        title="Menu"
       >
         <MobileMenuContent />
-      </Drawer>
+      </CustomDrawer>
 
       {/* Spacer for fixed mobile navbar */}
-      <div className="block lg:hidden h-14"></div>
+      <div className="block lg:hidden h-16"></div>
+      {showSearchBar && isExpanded && searchProduct && (
+        <div className="block lg:hidden">
+          <div className="h-96"></div>
+        </div>
+      )}
     </div>
   );
 };
