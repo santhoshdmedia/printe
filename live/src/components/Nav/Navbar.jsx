@@ -621,7 +621,7 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Navbar */}
-      <div className={`block lg:hidden w-full fixed top-0 left-0 z-40 bg-[#f2c41a] transition-all duration-300 ${
+      <div className={`block lg:hidden w-full fixed top-0 left-0 !z-[9999] bg-[#f2c41a] transition-all duration-300 ${
         isScrolled ? 'shadow-lg' : 'shadow-md'
       }`}>
         {/* Main Navbar Row */}
