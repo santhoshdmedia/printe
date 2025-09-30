@@ -77,7 +77,7 @@ const Navbar = () => {
       // For bottom navigation hide/show
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
         // Scrolling down - hide bottom nav
-        setBottomNavVisible(false);
+        setBottomNavVisible(true);
       } else if (currentScrollY < lastScrollY) {
         // Scrolling up - show bottom nav
         setBottomNavVisible(true);
