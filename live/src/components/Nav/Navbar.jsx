@@ -515,7 +515,7 @@ const Navbar = () => {
 
       {/* Drawer Panel */}
       <div
-        className={`absolute left-0 top-0 h-screen w-full bg-gradient-to-b from-white to-yellow-50/30 shadow-2xl transform transition-transform duration-500 ${
+        className={`absolute left-0 top-0 h-screen w-full bg-gradient-to-b from-white to-yellow-50 shadow-2xl transform transition-transform duration-500 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ zIndex: 10001 }}
