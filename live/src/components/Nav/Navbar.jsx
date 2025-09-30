@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import _ from "lodash";
@@ -50,6 +50,11 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [activeNav, setActiveNav] = useState("home");
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [bottomNavVisible, setBottomNavVisible] = useState(false);
+
+  // Refs
+  const scrollTimeoutRef = useRef(null);
 
   // Set active nav based on current route
   useEffect(() => {
@@ -62,13 +67,43 @@ const Navbar = () => {
   }, [location]);
 
   // Scroll effect
-  useEffect(() => {
+ useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      const currentScrollY = window.scrollY;
+      
+      // For top navbar shadow
+      setIsScrolled(currentScrollY > 10);
+
+      // For bottom navigation hide/show
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down - hide bottom nav
+        setBottomNavVisible(false);
+      } else if (currentScrollY < lastScrollY) {
+        // Scrolling up - show bottom nav
+        setBottomNavVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Auto show bottom nav when scrolling stops
+      scrollTimeoutRef.current = setTimeout(() => {
+        setBottomNavVisible(true);
+      }, 1500);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [lastScrollY]);
 
   // Fetch cart
   const fetchCartData = useCallback(async () => {
@@ -374,7 +409,7 @@ const Navbar = () => {
 
   // Bottom Navigation Component - Only for Mobile
   const BottomNavigation = () => (
-    <div className="fixed top-[75vh] left-0 right-0 z-[9998] w-full block lg:hidden">
+    <div className={`fixed ${bottomNavVisible?"top-[75vh]":"top-[80vh]"}  left-0 right-0 z-[9998] w-full block lg:hidden`}>
       <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
         <div className="flex items-center justify-around">
           {/* Home */}
