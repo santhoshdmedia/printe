@@ -8,6 +8,7 @@ import { ImageHelper } from "../helper/ImageHelper";
 import QuickAccess from "./QuickAccess";
 import NavMenu from "../components/Nav/NavMenu.jsx";
 import { Toaster } from "react-hot-toast";
+// import { BottomNavigation } from "../components/Nav/Navbar.jsx";
 
 const Layout = () => {
   const [showIcon, setShowIcon] = useState(false);
@@ -48,7 +49,7 @@ const Layout = () => {
 
   return (
     <div className={` w-full mx-auto !transition-all !duration-700 `}>
-      <div
+      {/* <div
         className={`fixed top-0 left-0 -z-10 h-[100vh] w-full  ${
           isProduct ? "hidden" : ""
         }`}
@@ -57,7 +58,7 @@ const Layout = () => {
           className="absolute inset-0 h-full w-full bg-gradient-to-b from-white to-[#FFF9C7] "
           aria-hidden="true"
         />
-      </div>
+      </div> */}
 
       <div className="sticky top-0 z-[999] w-full overflow-hidden bg-[#f5f5f5] p-2">
         <div className="scrolling-text-container">
@@ -71,7 +72,7 @@ const Layout = () => {
       <div className="sticky top-[40px] z-[999] w-full">
         <Navbar />
       </div>
-      <div className="sticky top-[130px] z-[20]">
+      <div className="sticky top-[120px] z-[20]">
         <NavMenu />
       </div>
 
@@ -110,6 +111,9 @@ const Layout = () => {
           />
         </span>
       </div>
+      {/* <div className="relative bottom-[90vh]">
+        <BottomNavigation/>
+      </div> */}
       
       {/* React Hot Toast Configuration - Fixed z-index */}
       <Toaster 

@@ -1,11 +1,21 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import _ from "lodash";
 
 // Icons
-import { BsCart3, BsSearch, BsXLg } from "react-icons/bs";
-import { IoHeartOutline, IoMenu, IoClose } from "react-icons/io5";
+import { 
+  BsCart3, 
+  BsSearch, 
+  BsXLg, 
+  BsPerson,
+  BsHeart,
+  BsHouse,
+  BsGrid,
+  BsChevronRight,
+  BsTelephone
+} from "react-icons/bs";
+import { IoMenu, IoClose, IoHeartOutline } from "react-icons/io5";
 import { IconHelper } from "../../helper/IconHelper";
 
 // API & Redux
@@ -19,6 +29,7 @@ import Logo from "../../assets/logo/without_bg.png";
 const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { isSearchingProducts, searchingProducts, menu } = useSelector(
     (state) => state.publicSlice
@@ -28,6 +39,7 @@ const Navbar = () => {
 
   const heartCount = user?.wish_list?.length ?? 0;
   const profileImageName = user?.name?.[0] ?? "";
+  const userName = user?.name ?? "User";
 
   // State
   const [isExpanded, setIsExpanded] = useState(false);
@@ -37,6 +49,17 @@ const Navbar = () => {
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [activeNav, setActiveNav] = useState("home");
+
+  // Set active nav based on current route
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === "/") setActiveNav("home");
+    else if (path.includes("shopping-cart")) setActiveNav("cart");
+    else if (path.includes("wishlist")) setActiveNav("wishlist");
+    else if (path.includes("account")) setActiveNav("account");
+    else if (path.includes("category")) setActiveNav("categories");
+  }, [location]);
 
   // Scroll effect
   useEffect(() => {
@@ -119,57 +142,54 @@ const Navbar = () => {
     );
   };
 
-  // Search Input
+  // Search Input Component
   const SearchInput = ({ isMobile = false }) => (
     <div
-      className={`relative ${isMobile ? "w-full" : "w-full max-w-[500px] md:w-[350px] lg:w-[400px]"}`}
+      className={`relative ${isMobile ? "w-full" : "w-full  md:w-[35vw] lg:w-[25vw]"}`}
     >
-      <input
-        type="text"
-        placeholder="Search Product..."
-        value={searchProduct}
-        onChange={handleSearchChange}
-        onFocus={handleSearchFocus}
-        onBlur={handleSearchBlur}
-        className={`w-full px-4 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:border-[#f2c41a] bg-white transition-all duration-300 ${
-          isMobile ? "pr-10 text-sm" : "pr-12"
-        }`}
-      />
-      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-        <BsSearch className="text-base" />
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="What are you looking for?"
+          value={searchProduct}
+          onChange={handleSearchChange}
+          onFocus={handleSearchFocus}
+          onBlur={handleSearchBlur}
+          className={`w-full px-5 py-4 rounded-2xl border-0 focus:outline-none focus:ring-4 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 ${
+            isMobile ? "pr-12 text-base" : "pr-12"
+          }`}
+        />
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+          <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg">
+            <BsSearch className="text-white text-lg" />
+          </div>
+        </div>
       </div>
+
       {/* Search Results */}
       <div
-        className={`absolute top-full left-0 z-30 bg-white/95 backdrop-blur-md rounded-b-xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`absolute top-full left-0 z-50 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-out mt-3 ${
           isExpanded && searchProduct
-            ? "opacity-100 max-h-[70vh] w-full visible border-t border-gray-200"
+            ? "opacity-100 max-h-[70vh] w-full visible border border-yellow-100"
             : "opacity-0 max-h-0 invisible"
         }`}
       >
         <div className="overflow-y-auto">
           {isSearchingProducts ? (
-            <div className="flex justify-center py-6">
-              <div className="w-6 h-6 border-3 border-[#f2c41a] border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p className="text-gray-600 text-sm">Searching products...</p>
             </div>
           ) : searchingProducts.length === 0 && searchProduct ? (
-            <div className="flex flex-col items-center justify-center py-8 text-gray-500 text-sm">
-              <svg
-                className="w-12 h-12 mb-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              No products found
+            <div className="flex flex-col items-center justify-center py-10 text-gray-500">
+              <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
+                <BsSearch className="text-2xl text-yellow-600" />
+              </div>
+              <p className="font-medium text-gray-700 mb-1">No products found</p>
+              <p className="text-sm text-gray-500">Try different keywords</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100/50">
+            <div className="divide-y divide-gray-100">
               {searchingProducts.map((data) => (
                 <div
                   key={data._id}
@@ -177,11 +197,11 @@ const Navbar = () => {
                     handleDestination(`/product/${data._id}`);
                     closeSearchBar();
                   }}
-                  className="cursor-pointer"
+                  className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
                 >
                   <SearchProductCard
                     data={data}
-                    className="hover:bg-[#f2c41a]/5 transition-colors duration-200 py-2"
+                    className="py-4 px-4"
                   />
                 </div>
               ))}
@@ -192,9 +212,9 @@ const Navbar = () => {
     </div>
   );
 
-  // Auth Buttons Component
+  // Desktop Auth Buttons Component
   const AuthButtons = () => (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center space-x-4">
       <Link
         to="/shopping-cart"
         onClick={() => {
@@ -204,27 +224,98 @@ const Navbar = () => {
         className="p-2 relative"
       >
         {cartCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium shadow-sm">
             {cartCount}
           </span>
         )}
-        <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-slate-100">
+        <div className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-yellow-50 shadow-sm border border-yellow-100">
           <BsCart3 className="text-xl text-[#121621]" />
         </div>
       </Link>
       <Link
         to="/login"
-        className="relative text-black hover:text-black px-3 py-2 rounded-lg group overflow-hidden transition-all duration-300 hover:shadow-lg"
+        className="relative text-black hover:text-black px-4 py-2.5 rounded-xl group overflow-hidden transition-all duration-300 hover:shadow-lg bg-white/80 backdrop-blur-sm border border-yellow-200"
         onClick={closeSearchBar}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-        <span className="relative z-10 flex items-center gap-2 font-bold">
-          <IconHelper.REGISTER_USER_ICON className="text-xl group-hover:scale-110 transition-transform duration-300" />
-          <span className="hidden sm:block group-hover:translate-x-1 transition-transform duration-300">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-100/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+        <span className="relative z-10 flex items-center gap-2 font-semibold text-sm">
+          <BsPerson className="text-lg group-hover:scale-110 transition-transform duration-300" />
+          <span className="group-hover:translate-x-0.5 transition-transform duration-300">
             Login
           </span>
         </span>
       </Link>
+    </div>
+  );
+
+  // Desktop User Menu Component
+  const UserMenu = () => (
+    <div className="flex items-center justify-end gap-4">
+      <Link
+        to="/account/wishlist"
+        className="p-2 relative"
+        onClick={closeSearchBar}
+      >
+        {heartCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium shadow-sm">
+            {heartCount}
+          </span>
+        )}
+        <div className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-yellow-50 shadow-sm border border-yellow-100">
+          <IoHeartOutline className="text-xl text-[#121621]" />
+        </div>
+      </Link>
+
+      <Link
+        to="/shopping-cart"
+        onClick={() => {
+          fetchCartData();
+          closeSearchBar();
+        }}
+        className="p-2 relative"
+      >
+        {cartCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium shadow-sm">
+            {cartCount}
+          </span>
+        )}
+        <div className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-yellow-50 shadow-sm border border-yellow-100">
+          <BsCart3 className="text-xl text-[#121621]" />
+        </div>
+      </Link>
+
+      <div className="relative">
+        <button
+          onClick={() => setShowUserDropdown(!showUserDropdown)}
+          className="focus:outline-none"
+        >
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f2c41a] to-[#e6b800] text-white flex items-center justify-center border-2 border-white shadow-md capitalize text-lg font-semibold transition-all duration-300 cursor-pointer hover:shadow-lg hover:scale-105">
+            {profileImageName}
+          </div>
+        </button>
+
+        {showUserDropdown && (
+          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+            <div className="py-2">
+              <Link
+                to="/account"
+                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-yellow-50 transition-colors duration-200"
+                onClick={() => setShowUserDropdown(false)}
+              >
+                <BsPerson className="text-lg" />
+                My Account
+              </Link>
+              <button
+                onClick={logout}
+                className="flex items-center gap-3 w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
+              >
+                <IoClose className="text-lg" />
+                LogOut
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -273,107 +364,193 @@ const Navbar = () => {
     </Link>
   );
 
-  // User Menu Component
-  const UserMenu = () => (
-    <div className="flex items-center justify-end gap-2">
-      <Link
-        to="/account/wishlist"
-        className="p-2 relative"
-        onClick={closeSearchBar}
-      >
-        {heartCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {heartCount}
-          </span>
-        )}
-        <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-slate-100">
-          <IoHeartOutline className="text-xl text-[#121621]" />
+  // Bottom Navigation Component - Only for Mobile
+  const BottomNavigation = () => (
+    <div className="fixed top-[83vh] left-0 right-0 z-[9998] w-full block lg:hidden ">
+      <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
+        <div className="flex items-center justify-around">
+          {/* Home */}
+          <button
+            onClick={() => handleDestination("/")}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
+              activeNav === "home" 
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+            }`}
+          >
+            <BsHouse className={`text-xl ${activeNav === "home" ? "scale-110" : ""}`} />
+            <span className="text-xs mt-1 font-medium">Home</span>
+          </button>
+
+          {/* Categories */}
+          <button
+            onClick={() => setMenuStatus(true)}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
+              activeNav === "categories" 
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+            }`}
+          >
+            <BsGrid className={`text-xl ${activeNav === "categories" ? "scale-110" : ""}`} />
+            <span className="text-xs mt-1 font-medium">Menu</span>
+          </button>
+
+          {/* Search */}
+          <button
+            onClick={() => setShowSearchBar(!showSearchBar)}
+            className="flex flex-col items-center justify-center p-3 rounded-xl text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-300"
+          >
+            <div className="relative">
+              <BsSearch className="text-xl" />
+            </div>
+            <span className="text-xs mt-1 font-medium">Search</span>
+          </button>
+
+          {/* Cart */}
+          <button
+            onClick={() => {
+              fetchCartData();
+              handleDestination("/shopping-cart");
+            }}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 relative ${
+              activeNav === "cart" 
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+            }`}
+          >
+            <div className="relative">
+              <BsCart3 className={`text-xl ${activeNav === "cart" ? "scale-110" : ""}`} />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg animate-pulse">
+                  {cartCount}
+                </span>
+              )}
+            </div>
+            <span className="text-xs mt-1 font-medium">Cart</span>
+          </button>
+
+          {/* Account */}
+          <button
+            onClick={() => isAuth ? setShowUserDropdown(!showUserDropdown) : handleDestination("/login")}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
+              activeNav === "account" 
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+            }`}
+          >
+            <BsPerson className={`text-xl ${activeNav === "account" ? "scale-110" : ""}`} />
+            <span className="text-xs mt-1 font-medium">Me</span>
+          </button>
         </div>
-      </Link>
+      </div>
 
-      <Link
-        to="/shopping-cart"
-        onClick={() => {
-          fetchCartData();
-          closeSearchBar();
-        }}
-        className="p-2 relative"
-      >
-        {cartCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {cartCount}
-          </span>
-        )}
-        <div className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-slate-100">
-          <BsCart3 className="text-xl text-[#121621]" />
-        </div>
-      </Link>
-
-      <div className="relative">
-        <button
-          onClick={() => setShowUserDropdown(!showUserDropdown)}
-          className="focus:outline-none"
-        >
-          <div className="w-8 h-8 rounded-full bg-[#f2c41a] text-white flex items-center justify-center border border-gray-300 capitalize text-lg transition-all duration-300 cursor-pointer hover:opacity-80">
-            {profileImageName}
-          </div>
-        </button>
-
-        {showUserDropdown && (
-          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-            <div className="py-1">
-              <Link
-                to="/account"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                onClick={() => setShowUserDropdown(false)}
-              >
-                My Account
-              </Link>
-              <button
-                onClick={logout}
-                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition-colors duration-200"
-              >
-                LogOut
-              </button>
+      {/* User Dropdown for Mobile */}
+      {showUserDropdown && isAuth && (
+        <div className="absolute bottom-full right-2 mb-4 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+          {/* User Info */}
+          <div className="p-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white/30">
+                {profileImageName}
+              </div>
+              <div>
+                <p className="font-semibold">{userName}</p>
+                <p className="text-white/80 text-sm">Welcome back!</p>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Menu Items */}
+          <div className="p-2">
+            <Link
+              to="/account"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200"
+              onClick={() => setShowUserDropdown(false)}
+            >
+              <BsPerson className="text-yellow-600 text-lg" />
+              <span>My Account</span>
+            </Link>
+            <Link
+              to="/account/wishlist"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200"
+              onClick={() => setShowUserDropdown(false)}
+            >
+              <div className="relative">
+                <BsHeart className="text-yellow-600 text-lg" />
+                {heartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {heartCount}
+                  </span>
+                )}
+              </div>
+              <span>My Wishlist</span>
+            </Link>
+            <button
+              onClick={logout}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 w-full text-left transition-colors duration-200"
+            >
+              <IoClose className="text-lg" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
   // Custom Drawer (Mobile Menu)
   const CustomDrawer = ({ isOpen, onClose, children }) => (
     <div
-    className={`fixed inset-0 z-[10000] transition-all duration-300 ${
-      isOpen ? "opacity-100 visible" : "opacity-0 invisible"
+      className={`fixed inset-0 z-[10000] transition-all duration-500 ${
+        isOpen ? "opacity-100 visible" : "opacity-0 invisible"
       }`}
     >
       {/* Overlay */}
       <div
-        className={`absolute inset-0 bg-black transition-opacity duration-300 ${
-          isOpen ? "opacity-50" : "opacity-0"
+        className={`absolute inset-0   transition-opacity duration-500  ${
+          isOpen ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
       ></div>
 
       {/* Drawer Panel */}
       <div
-      className={`absolute left-0 top-0 h-screen w-72 bg-white shadow-xl transform transition-transform duration-300 ${
+        className={`absolute left-0 top-0 h-screen w-full bg-gradient-to-b from-white to-yellow-50/30 shadow-2xl transform transition-transform duration-500 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
-      style={{ zIndex: 10001 }} // ensure panel is always above navbar
+        style={{ zIndex: 10001 }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-3 border-b bg-[#f2c41a]">
-          <img src={Logo} alt="Logo" className="h-8" />
-        <button onClick={onClose}>
-          <IoClose className="text-xl" />
-          </button>
+        <div className="p-6 bg-gradient-to-r from-yellow-400 to-yellow-500 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={Logo} alt="Logo" className="h-8" />
+              <span className="text-white font-bold text-lg">Menu</span>
+            </div>
+            <button 
+              onClick={onClose}
+              className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95"
+            >
+              <IoClose className="text-white text-xl" />
+            </button>
+          </div>
+          
+          {/* User Welcome */}
+          {isAuth && (
+            <div className="mt-4 flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white/30">
+                {profileImageName}
+              </div>
+              <div>
+                <p className="text-black font-semibold">Hello, {userName}</p>
+                <p className="text-black/80 text-sm">Welcome back!</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto h-[calc(100vh-56px)] p-3">
+        <div className="overflow-y-auto h-[calc(100vh-120px)] p-4 pb-24">
           {children}
         </div>
       </div>
@@ -382,89 +559,147 @@ const Navbar = () => {
 
   // Mobile Menu Content
   const MobileMenuContent = () => (
-    <div className="flex flex-col gap-2">
-      <div
-        onClick={() => handleDestination("/")}
-        className="px-3 py-2 rounded-md hover:bg-slate-100 cursor-pointer text-gray-900"
-      >
-        Home
+    <div className="flex flex-col gap-3">
+      {/* Quick Actions */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2">
+          Quick Links
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div
+            onClick={() => handleDestination("/")}
+            className="bg-white rounded-2xl p-4 text-center shadow-lg border border-yellow-100 hover:shadow-xl transition-all duration-300 active:scale-95 group"
+          >
+            <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300">
+              <BsHouse className="text-white text-xl" />
+            </div>
+            <span className="text-sm font-semibold text-gray-700">Home</span>
+          </div>
+          
+          {isAuth ? (
+            <div
+              onClick={() => handleDestination("/account")}
+              className="bg-white rounded-2xl p-4 text-center shadow-lg border border-yellow-100 hover:shadow-xl transition-all duration-300 active:scale-95 group"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300">
+                <BsPerson className="text-white text-xl" />
+              </div>
+              <span className="text-sm font-semibold text-gray-700">Profile</span>
+            </div>
+          ) : (
+            <div
+              onClick={() => handleDestination("/login")}
+              className="bg-white rounded-2xl p-4 text-center shadow-lg border border-yellow-100 hover:shadow-xl transition-all duration-300 active:scale-95 group"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300">
+                <BsPerson className="text-white text-xl" />
+              </div>
+              <span className="text-sm font-semibold text-gray-700">Login</span>
+            </div>
+          )}
+        </div>
       </div>
-      {isAuth ? (
-        <>
-          <div
-            onClick={() => handleDestination("/account")}
-            className="px-3 py-2 rounded-md hover:bg-slate-100 cursor-pointer text-gray-700"
-          >
+
+      {/* Account Section for Auth Users */}
+      {isAuth && (
+        <div className="bg-white rounded-2xl shadow-lg border border-yellow-100 p-4 mb-6">
+          <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <BsPerson className="text-yellow-600" />
             My Account
+          </h3>
+          <div className="space-y-2">
+            <div
+              onClick={() => {
+                fetchCartData();
+                handleDestination("/shopping-cart");
+              }}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-yellow-50 cursor-pointer transition-colors duration-200 group"
+            >
+              <div className="flex items-center gap-3">
+                <BsCart3 className="text-gray-600 text-lg" />
+                <span className="text-gray-700">My Cart</span>
+              </div>
+              {cartCount > 0 && (
+                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-6 text-center font-bold">
+                  {cartCount}
+                </span>
+              )}
+            </div>
+            <div
+              onClick={() => handleDestination("/account/wishlist")}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-yellow-50 cursor-pointer transition-colors duration-200 group"
+            >
+              <div className="flex items-center gap-3">
+                <BsHeart className="text-gray-600 text-lg" />
+                <span className="text-gray-700">My Wishlist</span>
+              </div>
+              {heartCount > 0 && (
+                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-6 text-center font-bold">
+                  {heartCount}
+                </span>
+              )}
+            </div>
           </div>
-          <div
-            onClick={() => {
-              fetchCartData();
-              handleDestination("/shopping-cart");
-            }}
-            className="px-3 py-2 rounded-md hover:bg-slate-100 cursor-pointer text-gray-700"
-          >
-            My Cart {cartCount > 0 && `(${cartCount})`}
-          </div>
-          <div
-            onClick={() => handleDestination("/account/wishlist")}
-            className="px-3 py-2 rounded-md hover:bg-slate-100 cursor-pointer text-gray-700"
-          >
-            My Wishlist {heartCount > 0 && `(${heartCount})`}
-          </div>
-          <div
-            onClick={logout}
-            className="px-3 py-2 rounded-md text-red-600 hover:bg-slate-100 cursor-pointer"
-          >
-            Logout
-          </div>
-        </>
-      ) : (
-        <>
-          <div
-            onClick={() => handleDestination("/login")}
-            className="px-3 py-2 rounded-md hover:bg-slate-100 cursor-pointer text-gray-700"
-          >
-            Login
-          </div>
-          <div
-            onClick={() => handleDestination("/sign-up")}
-            className="px-3 py-2 rounded-md hover:bg-slate-100 cursor-pointer text-gray-700"
-          >
-            Register
-          </div>
-        </>
+        </div>
       )}
 
-      <div className="border-t pt-4">
-        <h3 className="px-3 font-semibold">Categories</h3>
-        {menu.map((res, i) => (
-          <div key={i} className="pl-4">
-              {_.get(res, "main_category_name", "")}
-            {_.get(res, "sub_categories_details", []).map((sub, j) => (
-              <div
-                key={j}
-                onClick={() =>
-                  handleCategoryClick(
-                    res.main_category_name,
-                    sub.sub_category_name,
-                    res._id,
-                    sub._id
-                  )
-                }
-                className="px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-slate-100 cursor-pointer"
-              >
-                {sub.sub_category_name}
+      {/* Categories */}
+      <div className="bg-white rounded-2xl shadow-lg border border-yellow-100 p-4">
+        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <BsGrid className="text-yellow-600" />
+          Categories
+        </h3>
+        <div className="space-y-2">
+          {menu.map((res, i) => (
+            <div key={i} className="mb-3">
+              <div className="font-medium text-gray-700 px-3 py-2 bg-yellow-50 rounded-lg mb-1">
+                {_.get(res, "main_category_name", "")}
               </div>
-            ))}
+              {_.get(res, "sub_categories_details", []).map((sub, j) => (
+                <div
+                  key={j}
+                  onClick={() =>
+                    handleCategoryClick(
+                      res.main_category_name,
+                      sub.sub_category_name,
+                      res._id,
+                      sub._id
+                    )
+                  }
+                  className="px-3 py-2.5 text-sm text-gray-600 rounded-lg hover:bg-yellow-50 cursor-pointer transition-colors duration-200 ml-2"
+                >
+                  {sub.sub_category_name}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Support Section for Mobile */}
+      <div className="bg-white rounded-2xl shadow-lg border border-yellow-100 p-4 mt-4">
+        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <BsTelephone className="text-yellow-600" />
+          Support
+        </h3>
+        <a
+          href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-yellow-50 transition-colors duration-200 text-gray-700"
+        >
+          <IconHelper.WHATSAPP_ICON className="text-green-500 text-xl" />
+          <div>
+            <p className="font-medium">+91 95856 10000</p>
+            <p className="text-sm text-gray-500">Customer Support</p>
           </div>
-        ))}
+        </a>
       </div>
     </div>
   );
 
   return (
-    <div className="w-full">
+    <div className="w-full m-0">
       {/* Desktop Navbar */}
       <div
         className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-20 sticky top-0 z-40 ${
@@ -487,58 +722,73 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Navbar */}
+      {/* Mobile Top Bar */}
       <div
-        className={`block lg:hidden w-full fixed top-0 left-0 z-[9999] bg-[#f2c41a] ${
-          isScrolled ? "shadow-lg" : "shadow-md"
+        className={`block lg:hidden w-full fixed top-0 left-0 z-[9999] bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${
+          isScrolled ? "shadow-2xl" : "shadow-lg"
         }`}
       >
-        <div className="w-full h-14 flex items-center justify-between px-3">
-          <div className="flex items-center gap-4">
+        <div className="w-full h-16 flex items-center justify-between px-4">
+          {/* Left: Menu & Logo */}
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setMenuStatus(true)}
-              className="p-2 text-[#121621]"
+              className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95 shadow-lg"
             >
-              <IoMenu className="text-2xl" />
+              <IoMenu className="text-white text-xl" />
             </button>
-            <Link to="/" onClick={closeSearchBar}>
-              <img src={Logo} alt="Logo" className="h-8 object-contain" />
+            <Link 
+              to="/" 
+              onClick={closeSearchBar} 
+              className="flex items-center gap-2"
+            >
+              <img src={Logo} alt="Logo" className="h-7 object-contain" />
+              <span className="text-white font-bold text-sm hidden sm:block">Store</span>
             </Link>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowSearchBar(!showSearchBar)}
-              className="p-2 rounded-full text-[#121621]"
-            >
-              {showSearchBar ? <BsXLg /> : <BsSearch />}
-            </button>
-            {isAuth ? <UserMenu /> : <AuthButtons />}
-          </div>
+
+          {/* Right: Search */}
+          <button
+            onClick={() => setShowSearchBar(!showSearchBar)}
+            className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95 shadow-lg"
+          >
+            {showSearchBar ? (
+              <BsXLg className="text-white text-lg" />
+            ) : (
+              <BsSearch className="text-white text-lg" />
+            )}
+          </button>
         </div>
 
         {/* Expandable Search Bar */}
         <div
-          className={`w-full bg-[#f2c41a] transition-all duration-300 overflow-hidden border-t border-gray-200 ${
-            showSearchBar ? "max-h-20 py-3" : "max-h-0 py-0"
+          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 overflow-hidden ${
+            showSearchBar ? "max-h-28 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
           }`}
         >
-          <div className="px-3">
+          <div className="px-4">
             <SearchInput isMobile />
           </div>
         </div>
       </div>
 
-      {/* Drawer */}
+      {/* Bottom Navigation - Only on Mobile */}
+      <BottomNavigation />
+
+      {/* Mobile Menu Drawer */}
       <CustomDrawer isOpen={menuStatus} onClose={() => setMenuStatus(false)}>
         <MobileMenuContent />
       </CustomDrawer>
 
       {/* Spacer for mobile navbar */}
       <div
-        className={`block lg:hidden transition-all duration-300 ${
-          showSearchBar ? "h-32" : "h-14"
+        className={`block lg:hidden transition-all duration-500 ${
+          showSearchBar ? "h-28" : "h-16"
         }`}
       />
+      
+      {/* Bottom navigation spacer - This ensures content doesn't get hidden behind the bottom nav */}
+      <div className="block lg:hidden h-20" />
     </div>
   );
 };
