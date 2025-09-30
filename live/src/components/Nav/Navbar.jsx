@@ -366,7 +366,7 @@ const Navbar = () => {
 
   // Bottom Navigation Component - Only for Mobile
   const BottomNavigation = () => (
-    <div className="fixed top-[83vh] left-0 right-0 z-[9998] w-full block lg:hidden ">
+    <div className="fixed top-[75vh] left-0 right-0 z-[9998] w-full block lg:hidden ">
       <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
         <div className="flex items-center justify-around">
           {/* Home */}
