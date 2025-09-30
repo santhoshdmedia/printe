@@ -142,7 +142,7 @@ const Navbar = () => {
     );
   };
 
-  // Search Input Component
+  // Search Input Component - FIXED for mobile
   const SearchInput = ({ isMobile = false }) => (
     <div
       className={`relative ${isMobile ? "w-full" : "w-full  md:w-[35vw] lg:w-[25vw]"}`}
@@ -166,15 +166,23 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Search Results */}
+      {/* Search Results - FIXED for mobile visibility */}
       <div
-        className={`absolute top-full left-0 z-50 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-out mt-3 ${
+        className={`absolute top-full left-0 z-[10010] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-out mt-3 ${
           isExpanded && searchProduct
-            ? "opacity-100 max-h-[70vh] w-full visible border border-yellow-100"
+            ? "opacity-100 max-h-[60vh] w-full visible border border-yellow-100"
             : "opacity-0 max-h-0 invisible"
         }`}
+        style={{
+          // Ensure search results are always visible and not clipped
+          position: isMobile ? 'fixed' : 'absolute',
+          top: isMobile ? '100%' : '100%',
+          left: isMobile ? '1rem' : '0',
+          right: isMobile ? '1rem' : 'auto',
+          width: isMobile ? 'calc(100% - 2rem)' : '100%'
+        }}
       >
-        <div className="overflow-y-auto">
+        <div className="overflow-y-auto max-h-[60vh]">
           {isSearchingProducts ? (
             <div className="flex flex-col items-center justify-center py-8">
               <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mb-3"></div>
@@ -366,7 +374,7 @@ const Navbar = () => {
 
   // Bottom Navigation Component - Only for Mobile
   const BottomNavigation = () => (
-    <div className="fixed top-[75vh] left-0 right-0 z-[9998] w-full block lg:hidden ">
+    <div className="fixed top-[75vh] left-0 right-0 z-[9998] w-full block lg:hidden">
       <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
         <div className="flex items-center justify-around">
           {/* Home */}
@@ -507,7 +515,7 @@ const Navbar = () => {
     >
       {/* Overlay */}
       <div
-        className={`absolute inset-0   transition-opacity duration-500  ${
+        className={`absolute inset- transition-opacity duration-500 ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
@@ -542,8 +550,8 @@ const Navbar = () => {
                 {profileImageName}
               </div>
               <div>
-                <p className="text-black font-semibold">Hello, {userName}</p>
-                <p className="text-black/80 text-sm">Welcome back!</p>
+                <p className="text-white font-semibold">Hello, {userName}</p>
+                <p className="text-white/80 text-sm">Welcome back!</p>
               </div>
             </div>
           )}
@@ -760,13 +768,16 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Expandable Search Bar */}
+        {/* Expandable Search Bar - FIXED for search results visibility */}
         <div
-          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 overflow-hidden ${
+          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${
             showSearchBar ? "max-h-28 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
           }`}
+          style={{
+            overflow: showSearchBar ? 'visible' : 'hidden'
+          }}
         >
-          <div className="px-4">
+          <div className="px-4 relative">
             <SearchInput isMobile />
           </div>
         </div>
@@ -781,14 +792,14 @@ const Navbar = () => {
       </CustomDrawer>
 
       {/* Spacer for mobile navbar */}
-      <div
+      {/* <div
         className={`block lg:hidden transition-all duration-500 ${
           showSearchBar ? "h-28" : "h-16"
         }`}
-      />
+      /> */}
       
-      {/* Bottom navigation spacer - This ensures content doesn't get hidden behind the bottom nav */}
-      <div className="block lg:hidden h-20" />
+      {/* Bottom navigation spacer */}
+      {/* <div className="block lg:hidden h-20" /> */}
     </div>
   );
 };
