@@ -1,4 +1,4 @@
-const nodemailer = require("nodemailer");
+const nodemailer = require ("nodemailer");
 const { TemplateHelper } = require("./templateHelper");
 
 const transporter = nodemailer.createTransport({
@@ -55,6 +55,50 @@ const inquiryMail = async (values) => {
     console.log("Error sending email:", err);
   }
 };
+const otpMail = async (values) => {
+  try {
+    const result = await transporter.sendMail({
+      from: "santhoshprinte@gmail.com",
+      to: values.email,
+      subject: "Your OTP Verification Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+          <div style="max-width: 600px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.1);">
+            <h2 style="background:#007BFF; color: white; padding: 15px; border-radius: 5px; text-align: center; font-size: 22px; margin: 0;">
+              🔐 OTP Verification
+            </h2>
+            <div style="padding: 20px 0; text-align: center;">
+              <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+                Hello,<br>
+                Use the following OTP to complete your verification process:
+              </p>
+              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px dashed #007BFF; display: inline-block;">
+                <h1 style="color: #007BFF; font-size: 32px; letter-spacing: 8px; margin: 0; font-weight: bold;">
+                  ${values.otp}
+                </h1>
+              </div>
+              <p style="font-size: 14px; color: #666; margin-top: 20px;">
+                This OTP is valid for <strong>5 minutes</strong>.<br>
+                Do not share this code with anyone.
+              </p>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #ddd;">
+            <p style="text-align: center; font-size: 12px; color: #999;">
+              If you didn't request this OTP, please ignore this email.
+            </p>
+          </div>
+        </div>
+      `,
+    });
+
+    return true;
+  } catch (err) {
+    console.log("Error sending OTP email:", err);
+    return false;
+  }
+};
+
+
 
 const orderMail = async (values) => {
   try {
@@ -94,4 +138,4 @@ const orderStatusMail = async (values) => {
   }
 };
 
-module.exports = { sendMail, inquiryMail, orderMail, orderStatusMail };
+module.exports = { sendMail,otpMail, inquiryMail, orderMail, orderStatusMail };

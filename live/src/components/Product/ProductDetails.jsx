@@ -66,9 +66,9 @@ import {
 import { CiFaceSmile } from "react-icons/ci";
 import { CgSmileSad } from "react-icons/cg";
 import toast from "react-hot-toast";
-import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, CloseCircleOutlined,LoadingOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
-import { bulkOrder } from "../../helper/api_helper";
+import { bulkOrder,sendOtp,verifyOtp,resendOtp } from "../../helper/api_helper";
 
 export const CustomModal = ({
   open,
@@ -806,6 +806,58 @@ const calculateTotalSavings = () => {
 
   const Gst=_.get(data, "GST", 0);
   console.log(Gst);
+
+  const [otpSent, setOtpSent] = useState(false);
+const [emailVerified, setEmailVerified] = useState(false);
+const [sendingOtp, setSendingOtp] = useState(false);
+
+// Functions
+const handleSendOtp = async (email) => {
+  if (emailVerified) return;
+  
+  setSendingOtp(true);
+  try {
+    // Call your OTP sending API here
+    await resendOtp({email:email});
+    setOtpSent(true);
+    message.success('OTP sent to your email');
+  } catch (error) {
+    message.error('Failed to send OTP');
+  } finally {
+    setSendingOtp(false);
+  }
+};
+
+const handleVerifyOtp = async (otp) => {
+  try {
+    // Call your OTP verification API here
+    const email = form.getFieldValue('email');
+    const user = {email:email,otp:otp};
+    const response = await verifyOtp(user);
+    setEmailVerified(true);
+    message.success('Email verified successfully');
+  } catch (error) {
+    message.error('Invalid OTP');
+    form.setFields([{ name: 'otp', errors: ['Invalid OTP'] }]);
+  }
+};
+
+const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Mock API functions - replace with your actual API calls
+const sendOtpToEmail = async (email) => {
+  const user={email:email};
+  try {
+    const response = await sendOtp(user);
+    return response;
+  } catch (error) {
+    throw new Error('Failed to send OTP');
+  }
+};
+
   
 
   return (
@@ -1271,81 +1323,132 @@ const calculateTotalSavings = () => {
         </div>
         {/* Bulk Order Custom Modal */}
         <CustomModal
-          open={showBulkOrderForm}
-          onClose={() => setShowBulkOrderForm(false)}
-          title="Bulk Order Inquiry"
-          width={600}
+  open={showBulkOrderForm}
+  onClose={() => setShowBulkOrderForm(false)}
+  title="Bulk Order Inquiry"
+  width={600}
+>
+  <Form form={form} layout="vertical" onFinish={handleBulkOrderSubmit}>
+    <div className="space-y-4">
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item
+            label="Product Name"
+            name="product_name"
+            initialValue={_.get(data, "name", "")}
+          >
+            <Input disabled />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            label="Quantity"
+            name="quantity"
+            rules={[
+              { required: true, message: "Please enter quantity" },
+            ]}
+          >
+            <InputNumber min={1} className="w-full" addonAfter={unit} />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Form.Item
+        label="Email Address"
+        name="email"
+        rules={[
+          { required: true, message: "Please enter email" },
+          { type: "email", message: "Invalid email" },
+        ]}
+      >
+        <Input 
+          placeholder="your@email.com" 
+          suffix={
+            emailVerified ? (
+              <CheckCircleOutlined style={{ color: '#52c41a' }} />
+            ) : (
+              <LoadingOutlined spin={sendingOtp} />
+            )
+          }
+          onBlur={(e) => {
+            const email = e.target.value;
+            if (email && validateEmail(email)) {
+              handleSendOtp(email);
+            }
+          }}
+        />
+      </Form.Item>
+
+      {/* OTP Input Section */}
+      {otpSent && !emailVerified && (
+        <Form.Item
+          label="Enter OTP"
+          name="otp"
+          rules={[
+            { required: true, message: "Please enter OTP" },
+            { len: 6, message: "OTP must be 6 digits" }
+          ]}
         >
-          <Form form={form} layout="vertical" onFinish={handleBulkOrderSubmit}>
-            <div className="space-y-4">
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Product Name"
-                    name="product_name"
-                    initialValue={_.get(data, "name", "")}
-                  >
-                    <Input disabled />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Quantity"
-                    name="quantity"
-                    rules={[
-                      { required: true, message: "Please enter quantity" },
-                    ]}
-                  >
-                    <InputNumber min={1} className="w-full" addonAfter={unit} />
-                  </Form.Item>
-                </Col>
-              </Row>
+          <div className="flex items-center gap-3">
+            <Input.OTP 
+              length={6} 
+              onChange={(otp) => {
+                if (otp.length === 6) {
+                  handleVerifyOtp(otp);
+                }
+              }}
+              disabled={emailVerified}
+            />
+            <Button 
+              type="link" 
+              onClick={() => handleSendOtp(form.getFieldValue('email'))}
+              disabled={sendingOtp}
+            >
+              Resend OTP
+            </Button>
+          </div>
+        </Form.Item>
+      )}
 
-              <Form.Item
-                label="Email Address"
-                name="email"
-                rules={[
-                  { required: true, message: "Please enter email" },
-                  { type: "email", message: "Invalid email" },
-                ]}
-              >
-                <Input placeholder="your@email.com" />
-              </Form.Item>
+      <Form.Item
+        label="Mobile Number"
+        name="mobile"
+        rules={[
+          { required: true, message: "Please enter mobile number" },
+        ]}
+      >
+        <Input placeholder="+91 12345 67890" />
+      </Form.Item>
 
-              <Form.Item
-                label="Mobile Number"
-                name="mobile"
-                rules={[
-                  { required: true, message: "Please enter mobile number" },
-                ]}
-              >
-                <Input placeholder="+91 12345 67890" />
-              </Form.Item>
+      <Form.Item
+        label="Additional Requirements"
+        name="additional_requirements"
+      >
+        <TextArea
+          rows={3}
+          placeholder="Any special requirements or notes..."
+        />
+      </Form.Item>
 
-              <Form.Item
-                label="Additional Requirements"
-                name="additional_requirements"
-              >
-                <TextArea
-                  rows={3}
-                  placeholder="Any special requirements or notes..."
-                />
-              </Form.Item>
-
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => setShowBulkOrderForm(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button type="primary" htmlType="submit" className="flex-1">
-                  Submit Inquiry
-                </Button>
-              </div>
-            </div>
-          </Form>
-        </CustomModal>
+      <div className="flex gap-3">
+        <Button
+          onClick={() => setShowBulkOrderForm(false)}
+          className="flex-1"
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="primary" 
+          htmlType="submit" 
+          className="flex-1 bg-yellow-500"
+          disabled={!emailVerified}
+        >
+          Submit Inquiry
+        </Button>
+      </div>
+    </div>
+  </Form>
+</CustomModal>
 
         {/* Product Meta Information */}
         <div className="space-y-2">

@@ -133,6 +133,37 @@ export const getVariantPrice = async (id, key) => {
 export const getsubcat = async () => {
   return await axios.get(`${baseURL}/category/get_sub_category`);
 };
+// otp
+export const sendOtp = async (formdata) => {
+  return await axios.post(`${baseURL}/otp/send_otp`, formdata);
+};
+
+export const verifyOtp = async (formdata) => {
+  return await axios.post(`${baseURL}/otp/verify_otp`, formdata);
+};
+export const resendOtp = async (formdata) => {
+  return await axios.post(`${baseURL}/otp/resend_otp`, formdata);
+};
+
+// whatsapp
+export const sendWhatsAppOtp = async (formdata) => {
+  return await axios.post(`${baseURL}/whatsapp/send_otp`, formdata);
+}
+export const verifyWhatsAppOtp = async (formdata) => {
+  return await axios.post(`${baseURL}/whatsapp/verify_otp`, formdata);
+}
+export const resendWhatsAppOtp = async (formdata) => {
+  return await axios.post(`${baseURL}/whatsapp/resend_otp`, formdata);
+}
+
+
+
+
+
+
+
+
+
 
 //payment
 export const createOrderId = (data) => {

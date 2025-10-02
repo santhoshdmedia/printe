@@ -99,7 +99,7 @@ const {
   getSingleVendor,
   getSingleVendorName,
   VendorLogin,
-  VendorGetProfile
+  VendorGetProfile,
 } = require("../controller/vendor.controller");
 const {
   sendForgetPasswordMail,
@@ -126,7 +126,7 @@ const {
   addToShoppingCart,
   getMyShoppingCart,
   removeMyShoppingCart,
-  mergeCartsAfterLogin
+  mergeCartsAfterLogin,
 } = require("../controller/shoppingcart.controller");
 const {
   createvendorProduct,
@@ -135,12 +135,18 @@ const {
   togglevendorProductStatus,
   getvendorProductStats,
   getAllVendorProduct,
-  getSingleVendorProduct
+  getSingleVendorProduct,
 } = require("../controller/vendorProduct");
 const {
-  addBulkOrder,getBulkOrder
+  addBulkOrder,
+  getBulkOrder,
 } = require("../controller/bulkOrder.controler");
 
+const {
+  resendOtpHandler,
+  sendOtpHandler,
+  verifyOtpHandler,
+} = require("../controller/mailotp.controller");
 module.exports = {
   login,
   changePasswrod,
@@ -286,8 +292,12 @@ module.exports = {
 
   // clone
 
-// bulk
-getBulkOrder,
-addBulkOrder
+  // bulk
+  getBulkOrder,
+  addBulkOrder,
 
+  // mail otp
+  resendOtpHandler,
+  sendOtpHandler,
+  verifyOtpHandler,
 };

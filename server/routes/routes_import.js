@@ -14,9 +14,11 @@ const mail_routes = require("./mail.routes");
 const enquires_routes = require("./enquires.routes");
 const section_routes = require("./customersection.routes");
 const shopping_cart = require("./shopping_cartroutes");
-const teamRoutes = require("./GetteamRoute")
-const vendorProductRoutes = require("./venderproduct.routes")
-const BulkOrderRoutes = require("./bulkOrder.routers")
+const teamRoutes = require("./GetteamRoute");
+const vendorProductRoutes = require("./venderproduct.routes");
+const BulkOrderRoutes = require("./bulkOrder.routers");
+const OtpRoutes = require("./Otp.routes");
+const whatsappRoutes = require("./whatsapp.routes");
 
 
 
@@ -39,5 +41,7 @@ module.exports = {
   shopping_cart,
   teamRoutes,
   vendorProductRoutes,
-  BulkOrderRoutes
+  BulkOrderRoutes,
+  OtpRoutes,
+  whatsappRoutes
 };
