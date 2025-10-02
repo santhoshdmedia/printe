@@ -53,7 +53,7 @@ import {
   ERROR_NOTIFICATION,
 } from "../../helper/notification_helper";
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
-import { DISCOUNT_HELPER } from "../../helper/form_validation";
+import { DISCOUNT_HELPER,GST_DISCOUNT_HELPER } from "../../helper/form_validation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   HeartOutlined,
@@ -575,8 +575,15 @@ const ProductDetails = ({
     const mrpPrice = Number(_.get(data, "MRP_price", 0));
     const currentPrice = Number(_.get(checkOutState, "product_price", 0));
     const savings = mrpPrice - currentPrice;
-    return savings.toFixed(2);
+    const allSavings = savings * quantity;
+    return allSavings.toFixed(2);
 };
+
+const calculateTotalSavings = () => {
+    const totalSavings = calculateSavings();
+    const mrpSavings = calculateMRPSavings();
+    return (Number(totalSavings) + Number(mrpSavings)).toFixed(2);
+}
 
   
 
@@ -797,6 +804,10 @@ const ProductDetails = ({
     </div>
   );
 
+  const Gst=_.get(data, "GST", 0);
+  console.log(Gst);
+  
+
   return (
     <Spin
       spinning={loading}
@@ -857,7 +868,7 @@ const ProductDetails = ({
             </AnimatePresence>
 
             <motion.div
-              animate={{ scale: [1, 1.02, 1] }}
+              animate={{ scale: [1, 1.15, 1] }}
               transition={{
                 duration: 1.5,
                 repeat: Infinity,
@@ -1008,7 +1019,7 @@ const ProductDetails = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Text strong className="text-gray-800">
-                Total Price:
+                Deal Price:
               </Text>
               <div className="text-right flex items-baseline">
                 <Text delete className="text-md text-gray-500 mr-2">
@@ -1023,39 +1034,32 @@ const ProductDetails = ({
             </div>
 
             {/* Savings Alerts */}
-            <div className="space-y-2">
-              {calculateMRPSavings() > 0 && (
-                <Alert
-                  message={`You saved ${formatPrice(
-                    calculateMRPSavings()
-                  )} on MRP`}
-                  type="success"
-                  showIcon
-                  className="!py-2"
-                />
-              )}
-
-              {quantity && calculateSavings() > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Alert
-                    message={`Congratulations! Additionally you saved ${formatPrice(
-                      calculateSavings()
-                    )} (${discountPercentage.percentage}% quantity discount)`}
-                    type="info"
-                    showIcon
-                    className="!py-2"
-                  />
-                </motion.div>
-              )}
+       <div className="space-y-2">
+  {calculateMRPSavings() > 0 && (
+    <Alert
+      message={
+        <div>
+          <div>You saved {formatPrice(calculateMRPSavings())} on MRP</div>
+          {quantity && calculateSavings() > 0 && (
+            <div className="mt-1">
+              <div>Kudos! Additionally you saved {formatPrice(calculateSavings())} ({discountPercentage.percentage}% quantity discount)</div>
+              <div style={{ fontWeight: 'bold', fontSize: '1.125rem', marginTop: '4px' }}>
+                Total Savings: {formatPrice(calculateTotalSavings())}
+              </div>
             </div>
+          )}
+        </div>
+      }
+      type="success"
+      showIcon
+      className="!py-2"
+    />
+  )}
+</div>
 
             {quantity && (
-              <div className="text-sm text-gray-600">
-                <Text>
+              <div className="  text-gray-600">
+                <h1 className="!text-md  text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
                   (
                   <Text strong>
@@ -1067,7 +1071,25 @@ const ProductDetails = ({
                     )}
                   </Text>
                   / piece)
-                </Text>
+                </h1>
+              </div>
+            )}
+            {quantity && (
+              <div className="!text-[12px] text-gray-600">
+                <h1>
+                  Inclusive of all taxes for <span strong>{quantity}</span> Qty
+                  (
+                  <span className="font-bold">
+                    {formatPrice(
+                      GST_DISCOUNT_HELPER(
+                        discountPercentage.percentage,
+                        Number(_.get(checkOutState, "product_price", 0)),
+                        Gst
+                      )
+                    )}
+                  </span>
+                  / piece)
+                </h1>
               </div>
             )}
           </div>
