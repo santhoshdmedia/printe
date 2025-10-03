@@ -599,6 +599,7 @@ const calculateTotalSavings = () => {
       return quantityDiscounts.map((item) => ({
         value: Number(item.quantity),
         label: `${item.quantity}`,
+        Free_Delivery:item.Free_Deliverey,
         discount: Number(item.Customer_discount),
         uuid: item.uniqe_id,
         stats: item.recommended_stats,
@@ -663,9 +664,9 @@ const calculateTotalSavings = () => {
               : discountPercentage.percentage,
             Number(_.get(checkOutState, "product_price", 0))
           );
-
           const totalPrice = unitPrice * item.value;
           const isSelected = quantity === item.value;
+          
 
           return (
             <div
@@ -697,6 +698,12 @@ const calculateTotalSavings = () => {
                   <span className="text-green-600 text-sm font-medium inline-flex items-center mt-1">
                     <CheckCircleOutlined className="mr-1" />
                     {item.discount}% discount
+                  </span>
+                )}
+                {quantityType === "dropdown" && item.Free_Delivery  && (
+                  <span className="text-green-600 text-sm font-medium inline-flex items-center mt-1">
+                    <CheckCircleOutlined className="mr-1" />
+                    Free Delivery
                   </span>
                 )}
               </div>
@@ -847,16 +854,7 @@ const validateEmail = (email) => {
   return emailRegex.test(email);
 };
 
-// Mock API functions - replace with your actual API calls
-const sendOtpToEmail = async (email) => {
-  const user={email:email};
-  try {
-    const response = await sendOtp(user);
-    return response;
-  } catch (error) {
-    throw new Error('Failed to send OTP');
-  }
-};
+
 
   
 
@@ -952,7 +950,7 @@ const sendOtpToEmail = async (email) => {
           <h2 className="text-xl font-semibold">
             {_.get(data, "product_description_tittle", "")}
           </h2>
-          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5">
+          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 w-[70%]">
             <li>{_.get(data, "Point_one", "")}</li>
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
