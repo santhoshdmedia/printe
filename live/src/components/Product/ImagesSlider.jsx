@@ -27,6 +27,14 @@ const ImagesSlider = ({ imageList, data }) => {
   const imageOnClickHandler = (id) => {
     setImageSelected(imageList[id].path);
     setActiveIndex(id);
+    scrollToTop();
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 80,
+      behavior: "smooth",
+    });
   };
 
   const handleMouseMove = (e) => {

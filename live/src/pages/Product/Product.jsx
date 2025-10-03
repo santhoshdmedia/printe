@@ -114,7 +114,7 @@ const Product = () => {
             </div>
           </div>
 
-          <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
+          <div className="mt-8 bg-white rounded-xl shadow-sm p-6 border">
             <OverViewDetails data={product} />
           </div>
 

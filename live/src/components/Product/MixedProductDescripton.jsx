@@ -7,7 +7,7 @@ const MixedProductDescripton = ({ res }) => {
     <div>
       {_.get(res, "tab_type", "") === "Editor" && (
         <>
-          <div dangerouslySetInnerHTML={{ __html: _.get(res, "description", "") }} className="lg:text-sm leading-6 text-justify font-primary py-2 text-wrap"></div>
+          <div dangerouslySetInnerHTML={{ __html: _.get(res, "description", "") }} className="lg:text-sm leading-6 text-justify font-primary py-2 text-wrap h-[400px] overflow-y-auto pr-5"></div>
         </>
       )}
       {_.get(res, "tab_type", "") === "Table" && (

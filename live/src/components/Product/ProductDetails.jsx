@@ -68,7 +68,7 @@ import { CgSmileSad } from "react-icons/cg";
 import toast from "react-hot-toast";
 import { CheckCircleOutlined, CloseCircleOutlined,LoadingOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
-import { bulkOrder,sendOtp,verifyOtp,resendOtp } from "../../helper/api_helper";
+import { bulkOrder,sendOtp,verifyOtp,resendOtp,sendWhatsAppOtp,verifyWhatsAppOtp,resendWhatsAppOtp } from "../../helper/api_helper";
 
 export const CustomModal = ({
   open,
@@ -100,7 +100,7 @@ export const CustomModal = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-start justify-center p-2  ${
+      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition}  ${
         isMobile ? "items-end" : "items-center"
       }`}
     >
@@ -871,7 +871,7 @@ const sendOtpToEmail = async (email) => {
         {/* Product Header */}
         <div className="space-y-1 flex justify-between items-start">
           <div className="flex-1">
-            <h1 className="text-gray-900 font-bold mb-2 text-3xl md:text-4xl lg:text-5xl">
+            <h1 className="text-gray-900 font-bold mb-2 text-3xl md:text-4xl lg:text-[2.8rem] leading-tight w-[80%]">
               {data.name}
             </h1>
             <div className="flex flex-wrap gap-2">
@@ -1222,7 +1222,7 @@ const sendOtpToEmail = async (email) => {
               />
 
               {checkOutState.product_design_file && (
-                <div className="mt-2 flex items-center justify-between">
+                <div className="mt-2 flex items-center justify-between flex-row-reverse">
                   <Checkbox
                     checked={checked}
                     onChange={(e) => setChecked(e.target.checked)}
@@ -1296,7 +1296,7 @@ const sendOtpToEmail = async (email) => {
             )}
           </div>
 
-          <Divider className="!my-4" />
+          <Divider className="!my-4  " />
           {/* Custom Modal for Design Preview */}
           <CustomModal
             open={designPreviewVisible}
@@ -1311,9 +1311,10 @@ const sendOtpToEmail = async (email) => {
                 Close
               </Button>,
             ]}
+            topPosition="top-[-170%] "
           >
             <div className="flex justify-center">
-              <Image
+              <img
                 src={checkOutState.product_design_file}
                 alt="Design Preview"
                 style={{ maxHeight: "400px" }}
@@ -1451,7 +1452,7 @@ const sendOtpToEmail = async (email) => {
 </CustomModal>
 
         {/* Product Meta Information */}
-        <div className="space-y-2">
+        <div className="space-y-2 z-0 relative">
           <div className="flex items-center">
             <Text strong className="!text-gray-800 !w-20">
               Categories:

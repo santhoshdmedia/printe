@@ -72,78 +72,88 @@ const Layout = () => {
       <div className="sticky top-[40px] z-[999] w-full">
         <Navbar />
       </div>
-      <div className="sticky top-[120px] z-[20]">
+      <div className="sticky top-[50px] z-[20]">
         <NavMenu />
       </div>
 
       <div className="lg:pt-0 pt-10 overflow-x-hidden max-w-[2000px] mx-auto ">
         <Outlet />
       </div>
-
-      <Footer />
-      <div
+         <div
         className={`${
           showIcon ? "" : "hidden"
-        } fixed bottom-8 right-8 cursor-pointer z-50 bg-green-500 rounded-full lg:p-4 p-3`}
+        } sticky bottom-24 left-[89.1%] cursor-pointer z-50 w-fit h-fit `}
       >
-        <a
-          href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
-          target="_blank"
-          rel="noopener noreferrer "
+        <div
+          className={` transition-all transition-500  sticky bottom-24 !left-[90%] cursor-pointer z-50   rounded-full lg:p-4 p-3`}
         >
-          <img
-            src={ImageHelper.WHATSAPP_IMG}
-            alt="WhatsApp Icon"
-            className="w-7 h-7  "
-          />
-        </a>
+          <span className="">
+            <ImageHelper.UP_arrow
+              className="text-yellow-400 text-5xl hover:animate-bounce"
+              onClick={scrollToTop}
+            />
+          </span>
+        </div>
       </div>
-
       <div
         className={`${
           showIcon ? "" : "hidden"
-        }  transition-all transition-500  fixed bottom-24 right-6 cursor-pointer z-50   rounded-full lg:p-4 p-3`}
+        } sticky bottom-8 left-[90%] cursor-pointer z-50 w-fit h-fit `}
       >
-        <span className="">
-          <ImageHelper.UP_arrow
-            className="text-yellow-400 text-5xl hover:animate-bounce"
-            onClick={scrollToTop}
-          />
-        </span>
+        <div
+          className={`${
+            showIcon ? "" : "hidden"
+          } sticky bottom-8 right-8 cursor-pointer z-50 bg-green-500 rounded-full lg:p-4 p-3`}
+        >
+          <a
+            href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
+            target="_blank"
+            rel="noopener noreferrer "
+          >
+            <img
+              src={ImageHelper.WHATSAPP_IMG}
+              alt="WhatsApp Icon"
+              className="w-7 h-7  "
+            />
+          </a>
+        </div>
       </div>
+     
+      <Footer />
+      
       {/* <div className="relative bottom-[90vh]">
         <BottomNavigation/>
       </div> */}
-      
+
       {/* React Hot Toast Configuration - Fixed z-index */}
-      <Toaster 
+      <Toaster
         position="top-right"
         reverseOrder={true}
         containerStyle={{
-          position: 'fixed',
-          top: '400px', // Adjust this value based on your navbar height
-          right: '20px',
+          position: "fixed",
+          top: "400px", // Adjust this value based on your navbar height
+          right: "20px",
           zIndex: 1000, // Higher than navbar z-index (999)
         }}
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#28aa59',
-            color: '#fff',
+            background: "#28aa59",
+            color: "#fff",
             zIndex: 1001, // Even higher than container
           },
           success: {
             duration: 3000,
             theme: {
-              primary: 'green',
-              secondary: 'black',
+              primary: "green",
+              secondary: "black",
             },
           },
           error: {
             duration: 5000,
             style: {
-              background: '#ff4d4f',
-              color: '#fff',
+              background: "#ff4d4f",
+              color: "#fff",
               zIndex: 1001,
             },
           },
