@@ -5,7 +5,7 @@ const optionSchema = new mongoose.Schema(
     value: { type: String },
     _id: { type: String },
     variant_type: { type: String },
-    image_name: { type: String },
+   image_names: { type: Array }
   },
   { _id: false }
 );
@@ -14,7 +14,8 @@ const variantSchema = new mongoose.Schema(
   {
     variant_name: { type: String },
     variant_type: { type: String },
-    options: [optionSchema],
+    
+    options: {type: Array},
     _id: { type: Number },
   },
   { _id: false }

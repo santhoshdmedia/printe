@@ -204,43 +204,38 @@ const CustomPopover = ({
     </div>
   );
 };
+import { PincodeDeliveryCalculator } from "./ProductDetails";
 
-const ProductDetails = ({
+
+const ProductDetailVarient = ({
   data = {
     _id: "",
     name: "",
     desc: "",
-    images: [{ key: 1, path: "" }],
-    variants: [{ name: "", options: [{ value: "", price: 0 }] }],
-    label: [],
+    images: [],
+    variants: [],
+    variants_price: [],
+    type: "Variable Product",
   },
+  onColorChange, 
+  selectedColor: propSelectedColor, 
 }) => {
   const { user } = useSelector((state) => state.authSlice);
   const [form] = Form.useForm();
 
-  const product_type = _.get(data, "type", "Stand Alone Product");
+  const product_type = _.get(data, "type", "Variable Product");
+  
+  // Get initial price based on user role
   let price = "";
-
   if (user.role === "Dealer") {
-    price =
-      product_type === "Stand Alone Product"
-        ? _.get(data, "Deler_product_price", 0) ||
-          _.get(data, "single_product_price", 0)
-        : _.get(data, "variants_price[0].Deler_product_price", "");
+    price = _.get(data, "variants_price[0].Deler_product_price", 0);
   } else if (user.role === "Corporate") {
-    price =
-      product_type === "Stand Alone Product"
-        ? _.get(data, "single_product_price", 0) ||
-          _.get(data, "corporate_product_price", 0)
-        : _.get(data, "variants_price[0].corporate_product_price", "");
+    price = _.get(data, "variants_price[0].corporate_product_price", 0);
   } else {
-    price =
-      product_type === "Stand Alone Product"
-        ? _.get(data, "single_product_price", 0) ||
-          _.get(data, "customer_product_price", 0)
-        : _.get(data, "variants_price[0].customer_product_price", "");
+    price = _.get(data, "variants_price[0].customer_product_price", 0);
   }
 
+  // State management
   const [totalPrice, setTotalPrice] = useState(price);
   const [quantity, setQuantity] = useState(null);
   const [discountPercentage, setDiscountPercentage] = useState({
@@ -248,13 +243,13 @@ const ProductDetails = ({
     percentage: 0,
   });
   const [variant, setVariant] = useState([]);
-  const [currentPriceSplitup, setCurrentPriceSplitup] = useState([]);
+  const [currentPriceSplitup, setCurrentPriceSplitup] = useState({});
   const [checked, setChecked] = useState(false);
   const [error, setError] = useState("");
   const [maximum_quantity, setMaimumQuantity] = useState();
-  const [freeDelivery, setFreeDelivery] = useState(false); // New state for free delivery
+  const [freeDelivery, setFreeDelivery] = useState(false);
   const [checkOutState, setCheckOutState] = useState({
-    product_image: _.get(data, "images[0].path", ""),
+    product_image: _.get(data, "images[0]", ""),
     product_design_file: "",
     product_name: _.get(data, "name", ""),
     category_name: _.get(data, "category_details.main_category_name", ""),
@@ -291,6 +286,9 @@ const ProductDetails = ({
   const [hasDiscount, setHasDiscount] = useState(false);
   const [showBulkOrderForm, setShowBulkOrderForm] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  
+  // Use local state for selectedColor with prop as initial value
+  const [selectedColor, setSelectedColor] = useState(propSelectedColor || "");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -298,17 +296,57 @@ const ProductDetails = ({
     (state) => state.publicSlice
   );
 
-  // Get quantity discounts from backend
+  // Get product data
   const quantityDiscounts = _.get(data, "quantity_discount_splitup", []);
   const dropdownGap = _.get(data, "dropdown_gap", 100);
   const quantityType = _.get(data, "quantity_type", "dropdown");
   const maxQuantity = _.get(data, "max_quantity", 10000);
-  const unit = _.get(data, "unit", "");
+  const unit = _.get(data, "unit", "Box");
   const productionTime = _.get(data, "Production_time", "");
   const ArrangeTime = _.get(data, "Stock_Arrangement_time", "");
   const processing_item = Number(productionTime) + Number(ArrangeTime);
+  const Gst = _.get(data, "GST", 0);
 
+  // Get color variants
+  const colorVariants = data.variants?.find(v => v.variant_name === "Colour") || { options: [] };
+
+  // Initialize variants and prices
   useEffect(() => {
+    if (product_type === "Variable Product" && data.variants_price?.length > 0) {
+      const firstVariant = data.variants_price[0];
+      const firstColor = _.get(firstVariant, "Colour", "");
+      
+      // Use the propSelectedColor if available, otherwise use first color
+      const initialColor = propSelectedColor || firstColor;
+      
+      setSelectedColor(initialColor);
+      setCurrentPriceSplitup(firstVariant);
+      setVariant([initialColor]);
+      
+      // Set price based on user role
+      let price = 0;
+      if (user.role === "Dealer") {
+        price = _.get(firstVariant, "Deler_product_price", 0);
+      } else if (user.role === "Corporate") {
+        price = _.get(firstVariant, "corporate_product_price", 0);
+      } else {
+        price = _.get(firstVariant, "customer_product_price", 0);
+      }
+      
+      setCheckOutState((prevState) => ({
+        ...prevState,
+        product_price: price,
+        product_variants: firstVariant,
+      }));
+      setStockCount(_.get(firstVariant, "stock_count", 0));
+      
+      // Notify parent component about initial color selection
+      if (onColorChange && !propSelectedColor) {
+        onColorChange(initialColor);
+      }
+    }
+
+    // Initialize quantity
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
       const initialQuantity = Number(
         _.get(quantityDiscounts, "[0].quantity", 500)
@@ -340,7 +378,7 @@ const ProductDetails = ({
         uuid: _.get(quantityDiscounts, "[0].uniqe_id", ""),
         percentage: initialDiscount,
       });
-      setFreeDelivery(initialFreeDelivery); // Set initial free delivery status
+      setFreeDelivery(initialFreeDelivery);
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: initialQuantity,
@@ -355,8 +393,16 @@ const ProductDetails = ({
         product_quantity: 0,
       }));
     }
-  }, [quantityDiscounts, quantityType, maxQuantity]);
+  }, [quantityDiscounts, quantityType, maxQuantity, data.variants_price, user.role, propSelectedColor, onColorChange]);
 
+  // Update local selectedColor when prop changes
+  useEffect(() => {
+    if (propSelectedColor && propSelectedColor !== selectedColor) {
+      setSelectedColor(propSelectedColor);
+    }
+  }, [propSelectedColor]);
+
+  // Rating and review effects
   useEffect(() => {
     const ratingSum = rate.reduce(
       (totalSum, num) => totalSum + Math.round(num.rating),
@@ -378,66 +424,47 @@ const ProductDetails = ({
     }
   }, [reviewData]);
 
-  useEffect(() => {
-    if (product_type === "Stand Alone Product") {
-      setCheckOutState((prevState) => ({
-        ...prevState,
-        product_price: price,
-      }));
-      setStockCount(_.get(data, "stock_count", 0));
-    } else if (_.isEmpty(currentPriceSplitup)) {
-      let items = _.get(product, "variants_price", []).map((res) => {
-        return Number(res.price);
-      });
-      let itemKeys = _.get(product, "variants_price", []).map((res) => {
-        return res.key;
-      });
-      let lowest_price_index = items.indexOf(Math.min(...items));
-      setVariant(String(itemKeys[lowest_price_index]).split("-"));
-      setCurrentPriceSplitup(
-        _.get(product, `variants_price[${lowest_price_index}]`, {})
-      );
-      let stock_count = _.get(
-        product,
-        `variants_price[${lowest_price_index}].stock`,
-        {}
-      );
-      let product_price = _.get(
-        product,
-        `variants_price[${lowest_price_index}].price`,
-        {}
-      );
-
-      setCheckOutState((prevState) => ({
-        ...prevState,
-        product_price: product_price,
-        product_variants: _.get(
-          product,
-          `variants_price[${lowest_price_index}]`,
-          {}
-        ),
-      }));
-      setStockCount(stock_count);
-    }
-  }, [product, product_type, price, data]);
-
+  // Handle color selection
   const handleOnChangeSelectOption = async (selectedValue, index) => {
     try {
       const updatedVariant = [...variant];
       updatedVariant[index] = selectedValue;
+      setVariant(updatedVariant);
+      
+      // Find the variant price data for the selected variant
+      const variantPriceData = data.variants_price.find(
+        (vp) => vp.Colour === selectedValue
+      );
 
-      setVariant((prev) => updatedVariant);
-      const key = updatedVariant.join("-");
-      const result = await getVariantPrice(data._id, { key: key });
-      setCurrentPriceSplitup(_.get(result, "data.data", {}));
-      setCheckOutState((prevState) => ({
-        ...prevState,
-        product_price: _.get(result, "data.data.price", {}),
-        product_variants: _.get(result, "data.data", {}),
-      }));
-      setStockCount(_.get(result, "data.data.stock", {}));
+      if (variantPriceData) {
+        setCurrentPriceSplitup(variantPriceData);
+        setSelectedColor(selectedValue);
+        
+        // Set price based on user role
+        let price = 0;
+        if (user.role === "Dealer") {
+          price = _.get(variantPriceData, "Deler_product_price", 0);
+        } else if (user.role === "Corporate") {
+          price = _.get(variantPriceData, "corporate_product_price", 0);
+        } else {
+          price = _.get(variantPriceData, "customer_product_price", 0);
+        }
+
+        setCheckOutState((prevState) => ({
+          ...prevState,
+          product_price: price,
+          product_variants: variantPriceData,
+        }));
+        setStockCount(_.get(variantPriceData, "stock_count", 0));
+
+        // Notify parent component about color change for image update
+        if (onColorChange && typeof onColorChange === 'function') {
+          onColorChange(selectedValue);
+        }
+      }
     } catch (err) {
-      console.log(err);
+      console.log("Error in handleOnChangeSelectOption:", err);
+      toast.error("Failed to change color variant");
     }
   };
 
@@ -498,11 +525,9 @@ const ProductDetails = ({
       checkOutState.FreeDelivery = freeDelivery;
       checkOutState.final_total = Number(
         checkOutState?.product_price * checkOutState.product_quantity
-
       );
 
       const result = await addToShoppingCart(checkOutState);
-      console.log(result);
 
       Swal.fire({
         title: "Product Added To Cart",
@@ -563,7 +588,9 @@ const ProductDetails = ({
       return _.get(data, "stocks_status", "") === "Don't Track Stocks"
         ? true
         : Number(stock) > Number(quantity);
-    } catch (err) {}
+    } catch (err) {
+      return false;
+    }
   };
 
   // Format price functions
@@ -600,7 +627,7 @@ const ProductDetails = ({
   };
 
   const calculateMRPSavings = () => {
-    const mrpPrice = Number(_.get(data, "MRP_price", 0));
+    const mrpPrice = Number(_.get(currentPriceSplitup, "MRP_price", 0));
     const currentPrice = Number(_.get(checkOutState, "product_price", 0));
     const savings = mrpPrice - currentPrice;
     const allSavings = savings * quantity;
@@ -841,13 +868,12 @@ const ProductDetails = ({
     </div>
   );
 
-  const Gst = _.get(data, "GST", 0);
-
+  // OTP State
   const [otpSent, setOtpSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
 
-  // Functions
+  // OTP Functions
   const handleSendOtp = async (email) => {
     if (emailVerified) return;
 
@@ -953,7 +979,7 @@ const ProductDetails = ({
               <div className="flex items-baseline gap-2">
                 <span className="text-white/70 text-xs line-through">
                   ₹
-                  {_.get(data, "MRP_price", 0) ||
+                  {_.get(currentPriceSplitup, "MRP_price", 0) ||
                     Number(_.get(checkOutState, "product_price", 0)) + 50}
                 </span>
                 <h3 className="text-white text-base font-semibold">
@@ -987,7 +1013,41 @@ const ProductDetails = ({
           </ul>
         </div>
 
-        {/* Quantity and Variants Section */}
+        {/* Color Variants Section */}
+        {colorVariants.options.length > 0 && (
+          <div className="w-full space-y-2">
+            <Text strong className="block mb-2">
+              Colour:
+            </Text>
+            <div className="flex flex-wrap gap-3">
+              {colorVariants.options.map((option, index) => (
+                <div
+                  key={index}
+                  className={`flex flex-col items-center cursor-pointer transition-all duration-200 ${
+                    selectedColor === option.value
+                      ? "ring-2 ring-blue-500 rounded-lg"
+                      : "hover:ring-2 hover:ring-blue-300 rounded-lg"
+                  }`}
+                  onClick={() => handleOnChangeSelectOption(option.value, 0)}
+                >
+                  <div
+                    className="w-16 h-16 rounded-lg border border-gray-200 overflow-hidden"
+                    style={{
+                      backgroundImage: `url(${option.image_names[0]})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  />
+                  <Text className="text-xs mt-1 text-center capitalize">
+                    {option.value}
+                  </Text>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Quantity Section */}
         <div className="w-full flex flex-wrap space-y-2">
           <div className="flex items-center gap-2 space-x-1">
             <Text strong className="block mb-2">
@@ -1006,73 +1066,6 @@ const ProductDetails = ({
           </div>
 
           <div className="grid grid-cols-2">
-            {product_type !== "Stand Alone Product" &&
-              !_.isEmpty(currentPriceSplitup) && (
-                <>
-                  {_.get(data, "variants", []).map((variant, index) => (
-                    <div className="flex items-center gap-2 space-x-1">
-                      <Text strong className="block mb-2">
-                        {variant.variant_name}:
-                      </Text>
-                      {variant.variant_type !== "image_variant" ? (
-                        <Select
-                          defaultValue={_.get(
-                            currentPriceSplitup,
-                            `[${variant.variant_name}]`,
-                            ""
-                          )}
-                          options={variant.options.map((opt) => ({
-                            value: opt.value,
-                            label: opt.value,
-                          }))}
-                          onChange={(value) =>
-                            handleOnChangeSelectOption(value, index)
-                          }
-                          placeholder={`Select ${variant.variant_name}`}
-                        />
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {variant.options.map((option, optionIndex) => (
-                            <div
-                              key={optionIndex}
-                              className="flex flex-col items-center"
-                            >
-                              <div
-                                onClick={() =>
-                                  handleOnChangeSelectOption(
-                                    option.value,
-                                    index
-                                  )
-                                }
-                                className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
-                                  _.get(
-                                    currentPriceSplitup,
-                                    `[${variant.variant_name}]`,
-                                    ""
-                                  ) === option.value
-                                    ? "border-blue-500 shadow-md"
-                                    : "border-gray-300 hover:border-blue-400"
-                                }`}
-                                style={{ width: "50px", height: "50px" }}
-                              >
-                                <img
-                                  src={option.image_name}
-                                  className="w-full h-full object-contain"
-                                  alt={option.value}
-                                />
-                              </div>
-                              <Text className="text-xs mt-1 text-center">
-                                {option.value}
-                              </Text>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
-
             {_.get(data, "name", "") === "Matt Finish" && (
               <div className="flex items-center gap-2 space-x-1">
                 <Checkbox
@@ -1095,7 +1088,7 @@ const ProductDetails = ({
               </Text>
               <div className="text-right flex items-baseline">
                 <Text delete className="text-md text-gray-500 mr-2">
-                  MRP {formatPrice(_.get(data, "MRP_price", 0))}
+                  MRP {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
@@ -1143,8 +1136,8 @@ const ProductDetails = ({
             </div>
 
             {quantity && (
-              <div className="  text-gray-600">
-                <h1 className="!text-md  text-gray-600">
+              <div className="text-gray-600">
+                <h1 className="!text-md text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
                   (
                   <Text strong>
@@ -1220,7 +1213,7 @@ const ProductDetails = ({
             </Text>
             <PincodeDeliveryCalculator
               Production={processing_item}
-              freeDelivery={freeDelivery} // Pass freeDelivery status
+              freeDelivery={freeDelivery}
             />
           </motion.div>
         </Card>
@@ -1332,7 +1325,8 @@ const ProductDetails = ({
             )}
           </div>
 
-          <Divider className="!my-4  " />
+          <Divider className="!my-4" />
+          
           {/* Custom Modal for Design Preview */}
           <CustomModal
             open={designPreviewVisible}
@@ -1347,7 +1341,7 @@ const ProductDetails = ({
                 Close
               </Button>,
             ]}
-            topPosition="top-[-170%] "
+            topPosition="top-[-170%]"
           >
             <div className="flex justify-center">
               <img
@@ -1358,6 +1352,7 @@ const ProductDetails = ({
             </div>
           </CustomModal>
         </div>
+
         {/* Bulk Order Custom Modal */}
         <CustomModal
           open={showBulkOrderForm}
@@ -1509,332 +1504,4 @@ const ProductDetails = ({
   );
 };
 
-export default ProductDetails;
-
-import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
-
-export const PincodeDeliveryCalculator = ({ Production, freeDelivery }) => {
-  const [pincode, setPincode] = useState("");
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [state, setState] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isValidatingPincode, setIsValidatingPincode] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [isPincodeValid, setIsPincodeValid] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const stateDeliveryDays = {
-    maharashtra: { days: 2, name: "Maharashtra" },
-    gujarat: { days: 3, name: "Gujarat" },
-    karnataka: { days: 4, name: "Karnataka" },
-    "tamil nadu": { days: 3, name: "Tamil Nadu" },
-    kerala: { days: 6, name: "Kerala" },
-    delhi: { days: 7, name: "Delhi" },
-    default: { days: 3, name: "Other States" },
-  };
-
-  const pincodeToStateMap = {
-    400: "maharashtra",
-    395: "gujarat",
-    560: "karnataka",
-    600: "tamil nadu",
-    682: "kerala",
-    110: "delhi",
-  };
-
-  const getStateFromPincode = (pincode) => {
-    const prefix = pincode.substring(0, 3);
-    return pincodeToStateMap[prefix] || "default";
-  };
-
-  // Calculate production completion date only (without delivery days)
-  const calculateProductionDate = () => {
-    const today = new Date();
-    const productionTime = Production || 0;
-
-    let productionDate = new Date(today);
-    productionDate.setDate(productionDate.getDate() + Number(productionTime));
-
-    // Skip weekends for production time
-    let addedDays = 0;
-    while (addedDays < productionTime) {
-      productionDate.setDate(productionDate.getDate() + 1);
-      if (productionDate.getDay() !== 0 && productionDate.getDay() !== 6) {
-        addedDays++;
-      }
-    }
-
-    return productionDate.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  // Calculate delivery date (production + delivery days)
-  const calculateDeliveryDate = (state = "tamil nadu") => {
-    const { days: deliveryDays } =
-      stateDeliveryDays[state] || stateDeliveryDays.default;
-    const today = new Date();
-    const productionTime = Production || 0;
-
-    let deliveryDate = new Date(today);
-    deliveryDate.setDate(deliveryDate.getDate() + Number(productionTime));
-
-    let totalDays = productionTime + deliveryDays;
-    let addedDays = 0;
-
-    while (addedDays < totalDays) {
-      deliveryDate.setDate(deliveryDate.getDate() + 1);
-      if (deliveryDate.getDay() !== 0 && deliveryDate.getDay() !== 6) {
-        addedDays++;
-      }
-    }
-
-    return deliveryDate.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const validatePincode = async (pincode) => {
-    setIsValidatingPincode(true);
-
-    // Simulate API validation
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const isValid = /^\d{6}$/.test(pincode);
-    setIsPincodeValid(isValid);
-
-    if (isValid) {
-      const stateKey = getStateFromPincode(pincode);
-      setState(
-        stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name
-      );
-      const date = calculateDeliveryDate(stateKey);
-      setDeliveryDate(date);
-      setError("");
-    } else {
-      setError("Please enter a valid 6-digit pincode");
-      setDeliveryDate("");
-      setState("");
-    }
-
-    setIsValidatingPincode(false);
-  };
-
-  const handlePincodeChange = (e) => {
-    const value = e.target.value.replace(/\D/g, "");
-    setPincode(value.slice(0, 6));
-    setIsPincodeValid(null);
-    setState("");
-    setDeliveryDate("");
-    setError("");
-
-    if (value.length === 6) {
-      validatePincode(value);
-    }
-  };
-
-  const extractPincodeFromDisplayName = (displayName) => {
-    const pincodeMatch = displayName.match(/\b\d{6}\b/);
-    return pincodeMatch ? pincodeMatch[0] : null;
-  };
-
-  const handleGeolocationError = (error) => {
-    switch (error.code) {
-      case error.PERMISSION_DENIED:
-        toast.error(
-          "Location access denied. Please enable location permissions."
-        );
-        break;
-      case error.POSITION_UNAVAILABLE:
-        toast.error(
-          "Location information unavailable. Please check your GPS settings."
-        );
-        break;
-      case error.TIMEOUT:
-        toast.error("Location request timed out. Please try again.");
-        break;
-      default:
-        toast.error("Failed to get location. Please enter pincode manually.");
-    }
-  };
-
-  const checkLocationPermission = async () => {
-    if (!navigator.permissions) return true;
-
-    try {
-      const permissionStatus = await navigator.permissions.query({
-        name: "geolocation",
-      });
-      return permissionStatus.state !== "denied";
-    } catch {
-      return true;
-    }
-  };
-
-  const getPincodeByGPS = async () => {
-    setIsGettingLocation(true);
-    setError("");
-
-    try {
-      if (!navigator.geolocation) {
-        throw new Error("Geolocation not supported");
-      }
-
-      const position = await new Promise((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: 15000,
-          enableHighAccuracy: true,
-          maximumAge: 300000,
-        })
-      );
-
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
-      );
-
-      const data = await response.json();
-      const detectedPincode =
-        data.address?.postcode ||
-        extractPincodeFromDisplayName(data.display_name);
-
-      if (detectedPincode) {
-        setPincode(detectedPincode);
-        validatePincode(detectedPincode);
-        toast.success(`📍 Pincode detected: ${detectedPincode}`);
-      } else {
-        throw new Error("No pincode found");
-      }
-    } catch (error) {
-      handleGeolocationError(error);
-    } finally {
-      setIsGettingLocation(false);
-    }
-  };
-
-  const getPincodeByGPSWithPermissionCheck = async () => {
-    const hasPermission = await checkLocationPermission();
-    hasPermission
-      ? await getPincodeByGPS()
-      : toast.error("Location permission denied");
-  };
-
-  // Delivery Info Content for Custom Modal
-  const DeliveryInfoContent = () => (
-    <div className="delivery-info-content">
-      <ul className="space-y-2">
-        <li>• Delivery times vary by state and region</li>
-        <li>• Orders placed after 3 PM will be processed next business day</li>
-        <li>• Weekends and holidays are not counted as business days</li>
-      </ul>
-    </div>
-  );
-
-  const productionDate = calculateProductionDate();
-
-  return (
-    <div className="pincode-delivery-calculator">
-      <div className="pincode-input-container">
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          className="input-wrapper relative overflow-hidden rounded-lg"
-        >
-          <Input
-            className="pincode-input"
-            value={pincode}
-            onChange={handlePincodeChange}
-            placeholder="Enter 6-digit Pincode"
-            maxLength={6}
-            suffix={
-              <div className="input-suffix">
-                {isValidatingPincode && <Spin size="small" />}
-                {isPincodeValid && (
-                  <CheckCircleOutlined className="success-icon" />
-                )}
-                {isPincodeValid === false && (
-                  <CloseCircleOutlined className="error-icon" />
-                )}
-              </div>
-            }
-          />
-          <button
-            onClick={getPincodeByGPSWithPermissionCheck}
-            disabled={isGettingLocation}
-            className="location-button absolute flex top-0 right-0 bg-yellow-500 h-full p-2"
-          >
-            {isGettingLocation ? (
-              <Spin size="small" />
-            ) : (
-              <span className="button-content flex items-center gap-2 ">
-                <FaMapMarkerAlt className="" /> Get Location
-              </span>
-            )}
-          </button>
-        </motion.div>
-
-        {error && <div className="error-message">{error}</div>}
-
-        {/* Show different messages based on whether pincode is provided */}
-        {pincode && deliveryDate ? (
-          // When pincode is provided and valid
-          <motion.div className="delivery-info" whileHover={{ x: 5 }}>
-            <span className="delivery-text">
-              Standard Delivery by <Text strong>{deliveryDate}</Text>
-            </span>
-            <Divider type="vertical" />
-            {freeDelivery ? (
-              <div className="flex items-center gap-2">
-                <Text delete type="secondary">
-                  ₹ 100
-                </Text>
-                <Text type="success" strong>
-                  Cheers – Zero Delivery Charges, 100% Happiness!
-                </Text>
-              </div>
-            ) : (
-              <Text type="success" strong>
-                ₹ 100
-              </Text>
-            )}
-          </motion.div>
-        ) : (
-          // When no pincode is provided
-          <motion.div className="production-info" whileHover={{ x: 5 }}>
-            <span className="production-text">
-              Expected Dispatch by <Text strong>{productionDate}</Text>
-            </span>
-            <Divider type="vertical" />
-            <Text type="secondary">
-              Enter pincode for delivery date & charges
-            </Text>
-            {freeDelivery ? (
-              <div className="flex items-center gap-2">
-                <Text type="success" strong>
-                  Cheers – Zero Delivery Charges, 100% Happiness!
-                </Text>
-              </div>
-            ) : (
-              <Text type="success" strong></Text>
-            )}
-          </motion.div>
-        )}
-
-        {/* Custom Modal for Delivery Information */}
-        <CustomModal
-          open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title="Delivery Information"
-          width={700}
-        >
-          <DeliveryInfoContent />
-        </CustomModal>
-      </div>
-    </div>
-  );
-};
+export default ProductDetailVarient;

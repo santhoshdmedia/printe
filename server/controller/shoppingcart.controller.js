@@ -53,7 +53,8 @@ const addToShoppingCart = async (req, res) => {
       category_name: req.body.category_name || '',
       product_name: req.body.product_name || 'Product',
       product_image: req.body.product_image || '',
-      
+      FreeDelivery: req.body.FreeDelivery || false,
+
       // Add optional fields
       ...(req.body.size && { size: req.body.size }),
       ...(req.body.color && { color: req.body.color }),

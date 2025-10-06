@@ -20,6 +20,11 @@ module.exports = model(
         type: String,
         required: false, 
       },
+      FreeDelivery: {
+        type: Boolean,
+        required: true,
+        default: false
+      },
       product_image: {
         type: String,
         required: true,

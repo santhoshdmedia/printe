@@ -231,7 +231,7 @@ const NewCheckout = () => {
     },
   ];
 
-  const GET_SUB_TOTAL = () => {
+  const  GET_SUB_TOTAL = () => {
     return _.sum(
       cardData.map((res) => {
         return Number(res.final_total);
@@ -248,6 +248,7 @@ const NewCheckout = () => {
       })
     );
   };
+
   const GET_Mrp_savings = () => {
     // console.log(_.get(result, "data.data.[0].sgst", 0),)
     return _.sum(
@@ -271,7 +272,10 @@ const NewCheckout = () => {
     return GET_SUB_TOTAL() + GET_TAX_TOTAL() + 100;
   };
   const get_delivery_Fee = () => {
-    return 100;
+    const freeDelivery = cardData.every((item) => item.FreeDelivery);
+    console.log(freeDelivery, "freeDelivery");
+    
+    return freeDelivery ? 0 : 100;
   };
 
   const GET_PAYABLE_AMOUNT = () => {
@@ -490,6 +494,8 @@ const NewCheckout = () => {
     return e;
   };
 
+  console.log(cardData, "cardData");
+  
   return (
     <Spin
       spinning={loading}
@@ -831,11 +837,10 @@ const NewCheckout = () => {
                   </div>
 
                   <Button
-                    type="primary"
                     block
                     size="large"
                     onClick={() => form.submit()}
-                    className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 border-none h-12 font-bold"
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:!from-yellow-500 hover:!to-yellow-700 border-none h-12 font-bold hover:shadow-lg hover:!text-white hover:!bg-gradient-to-r"
                     disabled={!acceptTerms}
                   >
                     {paymentOption === "full"
