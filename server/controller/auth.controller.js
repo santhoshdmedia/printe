@@ -14,7 +14,8 @@ const login = async (req, res) => {
     }
     user.isOnline=true;
 
-    const isPasswordValid = await PlaintoHash(password, _.get(user, "[0]  .password", ""));
+    const isPasswordValid = await PlaintoHash(password, _.get(user, "[0].password", ""));
+
     if (isPasswordValid) {
       const payload = {
         id: _.get(user, "[0]._id", ""),
