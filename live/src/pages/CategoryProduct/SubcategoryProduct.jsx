@@ -30,20 +30,16 @@ const SubcategoryProduct = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <div className="">
+
       {/* Header Section with Breadcrumbs */}
-        <div className="lg:px-40 px-4 py-6">
-          <Breadcrumbs 
-            title={_.get(params, "category", "")} 
-            titleto={`/category/${_.get(params, "category", "")}/${_.get(params, "categoryid", "")}`} 
-            title2={_.get(params, "subcategory", "")} 
-          />
-        </div>
+       
       
 
       {/* Banner Section - Fixed image display */}
       {_.get(productDatas, "[0].sub_category_details.sub_category_banner_image", "") && (
-        <div className="lg:px-40 px-4 py-6">
-          <div className="rounded-xl overflow-hidden shadow-lg bg-gray-200 flex items-center justify-center max-h-[280px]">
+        <div className="">
+          <div className=" overflow-hidden shadow-lg bg-gray-200 flex items-center justify-center max-h-[600px]  max-w-[1800px] mx-auto">
             <img 
               src={_.get(productDatas, "[0].sub_category_details.sub_category_banner_image", "")} 
               className="w-full h-auto  object-[100%]" 
@@ -62,6 +58,15 @@ const SubcategoryProduct = () => {
           </div>
         </div>
       )}
+      </div>
+       <div className="lg:px-40 px-4 py-6  w-full bg-[#ffffff13] z-10 ">
+          <Breadcrumbs 
+            title={_.get(params, "category", "")} 
+            titleto={`/category/${_.get(params, "category", "")}/${_.get(params, "categoryid", "")}`} 
+            title2={_.get(params, "subcategory", "")} 
+          />
+        </div>
+
 
       {/* Content Section */}
       <div className="lg:px-40 px-4 py-8">
