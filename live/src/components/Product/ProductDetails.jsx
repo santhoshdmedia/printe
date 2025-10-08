@@ -205,6 +205,29 @@ const CustomPopover = ({
   );
 };
 
+// Helper function to get product images - FIXED FOR STANDALONE PRODUCTS
+const getProductImages = (data) => {
+  const images = _.get(data, "images", []);
+  
+  if (!images || images.length === 0) return [];
+  
+  // Handle both formats: array of objects with path property AND array of strings
+  return images.map(image => {
+    if (typeof image === 'string') {
+      return image; // Direct URL string
+    } else if (image && image.path) {
+      return image.path; // Object with path property
+    }
+    return ''; // Fallback for invalid items
+  }).filter(Boolean); // Remove any empty strings
+};
+
+// Helper function to get first product image - FIXED FOR STANDALONE PRODUCTS
+const getFirstProductImage = (data) => {
+  const images = getProductImages(data);
+  return images.length > 0 ? images[0] : "";
+};
+
 const ProductDetails = ({
   data = {
     _id: "",
@@ -252,9 +275,9 @@ const ProductDetails = ({
   const [checked, setChecked] = useState(false);
   const [error, setError] = useState("");
   const [maximum_quantity, setMaimumQuantity] = useState();
-  const [freeDelivery, setFreeDelivery] = useState(false); // New state for free delivery
+  const [freeDelivery, setFreeDelivery] = useState(false);
   const [checkOutState, setCheckOutState] = useState({
-    product_image: _.get(data, "images[0].path", ""),
+    product_image: getFirstProductImage(data), // FIXED: Using helper function
     product_design_file: "",
     product_name: _.get(data, "name", ""),
     category_name: _.get(data, "category_details.main_category_name", ""),
@@ -340,7 +363,7 @@ const ProductDetails = ({
         uuid: _.get(quantityDiscounts, "[0].uniqe_id", ""),
         percentage: initialDiscount,
       });
-      setFreeDelivery(initialFreeDelivery); // Set initial free delivery status
+      setFreeDelivery(initialFreeDelivery);
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: initialQuantity,
@@ -498,7 +521,6 @@ const ProductDetails = ({
       checkOutState.FreeDelivery = freeDelivery;
       checkOutState.final_total = Number(
         checkOutState?.product_price * checkOutState.product_quantity
-
       );
 
       const result = await addToShoppingCart(checkOutState);
@@ -1220,7 +1242,7 @@ const ProductDetails = ({
             </Text>
             <PincodeDeliveryCalculator
               Production={processing_item}
-              freeDelivery={freeDelivery} // Pass freeDelivery status
+              freeDelivery={freeDelivery}
             />
           </motion.div>
         </Card>
