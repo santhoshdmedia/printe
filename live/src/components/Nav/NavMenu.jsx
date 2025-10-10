@@ -12,6 +12,8 @@ const NavMenu = () => {
   const [hoverDrop, setHoverDrop] = useState(false);
   const [mega, setMega] = useState(false);
 
+  console.log(menu, "menu");
+  
   // State management
   const [activeDropdown, setActiveDropdown] = useState({
     megaMenu: false,

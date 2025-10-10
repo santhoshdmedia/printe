@@ -407,140 +407,7 @@ const Navbar = () => {
     </Link>
   );
 
-  // Bottom Navigation Component - Only for Mobile
-  const BottomNavigation = () => (
-    <div className={`fixed ${bottomNavVisible?"top-[80vh]":"top-[85vh]"}  left-0 right-0 z-[9998] w-full block lg:hidden`}>
-      <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
-        <div className="flex items-center justify-around">
-          {/* Home */}
-          <button
-            onClick={() => handleDestination("/")}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
-              activeNav === "home" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
-                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-            }`}
-          >
-            <BsHouse className={`text-xl ${activeNav === "home" ? "scale-110" : ""}`} />
-            <span className="text-xs mt-1 font-medium">Home</span>
-          </button>
-
-          {/* Categories */}
-          <button
-            onClick={() => setMenuStatus(true)}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
-              activeNav === "categories" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
-                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-            }`}
-          >
-            <BsGrid className={`text-xl ${activeNav === "categories" ? "scale-110" : ""}`} />
-            <span className="text-xs mt-1 font-medium">Menu</span>
-          </button>
-
-          {/* Search */}
-          <button
-            onClick={() => setShowSearchBar(!showSearchBar)}
-            className="flex flex-col items-center justify-center p-3 rounded-xl text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-300"
-          >
-            <div className="relative">
-              <BsSearch className="text-xl" />
-            </div>
-            <span className="text-xs mt-1 font-medium">Search</span>
-          </button>
-
-          {/* Cart */}
-          <button
-            onClick={() => {
-              fetchCartData();
-              handleDestination("/shopping-cart");
-            }}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 relative ${
-              activeNav === "cart" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
-                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-            }`}
-          >
-            <div className="relative">
-              <BsCart3 className={`text-xl ${activeNav === "cart" ? "scale-110" : ""}`} />
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg animate-pulse">
-                  {cartCount}
-                </span>
-              )}
-            </div>
-            <span className="text-xs mt-1 font-medium">Cart</span>
-          </button>
-
-          {/* Account */}
-          <button
-            onClick={() => isAuth ? setShowUserDropdown(!showUserDropdown) : handleDestination("/login")}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
-              activeNav === "account" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
-                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-            }`}
-          >
-            <BsPerson className={`text-xl ${activeNav === "account" ? "scale-110" : ""}`} />
-            <span className="text-xs mt-1 font-medium">Me</span>
-          </button>
-        </div>
-      </div>
-
-      {/* User Dropdown for Mobile */}
-      {showUserDropdown && isAuth && (
-        <div className="absolute bottom-full right-2 mb-4 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
-          {/* User Info */}
-          <div className="p-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white/30">
-                {profileImageName}
-              </div>
-              <div>
-                <p className="font-semibold">{userName}</p>
-                <p className="text-white/80 text-sm">Welcome back!</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Menu Items */}
-          <div className="p-2">
-            <Link
-              to="/account"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200"
-              onClick={() => setShowUserDropdown(false)}
-            >
-              <BsPerson className="text-yellow-600 text-lg" />
-              <span>My Account</span>
-            </Link>
-            <Link
-              to="/account/wishlist"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200"
-              onClick={() => setShowUserDropdown(false)}
-            >
-              <div className="relative">
-                <BsHeart className="text-yellow-600 text-lg" />
-                {heartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                    {heartCount}
-                  </span>
-                )}
-              </div>
-              <span>My Wishlist</span>
-            </Link>
-            <button
-              onClick={logout}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 w-full text-left transition-colors duration-200"
-            >
-              <IoClose className="text-lg" />
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
+ 
   // Custom Drawer (Mobile Menu)
   const CustomDrawer = ({ isOpen, onClose, children }) => (
     <div
@@ -840,3 +707,167 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
+ // Bottom Navigation Component - Only for Mobile
+  export const BottomNavigation = () => {
+      const [menuStatus, setMenuStatus] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
+  const { isAuth, user } = useSelector((state) => state.authSlice);
+  const cartCount = useSelector((state) => state.cartSlice.count);
+  const profileImageName = user?.name?.[0] ?? "";
+  const userName = user?.name ?? "User";
+  const [activeNav, setActiveNav] = useState("home");
+  const fetchCartData = useCallback(async () => {
+    try {
+      const result = await getMyShoppingCart();
+      const data = _.get(result, "data.data", []);
+      dispatch(SET_CART_COUNT(data.length));
+    }
+    catch (err) {
+      console.error("Failed to fetch cart data:", err);
+    }
+  }, [dispatch]);
+
+      const handleDestination = (url) => {
+    navigate(url);
+    setMenuStatus(false);
+    closeSearchBar();
+    setShowUserDropdown(false);
+  };
+   return ( 
+   <div className={`sticky bottom-0  left-0 right-0 z-[9998] w-screen block lg:hidden`}>
+      <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
+        <div className="flex items-center justify-around">
+          {/* Home */}
+          <button
+            onClick={() => handleDestination("/")}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
+              activeNav === "home" 
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+            }`}
+          >
+            <BsHouse className={`text-xl ${activeNav === "home" ? "scale-110" : ""}`} />
+            <span className="text-xs mt-1 font-medium">Home</span>
+          </button>
+
+          {/* Categories */}
+          <button
+            onClick={() => setMenuStatus(true)}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
+              activeNav === "categories" 
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+            }`}
+          >
+            <BsGrid className={`text-xl ${activeNav === "categories" ? "scale-110" : ""}`} />
+            <span className="text-xs mt-1 font-medium">Menu</span>
+          </button>
+
+          {/* Search */}
+          <button
+            onClick={() => setShowSearchBar(!showSearchBar)}
+            className="flex flex-col items-center justify-center p-3 rounded-xl text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-300"
+          >
+            <div className="relative">
+              <BsSearch className="text-xl" />
+            </div>
+            <span className="text-xs mt-1 font-medium">Search</span>
+          </button>
+
+          {/* Cart */}
+          <button
+            onClick={() => {
+              fetchCartData();
+              handleDestination("/shopping-cart");
+            }}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 relative ${
+              activeNav === "cart" 
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+            }`}
+          >
+            <div className="relative">
+              <BsCart3 className={`text-xl ${activeNav === "cart" ? "scale-110" : ""}`} />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg animate-pulse">
+                  {cartCount}
+                </span>
+              )}
+            </div>
+            <span className="text-xs mt-1 font-medium">Cart</span>
+          </button>
+
+          {/* Account */}
+          <button
+            onClick={() => isAuth ? setShowUserDropdown(!showUserDropdown) : handleDestination("/login")}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
+              activeNav === "account" 
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+            }`}
+          >
+            <BsPerson className={`text-xl ${activeNav === "account" ? "scale-110" : ""}`} />
+            <span className="text-xs mt-1 font-medium">Me</span>
+          </button>
+        </div>
+      </div>
+
+      {/* User Dropdown for Mobile */}
+      {showUserDropdown && isAuth && (
+        <div className="absolute bottom-full right-2 mb-4 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+          {/* User Info */}
+          <div className="p-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white/30">
+                {profileImageName}
+              </div>
+              <div>
+                <p className="font-semibold">{userName}</p>
+                <p className="text-white/80 text-sm">Welcome back!</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Menu Items */}
+          <div className="p-2">
+            <Link
+              to="/account"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200"
+              onClick={() => setShowUserDropdown(false)}
+            >
+              <BsPerson className="text-yellow-600 text-lg" />
+              <span>My Account</span>
+            </Link>
+            <Link
+              to="/account/wishlist"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200"
+              onClick={() => setShowUserDropdown(false)}
+            >
+              <div className="relative">
+                <BsHeart className="text-yellow-600 text-lg" />
+                {heartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {heartCount}
+                  </span>
+                )}
+              </div>
+              <span>My Wishlist</span>
+            </Link>
+            <button
+              onClick={logout}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 w-full text-left transition-colors duration-200"
+            >
+              <IoClose className="text-lg" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>)
+  };

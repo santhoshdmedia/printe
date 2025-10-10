@@ -992,7 +992,7 @@ const ProductDetails = ({
 
         {/* Product Description */}
         <div>
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl font-semibold w-[70%]">
             {_.get(data, "product_description_tittle", "")}
           </h2>
           <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 w-[70%]">

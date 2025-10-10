@@ -8,7 +8,7 @@ import { ImageHelper } from "../helper/ImageHelper";
 import QuickAccess from "./QuickAccess";
 import NavMenu from "../components/Nav/NavMenu.jsx";
 import { Toaster } from "react-hot-toast";
-// import { BottomNavigation } from "../components/Nav/Navbar.jsx";
+import { BottomNavigation } from "../components/Nav/Navbar.jsx";
 
 const Layout = () => {
   const [showIcon, setShowIcon] = useState(false);
@@ -82,7 +82,7 @@ const Layout = () => {
          <div
         className={`${
           showIcon ? "" : "hidden"
-        } sticky bottom-24 left-[89.1%] cursor-pointer z-50 w-fit h-fit `}
+        } sticky bottom-24 left-[89.1%] cursor-pointer z-50 w-fit !h-0 overflow-visible `}
       >
         <div
           className={` transition-all transition-500  sticky bottom-24 !left-[90%] cursor-pointer z-50   rounded-full lg:p-4 p-3`}
@@ -120,6 +120,9 @@ const Layout = () => {
       </div>
      
       <Footer />
+      <div className="sticky bottom-[0px] z-[20]">
+        <BottomNavigation />
+      </div>
       
       {/* <div className="relative bottom-[90vh]">
         <BottomNavigation/>

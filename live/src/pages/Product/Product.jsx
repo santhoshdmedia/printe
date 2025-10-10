@@ -6,10 +6,10 @@ import { Spin } from "antd";
 import _ from "lodash";
 
 // Components
-import ImagesSlider from "../../components/Product/ImagesSlider";
+import Imageslider from "../../components/Product/ImagesSlider";
 import ImagesliderVarient from "../../components/Product/ImagesliderVarient";
 import ProductDetails from "../../components/Product/ProductDetails";
-import ProductDetailVariant from "../../components/Product/ProductDetailVarient";
+import ProductDetailVarient from "../../components/Product/ProductDetailVarient";
 import ProductPageLoadingSkeleton from "../../components/LoadingSkeletons/ProductPageLoadingSkeleton";
 import OverViewDetails from "../../components/Product/OverViewDetails";
 import Breadcrumbs from "../../components/cards/Breadcrumbs";
@@ -30,9 +30,9 @@ const Product = () => {
     (state) => state.publicSlice
   );
 
-  // State to track selected color and its images
-  const [selectedColor, setSelectedColor] = useState("");
-  const [colorImages, setColorImages] = useState({});
+  // State to track selected variants and variant images
+  const [selectedVariants, setSelectedVariants] = useState({});
+  const [variantImages, setVariantImages] = useState({});
 
   // Safe value getter with better error handling
   const getProductValue = useCallback((path, defaultValue = "") => {
@@ -56,35 +56,38 @@ const Product = () => {
   // Process variant images when product loads
   useEffect(() => {
     if (product?.variants) {
-      const colorVariant = product.variants.find(v => v.variant_name === "Colour");
-      if (colorVariant) {
-        const imagesMap = {};
-        
-        colorVariant.options.forEach(option => {
+      const imagesMap = {};
+      
+      // Process all variants to build images map
+      product.variants.forEach(variant => {
+        variant.options?.forEach(option => {
           if (option.image_names && option.image_names.length > 0) {
-            // Convert image URLs to the format expected by ImagesliderVarient
+            // Use variant value as key and store array of images
             imagesMap[option.value] = option.image_names.map(img => ({
               path: typeof img === 'string' ? img : img.path || img.url,
               url: typeof img === 'string' ? img : img.url || img.path
             }));
           }
         });
-        
-        setColorImages(imagesMap);
-        
-        // Set initial selected color
-        const firstColor = colorVariant.options[0]?.value;
-        if (firstColor) {
-          setSelectedColor(firstColor);
+      });
+      
+      setVariantImages(imagesMap);
+      
+      // Set initial selected variants
+      const initialVariants = {};
+      product.variants.forEach(variant => {
+        if (variant.options?.length > 0) {
+          initialVariants[variant.variant_name] = variant.options[0].value;
         }
-      }
+      });
+      setSelectedVariants(initialVariants);
     }
   }, [product]);
 
-  // Handle color change from ProductDetailVariant
-  const handleColorChange = useCallback((color) => {
-    console.log("Color changed to:", color);
-    setSelectedColor(color);
+  // Handle variant changes from ProductDetailVarient
+  const handleVariantChange = useCallback((variants) => {
+    console.log("Variants changed to:", variants);
+    setSelectedVariants(variants);
   }, []);
 
   // Fetch product data
@@ -118,6 +121,15 @@ const Product = () => {
     }
   }, [product, user, addTohistoryDb]);
 
+  // Get main product images
+  const getProductImages = useCallback(() => {
+    const images = product?.images || [];
+    return images.map(img => ({
+      path: typeof img === 'string' ? img : img.path,
+      url: typeof img === 'string' ? img : img.url
+    }));
+  }, [product]);
+
   // Loading state
   if (isGettingProduct) {
     return <ProductPageLoadingSkeleton />;
@@ -138,19 +150,7 @@ const Product = () => {
   const subCategoryName = getProductValue("sub_category_details.sub_category_name");
   const subCategoryId = getProductValue("sub_category_details._id");
   const productName = getProductValue("name", "Product");
-  const hasVariants = product.variants?.[0]?.variant_type === "image_variant";
-
-  // Get images for current selected color
-  const getCurrentImages = () => {
-    if (selectedColor && colorImages[selectedColor]) {
-      return colorImages[selectedColor];
-    }
-    // Fallback to main product images
-    return (product.images || []).map(img => ({
-      path: typeof img === 'string' ? img : img.path,
-      url: typeof img === 'string' ? img : img.url
-    }));
-  };
+  const hasVariants = product.type === "Variable Product" && product.variants?.length > 0;
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
@@ -187,14 +187,14 @@ const Product = () => {
             <div className="w-full lg:w-1/2">
               {hasVariants ? (
                 <ImagesliderVarient
-                  imageList={getCurrentImages()}
+                  imageList={getProductImages()}
                   data={product}
-                  selectedColor={selectedColor}
-                  colorImages={colorImages}
+                  selectedVariants={selectedVariants}
+                  variantImages={variantImages}
                 />
               ) : (
-                <ImagesSlider 
-                  imageList={product?.images || []} 
+                <Imageslider
+                  imageList={getProductImages()} 
                   data={product} 
                 />
               )}
@@ -203,10 +203,10 @@ const Product = () => {
             {/* Product Details */}
             <div className="w-full lg:w-1/2 lg:pl-8">
               {hasVariants ? (
-                <ProductDetailVariant 
+                <ProductDetailVarient 
                   data={product} 
-                  onColorChange={handleColorChange} // Make sure this prop is passed
-                  selectedColor={selectedColor}
+                  onVariantChange={handleVariantChange}
+                  selectedVariants={selectedVariants}
                 />
               ) : (
                 <ProductDetails data={product} />
