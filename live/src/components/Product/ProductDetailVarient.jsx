@@ -719,7 +719,7 @@ const ProductDetailVarient = ({
         {/* Product Header */}
         <div className="space-y-1 flex justify-between items-end">
           <div className="flex-1">
-            <h1 className="text-gray-900 font-bold text-2xl md:text-3xl lg:text-[2rem] leading-tight">
+            <h1 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xlleading-tight">
               {data.name}
             </h1>
           </div>
@@ -784,10 +784,10 @@ const ProductDetailVarient = ({
 
         {/* Product Description */}
         <div className="">
-          <h2 className="!text-lg font-semibold w-[80%]">
+          <h2 className="!text-md font-semibold w-[70%]">
             {_.get(data, "product_description_tittle", "")}
           </h2>
-          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5">
+          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 ">
             <li>{_.get(data, "Point_one", "")}</li>
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>

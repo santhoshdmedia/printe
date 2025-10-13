@@ -914,7 +914,7 @@ const ProductDetails = ({
         {/* Product Header */}
         <div className="space-y-1 flex justify-between items-start">
           <div className="flex-1">
-            <h1 className="text-gray-900 font-bold mb-2 text-3xl md:text-4xl lg:text-[2.8rem] leading-tight w-[80%]">
+            <h1 className="text-gray-900 font-bold mb-2 text-xl md:text-2xl lg:text-2xl leading-tight w-[80%]">
               {data.name}
             </h1>
             <div className="flex flex-wrap gap-2">
@@ -992,10 +992,10 @@ const ProductDetails = ({
 
         {/* Product Description */}
         <div>
-          <h2 className="text-xl font-semibold w-[70%]">
+          <h2 className="text-md font-semibold w-[70%]">
             {_.get(data, "product_description_tittle", "")}
           </h2>
-          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 w-[70%]">
+          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 ">
             <li>{_.get(data, "Point_one", "")}</li>
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
