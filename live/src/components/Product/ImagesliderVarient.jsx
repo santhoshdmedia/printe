@@ -14,6 +14,11 @@ import {
   PictureOutlined
 } from "@ant-design/icons";
 
+import { IoShareSocial } from "react-icons/io5";
+import { FacebookIcon, WhatsappIcon } from "react-share";
+import { CustomPopover } from "../Product/ProductDetails";
+import { AnimatePresence } from "framer-motion";
+
 const ImagesliderVarient = ({ 
   imageList = [], 
   data = {},
@@ -172,6 +177,23 @@ const ImagesliderVarient = ({
     };
   }, [currentImages, activeIndex]);
 
+   const [showShareMenu, setShowShareMenu] = useState(false);
+    const handleNativeShare = async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: data.name,
+            text: "Check out this amazing product!",
+            url: window.location.href,
+          });
+        } catch (err) {
+          console.log("Error sharing:", err);
+        }
+      } else {
+        setShowShareMenu(!showShareMenu);
+      }
+    };
+
   return (
     <div className="!sticky !top-24 w-full h-full">
       <div className="lg:hidden block">
@@ -231,7 +253,7 @@ const ImagesliderVarient = ({
             <Tooltip title={`${isAutoPlaying ? 'Stop' : 'Start'} Auto-play`}>
               <button
                 onClick={toggleAutoPlay}
-                className={`absolute bottom-4 right-4 p-2 rounded-full z-30 ${
+                className={`absolute bottom-4 left-4 w-10 h-10 p-2 rounded-full z-30 ${
                   isAutoPlaying 
                     ? 'bg-red-500 text-white' 
                     : 'bg-white text-gray-600'
@@ -247,18 +269,62 @@ const ImagesliderVarient = ({
             title={`${isFav ? "Remove From" : "Add To"} Wish List`}
             placement="left"
           >
-            <button
-              className={`absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 ${
-                isFav ? "text-red-500" : "text-gray-600"
-              }`}
-              onClick={handleAddWishList}
-            >
-              {isFav ? (
-                <HeartFilled className="!text-[#f2c41a]" style={{ fontSize: '24px' }} />
-              ) : (
-                <HeartOutlined style={{ fontSize: '24px' }} />
-              )}
-            </button>
+            <div className="flex  gap-2">
+                   <div className="flex flex-col  gap-2 absolute top-4 right-4 z-40 ">
+                     <button
+                      className={` p-2 w-10 h-10 !border-none bg-transparent rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 focus:outline-none ${
+                        isFav ? "text-red-500" : "text-gray-600"
+                      }`}
+                      onClick={handleAddWishList}
+                      aria-label={isFav ? "Remove from wishlist" : "Add to wishlist"}
+                    >
+                      {isFav ? (
+                        <HeartFilled
+                          className="!text-[#f2c41a]"
+                          style={{ fontSize: "24px" }}
+                        />
+                      ) : (
+                        <HeartOutlined style={{ fontSize: "24px" }} />
+                      )}
+                    </button>
+                    <button
+                      onClick={handleNativeShare}
+                      className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300 hidden md:block"
+                    >
+                      <IoShareSocial />
+                    </button>
+            
+                    <AnimatePresence>
+                      {showShareMenu && (
+                        <CustomPopover
+                          open={showShareMenu}
+                          onClose={() => setShowShareMenu(false)}
+                          className="w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200"
+                        >
+                          <p className="text-xs text-gray-500 font-semibold p-2">
+                            Share via
+                          </p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => shareProduct("facebook")}
+                              className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
+                            >
+                              <FacebookIcon size={35} round />
+                              <span className="text-xs mt-1">Facebook</span>
+                            </button>
+                            <button
+                              onClick={() => shareProduct("whatsapp")}
+                              className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
+                            >
+                              <WhatsappIcon size={35} round />
+                              <span className="text-xs mt-1">WhatsApp</span>
+                            </button>
+                          </div>
+                        </CustomPopover>
+                      )}
+                    </AnimatePresence>
+                   </div>
+                  </div>
           </Tooltip>
         </div>
       </div>

@@ -27,24 +27,31 @@ const WishList = () => {
       case "popular":
         return <Tag color="purple" className="text-xs py-1 px-2">Popular</Tag>;
       default:
-        return <></>;
+        return null;
     }
   };
 
-  const handleDeleteWishProduct = (index) => {
-    const filtedList = user.wish_list.filter((_, i) => i !== index);
-    const form = { wish_list: filtedList };
+  const handleDeleteWishProduct = (productId) => {
+    if (!user?.wish_list) return;
+    
+    const filteredList = user.wish_list.filter(id => id !== productId);
+    const form = { wish_list: filteredList };
+    
     dispatch({
       type: "UPDATE_USER",
-      data: { form, type: "custom", message: "Wished product deleted" },
+      data: { form, type: "custom", message: "Product removed from wishlist" },
     });
 
-    // 🔑 auto refresh wishlist after delete
+    // Refresh wishlist after delete
     dispatch({
       type: "GET_PRODUCT",
-      data: { id_list: filtedList, type: "wish_list" },
+      data: { id_list: filteredList, type: "wish_list" },
     });
   };
+
+  // Safe access to wishlist data
+  const wishListData = wish_list?.data || [];
+  const isLoading = wish_list?.loading || false;
 
   return (
     <div className="w-full">
@@ -88,7 +95,6 @@ const WishList = () => {
           animation: fadeIn 0.4s ease forwards;
         }
         
-        /* Style for Browse Products button */
         .browse-products-btn {
           transition: all 0.3s ease;
           background-color: #FFD700;
@@ -112,14 +118,14 @@ const WishList = () => {
           </div>
         </div>
         
-        {wish_list.loading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center py-10">
             <div className="animate-pulse flex flex-col items-center">
               <div className="rounded-full bg-gray-200 h-12 w-12 mb-3"></div>
               <div className="h-4 bg-gray-200 rounded w-32"></div>
             </div>
           </div>
-        ) : wish_list.data.length === 0 ? (
+        ) : wishListData.length === 0 ? (
           <div className="py-10 flex flex-col items-center justify-center">
             <Empty 
               image={
@@ -137,28 +143,37 @@ const WishList = () => {
             />
             <Link 
               to="/" 
-              className="browse-products-btn mt-5 px-6 py-2 rounded-full transition-colors flex items-center gap-2"
+              className="browse-products-btn mt-5 px-6 py-2 rounded-full transition-colors flex items-center gap-2 font-medium"
             >
               <MdShoppingCart /> Browse Products
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {wish_list.data.map((data, index) => {
-              const img = data.images?.[0]?.path;
-              const price = _.get(data, "single_product_price", null) ||_.get(data, "customer_product_price", null);
-              
+            {wishListData.map((data, index) => {
+              // Safe data access with fallbacks
+              const img = data?.images?.[0]?.path || "/placeholder-product.jpg";
+              const price = _.get(data, "single_product_price", null) || 
+                           _.get(data, "customer_product_price", null);
+              const productName = data?.name || "Unnamed Product";
+              const productId = data?._id;
+              const seoUrl = _.get(data, "seo_url", "");
+              const labels = Array.isArray(data?.label) ? data.label : [];
+
+              // Skip rendering if no product ID
+              if (!productId) return null;
+
               return (
                 <div 
                   className="wishlist-item border rounded-xl overflow-hidden shadow-sm bg-white animate-fade-in"
-                  key={index}
+                  key={productId}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <div className="flex flex-col md:flex-row">
                     <div className="md:w-32 h-40 md:h-auto bg-gray-100 flex items-center justify-center overflow-hidden">
                       <img 
-                        src={img || "/placeholder-product.jpg"} 
-                        alt={data.name} 
+                        src={img} 
+                        alt={productName} 
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                         onError={(e) => {
                           e.target.src = "/placeholder-product.jpg";
@@ -169,11 +184,11 @@ const WishList = () => {
                     <div className="flex-1 p-4 flex flex-col">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 pr-4">
-                          {data.name}
+                          {productName}
                         </h3>
                         <button
                           className="delete-btn p-1 rounded-full hover:bg-gray-100"
-                          onClick={() => handleDeleteWishProduct(index)}
+                          onClick={() => handleDeleteWishProduct(productId)}
                           aria-label="Remove from wishlist"
                         >
                           <MdDelete className="text-gray-400 hover:text-red-500" size={18} />
@@ -181,12 +196,15 @@ const WishList = () => {
                       </div>
                       
                       <div className="mt-auto">
+                        {/* Safe label rendering */}
                         <div className="flex items-center gap-2 mb-3">
-                          {data.label.map((label, i) => (
-                            <React.Fragment key={i}>
-                              {generateLabel(label)}
-                            </React.Fragment>
-                          ))}
+                          {labels.length > 0 ? (
+                            labels.map((label, i) => (
+                              <React.Fragment key={i}>
+                                {generateLabel(label)}
+                              </React.Fragment>
+                            ))
+                          ) : null}
                         </div>
                         
                         <div className="flex items-center justify-between mt-2">
@@ -195,8 +213,8 @@ const WishList = () => {
                           </span>
                           
                           <Link
-                            to={`/product/${_.get(data, "seo_url", "")}`}
-                            className="shop-btn text-white text-sm py-2 px-4 rounded-full flex items-center gap-1"
+                            to={`/product/${seoUrl || productId}`}
+                            className="shop-btn text-white text-sm py-2 px-4 rounded-full flex items-center gap-1 font-medium"
                           >
                             <MdShoppingCart size={16} />
                             <span>Shop Now</span>

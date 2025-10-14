@@ -172,7 +172,7 @@ const { Title, Text, Paragraph } = Typography;
 import { FaTruckFast } from "react-icons/fa6";
 
 // Custom Popover Component for smaller overlays
-const CustomPopover = ({
+export const CustomPopover = ({
   open,
   onClose,
   children,
@@ -277,7 +277,7 @@ const ProductDetails = ({
   const [maximum_quantity, setMaimumQuantity] = useState();
   const [freeDelivery, setFreeDelivery] = useState(false);
   const [checkOutState, setCheckOutState] = useState({
-    product_image: getFirstProductImage(data), // FIXED: Using helper function
+    product_image: getFirstProductImage(data),
     product_design_file: "",
     product_name: _.get(data, "name", ""),
     category_name: _.get(data, "category_details.main_category_name", ""),
@@ -701,6 +701,11 @@ const ProductDetails = ({
     setQuantityDropdownVisible(false);
   };
 
+  const handleBulkOrder = () => {
+    setShowBulkOrderForm(true);
+    setQuantityDropdownVisible(false);
+  }
+
   // Custom dropdown renderer for quantity selection
   const quantityDropdownRender = (menu) => (
     <div
@@ -779,7 +784,7 @@ const ProductDetails = ({
 
       <div className="mt-4 pt-3 border-t border-gray-100">
         <button
-          onClick={() => setShowBulkOrderForm(true)}
+          onClick={() => handleBulkOrder()}
           className="w-full py-2 px-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-semibold text-sm hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
         >
           <PlusOutlined />
@@ -911,10 +916,11 @@ const ProductDetails = ({
       }
     >
       <div className="font-primary w-full space-y-2 relative">
-        {/* Product Header */}
-        <div className="space-y-1 flex justify-between items-start">
-          <div className="flex-1">
-            <h1 className="text-gray-900 font-bold mb-2 text-xl md:text-2xl lg:text-2xl leading-tight w-[80%]">
+        {/* Product Header - Responsive Layout */}
+        <div className="space-y-1 flex flex-col md:flex-row justify-between items-start gap-4">
+          {/* Left Section - Title and Labels */}
+          <div className="flex-1 w-full md:w-auto">
+            <h1 className="text-gray-900 font-bold mb-2 text-xl md:text-2xl lg:text-2xl leading-tight w-full md:w-[80%]">
               {data.name}
             </h1>
             <div className="flex flex-wrap gap-2">
@@ -924,14 +930,83 @@ const ProductDetails = ({
             </div>
           </div>
 
-          <div className="relative">
-            <button
-              onClick={handleNativeShare}
-              className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300"
-            >
-              <IoShareSocial />
-            </button>
+          {/* Right Section - Price and Share Button */}
+          <div className="w-full md:w-auto flex flex-col md:flex-row items-start md:items-center gap-3 md:relative">
+            {/* Share Button - Mobile */}
+            <div className="md:hidden flex flex-row-reverse items-center gap-3 w-full justify-between my-2">
+              <button
+                onClick={handleNativeShare}
+                className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300"
+              >
+                <IoShareSocial />
+              </button>
+              
+              {/* Price Badge - Mobile */}
+              <motion.div
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  ease: "easeInOut",
+                }}
+                className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
+              >
+                <div className="flex items-baseline gap-2">
+                  <span className="text-white/70 text-xs line-through">
+                    ₹
+                    {_.get(data, "MRP_price", 0) ||
+                      Number(_.get(checkOutState, "product_price", 0)) + 50}
+                  </span>
+                  <h3 className="text-white text-base font-semibold">
+                    {quantity
+                      ? formatPrice(
+                          Number(_.get(checkOutState, "product_price", 0))
+                        )
+                      : "Select Qty"}
+                  </h3>
+                </div>
+              </motion.div>
+            </div>
 
+            {/* Share Button - Desktop */}
+            <div className="hidden md:flex items-center gap-3">
+              <button
+                onClick={handleNativeShare}
+                className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300 hidden"
+              >
+                <IoShareSocial />
+              </button>
+
+              {/* Price Badge - Desktop */}
+              <motion.div
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  ease: "easeInOut",
+                }}
+                className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
+              >
+                <div className="flex items-baseline gap-2">
+                  <span className="text-white/70 text-xs line-through">
+                    ₹
+                    {_.get(data, "MRP_price", 0) ||
+                      Number(_.get(checkOutState, "product_price", 0)) + 50}
+                  </span>
+                  <h3 className="text-white text-base font-semibold">
+                    {quantity
+                      ? formatPrice(
+                          Number(_.get(checkOutState, "product_price", 0))
+                        )
+                      : "Select Qty"}
+                  </h3>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Share Menu Popover */}
             <AnimatePresence>
               {showShareMenu && (
                 <CustomPopover
@@ -961,41 +1036,15 @@ const ProductDetails = ({
                 </CustomPopover>
               )}
             </AnimatePresence>
-
-            <motion.div
-              animate={{ scale: [1, 1.15, 1] }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                repeatType: "loop",
-                ease: "easeInOut",
-              }}
-              className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-3 py-2 shadow-md text-right h-fit w-fit absolute top-16 right-0"
-            >
-              <div className="flex items-baseline gap-2">
-                <span className="text-white/70 text-xs line-through">
-                  ₹
-                  {_.get(data, "MRP_price", 0) ||
-                    Number(_.get(checkOutState, "product_price", 0)) + 50}
-                </span>
-                <h3 className="text-white text-base font-semibold">
-                  {quantity
-                    ? formatPrice(
-                        Number(_.get(checkOutState, "product_price", 0))
-                      )
-                    : "Select Qty"}
-                </h3>
-              </div>
-            </motion.div>
           </div>
         </div>
 
         {/* Product Description */}
         <div>
-          <h2 className="text-md font-semibold w-[70%]">
+          <h2 className="text-md font-semibold w-full md:w-[70%]">
             {_.get(data, "product_description_tittle", "")}
           </h2>
-          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 ">
+          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5">
             <li>{_.get(data, "Point_one", "")}</li>
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
@@ -1010,16 +1059,16 @@ const ProductDetails = ({
         </div>
 
         {/* Quantity and Variants Section */}
-        <div className="w-full flex flex-wrap space-y-2">
-          <div className="flex items-center gap-2 space-x-1">
-            <Text strong className="block mb-2">
+        <div className="w-full flex flex-col space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
+            <Text strong className="block mb-2 md:mb-0 md:w-24">
               Quantity:
             </Text>
             <Select
               value={quantity}
               onChange={handleQuantitySelect}
               options={quantityOptions}
-              className="w-[30vw]"
+              className="w-full md:w-[30vw]"
               placeholder="Select quantity"
               dropdownRender={quantityDropdownRender}
               open={quantityDropdownVisible}
@@ -1027,13 +1076,13 @@ const ProductDetails = ({
             />
           </div>
 
-          <div className="grid grid-cols-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {product_type !== "Stand Alone Product" &&
               !_.isEmpty(currentPriceSplitup) && (
                 <>
                   {_.get(data, "variants", []).map((variant, index) => (
-                    <div className="flex items-center gap-2 space-x-1">
-                      <Text strong className="block mb-2">
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
+                      <Text strong className="block mb-2 md:mb-0 md:w-24">
                         {variant.variant_name}:
                       </Text>
                       {variant.variant_type !== "image_variant" ? (
@@ -1051,6 +1100,7 @@ const ProductDetails = ({
                             handleOnChangeSelectOption(value, index)
                           }
                           placeholder={`Select ${variant.variant_name}`}
+                          className="w-full"
                         />
                       ) : (
                         <div className="flex flex-wrap gap-2">
@@ -1096,7 +1146,7 @@ const ProductDetails = ({
               )}
 
             {_.get(data, "name", "") === "Matt Finish" && (
-              <div className="flex items-center gap-2 space-x-1">
+              <div className="flex items-center gap-2">
                 <Checkbox
                   checked={individualBox}
                   onChange={(e) => setIndividualBox(e.target.checked)}
@@ -1111,12 +1161,12 @@ const ProductDetails = ({
         {/* Total Price Section */}
         <Card className="bg-blue-50 rounded-lg border-0">
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <Text strong className="text-gray-800">
                 Deal Price:
               </Text>
-              <div className="text-right flex items-baseline">
-                <Text delete className="text-md text-gray-500 mr-2">
+              <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
+                <Text delete className="text-md text-gray-500 md:mr-2">
                   MRP {formatPrice(_.get(data, "MRP_price", 0))}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
@@ -1165,8 +1215,8 @@ const ProductDetails = ({
             </div>
 
             {quantity && (
-              <div className="  text-gray-600">
-                <h1 className="!text-md  text-gray-600">
+              <div className="text-gray-600">
+                <h1 className="!text-md text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
                   (
                   <Text strong>
@@ -1249,7 +1299,7 @@ const ProductDetails = ({
 
         {/* File Upload Section */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
             <Text strong className="text-gray-800">
               Upload Your Design
             </Text>
@@ -1280,20 +1330,22 @@ const ProductDetails = ({
               />
 
               {checkOutState.product_design_file && (
-                <div className="mt-2 flex items-center justify-between flex-row-reverse">
-                  <Checkbox
-                    checked={checked}
-                    onChange={(e) => setChecked(e.target.checked)}
-                  >
-                    I confirm this design
-                  </Checkbox>
+                <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
                   <Button
                     type="link"
                     icon={<EyeOutlined />}
                     onClick={() => setDesignPreviewVisible(true)}
+                    className="md:order-1"
                   >
                     View Design
                   </Button>
+                  <Checkbox
+                    checked={checked}
+                    onChange={(e) => setChecked(e.target.checked)}
+                    className="md:order-2"
+                  >
+                    I confirm this design
+                  </Checkbox>
                 </div>
               )}
             </>
@@ -1354,7 +1406,8 @@ const ProductDetails = ({
             )}
           </div>
 
-          <Divider className="!my-4  " />
+          <Divider className="!my-4" />
+          
           {/* Custom Modal for Design Preview */}
           <CustomModal
             open={designPreviewVisible}
@@ -1369,7 +1422,7 @@ const ProductDetails = ({
                 Close
               </Button>,
             ]}
-            topPosition="top-[-170%] "
+            topPosition="top-[-170%]"
           >
             <div className="flex justify-center">
               <img
@@ -1380,6 +1433,7 @@ const ProductDetails = ({
             </div>
           </CustomModal>
         </div>
+
         {/* Bulk Order Custom Modal */}
         <CustomModal
           open={showBulkOrderForm}
@@ -1854,7 +1908,7 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery }) => {
           title="Delivery Information"
           width={700}
         >
-          <DeliveryInfoContent />
+          {/* <DeliveryInfoContent /> */}
         </CustomModal>
       </div>
     </div>

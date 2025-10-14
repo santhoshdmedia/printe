@@ -8,7 +8,7 @@ import { ImageHelper } from "../helper/ImageHelper";
 import QuickAccess from "./QuickAccess";
 import NavMenu from "../components/Nav/NavMenu.jsx";
 import { Toaster } from "react-hot-toast";
-import { BottomNavigation } from "../components/Nav/Navbar.jsx";
+// import { BottomNavigation } from "../components/Nav/Navbar.jsx";
 
 const Layout = () => {
   const [showIcon, setShowIcon] = useState(false);
@@ -120,9 +120,9 @@ const Layout = () => {
       </div>
      
       <Footer />
-      <div className="sticky bottom-[0px] z-[20]">
+      {/* <div className="sticky bottom-[0px] z-[20]">
         <BottomNavigation />
-      </div>
+      </div> */}
       
       {/* <div className="relative bottom-[90vh]">
         <BottomNavigation/>

@@ -607,139 +607,8 @@ const Navbar = () => {
       </div>
     </div>
   );
-
-  return (
-    <div className="w-full m-0">
-      {/* Desktop Navbar */}
-      <div
-        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-20 sticky top-0 z-40 ${
-          isScrolled ? "shadow-xl" : "shadow-lg"
-        }`}
-      >
-        {/* Left: Logo + Search */}
-        <div className="flex items-center gap-x-8 xl:gap-x-32 w-[70%]">
-          <Link to="/">
-            <img src={Logo} alt="logo" className="h-16" />
-          </Link>
-          <SearchInput />
-        </div>
-
-        {/* Right: User Section */}
-        <div className="flex items-center justify-end gap-x-4 w-[30%]">
-          {isAuth ? <UserMenu /> : <AuthButtons />}
-          <SupportSection />
-          <HelpCenterLink />
-        </div>
-      </div>
-
-      {/* Mobile Top Bar */}
-      <div
-        className={`block lg:hidden w-full fixed top-0 left-0 z-[9999] bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${
-          isScrolled ? "shadow-2xl" : "shadow-lg"
-        }`}
-      >
-        <div className="w-full h-16 flex items-center justify-between px-4">
-          {/* Left: Menu & Logo */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMenuStatus(true)}
-              className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95 shadow-lg"
-            >
-              <IoMenu className="text-white text-xl" />
-            </button>
-            <Link 
-              to="/" 
-              onClick={closeSearchBar} 
-              className="flex items-center gap-2"
-            >
-              <img src={Logo} alt="Logo" className="h-7 object-contain" />
-              <span className="text-white font-bold text-sm hidden sm:block">Store</span>
-            </Link>
-          </div>
-
-          {/* Right: Search */}
-          <button
-            onClick={() => setShowSearchBar(!showSearchBar)}
-            className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95 shadow-lg"
-          >
-            {showSearchBar ? (
-              <BsXLg className="text-white text-lg" />
-            ) : (
-              <BsSearch className="text-white text-lg" />
-            )}
-          </button>
-        </div>
-
-        {/* Expandable Search Bar - FIXED for search results visibility */}
-        <div
-          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${
-            showSearchBar ? "max-h-28 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
-          }`}
-          style={{
-            overflow: showSearchBar ? 'visible' : 'hidden'
-          }}
-        >
-          <div className="px-4 relative">
-            <SearchInput isMobile />
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Navigation - Only on Mobile */}
-      <BottomNavigation />
-
-      {/* Mobile Menu Drawer */}
-      <CustomDrawer isOpen={menuStatus} onClose={() => setMenuStatus(false)}>
-        <MobileMenuContent />
-      </CustomDrawer>
-
-      {/* Spacer for mobile navbar */}
-      {/* <div
-        className={`block lg:hidden transition-all duration-500 ${
-          showSearchBar ? "h-28" : "h-16"
-        }`}
-      /> */}
-      
-      {/* Bottom navigation spacer */}
-      {/* <div className="block lg:hidden h-20" /> */}
-    </div>
-  );
-};
-
-export default Navbar;
-
-
- // Bottom Navigation Component - Only for Mobile
-  export const BottomNavigation = () => {
-      const [menuStatus, setMenuStatus] = useState(false);
-  const [showSearchBar, setShowSearchBar] = useState(false);
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const dispatch = useDispatch();
-  const { isAuth, user } = useSelector((state) => state.authSlice);
-  const cartCount = useSelector((state) => state.cartSlice.count);
-  const profileImageName = user?.name?.[0] ?? "";
-  const userName = user?.name ?? "User";
-  const [activeNav, setActiveNav] = useState("home");
-  const fetchCartData = useCallback(async () => {
-    try {
-      const result = await getMyShoppingCart();
-      const data = _.get(result, "data.data", []);
-      dispatch(SET_CART_COUNT(data.length));
-    }
-    catch (err) {
-      console.error("Failed to fetch cart data:", err);
-    }
-  }, [dispatch]);
-
-      const handleDestination = (url) => {
-    navigate(url);
-    setMenuStatus(false);
-    closeSearchBar();
-    setShowUserDropdown(false);
-  };
-   return ( 
+  // Bottom Navigation Component - Only for Mobile
+  const BottomNavigation = () => ( 
    <div className={`sticky bottom-0  left-0 right-0 z-[9998] w-screen block lg:hidden`}>
       <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
         <div className="flex items-center justify-around">
@@ -870,4 +739,109 @@ export default Navbar;
         </div>
       )}
     </div>)
-  };
+
+  return (
+    <div className="w-full m-0">
+      {/* Desktop Navbar */}
+      <div
+        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-20 sticky top-0 z-40 ${
+          isScrolled ? "shadow-xl" : "shadow-lg"
+        }`}
+      >
+        {/* Left: Logo + Search */}
+        <div className="flex items-center gap-x-8 xl:gap-x-32 w-[70%]">
+          <Link to="/">
+            <img src={Logo} alt="logo" className="h-16" />
+          </Link>
+          <SearchInput />
+        </div>
+
+        {/* Right: User Section */}
+        <div className="flex items-center justify-end gap-x-4 w-[30%]">
+          {isAuth ? <UserMenu /> : <AuthButtons />}
+          <SupportSection />
+          <HelpCenterLink />
+        </div>
+      </div>
+
+      {/* Mobile Top Bar */}
+      <div
+        className={`block lg:hidden w-full fixed top-0 left-0 z-[9999] bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${
+          isScrolled ? "shadow-2xl" : "shadow-lg"
+        }`}
+      >
+        <div className="w-full h-16 flex items-center justify-between px-4">
+          {/* Left: Menu & Logo */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMenuStatus(true)}
+              className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95 shadow-lg"
+            >
+              <IoMenu className="text-white text-xl" />
+            </button>
+            <Link 
+              to="/" 
+              onClick={closeSearchBar} 
+              className="flex items-center gap-2"
+            >
+              <img src={Logo} alt="Logo" className="h-7 object-contain" />
+              <span className="text-white font-bold text-sm hidden sm:block">Store</span>
+            </Link>
+          </div>
+
+          {/* Right: Search */}
+          <button
+            onClick={() => setShowSearchBar(!showSearchBar)}
+            className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95 shadow-lg"
+          >
+            {showSearchBar ? (
+              <BsXLg className="text-white text-lg" />
+            ) : (
+              <BsSearch className="text-white text-lg" />
+            )}
+          </button>
+        </div>
+
+        {/* Expandable Search Bar - FIXED for search results visibility */}
+        <div
+          
+          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${
+            showSearchBar ? "max-h-28 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
+          }`}
+          style={{
+            overflow: showSearchBar ? 'visible' : 'hidden'
+          }}
+        >
+          <div className="px-4 relative">
+            <SearchInput isMobile />
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Navigation - Only on Mobile */}
+      <div className="fixed top-[85vh] left-0 right-0 z-[9998] w-screen block lg:hidden transition-all duration-500">
+      <BottomNavigation />
+          </div>
+      {/* Mobile Menu Drawer */}
+      <CustomDrawer isOpen={menuStatus} onClose={() => setMenuStatus(false)}>
+        <MobileMenuContent />
+      </CustomDrawer>
+
+      {/* Spacer for mobile navbar */}
+      {/* <div
+        className={`block lg:hidden transition-all duration-500 ${
+          showSearchBar ? "h-28" : "h-16"
+        }`}
+      /> */}
+      
+      {/* Bottom navigation spacer */}
+      {/* <div className="block lg:hidden h-20" /> */}
+    </div>
+  );
+};
+
+export default Navbar;
+
+
+ 
+  

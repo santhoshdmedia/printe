@@ -26,15 +26,9 @@ import { useDispatch, useSelector } from "react-redux";
 import UploadFileButton from "../UploadFileButton";
 import { useNavigate } from "react-router-dom";
 import { IconHelper } from "../../helper/IconHelper";
-import {
-  FacebookIcon,
-  WhatsappIcon,
-} from "react-share";
+import { FacebookIcon, WhatsappIcon } from "react-share";
 import { IoShareSocial } from "react-icons/io5";
-import {
-  addToShoppingCart,
-  getVariantPrice,
-} from "../../helper/api_helper";
+import { addToShoppingCart, getVariantPrice } from "../../helper/api_helper";
 import Swal from "sweetalert2";
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import {
@@ -67,10 +61,8 @@ const ProductDetailVarient = ({
   const { user } = useSelector((state) => state.authSlice);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
-  const { isGettingVariantPrice } = useSelector(
-    (state) => state.publicSlice
-  );
+
+  const { isGettingVariantPrice } = useSelector((state) => state.publicSlice);
 
   // Product data constants
   const productType = _.get(data, "type", "Variable Product");
@@ -120,59 +112,80 @@ const ProductDetailVarient = ({
   });
 
   // Find matching variant price based on selected variants
-  const findMatchingVariantPrice = useCallback((variants) => {
-    if (!data.variants_price) return null;
-    
-    return data.variants_price.find(variantPrice => {
-      return Object.keys(variants).every(variantName => {
-        return variantPrice[variantName] === variants[variantName];
+  const findMatchingVariantPrice = useCallback(
+    (variants) => {
+      if (!data.variants_price) return null;
+
+      return data.variants_price.find((variantPrice) => {
+        return Object.keys(variants).every((variantName) => {
+          return variantPrice[variantName] === variants[variantName];
+        });
       });
-    });
-  }, [data.variants_price]);
+    },
+    [data.variants_price]
+  );
 
   // Update variant data when variant changes
-  const updateVariantData = useCallback((variantData) => {
-    if (!variantData) return;
-    
-    setCurrentPriceSplitup(variantData);
-    
-    // Set price based on user role
-    let price = 0;
-    if (user?.role === "Dealer") {
-      price = _.get(variantData, "Deler_product_price", _.get(variantData, "price", 0));
-    } else if (user?.role === "Corporate") {
-      price = _.get(variantData, "corporate_product_price", _.get(variantData, "price", 0));
-    } else {
-      price = _.get(variantData, "customer_product_price", _.get(variantData, "price", 0));
-    }
+  const updateVariantData = useCallback(
+    (variantData) => {
+      if (!variantData) return;
 
-    setCheckOutState((prevState) => ({
-      ...prevState,
-      product_price: price,
-      product_variants: variantData,
-    }));
-    setStockCount(_.get(variantData, "stock_count", _.get(variantData, "stock", 0)));
-  }, [user?.role]);
+      setCurrentPriceSplitup(variantData);
+
+      // Set price based on user role
+      let price = 0;
+      if (user?.role === "Dealer") {
+        price = _.get(
+          variantData,
+          "Deler_product_price",
+          _.get(variantData, "price", 0)
+        );
+      } else if (user?.role === "Corporate") {
+        price = _.get(
+          variantData,
+          "corporate_product_price",
+          _.get(variantData, "price", 0)
+        );
+      } else {
+        price = _.get(
+          variantData,
+          "customer_product_price",
+          _.get(variantData, "price", 0)
+        );
+      }
+
+      setCheckOutState((prevState) => ({
+        ...prevState,
+        product_price: price,
+        product_variants: variantData,
+      }));
+      setStockCount(
+        _.get(variantData, "stock_count", _.get(variantData, "stock", 0))
+      );
+    },
+    [user?.role]
+  );
 
   // Initialize variants and prices
   useEffect(() => {
     if (productType === "Variable Product" && data.variants_price?.length > 0) {
       // Set initial selected variants
       const initialSelectedVariants = {};
-      availableVariants.forEach(variant => {
+      availableVariants.forEach((variant) => {
         if (variant.options?.length > 0) {
-          initialSelectedVariants[variant.variant_name] = variant.options[0].value;
+          initialSelectedVariants[variant.variant_name] =
+            variant.options[0].value;
         }
       });
 
       setSelectedVariants(initialSelectedVariants);
-      
+
       // Find matching variant price
       const matchingVariant = findMatchingVariantPrice(initialSelectedVariants);
-      
+
       if (matchingVariant) {
         updateVariantData(matchingVariant);
-        
+
         // Notify parent about initial variant selection
         if (onVariantChange) {
           onVariantChange(initialSelectedVariants);
@@ -186,13 +199,20 @@ const ProductDetailVarient = ({
 
     // Initialize quantity
     initializeQuantity();
-  }, [data.variants_price, availableVariants, productType, findMatchingVariantPrice, updateVariantData, onVariantChange]);
+  }, [
+    data.variants_price,
+    availableVariants,
+    productType,
+    findMatchingVariantPrice,
+    updateVariantData,
+    onVariantChange,
+  ]);
 
   // Update local selectedVariants when prop changes
   useEffect(() => {
     if (propSelectedVariants && Object.keys(propSelectedVariants).length > 0) {
       setSelectedVariants(propSelectedVariants);
-      
+
       // Find matching variant price for the prop variants
       const matchingVariant = findMatchingVariantPrice(propSelectedVariants);
       if (matchingVariant) {
@@ -251,56 +271,66 @@ const ProductDetailVarient = ({
   }, [quantityType, quantityDiscounts, user?.role, maxQuantity]);
 
   // Handle variant selection
-  const handleVariantChange = useCallback(async (variantName, selectedValue) => {
-    try {
-      const updatedVariants = {
-        ...selectedVariants,
-        [variantName]: selectedValue
-      };
-      
-      setSelectedVariants(updatedVariants);
+  const handleVariantChange = useCallback(
+    async (variantName, selectedValue) => {
+      try {
+        const updatedVariants = {
+          ...selectedVariants,
+          [variantName]: selectedValue,
+        };
 
-      // Find the variant price data for the selected combination
-      const variantPriceData = findMatchingVariantPrice(updatedVariants);
+        setSelectedVariants(updatedVariants);
 
-      if (variantPriceData) {
-        updateVariantData(variantPriceData);
+        // Find the variant price data for the selected combination
+        const variantPriceData = findMatchingVariantPrice(updatedVariants);
 
-        // Notify parent component about variant changes
-        if (onVariantChange) {
-          onVariantChange(updatedVariants);
+        if (variantPriceData) {
+          updateVariantData(variantPriceData);
+
+          // Notify parent component about variant changes
+          if (onVariantChange) {
+            onVariantChange(updatedVariants);
+          }
+        } else {
+          console.warn("No variant price data found for:", updatedVariants);
+          toast.error("This variant combination is not available");
         }
-      } else {
-        console.warn("No variant price data found for:", updatedVariants);
-        toast.error("This variant combination is not available");
+      } catch (err) {
+        console.log("Error in handleVariantChange:", err);
+        toast.error("Failed to change variant");
       }
-    } catch (err) {
-      console.log("Error in handleVariantChange:", err);
-      toast.error("Failed to change variant");
-    }
-  }, [selectedVariants, findMatchingVariantPrice, updateVariantData, onVariantChange]);
+    },
+    [
+      selectedVariants,
+      findMatchingVariantPrice,
+      updateVariantData,
+      onVariantChange,
+    ]
+  );
 
   // Memoized calculations
-  const unitPrice = useMemo(() => 
-    DISCOUNT_HELPER(
-      discountPercentage.percentage,
-      Number(_.get(checkOutState, "product_price", 0))
-    ),
+  const unitPrice = useMemo(
+    () =>
+      DISCOUNT_HELPER(
+        discountPercentage.percentage,
+        Number(_.get(checkOutState, "product_price", 0))
+      ),
     [discountPercentage.percentage, checkOutState.product_price]
   );
 
-  const totalPrice = useMemo(() => 
-    quantity ? Number(unitPrice * quantity).toFixed(2) : 0,
+  const totalPrice = useMemo(
+    () => (quantity ? Number(unitPrice * quantity).toFixed(2) : 0),
     [unitPrice, quantity]
   );
 
-  const mrpTotalPrice = useMemo(() => 
-    quantity ? Number(checkOutState.product_price * quantity).toFixed(2) : 0,
+  const mrpTotalPrice = useMemo(
+    () =>
+      quantity ? Number(checkOutState.product_price * quantity).toFixed(2) : 0,
     [checkOutState.product_price, quantity]
   );
 
-  const savings = useMemo(() => 
-    quantity ? (mrpTotalPrice - totalPrice).toFixed(2) : 0,
+  const savings = useMemo(
+    () => (quantity ? (mrpTotalPrice - totalPrice).toFixed(2) : 0),
     [mrpTotalPrice, totalPrice, quantity]
   );
 
@@ -312,123 +342,134 @@ const ProductDetailVarient = ({
     return Math.max(0, allSavings).toFixed(2);
   }, [currentPriceSplitup, checkOutState.product_price, quantity]);
 
-  const totalSavings = useMemo(() => 
-    (Number(savings) + Number(mrpSavings)).toFixed(2),
+  const totalSavings = useMemo(
+    () => (Number(savings) + Number(mrpSavings)).toFixed(2),
     [savings, mrpSavings]
   );
 
   // Render variant selector based on variant type
-  const renderVariantSelector = useCallback((variant) => {
-    const { variant_name, variant_type, options } = variant;
-    
-    if (!options || options.length === 0) return null;
+  const renderVariantSelector = useCallback(
+    (variant) => {
+      const { variant_name, variant_type, options } = variant;
+      console.log("Rendering variant:",  options.map(opt => opt.image_names?.[0].path || opt.value));
 
-    // For image variants (like colors)
-    if (variant_type === "image_variant") {
-      return (
-        <div className="w-full space-y-3">
-          <Text strong className="block text-gray-800">
-            {variant_name}:
-          </Text>
-          <div className="flex flex-wrap gap-3">
-            {options.map((option, index) => (
-              <Tooltip key={index} title={option.value}>
-                <div
-                  className={`flex flex-col items-center cursor-pointer transition-all duration-200 p-1 ${
-                    selectedVariants[variant_name] === option.value
-                      ? "ring-2 ring-blue-500 rounded-lg"
-                      : "border border-gray-200 rounded-lg hover:border-blue-300"
-                  }`}
-                  onClick={() => handleVariantChange(variant_name, option.value)}
-                >
+      if (!options || options.length === 0) return null;
+
+      // For image variants (like colors)
+      if (variant_type === "image_variant") {
+        return (
+          <div className="w-full space-y-3">
+            <Text strong className="block text-gray-800">
+              {variant_name}:
+            </Text>
+            <div className="flex flex-wrap gap-3">
+              {options.map((option, index) => (
+                <Tooltip key={index} title={option.value}>
                   <div
-                    className="w-16 h-16 rounded-md overflow-hidden bg-gray-100"
-                    style={{
-                      backgroundImage: option.image_names?.[0] 
-                        ? `url(${option.image_names[0]})`
-                        : 'none',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
-                    }}
+                    className={`flex flex-col items-center cursor-pointer transition-all duration-200 p-1 ${
+                      selectedVariants[variant_name] === option.value
+                        ? "ring-2 ring-blue-500 rounded-lg"
+                        : "border border-gray-200 rounded-lg hover:border-blue-300"
+                    }`}
+                    onClick={() =>
+                      handleVariantChange(variant_name, option.value)
+                    }
                   >
-                    {!option.image_names?.[0] && (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                        <span className="text-xs text-gray-500">{option.value}</span>
-                      </div>
-                    )}
+                    <div
+                      className="w-16 h-16 rounded-md overflow-hidden bg-gray-100"
+                      style={{
+                        backgroundImage: option.image_names?.[0]
+                          ? `url(${option.image_names[0].path})`
+                          : "none",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    >
+                      {!option.image_names?.[0] && (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                          <span className="text-xs text-gray-500">
+                            {option.value}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <Text className="text-xs mt-1 text-center capitalize max-w-[60px] truncate">
+                      {option.value}
+                    </Text>
                   </div>
-                  <Text className="text-xs mt-1 text-center capitalize max-w-[60px] truncate">
-                    {option.value}
-                  </Text>
-                </div>
-              </Tooltip>
-            ))}
+                </Tooltip>
+              ))}
+            </div>
           </div>
-        </div>
-      );
-    }
-    
-    // For text variants (like sizes)
-    if (variant_type === "text_box_variant") {
+        );
+      }
+
+      // For text variants (like sizes)
+      if (variant_type === "text_box_variant") {
+        return (
+          <div className="w-full space-y-3">
+            <Text strong className="block text-gray-800">
+              {variant_name}:
+            </Text>
+            <div className="flex flex-wrap gap-2">
+              {options.map((option, index) => (
+                <button
+                  key={index}
+                  className={`px-4 py-2 border rounded-lg transition-all duration-200 font-medium ${
+                    selectedVariants[variant_name] === option.value
+                      ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50"
+                  }`}
+                  onClick={() =>
+                    handleVariantChange(variant_name, option.value)
+                  }
+                >
+                  {option.value}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // Default dropdown for other variants
       return (
         <div className="w-full space-y-3">
           <Text strong className="block text-gray-800">
             {variant_name}:
           </Text>
-          <div className="flex flex-wrap gap-2">
+          <Select
+            value={selectedVariants[variant_name]}
+            onChange={(value) => handleVariantChange(variant_name, value)}
+            className="w-full"
+            placeholder={`Select ${variant_name}`}
+            size="large"
+          >
             {options.map((option, index) => (
-              <button
-                key={index}
-                className={`px-4 py-2 border rounded-lg transition-all duration-200 font-medium ${
-                  selectedVariants[variant_name] === option.value
-                    ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50"
-                }`}
-                onClick={() => handleVariantChange(variant_name, option.value)}
-              >
-                {option.value}
-              </button>
+              <Select.Option key={index} value={option.value}>
+                <div className="flex items-center justify-between">
+                  <span className="capitalize">{option.value}</span>
+                  {option.additional_price > 0 && (
+                    <span className="text-green-600 text-sm">
+                      +₹{option.additional_price}
+                    </span>
+                  )}
+                </div>
+              </Select.Option>
             ))}
-          </div>
+          </Select>
         </div>
       );
-    }
-    
-    // Default dropdown for other variants
-    return (
-      <div className="w-full space-y-3">
-        <Text strong className="block text-gray-800">
-          {variant_name}:
-        </Text>
-        <Select
-          value={selectedVariants[variant_name]}
-          onChange={(value) => handleVariantChange(variant_name, value)}
-          className="w-full"
-          placeholder={`Select ${variant_name}`}
-          size="large"
-        >
-          {options.map((option, index) => (
-            <Select.Option key={index} value={option.value}>
-              <div className="flex items-center justify-between">
-                <span className="capitalize">{option.value}</span>
-                {option.additional_price > 0 && (
-                  <span className="text-green-600 text-sm">
-                    +₹{option.additional_price}
-                  </span>
-                )}
-              </div>
-            </Select.Option>
-          ))}
-        </Select>
-      </div>
-    );
-  }, [selectedVariants, handleVariantChange]);
+    },
+    [selectedVariants, handleVariantChange]
+  );
 
   // Helper functions
   const scrollToProductDetails = useCallback(() => {
     const targetElement = document.getElementById("overview");
     if (targetElement) {
-      const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+      const elementPosition =
+        targetElement.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - 180;
       window.scrollTo({ top: offsetPosition, behavior: "smooth" });
     }
@@ -442,15 +483,18 @@ const ProductDetailVarient = ({
     navigate("/shopping-cart");
   }, [navigate]);
 
-  const handleQuantityDetails = useCallback((stock, quantity) => {
-    try {
-      return _.get(data, "stocks_status", "") === "Don't Track Stocks"
-        ? true
-        : Number(stock) >= Number(quantity);
-    } catch (err) {
-      return false;
-    }
-  }, [data]);
+  const handleQuantityDetails = useCallback(
+    (stock, quantity) => {
+      try {
+        return _.get(data, "stocks_status", "") === "Don't Track Stocks"
+          ? true
+          : Number(stock) >= Number(quantity);
+      } catch (err) {
+        return false;
+      }
+    },
+    [data]
+  );
 
   // Format price functions
   const formatPrice = useCallback((price) => {
@@ -474,143 +518,167 @@ const ProductDetailVarient = ({
         value: Number(item.quantity),
         label: `${item.quantity}`,
         Free_Delivery: item.Free_Deliverey,
-        discount: user?.role === "Dealer" ? item.Dealer_discount : 
-                 user?.role === "Corporate" ? item.Corporate_discount : 
-                 item.Customer_discount,
+        discount:
+          user?.role === "Dealer"
+            ? item.Dealer_discount
+            : user?.role === "Corporate"
+            ? item.Corporate_discount
+            : item.Customer_discount,
         uuid: item.uniqe_id,
         stats: item.recommended_stats,
       }));
     }
   }, [quantityType, dropdownGap, maxQuantity, quantityDiscounts, user?.role]);
 
-  const handleQuantitySelect = useCallback((selectedQuantity) => {
-    if (quantityType === "textbox") {
-      const selectedDiscount = quantityDiscounts
-        .filter((item) => Number(item.quantity) <= selectedQuantity)
-        .sort((a, b) => Number(b.quantity) - Number(a.quantity))[0];
+  const handleQuantitySelect = useCallback(
+    (selectedQuantity) => {
+      if (quantityType === "textbox") {
+        const selectedDiscount = quantityDiscounts
+          .filter((item) => Number(item.quantity) <= selectedQuantity)
+          .sort((a, b) => Number(b.quantity) - Number(a.quantity))[0];
 
-      setQuantity(selectedQuantity);
-      setCheckOutState((prev) => ({
-        ...prev,
-        product_quantity: selectedQuantity,
-      }));
+        setQuantity(selectedQuantity);
+        setCheckOutState((prev) => ({
+          ...prev,
+          product_quantity: selectedQuantity,
+        }));
 
-      if (selectedDiscount) {
-        let discount = 0;
-        if (user?.role === "Dealer") {
-          discount = selectedDiscount.Dealer_discount;
-        } else if (user?.role === "Corporate") {
-          discount = selectedDiscount.Corporate_discount;
+        if (selectedDiscount) {
+          let discount = 0;
+          if (user?.role === "Dealer") {
+            discount = selectedDiscount.Dealer_discount;
+          } else if (user?.role === "Corporate") {
+            discount = selectedDiscount.Corporate_discount;
+          } else {
+            discount = selectedDiscount.Customer_discount;
+          }
+
+          setDiscountPercentage({
+            uuid: selectedDiscount.uniqe_id,
+            percentage: Number(discount),
+          });
+          setFreeDelivery(selectedDiscount.Free_Deliverey || false);
         } else {
-          discount = selectedDiscount.Customer_discount;
+          setDiscountPercentage({ uuid: "", percentage: 0 });
+          setFreeDelivery(false);
         }
-
-        setDiscountPercentage({
-          uuid: selectedDiscount.uniqe_id,
-          percentage: Number(discount),
-        });
-        setFreeDelivery(selectedDiscount.Free_Deliverey || false);
       } else {
-        setDiscountPercentage({ uuid: "", percentage: 0 });
-        setFreeDelivery(false);
-      }
-    } else {
-      const selectedDiscount = quantityDiscounts.find(
-        (item) => Number(item.quantity) === selectedQuantity
-      );
+        const selectedDiscount = quantityDiscounts.find(
+          (item) => Number(item.quantity) === selectedQuantity
+        );
 
-      setQuantity(selectedQuantity);
-      setCheckOutState((prev) => ({
-        ...prev,
-        product_quantity: selectedQuantity,
-      }));
+        setQuantity(selectedQuantity);
+        setCheckOutState((prev) => ({
+          ...prev,
+          product_quantity: selectedQuantity,
+        }));
 
-      if (selectedDiscount) {
-        let discount = 0;
-        if (user?.role === "Dealer") {
-          discount = selectedDiscount.Dealer_discount;
-        } else if (user?.role === "Corporate") {
-          discount = selectedDiscount.Corporate_discount;
-        } else {
-          discount = selectedDiscount.Customer_discount;
+        if (selectedDiscount) {
+          let discount = 0;
+          if (user?.role === "Dealer") {
+            discount = selectedDiscount.Dealer_discount;
+          } else if (user?.role === "Corporate") {
+            discount = selectedDiscount.Corporate_discount;
+          } else {
+            discount = selectedDiscount.Customer_discount;
+          }
+
+          setDiscountPercentage({
+            uuid: selectedDiscount.uniqe_id,
+            percentage: Number(discount),
+          });
+          setFreeDelivery(selectedDiscount.Free_Deliverey || false);
         }
-
-        setDiscountPercentage({
-          uuid: selectedDiscount.uniqe_id,
-          percentage: Number(discount),
-        });
-        setFreeDelivery(selectedDiscount.Free_Deliverey || false);
       }
-    }
-    setQuantityDropdownVisible(false);
-  }, [quantityType, quantityDiscounts, user?.role]);
+      setQuantityDropdownVisible(false);
+    },
+    [quantityType, quantityDiscounts, user?.role]
+  );
 
   // Quantity dropdown render
-  const quantityDropdownRender = useCallback((menu) => (
-    <div
-      className="p-2 rounded-lg shadow-xl bg-white"
-      onMouseLeave={() => setQuantityDropdownVisible(false)}
-    >
-      <div className="overflow-y-auto max-h-80 space-y-3">
-        {quantityOptions.map((item) => {
-          const itemUnitPrice = DISCOUNT_HELPER(
-            item.discount,
-            Number(checkOutState.product_price)
-          );
-          const itemTotalPrice = itemUnitPrice * item.value;
-          const isSelected = quantity === item.value;
+  const quantityDropdownRender = useCallback(
+    (menu) => (
+      <div
+        className="p-2 rounded-lg shadow-xl bg-white"
+        onMouseLeave={() => setQuantityDropdownVisible(false)}
+      >
+        <div className="overflow-y-auto max-h-80 space-y-3">
+          {quantityOptions.map((item) => {
+            const itemUnitPrice = DISCOUNT_HELPER(
+              item.discount,
+              Number(checkOutState.product_price)
+            );
+            const itemTotalPrice = itemUnitPrice * item.value;
+            const isSelected = quantity === item.value;
 
-          return (
-            <div
-              key={item.value}
-              className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                isSelected
-                  ? "border-blue-500 bg-blue-50 shadow-sm"
-                  : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
-              }`}
-              onClick={() => handleQuantitySelect(item.value)}
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-base font-medium ${isSelected ? "text-blue-700" : "text-gray-800"}`}>
-                    {item.value} {unit}
-                  </span>
-                  {item.stats && item.stats !== "No comments" && (
-                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
-                      {item.stats}
+            return (
+              <div
+                key={item.value}
+                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-50 shadow-sm"
+                    : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
+                }`}
+                onClick={() => handleQuantitySelect(item.value)}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`text-base font-medium ${
+                        isSelected ? "text-blue-700" : "text-gray-800"
+                      }`}
+                    >
+                      {item.value} {unit}
                     </span>
-                  )}
+                    {item.stats && item.stats !== "No comments" && (
+                      <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                        {item.stats}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    {item.discount > 0 && (
+                      <span className="text-green-600 text-sm font-medium inline-flex items-center mt-1">
+                        <CheckCircleOutlined className="mr-1" />
+                        {item.discount}% discount
+                      </span>
+                    )}
+                    {item.Free_Delivery && (
+                      <span className="text-blue-600 text-sm font-medium inline-flex items-center mt-1">
+                        Free Delivery
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex gap-2">
-                  {item.discount > 0 && (
-                    <span className="text-green-600 text-sm font-medium inline-flex items-center mt-1">
-                      <CheckCircleOutlined className="mr-1" />
-                      {item.discount}% discount
-                    </span>
-                  )}
-                  {item.Free_Delivery && (
-                    <span className="text-blue-600 text-sm font-medium inline-flex items-center mt-1">
-                      Free Delivery
-                    </span>
-                  )}
+                <div className="text-right">
+                  <p
+                    className={`font-semibold ${
+                      isSelected ? "text-blue-700" : "text-gray-900"
+                    }`}
+                  >
+                    {formatPrice(itemTotalPrice)}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {formatPrice(itemUnitPrice)}/{unit}
+                  </p>
                 </div>
               </div>
-
-              <div className="text-right">
-                <p className={`font-semibold ${isSelected ? "text-blue-700" : "text-gray-900"}`}>
-                  {formatPrice(itemTotalPrice)}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {formatPrice(itemUnitPrice)}/{unit}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
-  ), [quantityOptions, checkOutState.product_price, quantity, unit, handleQuantitySelect, formatPrice]);
+    ),
+    [
+      quantityOptions,
+      checkOutState.product_price,
+      quantity,
+      unit,
+      handleQuantitySelect,
+      formatPrice,
+    ]
+  );
 
   // Handle buy/add to cart
   const handleBuy = async () => {
@@ -645,7 +713,9 @@ const ProductDetailVarient = ({
         MRP_savings: mrpSavings,
         TotalSavings: totalSavings,
         FreeDelivery: freeDelivery,
-        final_total: Number(checkOutState.product_price * checkOutState.product_quantity),
+        final_total: Number(
+          checkOutState.product_price * checkOutState.product_quantity
+        ),
       };
 
       const result = await addToShoppingCart(updatedCheckoutState);
@@ -678,19 +748,22 @@ const ProductDetailVarient = ({
   };
 
   // Share functionality
-  const shareProduct = useCallback((platform) => {
-    const productUrl = encodeURIComponent(window.location.href);
-    const productName = encodeURIComponent(data.name);
-    const shareUrls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${productUrl}`,
-      whatsapp: `https://api.whatsapp.com/send?text=Check out this product: ${productName} ${productUrl}`,
-    };
+  const shareProduct = useCallback(
+    (platform) => {
+      const productUrl = encodeURIComponent(window.location.href);
+      const productName = encodeURIComponent(data.name);
+      const shareUrls = {
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${productUrl}`,
+        whatsapp: `https://api.whatsapp.com/send?text=Check out this product: ${productName} ${productUrl}`,
+      };
 
-    if (shareUrls[platform]) {
-      window.open(shareUrls[platform], "_blank");
-    }
-    setShowShareMenu(false);
-  }, [data.name]);
+      if (shareUrls[platform]) {
+        window.open(shareUrls[platform], "_blank");
+      }
+      setShowShareMenu(false);
+    },
+    [data.name]
+  );
 
   const handleNativeShare = async () => {
     if (navigator.share) {
@@ -717,24 +790,95 @@ const ProductDetailVarient = ({
     >
       <div className="font-primary w-full space-y-6 relative">
         {/* Product Header */}
-        <div className="space-y-1 flex justify-between items-end">
+        <div className="space-y-1 flex md:flex-row flex-col justify-between items-end">
           <div className="flex-1">
-            <h1 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xlleading-tight">
+            <h1 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl leading-tight">
               {data.name}
             </h1>
           </div>
+          <div className="w-full md:w-auto flex flex-col md:flex-row items-start md:items-center gap-3 md:relative">
+            {/* Share Button - Mobile */}
+            <div className="md:hidden flex flex-row-reverse items-center gap-3 w-full justify-between my-2">
+              <button
+                onClick={handleNativeShare}
+                className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300"
+              >
+                <IoShareSocial />
+              </button>
 
-          <div className="relative">
-            <button
-              onClick={handleNativeShare}
-              className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300"
-            >
-              <IoShareSocial />
-            </button>
+              {/* Price Badge - Mobile */}
+              <motion.div
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  ease: "easeInOut",
+                }}
+                className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
+              >
+                <div className="flex items-baseline gap-2">
+                  <span className="text-white/70 text-xs line-through">
+                    ₹
+                    {_.get(data, "MRP_price", 0) ||
+                      Number(_.get(checkOutState, "product_price", 0)) + 50}
+                  </span>
+                  <h3 className="text-white text-base font-semibold">
+                    {quantity
+                      ? formatPrice(
+                          Number(_.get(checkOutState, "product_price", 0))
+                        )
+                      : "Select Qty"}
+                  </h3>
+                </div>
+              </motion.div>
+            </div>
 
+            {/* Share Button - Desktop */}
+            <div className="hidden md:flex items-center gap-3">
+              <button
+                onClick={handleNativeShare}
+                className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300 hidden"
+              >
+                <IoShareSocial />
+              </button>
+
+              {/* Price Badge - Desktop */}
+              <motion.div
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  ease: "easeInOut",
+                }}
+                className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
+              >
+                <div className="flex items-baseline gap-2">
+                  <span className="text-white/70 text-xs line-through">
+                    ₹
+                    {_.get(data, "MRP_price", 0) ||
+                      Number(_.get(checkOutState, "product_price", 0)) + 50}
+                  </span>
+                  <h3 className="text-white text-base font-semibold">
+                    {quantity
+                      ? formatPrice(
+                          Number(_.get(checkOutState, "product_price", 0))
+                        )
+                      : "Select Qty"}
+                  </h3>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Share Menu Popover */}
             <AnimatePresence>
               {showShareMenu && (
-                <div className="absolute right-0 top-12 w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200">
+                <CustomPopover
+                  open={showShareMenu}
+                  onClose={() => setShowShareMenu(false)}
+                  className="w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200"
+                >
                   <p className="text-xs text-gray-500 font-semibold p-2">
                     Share via
                   </p>
@@ -754,31 +898,9 @@ const ProductDetailVarient = ({
                       <span className="text-xs mt-1">WhatsApp</span>
                     </button>
                   </div>
-                </div>
+                </CustomPopover>
               )}
             </AnimatePresence>
-
-            <motion.div
-              animate={{ scale: [1, 1.15, 1] }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                repeatType: "loop",
-                ease: "easeInOut",
-              }}
-              className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-3 py-2 shadow-md text-right h-fit w-fit absolute top-16 right-0"
-            >
-              <div className="flex items-baseline gap-2">
-                <span className="text-white/70 text-xs line-through">
-                  ₹{_.get(currentPriceSplitup, "MRP_price", Number(checkOutState.product_price) + 50)}
-                </span>
-                <h3 className="text-white text-base font-semibold">
-                  {quantity
-                    ? formatPrice(Number(checkOutState.product_price))
-                    : "Select Qty"}
-                </h3>
-              </div>
-            </motion.div>
           </div>
         </div>
 
@@ -803,15 +925,16 @@ const ProductDetailVarient = ({
 
         <div className="p-4 bg-gray-50 rounded-lg">
           {/* Dynamic Variants Section */}
-          {availableVariants.length > 0 && availableVariants.some(v => v.options && v.options.length > 0) && (
-            <div className="w-full space-y-6 ">
-              {availableVariants.map((variant, index) => (
-                <div key={index}>
-                  {renderVariantSelector(variant)}
-                </div>
-              ))}
-            </div>
-          )}
+          {availableVariants.length > 0 &&
+            availableVariants.some(
+              (v) => v.options && v.options.length > 0
+            ) && (
+              <div className="w-full space-y-6 ">
+                {availableVariants.map((variant, index) => (
+                  <div key={index}>{renderVariantSelector(variant)}</div>
+                ))}
+              </div>
+            )}
 
           {/* Selected Variants Summary */}
           {Object.keys(selectedVariants).length > 0 && (
@@ -860,7 +983,9 @@ const ProductDetailVarient = ({
                   MRP {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
-                  {quantity ? formatPrice(totalPrice) : formatMRPPrice(totalPrice)}
+                  {quantity
+                    ? formatPrice(totalPrice)
+                    : formatMRPPrice(totalPrice)}
                 </Title>
               </div>
             </div>

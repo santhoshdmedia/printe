@@ -180,7 +180,7 @@ const RatingAndReviews = () => {
   return (
     <Spin spinning={loadingStatus}>
       <div className="flex gap-2  flex-col-reverse">
-        {/* <div className={`flex-1 ${review.length >= 5 && "h-[40rem]"} p-2 flex flex-col gap-2`}>
+        <div className={`flex-1 ${review.length >= 5 && "h-[40rem]"} p-2 flex flex-col gap-2`}>
           <h1 className="sub_title">
             Reviews <span className="text-gray-500 !para">{review.length}</span>
           </h1>
@@ -208,7 +208,7 @@ const RatingAndReviews = () => {
             </Swiper>
             )}
           </div>
-        </div> */}
+        </div>
 
         <div className={` w-full bg-tr ${review.length >= 5 && " sticky top-24"}  p-2`}>
           <h1 className="sub_title capitalize">Rating</h1>
@@ -236,7 +236,7 @@ const RatingAndReviews = () => {
               </span>
             </div>
           </div>
-
+{/* 
           <div className="flex flex-col gap-3  py-5 mt-4   rounded-lg">
             <h5 className="text-sm"> Rate the product</h5>
             <Rate
@@ -264,7 +264,7 @@ const RatingAndReviews = () => {
                 </>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </Spin>
