@@ -13,6 +13,7 @@ import BrowseAll from "../../components/Home/BrowseAll";
 import { useNavigate } from "react-router-dom";
 import QuickAccess from "../../config/QuickAccess";
 import ThreeDSlider from "../../components/Home/ThreeDSlider";
+import BeforeAfterSlider from "../../components/Home/BeforeAfter";
 
 const Home = () => {
   const [loading, setLoading] = useState(false);
@@ -98,6 +99,9 @@ const Home = () => {
             </div>
           );
         })}
+      </div>
+      <div className="">
+        <BeforeAfterSlider/>
       </div>
 
       <div className="">

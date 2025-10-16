@@ -200,7 +200,7 @@ const NavMenu = () => {
                                     >
                                       {/* Subcategory Image and Name */}
                                       <div className="flex items-center gap-4 mb-3">
-                                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                        {/* <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
                                           <img
                                             src={subcat.sub_category_image || "/placeholder-image.jpg"}
                                             alt={subcat.sub_category_name}
@@ -209,7 +209,7 @@ const NavMenu = () => {
                                               e.target.src = "/placeholder-image.jpg";
                                             }}
                                           />
-                                        </div>
+                                        </div> */}
                                         <div>
                                           <h4 className="font-semibold text-gray-800 text-sm">
                                             {subcat.sub_category_name}
@@ -326,7 +326,11 @@ const NavMenu = () => {
           .filter((cat) => cat.category_active_status)
           .map((category) => {
             const visibleSubCategories = getVisibleSubcategories(category);
+            const totalProducts = _.get(category, "product_details", []);
             
+            const showAsMegaMenu =
+              visibleSubCategories.length > 3 || totalProducts > 10;
+
             // Don't show category if no visible subcategories
             if (visibleSubCategories.length === 0) {
               return null;
@@ -335,7 +339,9 @@ const NavMenu = () => {
             return (
               <div
                 key={category._id}
-                className="text-[16px] items-center relative"
+                className={`text-[16px] items-center ${
+                  showAsMegaMenu ? "" : "relative"
+                }`}
                 ref={(el) =>
                   (dropdownRefs.current[`category-${category._id}`] = {
                     current: el,
@@ -346,6 +352,7 @@ const NavMenu = () => {
                   className="text-white center_div gap-x-2 text-nowrap cursor-pointer py-2 px-4 rounded-lg hover:text-yellow-300 transition-all duration-300"
                   onMouseEnter={() => {
                     toggleDropdown("categories", category._id);
+                    handleHoverState("category_id", category._id);
                   }}
                 >
                   <Link
@@ -356,142 +363,156 @@ const NavMenu = () => {
                   >
                     {category.main_category_name}{" "}
                     {activeDropdown.categories[category._id] ? (
-                      <SafeIcon icon={IconHelper.UPARROW_ICON} />
+                      <IconHelper.UPARROW_ICON />
                     ) : (
-                      <SafeIcon icon={IconHelper.DOWNARROW_ICON} />
+                      <IconHelper.DOWNARROW_ICON />
                     )}
                   </Link>
                 </div>
 
-                {/* Individual Category Mega Menu */}
-                {activeDropdown.categories[category._id] && (
-                  <div
-                    className="absolute border border-gray-200 bg-white shadow-lg w-[500px] max-h-[600px] overflow-auto left-1/2 transform -translate-x-1/2 z-50 p-8 top-[55px] rounded-xl"
-                    onMouseLeave={closeAllDropdowns}
-                  >
-                    <div className="max-w-4xl mx-auto">
-                      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                        {category.main_category_name}
-                      </h2>
-                      <p className="text-gray-600 mb-6">
-                        Browse all subcategories and products
-                      </p>
-                      
-                      <div className="grid grid-cols-3 gap-6">
-                        {visibleSubCategories.map((subcat) => (
-                          <div
-                            key={subcat._id}
-                            className="group transition-all duration-300 bg-white hover:bg-gray-50 rounded-lg p-4 border border-transparent hover:border-gray-200"
-                          >
-                            {/* Subcategory Header */}
+                {showAsMegaMenu ? (
+                  // Mega Menu Version
+                  activeDropdown.categories[category._id] && (
+                    <div
+                      className="absolute border border-gray-200 bg-white shadow-lg w-[1000px] max-h-[600px] overflow-auto left-[10px] z-50 p-8 top-[55px] rounded-xl"
+                      onMouseLeave={closeAllDropdowns}
+                    >
+                      <div className="max-w-5xl mx-auto">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                          {category.main_category_name}
+                        </h2>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                          {visibleSubCategories.map((subcat) => (
                             <div
-                              onClick={() => {
-                                navigation(
-                                  `/category/${encodeURIComponent(
-                                    category.main_category_name
-                                  )}/${encodeURIComponent(
-                                    subcat.sub_category_name
-                                  )}/${category._id}/${subcat._id}`
-                                );
-                                closeAllDropdowns();
-                              }}
-                              className="flex items-center gap-3 mb-3 cursor-pointer"
+                              key={subcat._id}
+                              className="group transition-all duration-300 bg-white hover:bg-gray-50 rounded-lg p-4 border border-transparent hover:border-gray-200"
                             >
-                              <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
-                                <img
-                                  src={subcat.sub_category_image || "/placeholder-image.jpg"}
-                                  alt={subcat.sub_category_name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    e.target.src = "/placeholder-image.jpg";
-                                  }}
-                                />
-                              </div>
-                              <div>
-                                <h3 className="font-bold text-gray-800 group-hover:text-yellow-600 transition-colors text-sm">
+                              {/* Subcategory Title */}
+                              <div
+                                onClick={() => {
+                                  navigation(
+                                    `/category/${encodeURIComponent(
+                                      category.main_category_name
+                                    )}/${encodeURIComponent(
+                                      subcat.sub_category_name
+                                    )}/${category._id}/${subcat._id}`
+                                  );
+                                  closeAllDropdowns();
+                                }}
+                                className="relative pb-2 mb-3 cursor-pointer"
+                              >
+                                <h3 className="text-lg font-bold text-gray-800 group-hover:text-yellow-600 transition-colors flex items-center justify-between">
                                   {subcat.sub_category_name}
+                                  <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm group-hover:text-yellow-500" />
                                 </h3>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {category.product_details?.filter(
-                                    p => p.sub_category_details === subcat._id && p.is_visible
-                                  ).length || 0} products
-                                </p>
+                                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-yellow-500 transition-all duration-300 group-hover:w-full"></div>
+                              </div>
+
+                              {/* Product List */}
+                              <div className="flex flex-col gap-3">
+                                {category.product_details
+                                  ?.filter(
+                                    (p) => p.sub_category_details === subcat._id && p.is_visible === true
+                                  )
+                                  .slice(0, 5)
+                                  .map((product, index) => (
+                                    <Link
+                                      to={`/product/${product.seo_url}`}
+                                      key={product._id}
+                                      className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-all duration-200 hover:translate-x-1 group/product"
+                                      onClick={closeAllDropdowns}
+                                      style={{
+                                        transitionDelay: `${index * 50}ms`,
+                                      }}
+                                    >
+                                      <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gray-200 group-hover/product:border-yellow-300 transition-all">
+                                        <img
+                                          src={_.get(
+                                            product,
+                                            "images[0].path",
+                                            "/placeholder-product.jpg"
+                                          )}
+                                          alt={product.name}
+                                          className="w-full h-full object-cover hover:scale-105 transition-transform"
+                                          onError={(e) => {
+                                            e.target.src =
+                                              "/placeholder-product.jpg";
+                                          }}
+                                        />
+                                      </div>
+                                      <p className="text-sm font-medium text-gray-700 truncate group-hover/product:text-yellow-600 transition-colors">
+                                        {product.name}
+                                      </p>
+                                      <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm opacity-0 group-hover/product:opacity-100 transition-opacity ml-auto" />
+                                    </Link>
+                                  ))}
                               </div>
                             </div>
+                          ))}
+                        </div>
 
-                            {/* Product List */}
-                            <div className="space-y-2">
-                              {category.product_details
-                                ?.filter(
-                                  (p) => p.sub_category_details === subcat._id && p.is_visible === true
-                                )
-                                .slice(0, 4)
-                                .map((product) => (
-                                  <Link
-                                    to={`/product/${product.seo_url}`}
-                                    key={product._id}
-                                    className="flex items-center gap-3 p-2 rounded-md hover:bg-white transition-all duration-200 group/product"
-                                    onClick={closeAllDropdowns}
-                                  >
-                                    <div className="flex-shrink-0 w-8 h-8 rounded border border-gray-200 overflow-hidden">
-                                      <img
-                                        src={_.get(
-                                          product,
-                                          "images[0].path",
-                                          "/placeholder-product.jpg"
-                                        )}
-                                        alt={product.name}
-                                        className="w-full h-full object-cover group-hover/product:scale-105 transition-transform"
-                                        onError={(e) => {
-                                          e.target.src = "/placeholder-product.jpg";
-                                        }}
-                                      />
-                                    </div>
-                                    <p className="text-xs font-medium text-gray-700 truncate group-hover/product:text-yellow-600 transition-colors flex-1">
-                                      {product.name}
-                                    </p>
-                                  </Link>
-                                ))}
-                            </div>
-
-                            {/* View All Link */}
-                            {category.product_details?.filter(
-                              p => p.sub_category_details === subcat._id && p.is_visible
-                            ).length > 4 && (
-                              <div className="mt-3 pt-2 border-t border-gray-100">
-                                <div
-                                  onClick={() => {
-                                    navigation(
-                                      `/category/${category.main_category_name}/${subcat.sub_category_name}/${category._id}/${subcat._id}`
-                                    );
-                                    closeAllDropdowns();
-                                  }}
-                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer flex items-center gap-1"
-                                >
-                                  View all products
-                                  <SafeIcon icon={IconHelper.RIGHT_ARROW_ICON} className="text-xs" />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* View All Button */}
-                      <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-                        <button
-                          onClick={() => {
-                            navigation(`/category/${category.main_category_name}/${category._id}`);
-                            closeAllDropdowns();
-                          }}
-                          className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors shadow-md hover:shadow-lg font-medium flex items-center justify-center mx-auto gap-2"
-                        >
-                          View All {category.main_category_name}
-                          <SafeIcon icon={IconHelper.RIGHT_ARROW_ICON} className="text-sm" />
-                        </button>
+                        {/* View All Button */}
+                        <div className="mt-8 text-center">
+                          <button
+                            onClick={() => {
+                              navigation(
+                                `/category/${category.main_category_name}`
+                              );
+                              closeAllDropdowns();
+                            }}
+                            className="px-6 py-3 bg-yellow-600 text-white rounded-full hover:bg-yellow-700 transition-colors shadow-md hover:shadow-lg font-medium flex items-center justify-center mx-auto"
+                          >
+                            View All {category.main_category_name}
+                            <IconHelper.RIGHT_ARROW_ICON className="ml-2 text-sm" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )
+                ) : (
+                  // Compact Dropdown Version
+                  activeDropdown.categories[category._id] && (
+                    <div
+                      className="absolute border border-gray-200 bg-white shadow-lg min-w-[250px] z-50 py-3 top-[55px] left-0 rounded-xl overflow-hidden"
+                      onMouseLeave={closeAllDropdowns}
+                    >
+                      {visibleSubCategories.map((subcat) => (
+                        <div key={subcat._id} className="group">
+                          <div
+                            onClick={() => {
+                              navigation(
+                                `/category/${category.main_category_name}/${subcat.sub_category_name}/${category._id}/${subcat._id}`
+                              );
+                              closeAllDropdowns();
+                            }}
+                            className="px-4 py-3 hover:bg-gray-50 text-gray-800 cursor-pointer font-medium border-b border-gray-100 flex items-center justify-between transition-colors"
+                          >
+                            {subcat.sub_category_name}
+                          </div>
+                          <div className="flex flex-col pl-4">
+                            {category.product_details
+                              ?.filter(
+                                (p) => p.sub_category_details === subcat._id && p.is_visible === true
+                              )
+                              .slice(0, 3)
+                              .map((product) => (
+                                <Link
+                                  to={`/product/${product.seo_url}`}
+                                  key={product._id}
+                                  className="px-4 py-2 text-sm hover:bg-gray-50 text-gray-700 hover:text-yellow-500 transition-colors flex items-center group/item"
+                                  onClick={closeAllDropdowns}
+                                >
+                                  <span className="truncate">
+                                    {product.name}
+                                  </span>
+                                  <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs ml-auto opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                                </Link>
+                              ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
             );
