@@ -980,7 +980,7 @@ const ProductDetailVarient = ({
               </Text>
               <div className="text-right flex items-baseline">
                 <Text delete className="text-md text-gray-500 mr-2">
-                  MRP {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
+                 {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
@@ -996,7 +996,7 @@ const ProductDetailVarient = ({
                 <Alert
                   message={
                     <div>
-                      <div>You saved {formatPrice(mrpSavings)} on MRP</div>
+                      <div>You saved {formatPrice(mrpSavings)} </div>
                       {quantity && savings > 0 && (
                         <div className="mt-1">
                           <div>

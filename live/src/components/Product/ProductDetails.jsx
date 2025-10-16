@@ -94,7 +94,7 @@ export const CustomModal = ({
   width = 520,
   className = "",
   closable = true,
-  topPosition = "top-0",
+  topPosition="top-0" ,
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -327,9 +327,12 @@ const ProductDetails = ({
   const quantityType = _.get(data, "quantity_type", "dropdown");
   const maxQuantity = _.get(data, "max_quantity", 10000);
   const unit = _.get(data, "unit", "");
+  const stockCount = _.get(data, "stock_count", "");
   const productionTime = _.get(data, "Production_time", "");
   const ArrangeTime = _.get(data, "Stock_Arrangement_time", "");
-  const processing_item = Number(productionTime) + Number(ArrangeTime);
+  const processing_item = stockCount === 0 
+  ? Number(productionTime) + Number(ArrangeTime) 
+  : Number(productionTime);
 
   useEffect(() => {
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
@@ -1167,7 +1170,7 @@ const ProductDetails = ({
               </Text>
               <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
                 <Text delete className="text-md text-gray-500 md:mr-2">
-                  MRP {formatPrice(_.get(data, "MRP_price", 0))}
+                   {formatPrice(_.get(data, "MRP_price", 0))}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
@@ -1184,7 +1187,7 @@ const ProductDetails = ({
                   message={
                     <div>
                       <div>
-                        You saved {formatPrice(calculateMRPSavings())} on MRP
+                        You saved {formatPrice(calculateMRPSavings())} 
                       </div>
                       {quantity && calculateSavings() > 0 && (
                         <div className="mt-1">
@@ -1273,6 +1276,7 @@ const ProductDetails = ({
               onClose={() => setIsModalOpen(false)}
               title="Processing Time Information"
               width={700}
+              topPosition="!top-[-280px]"
             >
               <ProcessingTimeInfo />
             </CustomModal>
@@ -1395,13 +1399,9 @@ const ProductDetails = ({
                 className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
                 onClick={handlebuy}
                 loading={loading}
-                disabled={!quantity || !handleQuantityDetails(stock, quantity)}
               >
-                {!quantity
-                  ? "Select quantity first"
-                  : !handleQuantityDetails(stock, quantity)
-                  ? "Out of stock"
-                  : "Add To Cart"}
+                
+                Add To Cart
               </Button>
             )}
           </div>

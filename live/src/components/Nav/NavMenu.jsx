@@ -4,6 +4,14 @@ import { IconHelper } from "../../helper/IconHelper";
 import _ from "lodash";
 import { Link, useNavigate } from "react-router-dom";
 
+// Safe icon component with fallback
+const SafeIcon = ({ icon: IconComponent, className, fallback = "→", ...props }) => {
+  if (!IconComponent || typeof IconComponent !== 'function') {
+    return <span className={className}>{fallback}</span>;
+  }
+  return <IconComponent className={className} {...props} />;
+};
+
 const NavMenu = () => {
   const { menu } = useSelector((state) => state.publicSlice);
   const navigation = useNavigate();
@@ -60,9 +68,6 @@ const NavMenu = () => {
     setIsAnyMegaMenuOpen(false);
   };
 
-  // Control body overflow
- 
-
   // Toggle dropdowns
   const toggleDropdown = (dropdownName, categoryId = null) => {
     if (dropdownName === "megaMenu") {
@@ -109,203 +114,219 @@ const NavMenu = () => {
         {/* All Categories Mega Menu */}
         <div className="w-fit center_div rounded-md text-white">
           <div ref={(el) => (dropdownRefs.current.megaMenu = { current: el })}>
-            <Link
-              to="/all-categories"
-              onMouseEnter={(e) => {
-                e.preventDefault();
+            <div
+              onMouseEnter={() => {
                 toggleDropdown("megaMenu");
-                handleHoverState("side_category_id", "view");
               }}
-              className="text-white center_div gap-x-2 text-[14px] font-bold hover:text-yellow-300 transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white hover:bg-opacity-10"
+              className="text-white center_div gap-x-2 text-[14px] font-bold hover:text-yellow-300 transition-all duration-300 py-2 px-4 rounded-lg hover:bg-white hover:bg-opacity-10 cursor-pointer"
             >
-              All categories <IconHelper.DOWNARROW_ICON />
-            </Link>
+              All categories <SafeIcon icon={IconHelper.DOWNARROW_ICON} />
+            </div>
 
             {/* Mega Menu Content */}
             {activeDropdown.megaMenu && (
               <div
-                className="absolute animate-fade-in max-h-fit w-[60vw] z-50 top-16 inset-0 bg-white rounded-xl overflow-hidden border border-gray-100"
+                className="absolute animate-fade-in w-[80vw] max-w-6xl z-50 top-16 left-0 transform -translate-x-1/2 bg-white rounded-xl overflow-hidden border border-gray-200 shadow-2xl"
                 onMouseLeave={closeAllDropdowns}
               >
-                <div className="grid grid-cols-5 px-8 py-8 gap-6 mx-auto">
-                  {menu.map((result) => (
-                    <div key={result._id} className="p-4 transition-all duration-300 rounded-xl hover:transform hover:-translate-y-1 hover:shadow-lg bg-transparent">
-                      <div
-                        onMouseEnter={() =>
-                          handleHoverState("side_category_id", result._id)
-                        }
-                        className="flex flex-col gap-3"
-                      >
-                        <div className="flex justify-between items-center">
-                          <span
-                            className="hover:text-yellow-500 cursor-pointer font-semibold text-gray-800 transition-colors"
-                            onClick={() => {
-                              navigation(
-                                `/category/${result.main_category_name}/${result._id}`
-                              );
-                              closeAllDropdowns();
-                            }}
+                <div className="p-8">
+                  <div className="grid grid-cols-4 gap-8">
+                    {/* Main Categories Column */}
+                    <div className="col-span-1 border-r border-gray-200 pr-6">
+                      <h3 className="font-bold text-gray-800 text-lg mb-6 pb-3 border-b border-gray-200">
+                        All Categories
+                      </h3>
+                      <div className="space-y-2">
+                        {menu.map((category) => (
+                          <div
+                            key={category._id}
+                            onMouseEnter={() =>
+                              handleHoverState("side_category_id", category._id)
+                            }
+                            className={`p-3 rounded-lg cursor-pointer transition-all  duration-200 ${
+                              hoverStates.side_category_id === category._id
+                                ? "bg-blue-50 border border-blue-200"
+                                : "hover:bg-gray-50"
+                            }`}
                           >
-                            {result.main_category_name}
-                          </span>
-                          {hoverStates.side_category_id === result._id ? (
-                            <IconHelper.LEFTARROW_ICON className="text-yellow-500 text-sm rotate-45" />
-                          ) : (
-                            <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm" />
-                          )}
-                        </div>
-                        <div className="rounded-lg overflow-hidden border border-gray-200 hover:border-yellow-300 transition-colors">
-                          <img
-                            src={_.get(
-                              result,
-                              "sub_categories_details[0].sub_category_image",
-                              ""
-                            )}
-                            alt={_.get(
-                              result,
-                              "sub_categories_details[0].sub_category_name",
-                              "Category"
-                            )}
-                            className="object-fill w-full h-auto"
-                            onClick={() => {
-                              navigation(
-                                `/category/${result.main_category_name}/${result._id}`
-                              );
-                              closeAllDropdowns();
-                            }}
-                          />
-                        </div>
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-gray-800 text-sm">
+                                {category.main_category_name}
+                              </span>
+                              <SafeIcon 
+                                icon={IconHelper.RIGHT_ARROW_ICON}
+                                className={`text-xs ${
+                                  hoverStates.side_category_id === category._id
+                                    ? "text-blue-500"
+                                    : "text-gray-400"
+                                }`} 
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
+                    </div>
 
-                      {/* Subcategory Panel - Only show if there are visible subcategories */}
-                      {hoverStates.side_category_id === result._id && 
-                       getVisibleSubcategories(result).length > 0 && (
-                        <div
-                          className="absolute min-w-[300px] min-h-full bg-white shadow-lg top-0 left-full border-l border-gray-200 rounded-r-xl overflow-hidden"
-                          onMouseLeave={() =>
-                            handleHoverState("side_category_id", null)
-                          }
-                        >
-                          <div className="p-4">
-                            <h3 className="font-bold text-gray-800 mb-3 text-lg">
-                              Subcategories
-                            </h3>
-                            <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent my-2"></div>
-                            {getVisibleSubcategories(result).map((subcat) => (
-                              <div
-                                key={subcat._id}
-                                className="pl-3 py-2 transition-all duration-200 border-l-3 border-transparent hover:border-blue-500 hover:bg-gray-50"
-                              >
-                                <div
-                                  onMouseEnter={() =>
-                                    handleHoverState("sideSubcatId", subcat._id)
-                                  }
-                                  className="text-gray-700 text-sm font-medium min-w-fit flex justify-between items-center h-10 hover:text-yellow-500 transition-colors"
-                                >
-                                  <span
-                                    className="hover:text-yellow-500 cursor-pointer truncate"
-                                    onClick={() => {
-                                      navigation(
-                                        `/category/${result.main_category_name}/${subcat.sub_category_name}/${result._id}/${subcat._id}`
-                                      );
-                                      closeAllDropdowns();
-                                    }}
-                                  >
-                                    {subcat.sub_category_name}
-                                  </span>
-                                  {hoverStates.sideSubcatId === subcat._id ? (
-                                    <IconHelper.LEFTARROW_ICON className="text-yellow-500 text-xs" />
-                                  ) : (
-                                    <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs" />
-                                  )}
-                                </div>
+                    {/* Subcategories Column - Show when a category is hovered */}
+                    <div className="col-span-3">
+                      {hoverStates.side_category_id ? (
+                        (() => {
+                          const selectedCategory = menu.find(
+                            (cat) => cat._id === hoverStates.side_category_id
+                          );
+                          const visibleSubcategories = getVisibleSubcategories(selectedCategory);
 
-                                {/* Products Panel */}
-                                {hoverStates.sideSubcatId === subcat._id && (
-                                  <div
-                                    className="absolute min-w-[300px] bg-white min-h-full top-0 left-full border-l border-gray-200 rounded-r-xl p-4"
-                                    onMouseLeave={() =>
-                                      handleHoverState("sideSubcatId", null)
-                                    }
-                                  >
-                                    <h4 className="font-semibold text-gray-800 mb-3">
-                                      Products
-                                    </h4>
-                                    <div className="h-px bg-gray-200 my-2"></div>
-                                    <div className="max-h-[350px] overflow-y-auto">
-                                      {result.product_details
-                                        ?.filter(
-                                          (p) =>
-                                            p.sub_category_details === subcat._id && 
-                                            p.is_visible === true
-                                        )
-                                        .map((product) => (
-                                          <div
-                                            key={product._id}
-                                            className="flex items-center justify-between p-2 rounded-lg transition-all duration-200 hover:bg-gray-50 hover:transform hover:translate-x-1"
-                                          >
-                                            <div className="flex items-center gap-3 min-w-0 w-full">
-                                              <div className="flex-shrink-0 relative w-12 h-12">
-                                                <div className="absolute inset-0 rounded-md overflow-hidden border border-gray-200">
-                                                  <img
-                                                    src={_.get(
-                                                      product,
-                                                      "images[0].path",
-                                                      "/placeholder-product.jpg"
-                                                    )}
-                                                    alt={product.name}
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                      e.target.src =
-                                                        "/placeholder-product.jpg";
-                                                      e.target.onerror = null;
-                                                    }}
-                                                  />
-                                                </div>
+                          if (!selectedCategory) return null;
+
+                          return (
+                            <div className="animate-fade-in">
+                              <h3 className="font-bold text-gray-800 text-lg mb-6 pb-3 border-b border-gray-200">
+                                {selectedCategory.main_category_name} - Subcategories
+                              </h3>
+                              
+                              {visibleSubcategories.length > 0 ? (
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {visibleSubcategories.map((subcat) => (
+                                    <div
+                                      key={subcat._id}
+                                      onMouseEnter={() =>
+                                        handleHoverState("sideSubcatId", subcat._id)
+                                      }
+                                      className={`p-4 rounded-lg border transition-all duration-200 cursor-pointer ${
+                                        hoverStates.sideSubcatId === subcat._id
+                                          ? "border-yellow-300 bg-yellow-50 shadow-md"
+                                          : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                      }`}
+                                    >
+                                      {/* Subcategory Image and Name */}
+                                      <div className="flex items-center gap-4 mb-3">
+                                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                          <img
+                                            src={subcat.sub_category_image || "/placeholder-image.jpg"}
+                                            alt={subcat.sub_category_name}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              e.target.src = "/placeholder-image.jpg";
+                                            }}
+                                          />
+                                        </div>
+                                        <div>
+                                          <h4 className="font-semibold text-gray-800 text-sm">
+                                            {subcat.sub_category_name}
+                                          </h4>
+                                          <p className="text-xs text-gray-500 mt-1">
+                                            {selectedCategory.product_details?.filter(
+                                              p => p.sub_category_details === subcat._id && p.is_visible
+                                            ).length || 0} products
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      {/* Products Preview */}
+                                      <div className="space-y-2">
+                                        {selectedCategory.product_details
+                                          ?.filter(
+                                            p => p.sub_category_details === subcat._id && p.is_visible
+                                          )
+                                          .slice(0, 3)
+                                          .map((product) => (
+                                            <div
+                                              key={product._id}
+                                              className="flex items-center gap-3 p-2 rounded-md hover:bg-white transition-colors group"
+                                              onClick={() => {
+                                                navigation(`/product/${product.seo_url}`);
+                                                closeAllDropdowns();
+                                              }}
+                                            >
+                                              <div className="w-8 h-8 rounded border border-gray-200 overflow-hidden flex-shrink-0">
+                                                <img
+                                                  src={_.get(product, "images[0].path", "/placeholder-product.jpg")}
+                                                  alt={product.name}
+                                                  className="w-full h-full object-cover"
+                                                  onError={(e) => {
+                                                    e.target.src = "/placeholder-product.jpg";
+                                                  }}
+                                                />
                                               </div>
-
-                                              <span
-                                                className="text-sm font-medium text-gray-800 truncate hover:text-yellow-500 cursor-pointer flex-grow"
-                                                onClick={() => {
-                                                  navigation(
-                                                    `/product/${product.seo_url}`
-                                                  );
-                                                  closeAllDropdowns();
-                                                }}
-                                              >
+                                              <span className="text-xs text-gray-700 truncate group-hover:text-yellow-600 transition-colors">
                                                 {product.name}
                                               </span>
                                             </div>
+                                          ))}
+                                      </div>
 
-                                            <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs" />
+                                      {/* View All Products Link */}
+                                      {selectedCategory.product_details?.filter(
+                                        p => p.sub_category_details === subcat._id && p.is_visible
+                                      ).length > 3 && (
+                                        <div className="mt-3 pt-2 border-t border-gray-100">
+                                          <div
+                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer flex items-center gap-1"
+                                            onClick={() => {
+                                              navigation(
+                                                `/category/${selectedCategory.main_category_name}/${subcat.sub_category_name}/${selectedCategory._id}/${subcat._id}`
+                                              );
+                                              closeAllDropdowns();
+                                            }}
+                                          >
+                                            View all products
+                                            <SafeIcon icon={IconHelper.RIGHT_ARROW_ICON} className="text-xs" />
                                           </div>
-                                        ))}
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
-                                )}
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-center py-12">
+                                  <p className="text-gray-500">No subcategories available</p>
+                                </div>
+                              )}
+
+                              {/* View All Category Button */}
+                              <div className="mt-8 pt-6 border-t border-gray-200">
+                                <button
+                                  onClick={() => {
+                                    navigation(`/category/${selectedCategory.main_category_name}/${selectedCategory._id}`);
+                                    closeAllDropdowns();
+                                  }}
+                                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium flex items-center gap-2 mx-auto"
+                                >
+                                  View All {selectedCategory.main_category_name}
+                                  <SafeIcon icon={IconHelper.RIGHT_ARROW_ICON} className="text-sm" />
+                                </button>
                               </div>
-                            ))}
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        // Default view when no category is hovered
+                        <div className="flex flex-col items-center justify-center h-full py-16">
+                          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <div className="text-3xl text-gray-400">📁</div>
                           </div>
+                          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                            Browse Categories
+                          </h3>
+                          <p className="text-gray-500 text-center max-w-md">
+                            Hover over a category on the left to see available subcategories and products
+                          </p>
                         </div>
                       )}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Category Dropdowns */}
+        {/* Individual Category Dropdowns */}
         {menu
           .filter((cat) => cat.category_active_status)
           .map((category) => {
             const visibleSubCategories = getVisibleSubcategories(category);
-            const totalProducts = _.get(category, "product_details", []);
             
-            const showAsMegaMenu =
-              visibleSubCategories.length > 3 || totalProducts > 10;
-
             // Don't show category if no visible subcategories
             if (visibleSubCategories.length === 0) {
               return null;
@@ -314,9 +335,7 @@ const NavMenu = () => {
             return (
               <div
                 key={category._id}
-                className={`text-[16px] items-center ${
-                  showAsMegaMenu ? "" : "relative"
-                }`}
+                className="text-[16px] items-center relative"
                 ref={(el) =>
                   (dropdownRefs.current[`category-${category._id}`] = {
                     current: el,
@@ -327,7 +346,6 @@ const NavMenu = () => {
                   className="text-white center_div gap-x-2 text-nowrap cursor-pointer py-2 px-4 rounded-lg hover:text-yellow-300 transition-all duration-300"
                   onMouseEnter={() => {
                     toggleDropdown("categories", category._id);
-                    handleHoverState("category_id", category._id);
                   }}
                 >
                   <Link
@@ -338,156 +356,142 @@ const NavMenu = () => {
                   >
                     {category.main_category_name}{" "}
                     {activeDropdown.categories[category._id] ? (
-                      <IconHelper.UPARROW_ICON />
+                      <SafeIcon icon={IconHelper.UPARROW_ICON} />
                     ) : (
-                      <IconHelper.DOWNARROW_ICON />
+                      <SafeIcon icon={IconHelper.DOWNARROW_ICON} />
                     )}
                   </Link>
                 </div>
 
-                {showAsMegaMenu ? (
-                  // Mega Menu Version
-                  activeDropdown.categories[category._id] && (
-                    <div
-                      className="absolute border border-gray-200 bg-white shadow-lg w-[1000px] max-h-[600px] overflow-auto left-[10px] z-50 p-8 top-[55px] rounded-xl"
-                      onMouseLeave={closeAllDropdowns}
-                    >
-                      <div className="max-w-5xl mx-auto">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                          {category.main_category_name}
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                          {visibleSubCategories.map((subcat) => (
+                {/* Individual Category Mega Menu */}
+                {activeDropdown.categories[category._id] && (
+                  <div
+                    className="absolute border border-gray-200 bg-white shadow-lg w-[500px] max-h-[600px] overflow-auto left-1/2 transform -translate-x-1/2 z-50 p-8 top-[55px] rounded-xl"
+                    onMouseLeave={closeAllDropdowns}
+                  >
+                    <div className="max-w-4xl mx-auto">
+                      <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                        {category.main_category_name}
+                      </h2>
+                      <p className="text-gray-600 mb-6">
+                        Browse all subcategories and products
+                      </p>
+                      
+                      <div className="grid grid-cols-3 gap-6">
+                        {visibleSubCategories.map((subcat) => (
+                          <div
+                            key={subcat._id}
+                            className="group transition-all duration-300 bg-white hover:bg-gray-50 rounded-lg p-4 border border-transparent hover:border-gray-200"
+                          >
+                            {/* Subcategory Header */}
                             <div
-                              key={subcat._id}
-                              className="group transition-all duration-300 bg-white hover:bg-gray-50 rounded-lg p-4 border border-transparent hover:border-gray-200"
+                              onClick={() => {
+                                navigation(
+                                  `/category/${encodeURIComponent(
+                                    category.main_category_name
+                                  )}/${encodeURIComponent(
+                                    subcat.sub_category_name
+                                  )}/${category._id}/${subcat._id}`
+                                );
+                                closeAllDropdowns();
+                              }}
+                              className="flex items-center gap-3 mb-3 cursor-pointer"
                             >
-                              {/* Subcategory Title */}
-                              <div
-                                onClick={() => {
-                                  navigation(
-                                    `/category/${encodeURIComponent(
-                                      category.main_category_name
-                                    )}/${encodeURIComponent(
-                                      subcat.sub_category_name
-                                    )}/${category._id}/${subcat._id}`
-                                  );
-                                  closeAllDropdowns();
-                                }}
-                                className="relative pb-2 mb-3 cursor-pointer"
-                              >
-                                <h3 className="text-lg font-bold text-gray-800 group-hover:text-yellow-600 transition-colors flex items-center justify-between">
-                                  {subcat.sub_category_name}
-                                  <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm group-hover:text-yellow-500" />
-                                </h3>
-                                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-yellow-500 transition-all duration-300 group-hover:w-full"></div>
+                              <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                <img
+                                  src={subcat.sub_category_image || "/placeholder-image.jpg"}
+                                  alt={subcat.sub_category_name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.src = "/placeholder-image.jpg";
+                                  }}
+                                />
                               </div>
-
-                              {/* Product List */}
-                              <div className="flex flex-col gap-3">
-                                {category.product_details
-                                  ?.filter(
-                                    (p) => p.sub_category_details === subcat._id && p.is_visible === true
-                                  )
-                                  .slice(0, 5)
-                                  .map((product, index) => (
-                                    <Link
-                                      to={`/product/${product.seo_url}`}
-                                      key={product._id}
-                                      className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-all duration-200 hover:translate-x-1 group/product"
-                                      onClick={closeAllDropdowns}
-                                      style={{
-                                        transitionDelay: `${index * 50}ms`,
-                                      }}
-                                    >
-                                      <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gray-200 group-hover/product:border-yellow-300 transition-all">
-                                        <img
-                                          src={_.get(
-                                            product,
-                                            "images[0].path",
-                                            "/placeholder-product.jpg"
-                                          )}
-                                          alt={product.name}
-                                          className="w-full h-full object-cover hover:scale-105 transition-transform"
-                                          onError={(e) => {
-                                            e.target.src =
-                                              "/placeholder-product.jpg";
-                                          }}
-                                        />
-                                      </div>
-                                      <p className="text-sm font-medium text-gray-700 truncate group-hover/product:text-yellow-600 transition-colors">
-                                        {product.name}
-                                      </p>
-                                      <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-sm opacity-0 group-hover/product:opacity-100 transition-opacity ml-auto" />
-                                    </Link>
-                                  ))}
+                              <div>
+                                <h3 className="font-bold text-gray-800 group-hover:text-yellow-600 transition-colors text-sm">
+                                  {subcat.sub_category_name}
+                                </h3>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {category.product_details?.filter(
+                                    p => p.sub_category_details === subcat._id && p.is_visible
+                                  ).length || 0} products
+                                </p>
                               </div>
                             </div>
-                          ))}
-                        </div>
 
-                        {/* View All Button */}
-                        <div className="mt-8 text-center">
-                          <button
-                            onClick={() => {
-                              navigation(
-                                `/category/${category.main_category_name}`
-                              );
-                              closeAllDropdowns();
-                            }}
-                            className="px-6 py-3 bg-yellow-600 text-white rounded-full hover:bg-yellow-700 transition-colors shadow-md hover:shadow-lg font-medium flex items-center justify-center mx-auto"
-                          >
-                            View All {category.main_category_name}
-                            <IconHelper.RIGHT_ARROW_ICON className="ml-2 text-sm" />
-                          </button>
-                        </div>
+                            {/* Product List */}
+                            <div className="space-y-2">
+                              {category.product_details
+                                ?.filter(
+                                  (p) => p.sub_category_details === subcat._id && p.is_visible === true
+                                )
+                                .slice(0, 4)
+                                .map((product) => (
+                                  <Link
+                                    to={`/product/${product.seo_url}`}
+                                    key={product._id}
+                                    className="flex items-center gap-3 p-2 rounded-md hover:bg-white transition-all duration-200 group/product"
+                                    onClick={closeAllDropdowns}
+                                  >
+                                    <div className="flex-shrink-0 w-8 h-8 rounded border border-gray-200 overflow-hidden">
+                                      <img
+                                        src={_.get(
+                                          product,
+                                          "images[0].path",
+                                          "/placeholder-product.jpg"
+                                        )}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover group-hover/product:scale-105 transition-transform"
+                                        onError={(e) => {
+                                          e.target.src = "/placeholder-product.jpg";
+                                        }}
+                                      />
+                                    </div>
+                                    <p className="text-xs font-medium text-gray-700 truncate group-hover/product:text-yellow-600 transition-colors flex-1">
+                                      {product.name}
+                                    </p>
+                                  </Link>
+                                ))}
+                            </div>
+
+                            {/* View All Link */}
+                            {category.product_details?.filter(
+                              p => p.sub_category_details === subcat._id && p.is_visible
+                            ).length > 4 && (
+                              <div className="mt-3 pt-2 border-t border-gray-100">
+                                <div
+                                  onClick={() => {
+                                    navigation(
+                                      `/category/${category.main_category_name}/${subcat.sub_category_name}/${category._id}/${subcat._id}`
+                                    );
+                                    closeAllDropdowns();
+                                  }}
+                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer flex items-center gap-1"
+                                >
+                                  View all products
+                                  <SafeIcon icon={IconHelper.RIGHT_ARROW_ICON} className="text-xs" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* View All Button */}
+                      <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+                        <button
+                          onClick={() => {
+                            navigation(`/category/${category.main_category_name}/${category._id}`);
+                            closeAllDropdowns();
+                          }}
+                          className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors shadow-md hover:shadow-lg font-medium flex items-center justify-center mx-auto gap-2"
+                        >
+                          View All {category.main_category_name}
+                          <SafeIcon icon={IconHelper.RIGHT_ARROW_ICON} className="text-sm" />
+                        </button>
                       </div>
                     </div>
-                  )
-                ) : (
-                  // Compact Dropdown Version
-                  activeDropdown.categories[category._id] && (
-                    <div
-                      className="absolute border border-gray-200 bg-white shadow-lg min-w-[250px] z-50 py-3 top-[55px] left-0 rounded-xl overflow-hidden"
-                      onMouseLeave={closeAllDropdowns}
-                    >
-                      {visibleSubCategories.map((subcat) => (
-                        <div key={subcat._id} className="group">
-                          <div
-                            onClick={() => {
-                              navigation(
-                                `/category/${category.main_category_name}/${subcat.sub_category_name}/${category._id}/${subcat._id}`
-                              );
-                              closeAllDropdowns();
-                            }}
-                            className="px-4 py-3 hover:bg-gray-50 text-gray-800 cursor-pointer font-medium border-b border-gray-100 flex items-center justify-between transition-colors"
-                          >
-                            {subcat.sub_category_name}
-                          </div>
-                          <div className="flex flex-col pl-4">
-                            {category.product_details
-                              ?.filter(
-                                (p) => p.sub_category_details === subcat._id && p.is_visible === true
-                              )
-                              .slice(0, 3)
-                              .map((product) => (
-                                <Link
-                                  to={`/product/${product.seo_url}`}
-                                  key={product._id}
-                                  className="px-4 py-2 text-sm hover:bg-gray-50 text-gray-700 hover:text-yellow-500 transition-colors flex items-center group/item"
-                                  onClick={closeAllDropdowns}
-                                >
-                                  <span className="truncate">
-                                    {product.name}
-                                  </span>
-                                  <IconHelper.RIGHT_ARROW_ICON className="text-gray-400 text-xs ml-auto opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                                </Link>
-                              ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )
+                  </div>
                 )}
               </div>
             );

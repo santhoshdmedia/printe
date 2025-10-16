@@ -70,6 +70,17 @@ module.exports = mongoose.model(
         type: String,
         required: true,
       },
+      product_codeS_NO: {
+        type: String,
+        required: true,
+      },
+      Vendor_Code: {
+        type: String,
+        required: true,
+      },
+      product_Lock: {
+        type: Boolean,
+      },
       Production_time: {
         type: String,
         required: true,
