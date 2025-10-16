@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { Image, Tooltip } from "antd";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useRef } from "react";
 import _ from "lodash";
 import { useNavigate } from "react-router-dom";
@@ -11,13 +11,54 @@ import {
   RightOutlined, 
   HeartOutlined, 
   HeartFilled,
-  PictureOutlined
+  PictureOutlined,
+  PlayCircleOutlined,
+  PauseCircleOutlined
 } from "@ant-design/icons";
 
 import { IoShareSocial } from "react-icons/io5";
 import { FacebookIcon, WhatsappIcon } from "react-share";
 import { CustomPopover } from "../Product/ProductDetails";
 import { AnimatePresence } from "framer-motion";
+
+// Custom hook for image URL handling
+const useImageHandler = (imageList) => {
+  const getImageUrl = useCallback((image) => {
+    if (!image) return "";
+    if (typeof image === 'string') return image;
+    return image.path || image.url || image.src || "";
+  }, []);
+
+  const processedImages = useMemo(
+    () => imageList?.map((img) => getImageUrl(img)) || [],
+    [imageList, getImageUrl]
+  );
+
+  return { getImageUrl, processedImages };
+};
+
+// Custom hook for auto-play functionality
+const useAutoPlay = (isActive, interval, onNext) => {
+  const autoPlayRef = useRef(null);
+
+  useEffect(() => {
+    if (isActive) {
+      autoPlayRef.current = setInterval(onNext, interval);
+    } else {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    }
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [isActive, interval, onNext]);
+
+  return autoPlayRef;
+};
 
 const ImagesliderVarient = ({ 
   imageList = [], 
@@ -29,23 +70,35 @@ const ImagesliderVarient = ({
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuth } = useSelector((state) => state.authSlice);
+
+  // State management
   const [isFav, setIsFav] = useState(false);
-  const [imageSelected, setImageSelected] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [currentImages, setCurrentImages] = useState([]);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
-  const autoPlayRef = useRef(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
+  // Refs
+  const autoPlayRef = useRef(null);
+  const transitionTimeoutRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const { getImageUrl } = useImageHandler(currentImages);
+
+  // Derived state
+  const currentImage = useMemo(
+    () => getImageUrl(currentImages[activeIndex]) || "",
+    [currentImages, activeIndex, getImageUrl]
+  );
+
+  const hasMultipleImages = currentImages.length > 1;
+
+  // Effects
   useEffect(() => {
     setIsFav(user?.wish_list?.includes(data?.seo_url) ?? false);
   }, [user, data?.seo_url]);
-
-  // Helper function to get image URL from different data structures
-  const getImageUrl = (image) => {
-    if (!image) return "";
-    if (typeof image === 'string') return image;
-    return image.path || image.url || image.src || "";
-  };
 
   // Update images when selected variants or imageList changes
   useEffect(() => {
@@ -76,304 +129,394 @@ const ImagesliderVarient = ({
 
     if (imagesToShow && imagesToShow.length > 0) {
       setCurrentImages(imagesToShow);
-      const firstImage = getImageUrl(imagesToShow[0]);
-      setImageSelected(firstImage);
       setActiveIndex(0);
     } else if (imageList && imageList.length > 0) {
       // Fallback to main image list
       setCurrentImages(imageList);
-      const firstImage = getImageUrl(imageList[0]);
-      setImageSelected(firstImage);
       setActiveIndex(0);
+    } else {
+      setCurrentImages([]);
     }
   }, [imageList, selectedVariants, variantImages]);
 
-  // Auto-play functionality
+  // Cleanup timeouts on unmount
   useEffect(() => {
-    if (isAutoPlaying && currentImages.length > 1) {
-      autoPlayRef.current = setInterval(() => {
-        handleNext();
-      }, 3000);
-    }
-
     return () => {
-      if (autoPlayRef.current) {
-        clearInterval(autoPlayRef.current);
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
       }
     };
-  }, [isAutoPlaying, currentImages.length]);
+  }, []);
 
-  const handleNext = () => {
-    if (currentImages.length > 0) {
-      const nextIndex = (activeIndex + 1) % currentImages.length;
-      setActiveIndex(nextIndex);
-      const nextImage = getImageUrl(currentImages[nextIndex]);
-      setImageSelected(nextImage);
+  // Event handlers
+  const handleImageTransition = useCallback((newIndex) => {
+    setIsTransitioning(true);
+    setActiveIndex(newIndex);
+
+    transitionTimeoutRef.current = setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
+  }, []);
+
+  const handleNext = useCallback(() => {
+    if (!hasMultipleImages) return;
+
+    const nextIndex = (activeIndex + 1) % currentImages.length;
+    handleImageTransition(nextIndex);
+  }, [hasMultipleImages, activeIndex, currentImages.length, handleImageTransition]);
+
+  const handlePrevious = useCallback(() => {
+    if (!hasMultipleImages) return;
+
+    const prevIndex = (activeIndex - 1 + currentImages.length) % currentImages.length;
+    handleImageTransition(prevIndex);
+  }, [hasMultipleImages, activeIndex, currentImages.length, handleImageTransition]);
+
+  const handleThumbnailClick = useCallback((index) => {
+    if (index !== activeIndex) {
+      handleImageTransition(index);
     }
-  };
+  }, [activeIndex, handleImageTransition]);
 
-  const handlePrevious = () => {
-    if (currentImages.length > 0) {
-      const prevIndex = (activeIndex - 1 + currentImages.length) % currentImages.length;
-      setActiveIndex(prevIndex);
-      const prevImage = getImageUrl(currentImages[prevIndex]);
-      setImageSelected(prevImage);
-    }
-  };
+  // Auto-play functionality
+  useAutoPlay(isAutoPlaying && hasMultipleImages, 3000, handleNext);
 
-  const imageOnClickHandler = (index) => {
-    if (currentImages[index] && index !== activeIndex) {
-      setActiveIndex(index);
-      const newImage = getImageUrl(currentImages[index]);
-      setImageSelected(newImage);
-    }
-  };
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
+  }, []);
 
-  const handleAddWishList = () => {
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+    setShowShareMenu(false);
+  }, []);
+
+  const handleAddWishList = useCallback(() => {
     if (!data?.seo_url) {
       console.error("Product seo_url is missing");
       return;
     }
 
-    if (isAuth) {
+    if (!isAuth) {
+      navigate("/login");
+      return;
+    }
+
+    const updateWishList = () => {
       if (isFav) {
-        const filter = user.wish_list.filter((product) => product !== data.seo_url);
-        const form = { wish_list: filter };
-        dispatch({
-          type: "UPDATE_USER",
-          data: { form, type: "custom", message: "Remove from WishList" },
-        });
-        setIsFav(false);
+        const filter = user.wish_list.filter(
+          (product) => product !== data.seo_url
+        );
+        return { wish_list: filter };
       } else {
-        const form = { wish_list: [...(user.wish_list || []), data.seo_url] };
-        dispatch({
-          type: "UPDATE_USER",
-          data: { form, type: "custom", message: "Added to WishList" },
+        return {
+          wish_list: [...(user.wish_list || []), data.seo_url],
+        };
+      }
+    };
+
+    const form = updateWishList();
+    const message = isFav ? "Remove from WishList" : "Added to WishList";
+
+    dispatch({
+      type: "UPDATE_USER",
+      data: { form, type: "custom", message },
+    });
+
+    setIsFav(!isFav);
+  }, [data?.seo_url, isAuth, isFav, user, dispatch, navigate]);
+
+  const toggleAutoPlay = useCallback(() => {
+    setIsAutoPlaying((prev) => !prev);
+  }, []);
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: data.name,
+          text: "Check out this amazing product!",
+          url: window.location.href,
         });
-        setIsFav(true);
+      } catch (err) {
+        console.log("Error sharing:", err);
       }
     } else {
-      navigate("/login");
+      setShowShareMenu(!showShareMenu);
     }
   };
 
-  const toggleAutoPlay = () => {
-    setIsAutoPlaying(!isAutoPlaying);
+  const shareProduct = (platform) => {
+    const url = window.location.href;
+    let shareUrl = "";
+
+    switch (platform) {
+      case "facebook":
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        break;
+      case "whatsapp":
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(`Check out this product: ${url}`)}`;
+        break;
+      default:
+        return;
+    }
+
+    window.open(shareUrl, "_blank", "width=600,height=400");
+    setShowShareMenu(false);
   };
 
-  // Handle keyboard navigation
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft') {
-        handlePrevious();
-      } else if (e.key === 'ArrowRight') {
-        handleNext();
+      if (!hasMultipleImages) return;
+
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          handlePrevious();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          handleNext();
+          break;
+        case " ":
+          e.preventDefault();
+          toggleAutoPlay();
+          break;
+        default:
+          break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [currentImages, activeIndex]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hasMultipleImages, handlePrevious, handleNext, toggleAutoPlay]);
 
-   const [showShareMenu, setShowShareMenu] = useState(false);
-    const handleNativeShare = async () => {
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: data.name,
-            text: "Check out this amazing product!",
-            url: window.location.href,
-          });
-        } catch (err) {
-          console.log("Error sharing:", err);
-        }
-      } else {
-        setShowShareMenu(!showShareMenu);
-      }
-    };
+  // Image error handler
+  const handleImageError = useCallback((imageUrl) => {
+    console.error("Failed to load image:", imageUrl);
+  }, []);
 
-  return (
-    <div className="!sticky !top-24 w-full h-full">
-      <div className="lg:hidden block">
-        <DividerCards name={data?.name} />
-      </div>
-      
-      {/* Main Image Container */}
-      <div className="relative w-full h-0 pb-[100%] bg-white border rounded-xl overflow-hidden group">
-        {/* Main Image */}
-        <div className="absolute inset-0 w-full h-full">
-          {imageSelected ? (
-            <img
-              src={imageSelected}
-              className="absolute inset-0 w-full h-full object-cover rounded-xl"
-              alt={data?.name || "product"}
-              onError={(e) => {
-                console.error('Failed to load image:', imageSelected);
-                e.target.style.display = 'none';
-              }}
+  // Render helpers
+  const renderMainImage = () => (
+    <div className="absolute inset-0 w-full h-full">
+      {currentImage ? (
+        <img
+          src={currentImage}
+          className={`absolute inset-0 w-full h-full object-cover rounded-xl transition-all duration-300 ${
+            isTransitioning ? "opacity-70 scale-105" : "opacity-100 scale-100"
+          } hover:scale-105`}
+          alt={data?.name || "product"}
+          onError={() => handleImageError(currentImage)}
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl">
+          <div className="text-center text-gray-400">
+            <PictureOutlined
+              style={{ fontSize: "48px" }}
+              className="mx-auto mb-2"
             />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl">
-              <div className="text-center text-gray-400">
-                <PictureOutlined style={{ fontSize: '48px' }} className="mx-auto mb-2" />
-                <p>No image available</p>
-              </div>
-            </div>
-          )}
-
-          {/* Navigation Buttons */}
-          {currentImages.length > 1 && (
-            <>
-              <button
-                onClick={handlePrevious}
-                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-70 text-white p-3 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200 hover:bg-opacity-90 z-30"
-              >
-                <LeftOutlined />
-              </button>
-              <button
-                onClick={handleNext}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-70 text-white p-3 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200 hover:bg-opacity-90 z-30"
-              >
-                <RightOutlined />
-              </button>
-            </>
-          )}
-
-          {/* Image Counter */}
-          {currentImages.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm z-30">
-              {activeIndex + 1} / {currentImages.length}
-            </div>
-          )}
-
-          {/* Auto-play Toggle */}
-          {currentImages.length > 1 && (
-            <Tooltip title={`${isAutoPlaying ? 'Stop' : 'Start'} Auto-play`}>
-              <button
-                onClick={toggleAutoPlay}
-                className={`absolute bottom-4 left-4 w-10 h-10 p-2 rounded-full z-30 ${
-                  isAutoPlaying 
-                    ? 'bg-red-500 text-white' 
-                    : 'bg-white text-gray-600'
-                } shadow-md hover:shadow-lg transition-all duration-200`}
-              >
-                {isAutoPlaying ? '❚❚' : '▶'}
-              </button>
-            </Tooltip>
-          )}
-          
-          {/* Wishlist Button */}
-          <Tooltip
-            title={`${isFav ? "Remove From" : "Add To"} Wish List`}
-            placement="left"
-          >
-            <div className="flex  gap-2">
-                   <div className="flex flex-col  gap-2 absolute top-4 right-4 z-40 ">
-                     <button
-                      className={` p-2 w-10 h-10 !border-none bg-transparent rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 focus:outline-none ${
-                        isFav ? "text-red-500" : "text-gray-600"
-                      }`}
-                      onClick={handleAddWishList}
-                      aria-label={isFav ? "Remove from wishlist" : "Add to wishlist"}
-                    >
-                      {isFav ? (
-                        <HeartFilled
-                          className="!text-[#f2c41a]"
-                          style={{ fontSize: "24px" }}
-                        />
-                      ) : (
-                        <HeartOutlined style={{ fontSize: "24px" }} />
-                      )}
-                    </button>
-                    <button
-                      onClick={handleNativeShare}
-                      className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300 hidden md:block"
-                    >
-                      <IoShareSocial />
-                    </button>
-            
-                    <AnimatePresence>
-                      {showShareMenu && (
-                        <CustomPopover
-                          open={showShareMenu}
-                          onClose={() => setShowShareMenu(false)}
-                          className="w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200"
-                        >
-                          <p className="text-xs text-gray-500 font-semibold p-2">
-                            Share via
-                          </p>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => shareProduct("facebook")}
-                              className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
-                            >
-                              <FacebookIcon size={35} round />
-                              <span className="text-xs mt-1">Facebook</span>
-                            </button>
-                            <button
-                              onClick={() => shareProduct("whatsapp")}
-                              className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
-                            >
-                              <WhatsappIcon size={35} round />
-                              <span className="text-xs mt-1">WhatsApp</span>
-                            </button>
-                          </div>
-                        </CustomPopover>
-                      )}
-                    </AnimatePresence>
-                   </div>
-                  </div>
-          </Tooltip>
-        </div>
-      </div>
-
-      {/* Thumbnail Navigation */}
-      {currentImages.length > 1 && (
-        <div className="flex gap-3 overflow-x-auto py-2 px-1 mt-4 scrollbar-thin">
-          {currentImages.map((image, index) => {
-            const imageUrl = getImageUrl(image);
-            return (
-              <div
-                className={`flex-shrink-0 bg-white border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${
-                  activeIndex === index 
-                    ? "border-blue-500 shadow-md" 
-                    : "border-gray-200 hover:border-gray-400"
-                }`}
-                key={index}
-                onClick={() => imageOnClickHandler(index)}
-                style={{ width: '80px', height: '80px' }}
-              >
-                <img
-                  src={imageUrl}
-                  className="w-full h-full object-cover"
-                  alt={`Thumbnail ${index + 1}`}
-                  loading="lazy"
-                  onError={(e) => {
-                    console.error('Failed to load thumbnail:', imageUrl);
-                    e.target.style.display = 'none';
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* No Images Fallback */}
-      {currentImages.length === 0 && (
-        <div className="relative w-full h-0 pb-[100%] bg-gray-100 border rounded-xl overflow-hidden flex items-center justify-center">
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <PictureOutlined style={{ fontSize: '48px' }} className="mx-auto mb-2" />
-              <p>No images available</p>
-            </div>
+            <p>No image available</p>
           </div>
         </div>
       )}
     </div>
   );
+
+  const renderNavigationButtons = () =>
+    hasMultipleImages && (
+      <>
+        <button
+          onClick={handlePrevious}
+          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-70 text-white p-3 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200 hover:bg-opacity-90 z-30 focus:outline-none focus:ring-2 focus:ring-white"
+          aria-label="Previous image"
+        >
+          <LeftOutlined />
+        </button>
+        <button
+          onClick={handleNext}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-70 text-white p-3 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200 hover:bg-opacity-90 z-30 focus:outline-none focus:ring-2 focus:ring-white"
+          aria-label="Next image"
+        >
+          <RightOutlined />
+        </button>
+      </>
+    );
+
+  const renderImageCounter = () =>
+    hasMultipleImages && (
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm z-30">
+        {activeIndex + 1} / {currentImages.length}
+      </div>
+    );
+
+  const renderAutoPlayToggle = () =>
+    hasMultipleImages && (
+      <Tooltip title={`${isAutoPlaying ? "Pause" : "Play"} slideshow`}>
+        <button
+          onClick={toggleAutoPlay}
+          className={`absolute bottom-4 left-4 w-10 h-10 p-2 flex justify-center items-center text-xl rounded-full z-30 shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white ${
+            isAutoPlaying
+              ? "bg-red-500 text-white hover:bg-red-600"
+              : "bg-white text-gray-600 hover:bg-gray-100"
+          }`}
+          aria-label={isAutoPlaying ? "Pause slideshow" : "Play slideshow"}
+        >
+          {isAutoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+        </button>
+      </Tooltip>
+    );
+
+  const renderActionButtons = () => (
+    <div 
+      className={`flex flex-col gap-2 absolute top-4 right-4 z-40 transition-all duration-300 ${
+        isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+      }`}
+    >
+      {/* Wishlist Button */}
+      <Tooltip
+        title={`${isFav ? "Remove from" : "Add to"} wishlist`}
+        placement="left"
+      >
+        <button
+          className={`p-2 w-10 h-10 !border-none bg-white bg-opacity-90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 focus:outline-none flex items-center justify-center ${
+            isFav ? "text-red-500" : "text-gray-600 hover:text-red-500"
+          }`}
+          onClick={handleAddWishList}
+          aria-label={isFav ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          {isFav ? (
+            <HeartFilled
+              className="!text-red-500"
+              style={{ fontSize: "20px" }}
+            />
+          ) : (
+            <HeartOutlined style={{ fontSize: "20px" }} />
+          )}
+        </button>
+      </Tooltip>
+
+      {/* Share Button */}
+      <Tooltip title="Share this product" placement="left">
+        <button
+          onClick={handleNativeShare}
+          className="bg-white bg-opacity-90 hover:bg-[#f2c41a] text-gray-600 hover:text-black p-2 rounded-full shadow-md transition-all duration-300 flex items-center justify-center w-10 h-10"
+        >
+          <IoShareSocial style={{ fontSize: "18px" }} />
+        </button>
+      </Tooltip>
+
+      {/* Share Menu */}
+      <AnimatePresence>
+        {showShareMenu && (
+          <CustomPopover
+            open={showShareMenu}
+            onClose={() => setShowShareMenu(false)}
+            className="w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200"
+          >
+            <p className="text-xs text-gray-500 font-semibold p-2">
+              Share via
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => shareProduct("facebook")}
+                className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
+              >
+                <FacebookIcon size={35} round />
+                <span className="text-xs mt-1">Facebook</span>
+              </button>
+              <button
+                onClick={() => shareProduct("whatsapp")}
+                className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
+              >
+                <WhatsappIcon size={35} round />
+                <span className="text-xs mt-1">WhatsApp</span>
+              </button>
+            </div>
+          </CustomPopover>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  const renderThumbnails = () =>
+    hasMultipleImages && (
+      <div
+        className="flex gap-3 overflow-x-auto py-2 px-1 mt-4 scrollbar-thin"
+        role="tablist"
+        aria-label="Image thumbnails"
+      >
+        {currentImages.map((image, index) => {
+          const imageUrl = getImageUrl(image);
+          return (
+            <button
+              key={index}
+              className={`flex-shrink-0 bg-white border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                activeIndex === index
+                  ? "border-blue-500 shadow-md"
+                  : "border-gray-200 hover:border-gray-400"
+              }`}
+              onClick={() => handleThumbnailClick(index)}
+              style={{ width: "80px", height: "80px" }}
+              role="tab"
+              aria-selected={activeIndex === index}
+              aria-label={`View image ${index + 1}`}
+            >
+              <img
+                src={imageUrl}
+                className="w-full h-full object-cover"
+                alt={`Thumbnail ${index + 1}`}
+                loading="lazy"
+                onError={() => handleImageError(imageUrl)}
+              />
+            </button>
+          );
+        })}
+      </div>
+    );
+
+  const renderNoImages = () =>
+    currentImages.length === 0 && (
+      <div className="relative w-full h-0 pb-[100%] bg-gray-100 border rounded-xl overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+          <div className="text-center">
+            <PictureOutlined
+              style={{ fontSize: "48px" }}
+              className="mx-auto mb-2"
+            />
+            <p>No images available</p>
+          </div>
+        </div>
+      </div>
+    );
+
+  return (
+    <div
+      className="!sticky !top-24 w-full h-full"
+      role="region"
+      aria-label="Product images"
+    >
+      <div className="lg:hidden block">
+        <DividerCards name={data?.name} />
+      </div>
+
+      {/* Main Image Container */}
+      <div 
+        ref={containerRef}
+        className="relative w-full h-0 pb-[100%] bg-white border rounded-xl overflow-hidden group"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {renderMainImage()}
+        {renderNavigationButtons()}
+        {renderImageCounter()}
+        {renderAutoPlayToggle()}
+        {renderActionButtons()}
+      </div>
+
+      {renderThumbnails()}
+      {renderNoImages()}
+    </div>
+  );
 };
 
-export default ImagesliderVarient;
+export default React.memo(ImagesliderVarient);

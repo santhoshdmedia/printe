@@ -75,10 +75,13 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   // Refs
   const imgRef = useRef(null);
   const transitionTimeoutRef = useRef(null);
+  const containerRef = useRef(null);
 
   // Derived state
   const currentImage = useMemo(
@@ -165,6 +168,12 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
 
   const handleMouseLeave = useCallback(() => {
     setPosition((prev) => ({ ...prev, showZoom: false }));
+    setIsHovered(false);
+    setShowShareMenu(false);
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
   }, []);
 
   const handleAddWishList = useCallback(() => {
@@ -212,6 +221,41 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   const toggleAutoPlay = useCallback(() => {
     setIsAutoPlaying((prev) => !prev);
   }, []);
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: data.name,
+          text: "Check out this amazing product!",
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log("Error sharing:", err);
+      }
+    } else {
+      setShowShareMenu(!showShareMenu);
+    }
+  };
+
+  const shareProduct = (platform) => {
+    const url = window.location.href;
+    let shareUrl = "";
+
+    switch (platform) {
+      case "facebook":
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        break;
+      case "whatsapp":
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(`Check out this product: ${url}`)}`;
+        break;
+      default:
+        return;
+    }
+
+    window.open(shareUrl, "_blank", "width=600,height=400");
+    setShowShareMenu(false);
+  };
 
   // Keyboard navigation
   useEffect(() => {
@@ -316,91 +360,84 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
       </Tooltip>
     );
 
-  const [showShareMenu, setShowShareMenu] = useState(false);
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: data.name,
-          text: "Check out this amazing product!",
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.log("Error sharing:", err);
-      }
-    } else {
-      setShowShareMenu(!showShareMenu);
-    }
-  };
-
-  const renderWishlistButton = () => (
-    <Tooltip
-      title={`${isFav ? "Remove from" : "Add to"} wishlist`}
-      placement="right"
+  const renderActionButtons = () => (
+    <div 
+      className={`flex flex-col gap-2 absolute top-4 right-4 z-40 transition-all duration-300 ${
+        isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+      }`}
     >
-      <div className="flex  gap-2">
-       <div className="flex flex-col  gap-2 absolute top-4 right-4 z-40 ">
-         <button
-          className={` p-2 w-10 h-10 !border-none bg-transparent rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 focus:outline-none ${
-            isFav ? "text-red-500" : "text-gray-600"
+      {/* Wishlist Button */}
+      <Tooltip
+        title={`${isFav ? "Remove from" : "Add to"} wishlist`}
+        placement="left"
+      >
+        <button
+          className={`p-2 w-10 h-10 !border-none bg-white bg-opacity-90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 focus:outline-none flex items-center justify-center ${
+            isFav ? "text-red-500" : "text-gray-600 hover:text-red-500"
           }`}
           onClick={handleAddWishList}
           aria-label={isFav ? "Remove from wishlist" : "Add to wishlist"}
         >
           {isFav ? (
             <HeartFilled
-              className="!text-[#f2c41a]"
-              style={{ fontSize: "24px" }}
+              className="!text-red-500"
+              style={{ fontSize: "20px" }}
             />
           ) : (
-            <HeartOutlined style={{ fontSize: "24px" }} />
+            <HeartOutlined style={{ fontSize: "20px" }} />
           )}
         </button>
+      </Tooltip>
+
+      {/* Share Button */}
+      <Tooltip title="Share this product" placement="left">
         <button
           onClick={handleNativeShare}
-          className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300 hidden md:block"
+          className="bg-white bg-opacity-90 hover:bg-[#f2c41a] text-gray-600 hover:text-black p-2 rounded-full shadow-md transition-all duration-300 flex items-center justify-center w-10 h-10"
         >
-          <IoShareSocial />
+          <IoShareSocial style={{ fontSize: "18px" }} />
         </button>
+      </Tooltip>
 
-        <AnimatePresence>
-          {showShareMenu && (
-            <CustomPopover
-              open={showShareMenu}
-              onClose={() => setShowShareMenu(false)}
-              className="w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200"
-            >
-              <p className="text-xs text-gray-500 font-semibold p-2">
-                Share via
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => shareProduct("facebook")}
-                  className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
-                >
-                  <FacebookIcon size={35} round />
-                  <span className="text-xs mt-1">Facebook</span>
-                </button>
-                <button
-                  onClick={() => shareProduct("whatsapp")}
-                  className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
-                >
-                  <WhatsappIcon size={35} round />
-                  <span className="text-xs mt-1">WhatsApp</span>
-                </button>
-              </div>
-            </CustomPopover>
-          )}
-        </AnimatePresence>
-       </div>
-      </div>
-    </Tooltip>
+      {/* Share Menu */}
+      <AnimatePresence>
+        {showShareMenu && (
+          <CustomPopover
+            open={showShareMenu}
+            onClose={() => setShowShareMenu(false)}
+            className="w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200"
+          >
+            <p className="text-xs text-gray-500 font-semibold p-2">
+              Share via
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => shareProduct("facebook")}
+                className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
+              >
+                <FacebookIcon size={35} round />
+                <span className="text-xs mt-1">Facebook</span>
+              </button>
+              <button
+                onClick={() => shareProduct("whatsapp")}
+                className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
+              >
+                <WhatsappIcon size={35} round />
+                <span className="text-xs mt-1">WhatsApp</span>
+              </button>
+            </div>
+          </CustomPopover>
+        )}
+      </AnimatePresence>
+    </div>
   );
 
   const renderOverviewButton = () => (
     <Tooltip title="View product details">
       <button
-        className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className={`absolute top-4 left-4 p-2 bg-white bg-opacity-90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          isHovered ? 'opacity-100' : 'opacity-0'
+        }`}
         onClick={handleMoveToOverview}
         aria-label="View product details"
       >
@@ -468,12 +505,17 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
       </div>
 
       {/* Main Image Container */}
-      <div className="relative w-full h-0 pb-[100%] bg-white border rounded-xl overflow-hidden group">
+      <div 
+        ref={containerRef}
+        className="relative w-full h-0 pb-[100%] bg-white border rounded-xl overflow-hidden group"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         {renderMainImage()}
         {renderNavigationButtons()}
         {renderImageCounter()}
         {renderAutoPlayToggle()}
-        {renderWishlistButton()}
+        {renderActionButtons()}
         {/* {renderOverviewButton()} */}
       </div>
 

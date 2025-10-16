@@ -228,6 +228,36 @@ const getFirstProductImage = (data) => {
   return images.length > 0 ? images[0] : "";
 };
 
+// Helper function to get role-specific fields
+const getRoleFields = (role) => {
+  switch(role) {
+    case 'Dealer':
+      return {
+        quantity: 'Dealer_quantity',
+        discount: 'Dealer_discount',
+        freeDelivery: 'free_delivery_dealer',
+        recommended: 'recommended_stats_dealer',
+        deliveryCharges: 'delivery_charges_dealer'
+      };
+    case 'Corporate':
+      return {
+        quantity: 'Corporate_quantity',
+        discount: 'Corporate_discount',
+        freeDelivery: 'free_delivery_corporate',
+        recommended: 'recommended_stats_corporate',
+        deliveryCharges: 'delivery_charges_corporate'
+      };
+    default: // Customer
+      return {
+        quantity: 'Customer_quantity',
+        discount: 'Customer_discount',
+        freeDelivery: 'free_delivery_customer',
+        recommended: 'recommended_stats_customer',
+        deliveryCharges: 'delivery_charges_customer'
+      };
+  }
+};
+
 const ProductDetails = ({
   data = {
     _id: "",
@@ -241,28 +271,27 @@ const ProductDetails = ({
   const { user } = useSelector((state) => state.authSlice);
   const [form] = Form.useForm();
 
-  const product_type = _.get(data, "type", "Stand Alone Product");
-  let price = "";
-
-  if (user.role === "Dealer") {
-    price =
-      product_type === "Stand Alone Product"
-        ? _.get(data, "Deler_product_price", 0) ||
-          _.get(data, "single_product_price", 0)
+  // Get role-based price
+  const getRoleBasedPrice = () => {
+    const product_type = _.get(data, "type", "Stand Alone Product");
+    
+    if (user.role === "Dealer") {
+      return product_type === "Stand Alone Product"
+        ? _.get(data, "Deler_product_price", 0) || _.get(data, "single_product_price", 0)
         : _.get(data, "variants_price[0].Deler_product_price", "");
-  } else if (user.role === "Corporate") {
-    price =
-      product_type === "Stand Alone Product"
-        ? _.get(data, "single_product_price", 0) ||
-          _.get(data, "corporate_product_price", 0)
+    } else if (user.role === "Corporate") {
+      return product_type === "Stand Alone Product"
+        ? _.get(data, "corporate_product_price", 0) || _.get(data, "single_product_price", 0)
         : _.get(data, "variants_price[0].corporate_product_price", "");
-  } else {
-    price =
-      product_type === "Stand Alone Product"
-        ? _.get(data, "single_product_price", 0) ||
-          _.get(data, "customer_product_price", 0)
+    } else {
+      return product_type === "Stand Alone Product"
+        ? _.get(data, "customer_product_price", 0) || _.get(data, "single_product_price", 0)
         : _.get(data, "variants_price[0].customer_product_price", "");
-  }
+    }
+  };
+
+  const price = getRoleBasedPrice();
+  const product_type = _.get(data, "type", "Stand Alone Product");
 
   const [totalPrice, setTotalPrice] = useState(price);
   const [quantity, setQuantity] = useState(null);
@@ -334,43 +363,57 @@ const ProductDetails = ({
   ? Number(productionTime) + Number(ArrangeTime) 
   : Number(productionTime);
 
+  // Generate quantity options based on user role
+  const generateQuantityOptions = () => {
+    const roleFields = getRoleFields(user.role);
+    
+    if (quantityType === "textbox") {
+      const options = [];
+      for (let i = dropdownGap; i <= maxQuantity; i += dropdownGap) {
+        options.push({ value: i, label: i.toString() });
+      }
+      return options;
+    } else {
+      return quantityDiscounts
+        .filter(item => item[roleFields.quantity]) // Only show items that have quantity for this role
+        .map((item) => ({
+          value: Number(item[roleFields.quantity]),
+          label: `${item[roleFields.quantity]}`,
+          Free_Delivery: item[roleFields.freeDelivery] || false,
+          discount: Number(item[roleFields.discount] || 0),
+          uuid: item.uniqe_id,
+          stats: item[roleFields.recommended] || "No comments",
+          deliveryCharges: Number(item[roleFields.deliveryCharges] || 100)
+        }))
+        .sort((a, b) => a.value - b.value); // Sort by quantity ascending
+    }
+  };
+
+  const quantityOptions = generateQuantityOptions();
+
   useEffect(() => {
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
-      const initialQuantity = Number(
-        _.get(quantityDiscounts, "[0].quantity", 500)
-      );
+      const roleFields = getRoleFields(user.role);
+      
+      // Find the first available quantity for this role
+      const firstAvailableItem = quantityDiscounts.find(item => item[roleFields.quantity]);
+      
+      if (firstAvailableItem) {
+        const initialQuantity = Number(firstAvailableItem[roleFields.quantity]);
+        const initialDiscount = Number(firstAvailableItem[roleFields.discount] || 0);
+        const initialFreeDelivery = firstAvailableItem[roleFields.freeDelivery] || false;
 
-      let initialDiscount = 0;
-      if (user.role === "Dealer") {
-        initialDiscount =
-          _.get(quantityDiscounts, "[0].Dealer_discount", 0) ||
-          _.get(quantityDiscounts, "[0].discount", 0);
-      } else if (user.role === "Corporate") {
-        initialDiscount =
-          _.get(quantityDiscounts, "[0].Corporate_discount", 0) ||
-          _.get(quantityDiscounts, "[0].discount", 0);
-      } else {
-        initialDiscount =
-          _.get(quantityDiscounts, "[0].Customer_discount", 0) ||
-          _.get(quantityDiscounts, "[0].discount", 0);
+        setQuantity(initialQuantity);
+        setDiscountPercentage({
+          uuid: firstAvailableItem.uniqe_id,
+          percentage: initialDiscount,
+        });
+        setFreeDelivery(initialFreeDelivery);
+        setCheckOutState((prev) => ({
+          ...prev,
+          product_quantity: initialQuantity,
+        }));
       }
-
-      const initialFreeDelivery = _.get(
-        quantityDiscounts,
-        "[0].Free_Deliverey",
-        false
-      );
-
-      setQuantity(initialQuantity);
-      setDiscountPercentage({
-        uuid: _.get(quantityDiscounts, "[0].uniqe_id", ""),
-        percentage: initialDiscount,
-      });
-      setFreeDelivery(initialFreeDelivery);
-      setCheckOutState((prev) => ({
-        ...prev,
-        product_quantity: initialQuantity,
-      }));
     } else {
       setDiscountPercentage({ uuid: "", percentage: 0 });
       setFreeDelivery(false);
@@ -381,7 +424,7 @@ const ProductDetails = ({
         product_quantity: 0,
       }));
     }
-  }, [quantityDiscounts, quantityType, maxQuantity]);
+  }, [quantityDiscounts, quantityType, maxQuantity, user.role]);
 
   useEffect(() => {
     const ratingSum = rate.reduce(
@@ -489,6 +532,56 @@ const ProductDetails = ({
 
   const goToShoppingCart = () => {
     navigate("/shopping-cart");
+  };
+
+  const handleQuantitySelect = (selectedQuantity) => {
+    const roleFields = getRoleFields(user.role);
+    
+    if (quantityType === "textbox") {
+      // For textbox type, find the best matching discount based on quantity
+      const availableDiscounts = quantityDiscounts
+        .filter(item => item[roleFields.quantity] && Number(item[roleFields.quantity]) <= selectedQuantity)
+        .sort((a, b) => Number(b[roleFields.quantity]) - Number(a[roleFields.quantity]));
+      
+      const selectedDiscount = availableDiscounts[0];
+
+      setQuantity(selectedQuantity);
+      setCheckOutState((prev) => ({
+        ...prev,
+        product_quantity: selectedQuantity,
+      }));
+
+      if (selectedDiscount) {
+        setDiscountPercentage({
+          uuid: selectedDiscount.uniqe_id,
+          percentage: Number(selectedDiscount[roleFields.discount] || 0),
+        });
+        setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
+      } else {
+        setDiscountPercentage({ uuid: "", percentage: 0 });
+        setFreeDelivery(false);
+      }
+    } else {
+      // For dropdown type, find exact match
+      const selectedDiscount = quantityDiscounts.find(
+        (item) => Number(item[roleFields.quantity]) === selectedQuantity
+      );
+
+      setQuantity(selectedQuantity);
+      setCheckOutState((prev) => ({
+        ...prev,
+        product_quantity: selectedQuantity,
+      }));
+
+      if (selectedDiscount) {
+        setDiscountPercentage({
+          uuid: selectedDiscount.uniqe_id,
+          percentage: Number(selectedDiscount[roleFields.discount] || 0),
+        });
+        setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
+      }
+    }
+    setQuantityDropdownVisible(false);
   };
 
   const handlebuy = async () => {
@@ -638,167 +731,130 @@ const ProductDetails = ({
     return (Number(totalSavings) + Number(mrpSavings)).toFixed(2);
   };
 
-  // Generate quantity options
-  const generateQuantityOptions = () => {
-    if (quantityType === "textbox") {
-      const options = [];
-      for (let i = dropdownGap; i <= maxQuantity; i += dropdownGap) {
-        options.push({ value: i, label: i.toString() });
-      }
-      return options;
-    } else {
-      return quantityDiscounts.map((item) => ({
-        value: Number(item.quantity),
-        label: `${item.quantity}`,
-        Free_Delivery: item.Free_Deliverey,
-        discount: Number(item.Customer_discount),
-        uuid: item.uniqe_id,
-        stats: item.recommended_stats,
-      }));
-    }
-  };
+  // Custom dropdown renderer for quantity selection
+  const quantityDropdownRender = (menu) => {
+    const roleFields = getRoleFields(user.role);
+    const quantityOptions = generateQuantityOptions();
 
-  const quantityOptions = generateQuantityOptions();
+    return (
+      <div
+        className="p-2 rounded-lg shadow-xl bg-white"
+        onMouseLeave={() => setQuantityDropdownVisible(false)}
+      >
+        {/* Role indicator badge */}
+        <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-blue-800">
+              Pricing for: <strong>{user.role}</strong>
+            </span>
+            {user.role !== 'Customer' && (
+              <Tag color="blue" className="text-xs">
+                {user.role} Pricing
+              </Tag>
+            )}
+          </div>
+        </div>
 
-  const handleQuantitySelect = (selectedQuantity) => {
-    if (quantityType === "textbox") {
-      const selectedDiscount = quantityDiscounts
-        .filter((item) => Number(item.quantity) <= selectedQuantity)
-        .sort((a, b) => Number(b.quantity) - Number(a.Customer_discount))[0];
+        <div className="overflow-y-auto max-h-80 space-y-3">
+          {quantityOptions.map((item) => {
+            const unitPrice = DISCOUNT_HELPER(
+              quantityType === "dropdown" ? item.discount : discountPercentage.percentage,
+              Number(_.get(checkOutState, "product_price", 0))
+            );
+            const totalPrice = unitPrice * item.value;
+            const isSelected = quantity === item.value;
 
-      setQuantity(selectedQuantity);
-      setCheckOutState((prev) => ({
-        ...prev,
-        product_quantity: selectedQuantity,
-      }));
+            return (
+              <div
+                key={item.value}
+                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-50 shadow-sm"
+                    : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
+                }`}
+                onClick={() => handleQuantitySelect(item.value)}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`text-base font-medium ${
+                        isSelected ? "text-blue-700" : "text-gray-800"
+                      }`}
+                    >
+                      {item.value} {unit}
+                    </span>
+                    {item.stats && item.stats !== "No comments" && (
+                      <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                        {item.stats}
+                      </span>
+                    )}
+                  </div>
 
-      if (selectedDiscount) {
-        setDiscountPercentage({
-          uuid: selectedDiscount.uniqe_id,
-          percentage: Number(selectedDiscount.Customer_discount),
-        });
-        setFreeDelivery(selectedDiscount.Free_Deliverey || false);
-      } else {
-        setDiscountPercentage({ uuid: "", percentage: 0 });
-        setFreeDelivery(false);
-      }
-    } else {
-      const selectedDiscount = quantityDiscounts.find(
-        (item) => Number(item.quantity) === selectedQuantity
-      );
+                  <div className="flex flex-wrap gap-2">
+                    {quantityType === "dropdown" && item.discount > 0 && (
+                      <span className="text-green-600 text-sm font-medium inline-flex items-center">
+                        <CheckCircleOutlined className="mr-1" />
+                        {item.discount}% {user.role.toLowerCase()} discount
+                      </span>
+                    )}
+                    {quantityType === "dropdown" && item.Free_Delivery && (
+                      <span className="text-blue-600 text-sm font-medium inline-flex items-center">
+                        <FaTruckFast className="mr-1" />
+                        Free Delivery
+                      </span>
+                    )}
+                    {/* {quantityType === "dropdown" && !item.Free_Delivery && (
+                      <span className="text-gray-500 text-sm inline-flex items-center">
+                        Delivery: ₹{item.deliveryCharges}
+                      </span>
+                    )} */}
+                  </div>
+                </div>
 
-      setQuantity(selectedQuantity);
-      setCheckOutState((prev) => ({
-        ...prev,
-        product_quantity: selectedQuantity,
-      }));
+                <div className="text-right">
+                  <p
+                    className={`font-semibold ${
+                      isSelected ? "text-blue-700" : "text-gray-900"
+                    }`}
+                  >
+                    {formatPrice(totalPrice)}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {formatPrice(unitPrice)}/{unit}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
-      if (selectedDiscount) {
-        setDiscountPercentage({
-          uuid: selectedDiscount.uniqe_id,
-          percentage: Number(selectedDiscount.Customer_discount),
-        });
-        setFreeDelivery(selectedDiscount.Free_Deliverey || false);
-      }
-    }
-    setQuantityDropdownVisible(false);
+        {/* No options available message */}
+        {quantityOptions.length === 0 && (
+          <div className="text-center py-4 text-gray-500">
+            No quantity options available for {user.role} role
+          </div>
+        )}
+
+        <div className="mt-4 pt-3 border-t border-gray-100">
+          <button
+            onClick={() => setShowBulkOrderForm(true)}
+            className="w-full py-2 px-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-semibold text-sm hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          >
+            <PlusOutlined />
+            Bulk Order Inquiry
+          </button>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Prices include all applicable taxes • {user.role} pricing applied
+          </p>
+        </div>
+      </div>
+    );
   };
 
   const handleBulkOrder = () => {
     setShowBulkOrderForm(true);
     setQuantityDropdownVisible(false);
   }
-
-  // Custom dropdown renderer for quantity selection
-  const quantityDropdownRender = (menu) => (
-    <div
-      className="p-2 rounded-lg shadow-xl bg-white"
-      onMouseLeave={() => setQuantityDropdownVisible(false)}
-    >
-      <div className="overflow-y-auto max-h-80 space-y-3">
-        {quantityOptions.map((item) => {
-          const unitPrice = DISCOUNT_HELPER(
-            quantityType === "dropdown"
-              ? item.discount
-              : discountPercentage.percentage,
-            Number(_.get(checkOutState, "product_price", 0))
-          );
-          const totalPrice = unitPrice * item.value;
-          const isSelected = quantity === item.value;
-
-          return (
-            <div
-              key={item.value}
-              className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                isSelected
-                  ? "border-blue-500 bg-blue-50 shadow-sm"
-                  : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
-              }`}
-              onClick={() => handleQuantitySelect(item.value)}
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`text-base font-medium ${
-                      isSelected ? "text-blue-700" : "text-gray-800"
-                    }`}
-                  >
-                    {item.value} {unit}
-                  </span>
-                  {item.stats && item.stats !== "No comments" && (
-                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
-                      {item.stats}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  {quantityType === "dropdown" && item.discount > 0 && (
-                    <span className="text-green-600 text-sm font-medium inline-flex items-center mt-1">
-                      <CheckCircleOutlined className="mr-1" />
-                      {item.discount}% discount
-                    </span>
-                  )}
-                  {quantityType === "dropdown" && item.Free_Delivery && (
-                    <span className="text-blue-600 text-sm font-medium inline-flex items-center mt-1">
-                      <FaTruckFast className="mr-1" />
-                      Free Delivery
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="text-right">
-                <p
-                  className={`font-semibold ${
-                    isSelected ? "text-blue-700" : "text-gray-900"
-                  }`}
-                >
-                  {formatPrice(totalPrice)}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {formatPrice(unitPrice)}/{unit}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-4 pt-3 border-t border-gray-100">
-        <button
-          onClick={() => handleBulkOrder()}
-          className="w-full py-2 px-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-semibold text-sm hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-        >
-          <PlusOutlined />
-          Bulk Order Inquiry
-        </button>
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Prices include all applicable taxes
-        </p>
-      </div>
-    </div>
-  );
 
   // Share functionality
   const shareProduct = (platform) => {
@@ -930,6 +986,12 @@ const ProductDetails = ({
               {data.label?.map((label, index) => (
                 <span key={index}>{generateLabel(label)}</span>
               ))}
+              {/* Role badge */}
+              {/* {user.role !== 'Customer' && (
+                <Tag color="blue" className="text-xs">
+                  {user.role} Pricing
+                </Tag>
+              )} */}
             </div>
           </div>
 
@@ -1194,7 +1256,7 @@ const ProductDetails = ({
                           <div>
                             Kudos! Additionally you saved{" "}
                             {formatPrice(calculateSavings())} (
-                            {discountPercentage.percentage}% quantity discount)
+                            {discountPercentage.percentage}% {user.role.toLowerCase()} discount)
                           </div>
                           <div
                             style={{

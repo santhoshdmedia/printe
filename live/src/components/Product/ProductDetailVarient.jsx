@@ -111,6 +111,50 @@ const ProductDetailVarient = ({
     FreeDelivery: false,
   });
 
+  // Helper function to get role-specific quantity
+  const getRoleSpecificQuantity = useCallback((item) => {
+    if (user?.role === "Dealer") {
+      return Number(item.Dealer_quantity || item.quantity || 0);
+    } else if (user?.role === "Corporate") {
+      return Number(item.Corporate_quantity || item.quantity || 0);
+    } else {
+      return Number(item.Customer_quantity || item.quantity || 0);
+    }
+  }, [user?.role]);
+
+  // Helper function to get role-specific discount
+  const getRoleSpecificDiscount = useCallback((item) => {
+    if (user?.role === "Dealer") {
+      return Number(item.Dealer_discount || item.discount || 0);
+    } else if (user?.role === "Corporate") {
+      return Number(item.Corporate_discount || item.discount || 0);
+    } else {
+      return Number(item.Customer_discount || item.discount || 0);
+    }
+  }, [user?.role]);
+
+  // Helper function to get role-specific free delivery
+  const getRoleSpecificFreeDelivery = useCallback((item) => {
+    if (user?.role === "Dealer") {
+      return item.free_delivery_dealer || item.Free_Deliverey || false;
+    } else if (user?.role === "Corporate") {
+      return item.free_delivery_corporate || item.Free_Deliverey || false;
+    } else {
+      return item.free_delivery_customer || item.Free_Deliverey || false;
+    }
+  }, [user?.role]);
+
+  // Helper function to get role-specific recommended stats
+  const getRoleSpecificStats = useCallback((item) => {
+    if (user?.role === "Dealer") {
+      return item.recommended_stats_dealer || item.recommended_stats || "No comments";
+    } else if (user?.role === "Corporate") {
+      return item.recommended_stats_corporate || item.recommended_stats || "No comments";
+    } else {
+      return item.recommended_stats_customer || item.recommended_stats || "No comments";
+    }
+  }, [user?.role]);
+
   // Find matching variant price based on selected variants
   const findMatchingVariantPrice = useCallback(
     (variants) => {
@@ -224,41 +268,27 @@ const ProductDetailVarient = ({
   // Initialize quantity settings
   const initializeQuantity = useCallback(() => {
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
-      const initialQuantity = Number(
-        _.get(quantityDiscounts, "[0].quantity", 500)
-      );
+      // Get the first available quantity for the current user role
+      const firstAvailableItem = quantityDiscounts.find(item => 
+        getRoleSpecificQuantity(item) > 0
+      ) || quantityDiscounts[0];
 
-      let initialDiscount = 0;
-      if (user?.role === "Dealer") {
-        initialDiscount =
-          _.get(quantityDiscounts, "[0].Dealer_discount", 0) ||
-          _.get(quantityDiscounts, "[0].discount", 0);
-      } else if (user?.role === "Corporate") {
-        initialDiscount =
-          _.get(quantityDiscounts, "[0].Corporate_discount", 0) ||
-          _.get(quantityDiscounts, "[0].discount", 0);
-      } else {
-        initialDiscount =
-          _.get(quantityDiscounts, "[0].Customer_discount", 0) ||
-          _.get(quantityDiscounts, "[0].discount", 0);
+      if (firstAvailableItem) {
+        const initialQuantity = getRoleSpecificQuantity(firstAvailableItem);
+        const initialDiscount = getRoleSpecificDiscount(firstAvailableItem);
+        const initialFreeDelivery = getRoleSpecificFreeDelivery(firstAvailableItem);
+
+        setQuantity(initialQuantity);
+        setDiscountPercentage({
+          uuid: _.get(firstAvailableItem, "uniqe_id", ""),
+          percentage: initialDiscount,
+        });
+        setFreeDelivery(initialFreeDelivery);
+        setCheckOutState((prev) => ({
+          ...prev,
+          product_quantity: initialQuantity,
+        }));
       }
-
-      const initialFreeDelivery = _.get(
-        quantityDiscounts,
-        "[0].Free_Deliverey",
-        false
-      );
-
-      setQuantity(initialQuantity);
-      setDiscountPercentage({
-        uuid: _.get(quantityDiscounts, "[0].uniqe_id", ""),
-        percentage: initialDiscount,
-      });
-      setFreeDelivery(initialFreeDelivery);
-      setCheckOutState((prev) => ({
-        ...prev,
-        product_quantity: initialQuantity,
-      }));
     } else {
       setDiscountPercentage({ uuid: "", percentage: 0 });
       setFreeDelivery(false);
@@ -268,7 +298,7 @@ const ProductDetailVarient = ({
         product_quantity: 0,
       }));
     }
-  }, [quantityType, quantityDiscounts, user?.role, maxQuantity]);
+  }, [quantityType, quantityDiscounts, user?.role, maxQuantity, getRoleSpecificQuantity, getRoleSpecificDiscount, getRoleSpecificFreeDelivery]);
 
   // Handle variant selection
   const handleVariantChange = useCallback(
@@ -351,7 +381,6 @@ const ProductDetailVarient = ({
   const renderVariantSelector = useCallback(
     (variant) => {
       const { variant_name, variant_type, options } = variant;
-      console.log("Rendering variant:",  options.map(opt => opt.image_names?.[0].path || opt.value));
 
       if (!options || options.length === 0) return null;
 
@@ -505,7 +534,7 @@ const ProductDetailVarient = ({
     return `MRP ₹${parseFloat(price || 0).toFixed(2)}`;
   }, []);
 
-  // Generate quantity options
+  // Generate quantity options based on user role
   const quantityOptions = useMemo(() => {
     if (quantityType === "textbox") {
       const options = [];
@@ -514,28 +543,28 @@ const ProductDetailVarient = ({
       }
       return options;
     } else {
-      return quantityDiscounts.map((item) => ({
-        value: Number(item.quantity),
-        label: `${item.quantity}`,
-        Free_Delivery: item.Free_Deliverey,
-        discount:
-          user?.role === "Dealer"
-            ? item.Dealer_discount
-            : user?.role === "Corporate"
-            ? item.Corporate_discount
-            : item.Customer_discount,
-        uuid: item.uniqe_id,
-        stats: item.recommended_stats,
-      }));
+      // Filter and map quantity discounts based on user role
+      return quantityDiscounts
+        .filter(item => getRoleSpecificQuantity(item) > 0) // Only show items with valid quantity for this role
+        .map((item) => ({
+          value: getRoleSpecificQuantity(item),
+          label: `${getRoleSpecificQuantity(item)}`,
+          Free_Delivery: getRoleSpecificFreeDelivery(item),
+          discount: getRoleSpecificDiscount(item),
+          uuid: item.uniqe_id,
+          stats: getRoleSpecificStats(item),
+        }))
+        .sort((a, b) => a.value - b.value); // Sort by quantity ascending
     }
-  }, [quantityType, dropdownGap, maxQuantity, quantityDiscounts, user?.role]);
+  }, [quantityType, dropdownGap, maxQuantity, quantityDiscounts, user?.role, getRoleSpecificQuantity, getRoleSpecificDiscount, getRoleSpecificFreeDelivery, getRoleSpecificStats]);
 
   const handleQuantitySelect = useCallback(
     (selectedQuantity) => {
       if (quantityType === "textbox") {
+        // For textbox type, find the best matching discount based on quantity
         const selectedDiscount = quantityDiscounts
-          .filter((item) => Number(item.quantity) <= selectedQuantity)
-          .sort((a, b) => Number(b.quantity) - Number(a.quantity))[0];
+          .filter((item) => getRoleSpecificQuantity(item) <= selectedQuantity)
+          .sort((a, b) => getRoleSpecificQuantity(b) - getRoleSpecificQuantity(a))[0];
 
         setQuantity(selectedQuantity);
         setCheckOutState((prev) => ({
@@ -544,27 +573,19 @@ const ProductDetailVarient = ({
         }));
 
         if (selectedDiscount) {
-          let discount = 0;
-          if (user?.role === "Dealer") {
-            discount = selectedDiscount.Dealer_discount;
-          } else if (user?.role === "Corporate") {
-            discount = selectedDiscount.Corporate_discount;
-          } else {
-            discount = selectedDiscount.Customer_discount;
-          }
-
           setDiscountPercentage({
             uuid: selectedDiscount.uniqe_id,
-            percentage: Number(discount),
+            percentage: getRoleSpecificDiscount(selectedDiscount),
           });
-          setFreeDelivery(selectedDiscount.Free_Deliverey || false);
+          setFreeDelivery(getRoleSpecificFreeDelivery(selectedDiscount));
         } else {
           setDiscountPercentage({ uuid: "", percentage: 0 });
           setFreeDelivery(false);
         }
       } else {
+        // For dropdown type, find the exact matching item
         const selectedDiscount = quantityDiscounts.find(
-          (item) => Number(item.quantity) === selectedQuantity
+          (item) => getRoleSpecificQuantity(item) === selectedQuantity
         );
 
         setQuantity(selectedQuantity);
@@ -574,25 +595,16 @@ const ProductDetailVarient = ({
         }));
 
         if (selectedDiscount) {
-          let discount = 0;
-          if (user?.role === "Dealer") {
-            discount = selectedDiscount.Dealer_discount;
-          } else if (user?.role === "Corporate") {
-            discount = selectedDiscount.Corporate_discount;
-          } else {
-            discount = selectedDiscount.Customer_discount;
-          }
-
           setDiscountPercentage({
             uuid: selectedDiscount.uniqe_id,
-            percentage: Number(discount),
+            percentage: getRoleSpecificDiscount(selectedDiscount),
           });
-          setFreeDelivery(selectedDiscount.Free_Deliverey || false);
+          setFreeDelivery(getRoleSpecificFreeDelivery(selectedDiscount));
         }
       }
       setQuantityDropdownVisible(false);
     },
-    [quantityType, quantityDiscounts, user?.role]
+    [quantityType, quantityDiscounts, user?.role, getRoleSpecificQuantity, getRoleSpecificDiscount, getRoleSpecificFreeDelivery]
   );
 
   // Quantity dropdown render
@@ -779,6 +791,22 @@ const ProductDetailVarient = ({
     } else {
       setShowShareMenu(!showShareMenu);
     }
+  };
+
+  // Custom Popover component
+  const CustomPopover = ({ open, onClose, className, children }) => {
+    if (!open) return null;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className={`absolute top-full right-0 mt-2 ${className}`}
+      >
+        {children}
+      </motion.div>
+    );
   };
 
   return (
