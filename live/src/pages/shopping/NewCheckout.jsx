@@ -693,6 +693,34 @@ const NewCheckout = () => {
                   </div>
                 )}
               </div>
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                <h2 className="text-lg font-bold mb-4">
+                  Coupen code
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Enter Enter Coupen code"
+                    size="large"
+                    onChange={(e) => setGstNo(e.target.value)}
+                    maxLength={15}
+                  />
+                 
+                  {isEditable && (
+                    <Button
+                      type="default"
+                      onClick={() => setIsEditable(false)}
+                      size="large"
+                    >
+                      I don't have GSTIN
+                    </Button>
+                  )}
+                </div>
+                {gstNo && gstNo.length !== 15 && (
+                  <div className="text-red-500 text-sm mt-2">
+                    GST number must be exactly 15 characters long.
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right Column - Order Summary */}

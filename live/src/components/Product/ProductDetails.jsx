@@ -271,6 +271,7 @@ const ProductDetails = ({
   const { user } = useSelector((state) => state.authSlice);
   const [form] = Form.useForm();
 
+
   // Get role-based price
   const getRoleBasedPrice = () => {
     const product_type = _.get(data, "type", "Stand Alone Product");
@@ -343,6 +344,9 @@ const ProductDetails = ({
   const [hasDiscount, setHasDiscount] = useState(false);
   const [showBulkOrderForm, setShowBulkOrderForm] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+
+  const[deliveryCharges,setDeliveryCharges]=useState(0);
+  const[noDesignUpload,setNoDesignUpload]=useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -506,7 +510,6 @@ const ProductDetails = ({
       }));
       setStockCount(_.get(result, "data.data.stock", {}));
     } catch (err) {
-      console.log(err);
     }
   };
 
@@ -534,18 +537,22 @@ const ProductDetails = ({
     navigate("/shopping-cart");
   };
 
+  
+
   const handleQuantitySelect = (selectedQuantity) => {
     const roleFields = getRoleFields(user.role);
+    
     
     if (quantityType === "textbox") {
       // For textbox type, find the best matching discount based on quantity
       const availableDiscounts = quantityDiscounts
         .filter(item => item[roleFields.quantity] && Number(item[roleFields.quantity]) <= selectedQuantity)
         .sort((a, b) => Number(b[roleFields.quantity]) - Number(a[roleFields.quantity]));
-      
-      const selectedDiscount = availableDiscounts[0];
+        
+        const selectedDiscount = availableDiscounts[0];
 
       setQuantity(selectedQuantity);
+      setD
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: selectedQuantity,
@@ -568,6 +575,7 @@ const ProductDetails = ({
       );
 
       setQuantity(selectedQuantity);
+      setDeliveryCharges(selectedDiscount[roleFields.freeDelivery] ? 0 : selectedDiscount[roleFields.deliveryCharges] || 0);
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: selectedQuantity,
@@ -592,6 +600,7 @@ const ProductDetails = ({
         toast.error("Please select quantity first");
         return;
       }
+     
 
       if (needDesignUpload && !checkOutState.product_design_file) {
         toast.error("Please upload your design file first");
@@ -620,7 +629,6 @@ const ProductDetails = ({
       );
 
       const result = await addToShoppingCart(checkOutState);
-      console.log(result);
 
       Swal.fire({
         title: "Product Added To Cart",
@@ -686,11 +694,15 @@ const ProductDetails = ({
 
   // Format price functions
   const formatPrice = (price) => {
+    
+    
     return `₹${parseFloat(price).toFixed(2)}`;
   };
 
   const formatMRPPrice = (price) => {
-    return `MRP ₹${parseFloat(price).toFixed(2)}`;
+     const mrpPrice = Number(_.get(data, "MRP_price", 0));
+    console.log(mrpPrice*quantity);
+    return ` ₹${parseFloat(price).toFixed(2)}`;
   };
 
   // Calculate total price
@@ -700,7 +712,8 @@ const ProductDetails = ({
       discountPercentage.percentage,
       Number(_.get(checkOutState, "product_price", 0))
     );
-    return Number(unitPrice * quantity).toFixed(2);
+    const freeDeliveryCharges = freeDelivery ? 0 : deliveryCharges;
+    return Number(unitPrice * quantity+freeDelivery).toFixed(2);
   };
 
   const calculateMRPTotalPrice = () => {
@@ -714,7 +727,8 @@ const ProductDetails = ({
     if (!quantity) return 0;
     const original = calculateMRPTotalPrice();
     const discounted = calculateTotalPrice();
-    return (original - discounted).toFixed(2);
+    
+    return (original - discounted ).toFixed(2);
   };
 
   const calculateMRPSavings = () => {
@@ -731,18 +745,21 @@ const ProductDetails = ({
     return (Number(totalSavings) + Number(mrpSavings)).toFixed(2);
   };
 
+
   // Custom dropdown renderer for quantity selection
   const quantityDropdownRender = (menu) => {
     const roleFields = getRoleFields(user.role);
     const quantityOptions = generateQuantityOptions();
 
+
+    
     return (
       <div
         className="p-2 rounded-lg shadow-xl bg-white"
         onMouseLeave={() => setQuantityDropdownVisible(false)}
       >
         {/* Role indicator badge */}
-        <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+        {/* <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-blue-800">
               Pricing for: <strong>{user.role}</strong>
@@ -753,7 +770,7 @@ const ProductDetails = ({
               </Tag>
             )}
           </div>
-        </div>
+        </div> */}
 
         <div className="overflow-y-auto max-h-80 space-y-3">
           {quantityOptions.map((item) => {
@@ -881,7 +898,6 @@ const ProductDetails = ({
           url: window.location.href,
         });
       } catch (err) {
-        console.log("Error sharing:", err);
       }
     } else {
       setShowShareMenu(!showShareMenu);
@@ -891,9 +907,7 @@ const ProductDetails = ({
   // Bulk order form submission
   const handleBulkOrderSubmit = async (values) => {
     try {
-      console.log("Bulk order submitted:", values);
       const result = await bulkOrder(values);
-      console.log(result);
 
       message.success("Bulk order inquiry submitted successfully!");
       setShowBulkOrderForm(false);
@@ -907,23 +921,25 @@ const ProductDetails = ({
   const ProcessingTimeInfo = () => (
     <div className="max-h-[400px] overflow-y-auto text-gray-700">
       <Paragraph>
-        The printing time determines how long it takes us to complete your
-        order.
+       After our <b> designing team </b> completes your design, you’ll receive a <b> WhatsApp message </b> from us. You just need to reply “Yes” — and we’ll immediately start processing your order to the next step.
       </Paragraph>
       <Paragraph>
-        While we strive to complete the order within the committed timeframes,
-        the timings also depend on the following factors:
+     Please note that <b> delivery time may delay</b>, but don’t worry — your order is <b> 100% safe and secure</b> and will reach your <b>doorstep</b>.
       </Paragraph>
-      <ul className="list-disc pl-5 mt-2 space-y-2">
-        <li>
-          We will provide the proof file for approval before printing. Faster
-          approval will guarantee speedy processing.
-        </li>
-        <li>
-          We need 300 dpi CMYK resolution artwork uploaded along the order.
-        </li>
-        <li>Production time does not include the shipping time.</li>
-      </ul>
+      <Paragraph>
+     However, kindly note that  <b>returns or exchanges are not applicable for customized products</b> due to their personalized nature. So please share your <b>expectations clearly</b> — we’ll make sure your order is prepared <b>perfectly</b>.
+      </Paragraph>
+      <Alert
+                  message={
+                    <span>
+                      If you place an order without a custom design, it will be delivered within 3–4 working days.
+                    </span>
+                  }
+                  type="info"
+                  showIcon
+                  className="!py-2"
+                />
+      
     </div>
   );
 
@@ -965,6 +981,15 @@ const ProductDetails = ({
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  const handleNoCustomization = (e) => {
+    setNoDesignUpload(e.target.checked);
+    if (e.target.checked) {
+      setNeedDesignUpload(false);
+    } else {
+      setNeedDesignUpload(true);
+    }
   };
 
   return (
@@ -1232,7 +1257,7 @@ const ProductDetails = ({
               </Text>
               <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
                 <Text delete className="text-md text-gray-500 md:mr-2">
-                   {formatPrice(_.get(data, "MRP_price", 0))}
+                   ₹{Number(_.get(data, "MRP_price", 0))*quantity}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
@@ -1249,7 +1274,8 @@ const ProductDetails = ({
                   message={
                     <div>
                       <div>
-                        You saved {formatPrice(calculateMRPSavings())} 
+                        You saved {formatPrice(calculateMRPSavings())} <br></br>
+                        {discountPercentage.percentage == 0 ? "select more quantity to get extra discount":""}
                       </div>
                       {quantity && calculateSavings() > 0 && (
                         <div className="mt-1">
@@ -1319,7 +1345,7 @@ const ProductDetails = ({
           <div className="flex flex-col w-full justify-between mt-4">
             <div className="flex items-center gap-2">
               <Text strong className="text-gray-700">
-                Production Time:
+                Proccessing Time:
               </Text>
               <Tooltip title="Learn more about processing time">
                 <Button
@@ -1336,9 +1362,9 @@ const ProductDetails = ({
             <CustomModal
               open={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              title="Processing Time Information"
+              title="Once you confirm, your order will get the green signal for processing"
               width={700}
-              topPosition="!top-[-280px]"
+              topPosition="!top-[-300px]"
             >
               <ProcessingTimeInfo />
             </CustomModal>
@@ -1359,6 +1385,7 @@ const ProductDetails = ({
             <PincodeDeliveryCalculator
               Production={processing_item}
               freeDelivery={freeDelivery}
+              deliveryCharges={deliveryCharges}
             />
           </motion.div>
         </Card>
@@ -1367,8 +1394,10 @@ const ProductDetails = ({
         <div className="space-y-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
             <Text strong className="text-gray-800">
-              Upload Your Design
+             { noDesignUpload?"Your Product is Ready to Ship":"Upload Your Design"}
             </Text>
+               
+                {noDesignUpload?null:
             <div className="flex items-center gap-2">
               <Text>Already have a Design</Text>
               <Switch
@@ -1384,9 +1413,16 @@ const ProductDetails = ({
                   }
                 }}
               />
-            </div>
+            </div>}
+ <Checkbox
+                  checked={noDesignUpload}
+                  onChange={handleNoCustomization }
+                >
+                  Procced without Design
+                </Checkbox>
           </div>
-
+{noDesignUpload?null:
+<div className="">
           {needDesignUpload ? (
             <>
               <UploadFileButton
@@ -1422,6 +1458,9 @@ const ProductDetails = ({
               showIcon
             />
           )}
+          </div>
+          
+}
 
           {/* Instructions Section */}
           <div>
@@ -1651,7 +1690,7 @@ export default ProductDetails;
 
 import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
 
-export const PincodeDeliveryCalculator = ({ Production, freeDelivery }) => {
+export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCharges }) => {
   const [pincode, setPincode] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [state, setState] = useState("");
@@ -1717,19 +1756,24 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery }) => {
       stateDeliveryDays[state] || stateDeliveryDays.default;
     const today = new Date();
     const productionTime = Production || 0;
+    
 
     let deliveryDate = new Date(today);
-    deliveryDate.setDate(deliveryDate.getDate() + Number(productionTime));
+    deliveryDate.setDate(deliveryDate.getDate() + Number(productionTime) + Number(deliveryDays)+2);
 
     let totalDays = productionTime + deliveryDays;
+    
     let addedDays = 0;
 
-    while (addedDays < totalDays) {
-      deliveryDate.setDate(deliveryDate.getDate() + 1);
-      if (deliveryDate.getDay() !== 0 && deliveryDate.getDay() !== 6) {
-        addedDays++;
-      }
-    }
+    // while (addedDays < totalDays) {
+    //   deliveryDate.setDate(deliveryDate.getDate() + 1);
+    //   if (deliveryDate.getDay() !== 0 && deliveryDate.getDay() !== 6) {
+    //     addedDays++;
+        
+    //   }
+    // }
+
+    
 
     return deliveryDate.toLocaleDateString("en-US", {
       weekday: "short",
@@ -1923,13 +1967,13 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery }) => {
           // When pincode is provided and valid
           <motion.div className="delivery-info" whileHover={{ x: 5 }}>
             <span className="delivery-text">
-              Standard Delivery by <Text strong>{deliveryDate}</Text>
+              Expected Delivery by <Text strong>{deliveryDate}</Text>
             </span>
             <Divider type="vertical" />
             {freeDelivery ? (
               <div className="flex items-center gap-2">
                 <Text delete type="secondary">
-                  ₹ 100
+                  ₹ {deliveryCharges}
                 </Text>
                 <Text type="success" strong>
                   Cheers – Zero Delivery Charges, 100% Happiness!
@@ -1937,7 +1981,7 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery }) => {
               </div>
             ) : (
               <Text type="success" strong>
-                ₹ 100
+                ₹ {deliveryCharges} Delivery Charges Applicable
               </Text>
             )}
           </motion.div>

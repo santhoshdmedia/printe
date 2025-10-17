@@ -13,6 +13,7 @@ const Order = model(
         type: Object,
         required: true,
       },
+
       delivery_address: {
         type: Object,
         required: true,
@@ -25,6 +26,12 @@ const Order = model(
       total_price: {
         type: Number,
         required: true,
+      },
+      DeliveryCharges: {
+        type: Number,
+      },
+      FreeDelivery: {
+        type: Boolean,
       },
       payment_type: {
         type: String,

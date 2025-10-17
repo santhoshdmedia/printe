@@ -42,6 +42,7 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import toast from "react-hot-toast";
+import {PincodeDeliveryCalculator} from "./ProductDetails.jsx"
 
 const { Title, Text } = Typography;
 
@@ -76,6 +77,7 @@ const ProductDetailVarient = ({
   const arrangeTime = _.get(data, "Stock_Arrangement_time", "");
   const processingTime = Number(productionTime) + Number(arrangeTime);
   const gst = _.get(data, "GST", 0);
+   const[noDesignUpload,setNoDesignUpload]=useState(false);
 
   // State declarations
   const [selectedVariants, setSelectedVariants] = useState({});
@@ -809,6 +811,15 @@ const ProductDetailVarient = ({
     );
   };
 
+   const handleNoCustomization = (e) => {
+    setNoDesignUpload(e.target.checked);
+    if (e.target.checked) {
+      setNeedDesignUpload(false);
+    } else {
+      setNeedDesignUpload(true);
+    }
+  };
+
   return (
     <Spin
       spinning={loading}
@@ -1058,7 +1069,7 @@ const ProductDetailVarient = ({
           <div className="flex flex-col w-full justify-between mt-4">
             <div className="flex items-center gap-2">
               <Text strong className="text-gray-700">
-                Production Time:
+                 { noDesignUpload?"Your Product is Ready to Ship":"Upload Your Design"}
               </Text>
               <span className="font-bold">{processingTime} days</span>
             </div>
@@ -1071,24 +1082,33 @@ const ProductDetailVarient = ({
             <Text strong className="text-gray-800">
               Upload Your Design
             </Text>
-            <div className="flex items-center gap-2">
-              <Text>Already have a Design</Text>
-              <Switch
-                checked={needDesignUpload}
-                onChange={(checked) => {
-                  setNeedDesignUpload(checked);
-                  if (!checked) {
-                    setCheckOutState((prev) => ({
-                      ...prev,
-                      product_design_file: "",
-                    }));
-                    setChecked(false);
-                  }
-                }}
-              />
-            </div>
+             {noDesignUpload?null:
+                        <div className="flex items-center gap-2">
+                          <Text>Already have a Design</Text>
+                          <Switch
+                            checked={needDesignUpload}
+                            onChange={(checked) => {
+                              setNeedDesignUpload(checked);
+                              if (!checked) {
+                                setCheckOutState((prev) => ({
+                                  ...prev,
+                                  product_design_file: "",
+                                }));
+                                setChecked(false);
+                              }
+                            }}
+                          />
+                        </div>}
+                        <Checkbox
+                                          checked={noDesignUpload}
+                                          onChange={handleNoCustomization }
+                                        >
+                                          Procced without Design
+                                        </Checkbox>
           </div>
 
+         {noDesignUpload?null:
+<div className="">
           {needDesignUpload ? (
             <>
               <UploadFileButton
@@ -1098,20 +1118,22 @@ const ProductDetailVarient = ({
               />
 
               {checkOutState.product_design_file && (
-                <div className="mt-2 flex items-center justify-between flex-row-reverse">
-                  <Checkbox
-                    checked={checked}
-                    onChange={(e) => setChecked(e.target.checked)}
-                  >
-                    I confirm this design
-                  </Checkbox>
+                <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
                   <Button
                     type="link"
                     icon={<EyeOutlined />}
                     onClick={() => setDesignPreviewVisible(true)}
+                    className="md:order-1"
                   >
                     View Design
                   </Button>
+                  <Checkbox
+                    checked={checked}
+                    onChange={(e) => setChecked(e.target.checked)}
+                    className="md:order-2"
+                  >
+                    I confirm this design
+                  </Checkbox>
                 </div>
               )}
             </>
@@ -1122,6 +1144,9 @@ const ProductDetailVarient = ({
               showIcon
             />
           )}
+          </div>
+          
+}
 
           {/* Add to Cart Button */}
           <div className="w-full">
