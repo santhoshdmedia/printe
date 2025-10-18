@@ -42,7 +42,7 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import toast from "react-hot-toast";
-import {PincodeDeliveryCalculator} from "./ProductDetails.jsx"
+import { PincodeDeliveryCalculator } from "./ProductDetails.jsx";
 
 const { Title, Text } = Typography;
 
@@ -62,6 +62,13 @@ const ProductDetailVarient = ({
   const { user } = useSelector((state) => state.authSlice);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const stockCount = _.get(data, "stock_count", "");
+  const productionTime = _.get(data, "Production_time", "");
+  const ArrangeTime = _.get(data, "Stock_Arrangement_time", "");
+  const processing_item =
+    stockCount === 0
+      ? Number(productionTime) + Number(ArrangeTime)
+      : Number(productionTime);
 
   const { isGettingVariantPrice } = useSelector((state) => state.publicSlice);
 
@@ -73,11 +80,11 @@ const ProductDetailVarient = ({
   const quantityType = _.get(data, "quantity_type", "dropdown");
   const maxQuantity = _.get(data, "max_quantity", 10000);
   const unit = _.get(data, "unit", "Box");
-  const productionTime = _.get(data, "Production_time", "");
+  // const productionTime = _.get(data, "Production_time", "");
   const arrangeTime = _.get(data, "Stock_Arrangement_time", "");
   const processingTime = Number(productionTime) + Number(arrangeTime);
   const gst = _.get(data, "GST", 0);
-   const[noDesignUpload,setNoDesignUpload]=useState(false);
+  const [noDesignUpload, setNoDesignUpload] = useState(false);
 
   // State declarations
   const [selectedVariants, setSelectedVariants] = useState({});
@@ -95,6 +102,7 @@ const ProductDetailVarient = ({
   const [designPreviewVisible, setDesignPreviewVisible] = useState(false);
   const [quantityDropdownVisible, setQuantityDropdownVisible] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+   const[deliveryCharges,setDeliveryCharges]=useState(0);
 
   // Checkout state
   const [checkOutState, setCheckOutState] = useState({
@@ -113,49 +121,102 @@ const ProductDetailVarient = ({
     FreeDelivery: false,
   });
 
+
+  const getRoleFields = (role) => {
+  switch(role) {
+    case 'Dealer':
+      return {
+        quantity: 'Dealer_quantity',
+        discount: 'Dealer_discount',
+        freeDelivery: 'free_delivery_dealer',
+        recommended: 'recommended_stats_dealer',
+        deliveryCharges: 'delivery_charges_dealer'
+      };
+    case 'Corporate':
+      return {
+        quantity: 'Corporate_quantity',
+        discount: 'Corporate_discount',
+        freeDelivery: 'free_delivery_corporate',
+        recommended: 'recommended_stats_corporate',
+        deliveryCharges: 'delivery_charges_corporate'
+      };
+    default: // Customer
+      return {
+        quantity: 'Customer_quantity',
+        discount: 'Customer_discount',
+        freeDelivery: 'free_delivery_customer',
+        recommended: 'recommended_stats_customer',
+        deliveryCharges: 'delivery_charges_customer'
+      };
+  }
+};
   // Helper function to get role-specific quantity
-  const getRoleSpecificQuantity = useCallback((item) => {
-    if (user?.role === "Dealer") {
-      return Number(item.Dealer_quantity || item.quantity || 0);
-    } else if (user?.role === "Corporate") {
-      return Number(item.Corporate_quantity || item.quantity || 0);
-    } else {
-      return Number(item.Customer_quantity || item.quantity || 0);
-    }
-  }, [user?.role]);
+  const getRoleSpecificQuantity = useCallback(
+    (item) => {
+      if (user?.role === "Dealer") {
+        return Number(item.Dealer_quantity || item.quantity || 0);
+      } else if (user?.role === "Corporate") {
+        return Number(item.Corporate_quantity || item.quantity || 0);
+      } else {
+        return Number(item.Customer_quantity || item.quantity || 0);
+      }
+    },
+    [user?.role]
+  );
 
   // Helper function to get role-specific discount
-  const getRoleSpecificDiscount = useCallback((item) => {
-    if (user?.role === "Dealer") {
-      return Number(item.Dealer_discount || item.discount || 0);
-    } else if (user?.role === "Corporate") {
-      return Number(item.Corporate_discount || item.discount || 0);
-    } else {
-      return Number(item.Customer_discount || item.discount || 0);
-    }
-  }, [user?.role]);
+  const getRoleSpecificDiscount = useCallback(
+    (item) => {
+      if (user?.role === "Dealer") {
+        return Number(item.Dealer_discount || item.discount || 0);
+      } else if (user?.role === "Corporate") {
+        return Number(item.Corporate_discount || item.discount || 0);
+      } else {
+        return Number(item.Customer_discount || item.discount || 0);
+      }
+    },
+    [user?.role]
+  );
 
   // Helper function to get role-specific free delivery
-  const getRoleSpecificFreeDelivery = useCallback((item) => {
-    if (user?.role === "Dealer") {
-      return item.free_delivery_dealer || item.Free_Deliverey || false;
-    } else if (user?.role === "Corporate") {
-      return item.free_delivery_corporate || item.Free_Deliverey || false;
-    } else {
-      return item.free_delivery_customer || item.Free_Deliverey || false;
-    }
-  }, [user?.role]);
+  const getRoleSpecificFreeDelivery = useCallback(
+    (item) => {
+      if (user?.role === "Dealer") {
+        return item.free_delivery_dealer || item.Free_Deliverey || false;
+      } else if (user?.role === "Corporate") {
+        return item.free_delivery_corporate || item.Free_Deliverey || false;
+      } else {
+        return item.free_delivery_customer || item.Free_Deliverey || false;
+      }
+    },
+    [user?.role]
+  );
 
   // Helper function to get role-specific recommended stats
-  const getRoleSpecificStats = useCallback((item) => {
-    if (user?.role === "Dealer") {
-      return item.recommended_stats_dealer || item.recommended_stats || "No comments";
-    } else if (user?.role === "Corporate") {
-      return item.recommended_stats_corporate || item.recommended_stats || "No comments";
-    } else {
-      return item.recommended_stats_customer || item.recommended_stats || "No comments";
-    }
-  }, [user?.role]);
+  const getRoleSpecificStats = useCallback(
+    (item) => {
+      if (user?.role === "Dealer") {
+        return (
+          item.recommended_stats_dealer ||
+          item.recommended_stats ||
+          "No comments"
+        );
+      } else if (user?.role === "Corporate") {
+        return (
+          item.recommended_stats_corporate ||
+          item.recommended_stats ||
+          "No comments"
+        );
+      } else {
+        return (
+          item.recommended_stats_customer ||
+          item.recommended_stats ||
+          "No comments"
+        );
+      }
+    },
+    [user?.role]
+  );
 
   // Find matching variant price based on selected variants
   const findMatchingVariantPrice = useCallback(
@@ -271,14 +332,15 @@ const ProductDetailVarient = ({
   const initializeQuantity = useCallback(() => {
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
       // Get the first available quantity for the current user role
-      const firstAvailableItem = quantityDiscounts.find(item => 
-        getRoleSpecificQuantity(item) > 0
-      ) || quantityDiscounts[0];
+      const firstAvailableItem =
+        quantityDiscounts.find((item) => getRoleSpecificQuantity(item) > 0) ||
+        quantityDiscounts[0];
 
       if (firstAvailableItem) {
         const initialQuantity = getRoleSpecificQuantity(firstAvailableItem);
         const initialDiscount = getRoleSpecificDiscount(firstAvailableItem);
-        const initialFreeDelivery = getRoleSpecificFreeDelivery(firstAvailableItem);
+        const initialFreeDelivery =
+          getRoleSpecificFreeDelivery(firstAvailableItem);
 
         setQuantity(initialQuantity);
         setDiscountPercentage({
@@ -300,7 +362,15 @@ const ProductDetailVarient = ({
         product_quantity: 0,
       }));
     }
-  }, [quantityType, quantityDiscounts, user?.role, maxQuantity, getRoleSpecificQuantity, getRoleSpecificDiscount, getRoleSpecificFreeDelivery]);
+  }, [
+    quantityType,
+    quantityDiscounts,
+    user?.role,
+    maxQuantity,
+    getRoleSpecificQuantity,
+    getRoleSpecificDiscount,
+    getRoleSpecificFreeDelivery,
+  ]);
 
   // Handle variant selection
   const handleVariantChange = useCallback(
@@ -536,8 +606,10 @@ const ProductDetailVarient = ({
     return `MRP ₹${parseFloat(price || 0).toFixed(2)}`;
   }, []);
 
-  // Generate quantity options based on user role
-  const quantityOptions = useMemo(() => {
+
+    const generateQuantityOptions = () => {
+    const roleFields = getRoleFields(user.role);
+    
     if (quantityType === "textbox") {
       const options = [];
       for (let i = dropdownGap; i <= maxQuantity; i += dropdownGap) {
@@ -545,28 +617,32 @@ const ProductDetailVarient = ({
       }
       return options;
     } else {
-      // Filter and map quantity discounts based on user role
       return quantityDiscounts
-        .filter(item => getRoleSpecificQuantity(item) > 0) // Only show items with valid quantity for this role
+        .filter(item => item[roleFields.quantity]) // Only show items that have quantity for this role
         .map((item) => ({
-          value: getRoleSpecificQuantity(item),
-          label: `${getRoleSpecificQuantity(item)}`,
-          Free_Delivery: getRoleSpecificFreeDelivery(item),
-          discount: getRoleSpecificDiscount(item),
+          value: Number(item[roleFields.quantity]),
+          label: `${item[roleFields.quantity]}`,
+          Free_Delivery: item[roleFields.freeDelivery] || false,
+          discount: Number(item[roleFields.discount] || 0),
           uuid: item.uniqe_id,
-          stats: getRoleSpecificStats(item),
+          stats: item[roleFields.recommended] || "No comments",
+          deliveryCharges: Number(item[roleFields.deliveryCharges] || 100)
         }))
         .sort((a, b) => a.value - b.value); // Sort by quantity ascending
     }
-  }, [quantityType, dropdownGap, maxQuantity, quantityDiscounts, user?.role, getRoleSpecificQuantity, getRoleSpecificDiscount, getRoleSpecificFreeDelivery, getRoleSpecificStats]);
+  };
 
+  // Generate quantity options based on user role
+  const quantityOptions = generateQuantityOptions();
   const handleQuantitySelect = useCallback(
     (selectedQuantity) => {
       if (quantityType === "textbox") {
         // For textbox type, find the best matching discount based on quantity
         const selectedDiscount = quantityDiscounts
           .filter((item) => getRoleSpecificQuantity(item) <= selectedQuantity)
-          .sort((a, b) => getRoleSpecificQuantity(b) - getRoleSpecificQuantity(a))[0];
+          .sort(
+            (a, b) => getRoleSpecificQuantity(b) - getRoleSpecificQuantity(a)
+          )[0];
 
         setQuantity(selectedQuantity);
         setCheckOutState((prev) => ({
@@ -606,7 +682,14 @@ const ProductDetailVarient = ({
       }
       setQuantityDropdownVisible(false);
     },
-    [quantityType, quantityDiscounts, user?.role, getRoleSpecificQuantity, getRoleSpecificDiscount, getRoleSpecificFreeDelivery]
+    [
+      quantityType,
+      quantityDiscounts,
+      user?.role,
+      getRoleSpecificQuantity,
+      getRoleSpecificDiscount,
+      getRoleSpecificFreeDelivery,
+    ]
   );
 
   // Quantity dropdown render
@@ -798,7 +881,7 @@ const ProductDetailVarient = ({
   // Custom Popover component
   const CustomPopover = ({ open, onClose, className, children }) => {
     if (!open) return null;
-    
+
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -811,7 +894,7 @@ const ProductDetailVarient = ({
     );
   };
 
-   const handleNoCustomization = (e) => {
+  const handleNoCustomization = (e) => {
     setNoDesignUpload(e.target.checked);
     if (e.target.checked) {
       setNeedDesignUpload(false);
@@ -1019,7 +1102,7 @@ const ProductDetailVarient = ({
               </Text>
               <div className="text-right flex items-baseline">
                 <Text delete className="text-md text-gray-500 mr-2">
-                 {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
+                  {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
@@ -1064,16 +1147,23 @@ const ProductDetailVarient = ({
                 </h1>
               </div>
             )}
+            <PincodeDeliveryCalculator
+              Production={processing_item}
+              freeDelivery={freeDelivery}
+              deliveryCharges={deliveryCharges}
+            />
           </div>
 
-          <div className="flex flex-col w-full justify-between mt-4">
+          {/* <div className="flex flex-col w-full justify-between mt-4">
             <div className="flex items-center gap-2">
               <Text strong className="text-gray-700">
-                 { noDesignUpload?"Your Product is Ready to Ship":"Upload Your Design"}
+                {noDesignUpload
+                  ? "Your Product is Ready to Ship"
+                  : "Upload Your Design"}
               </Text>
               <span className="font-bold">{processingTime} days</span>
             </div>
-          </div>
+          </div> */}
         </Card>
 
         {/* File Upload Section */}
@@ -1082,71 +1172,68 @@ const ProductDetailVarient = ({
             <Text strong className="text-gray-800">
               Upload Your Design
             </Text>
-             {noDesignUpload?null:
-                        <div className="flex items-center gap-2">
-                          <Text>Already have a Design</Text>
-                          <Switch
-                            checked={needDesignUpload}
-                            onChange={(checked) => {
-                              setNeedDesignUpload(checked);
-                              if (!checked) {
-                                setCheckOutState((prev) => ({
-                                  ...prev,
-                                  product_design_file: "",
-                                }));
-                                setChecked(false);
-                              }
-                            }}
-                          />
-                        </div>}
-                        <Checkbox
-                                          checked={noDesignUpload}
-                                          onChange={handleNoCustomization }
-                                        >
-                                          Procced without Design
-                                        </Checkbox>
+            {noDesignUpload ? null : (
+              <div className="flex items-center gap-2">
+                <Text>Already have a Design</Text>
+                <Switch
+                  checked={needDesignUpload}
+                  onChange={(checked) => {
+                    setNeedDesignUpload(checked);
+                    if (!checked) {
+                      setCheckOutState((prev) => ({
+                        ...prev,
+                        product_design_file: "",
+                      }));
+                      setChecked(false);
+                    }
+                  }}
+                />
+              </div>
+            )}
+            <Checkbox checked={noDesignUpload} onChange={handleNoCustomization}>
+              Procced without Design
+            </Checkbox>
           </div>
 
-         {noDesignUpload?null:
-<div className="">
-          {needDesignUpload ? (
-            <>
-              <UploadFileButton
-                handleUploadImage={handleUploadImage}
-                buttonText="Drag & Drop Files Here or Browse Files"
-                className="w-full border-dotted rounded-lg flex flex-col items-center justify-center transition-colors"
-              />
+          {noDesignUpload ? null : (
+            <div className="">
+              {needDesignUpload ? (
+                <>
+                  <UploadFileButton
+                    handleUploadImage={handleUploadImage}
+                    buttonText="Drag & Drop Files Here or Browse Files"
+                    className="w-full border-dotted rounded-lg flex flex-col items-center justify-center transition-colors"
+                  />
 
-              {checkOutState.product_design_file && (
-                <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
-                  <Button
-                    type="link"
-                    icon={<EyeOutlined />}
-                    onClick={() => setDesignPreviewVisible(true)}
-                    className="md:order-1"
-                  >
-                    View Design
-                  </Button>
-                  <Checkbox
-                    checked={checked}
-                    onChange={(e) => setChecked(e.target.checked)}
-                    className="md:order-2"
-                  >
-                    I confirm this design
-                  </Checkbox>
-                </div>
+                  {checkOutState.product_design_file && (
+                    <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                      <Button
+                        type="link"
+                        icon={<EyeOutlined />}
+                        onClick={() => setDesignPreviewVisible(true)}
+                        className="md:order-1"
+                      >
+                        View Design
+                      </Button>
+                      <Checkbox
+                        checked={checked}
+                        onChange={(e) => setChecked(e.target.checked)}
+                        className="md:order-2"
+                      >
+                        I confirm this design
+                      </Checkbox>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Alert
+                  message="Our Designing Team will contact you within 24 Hours After Booking"
+                  type="info"
+                  showIcon
+                />
               )}
-            </>
-          ) : (
-            <Alert
-              message="Our Designing Team will contact you within 24 Hours After Booking"
-              type="info"
-              showIcon
-            />
+            </div>
           )}
-          </div>
-          
-}
 
           {/* Add to Cart Button */}
           <div className="w-full">

@@ -94,7 +94,7 @@ export const CustomModal = ({
   width = 520,
   className = "",
   closable = true,
-  topPosition="top-0" ,
+  topPosition = "top-0",
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -113,7 +113,7 @@ export const CustomModal = ({
 
   return (
     <div
-      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition}  ${
+      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${
         isMobile ? "items-end" : "items-center"
       }`}
     >
@@ -122,7 +122,7 @@ export const CustomModal = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0  bg-opacity-50"
+        className="absolute inset-0 bg-black bg-opacity-50"
         onClick={onClose}
       />
 
@@ -171,7 +171,7 @@ const { Title, Text, Paragraph } = Typography;
 
 import { FaTruckFast } from "react-icons/fa6";
 
-// Custom Popover Component for smaller overlays
+// Custom Popover Component
 export const CustomPopover = ({
   open,
   onClose,
@@ -190,9 +190,7 @@ export const CustomPopover = ({
 
   return (
     <div className="relative">
-      {/* Backdrop for mobile */}
       <div className="fixed inset-0 z-40 md:hidden" onClick={onClose} />
-
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: -10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -205,30 +203,26 @@ export const CustomPopover = ({
   );
 };
 
-// Helper function to get product images - FIXED FOR STANDALONE PRODUCTS
+// Helper functions
 const getProductImages = (data) => {
   const images = _.get(data, "images", []);
-  
   if (!images || images.length === 0) return [];
   
-  // Handle both formats: array of objects with path property AND array of strings
   return images.map(image => {
     if (typeof image === 'string') {
-      return image; // Direct URL string
+      return image;
     } else if (image && image.path) {
-      return image.path; // Object with path property
+      return image.path;
     }
-    return ''; // Fallback for invalid items
-  }).filter(Boolean); // Remove any empty strings
+    return '';
+  }).filter(Boolean);
 };
 
-// Helper function to get first product image - FIXED FOR STANDALONE PRODUCTS
 const getFirstProductImage = (data) => {
   const images = getProductImages(data);
   return images.length > 0 ? images[0] : "";
 };
 
-// Helper function to get role-specific fields
 const getRoleFields = (role) => {
   switch(role) {
     case 'Dealer':
@@ -247,7 +241,7 @@ const getRoleFields = (role) => {
         recommended: 'recommended_stats_corporate',
         deliveryCharges: 'delivery_charges_corporate'
       };
-    default: // Customer
+    default:
       return {
         quantity: 'Customer_quantity',
         discount: 'Customer_discount',
@@ -270,7 +264,8 @@ const ProductDetails = ({
 }) => {
   const { user } = useSelector((state) => state.authSlice);
   const [form] = Form.useForm();
-
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // Get role-based price
   const getRoleBasedPrice = () => {
@@ -294,6 +289,7 @@ const ProductDetails = ({
   const price = getRoleBasedPrice();
   const product_type = _.get(data, "type", "Stand Alone Product");
 
+  // State declarations
   const [totalPrice, setTotalPrice] = useState(price);
   const [quantity, setQuantity] = useState(null);
   const [discountPercentage, setDiscountPercentage] = useState({
@@ -304,8 +300,11 @@ const ProductDetails = ({
   const [currentPriceSplitup, setCurrentPriceSplitup] = useState([]);
   const [checked, setChecked] = useState(false);
   const [error, setError] = useState("");
-  const [maximum_quantity, setMaimumQuantity] = useState();
+  const [maximum_quantity, setMaximumQuantity] = useState();
   const [freeDelivery, setFreeDelivery] = useState(false);
+  const [deliveryCharges, setDeliveryCharges] = useState(100); // Default delivery charges
+  const [noDesignUpload, setNoDesignUpload] = useState(false);
+  
   const [checkOutState, setCheckOutState] = useState({
     product_image: getFirstProductImage(data),
     product_design_file: "",
@@ -320,7 +319,9 @@ const ProductDetails = ({
     MRP_savings: 0,
     TotalSavings: 0,
     FreeDelivery: false,
+    DeliveryCharges: 100,
   });
+
   const [needDesignUpload, setNeedDesignUpload] = useState(true);
   const [reviewData, setReviewData] = useState([]);
   const [review, setReview] = useState([]);
@@ -332,29 +333,19 @@ const ProductDetails = ({
   const [designPreviewVisible, setDesignPreviewVisible] = useState(false);
   const [individualBox, setIndividualBox] = useState(false);
   const [quantityDropdownVisible, setQuantityDropdownVisible] = useState(false);
-  const [pincode, setPincode] = useState("");
-  const [state, setState] = useState("");
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [isPincodeValid, setIsPincodeValid] = useState(null);
-  const [isValidatingPincode, setIsValidatingPincode] = useState(false);
-  const [deliveryTime, setDeliveryTime] = useState(0);
-  const [deliveryDate, setDeliveryDate] = useState(0);
   const [instructionsVisible, setInstructionsVisible] = useState(false);
   const [lazy, setLazy] = useState(false);
   const [hasDiscount, setHasDiscount] = useState(false);
   const [showBulkOrderForm, setShowBulkOrderForm] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
-  const[deliveryCharges,setDeliveryCharges]=useState(0);
-  const[noDesignUpload,setNoDesignUpload]=useState(false);
-
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  // Product configuration
   const { isGettingVariantPrice, product, productRateAndReview } = useSelector(
     (state) => state.publicSlice
   );
-
-  // Get quantity discounts from backend
   const quantityDiscounts = _.get(data, "quantity_discount_splitup", []);
   const dropdownGap = _.get(data, "dropdown_gap", 100);
   const quantityType = _.get(data, "quantity_type", "dropdown");
@@ -364,8 +355,8 @@ const ProductDetails = ({
   const productionTime = _.get(data, "Production_time", "");
   const ArrangeTime = _.get(data, "Stock_Arrangement_time", "");
   const processing_item = stockCount === 0 
-  ? Number(productionTime) + Number(ArrangeTime) 
-  : Number(productionTime);
+    ? Number(productionTime) + Number(ArrangeTime) 
+    : Number(productionTime);
 
   // Generate quantity options based on user role
   const generateQuantityOptions = () => {
@@ -379,7 +370,7 @@ const ProductDetails = ({
       return options;
     } else {
       return quantityDiscounts
-        .filter(item => item[roleFields.quantity]) // Only show items that have quantity for this role
+        .filter(item => item[roleFields.quantity])
         .map((item) => ({
           value: Number(item[roleFields.quantity]),
           label: `${item[roleFields.quantity]}`,
@@ -389,23 +380,23 @@ const ProductDetails = ({
           stats: item[roleFields.recommended] || "No comments",
           deliveryCharges: Number(item[roleFields.deliveryCharges] || 100)
         }))
-        .sort((a, b) => a.value - b.value); // Sort by quantity ascending
+        .sort((a, b) => a.value - b.value);
     }
   };
 
   const quantityOptions = generateQuantityOptions();
 
+  // Initialize quantity and delivery charges
   useEffect(() => {
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
       const roleFields = getRoleFields(user.role);
-      
-      // Find the first available quantity for this role
       const firstAvailableItem = quantityDiscounts.find(item => item[roleFields.quantity]);
       
       if (firstAvailableItem) {
         const initialQuantity = Number(firstAvailableItem[roleFields.quantity]);
         const initialDiscount = Number(firstAvailableItem[roleFields.discount] || 0);
         const initialFreeDelivery = firstAvailableItem[roleFields.freeDelivery] || false;
+        const initialDeliveryCharges = initialFreeDelivery ? 0 : Number(firstAvailableItem[roleFields.deliveryCharges] || 100);
 
         setQuantity(initialQuantity);
         setDiscountPercentage({
@@ -413,23 +404,30 @@ const ProductDetails = ({
           percentage: initialDiscount,
         });
         setFreeDelivery(initialFreeDelivery);
-        setCheckOutState((prev) => ({
+        setDeliveryCharges(initialDeliveryCharges);
+        setCheckOutState(prev => ({
           ...prev,
           product_quantity: initialQuantity,
+          DeliveryCharges: initialDeliveryCharges,
+          FreeDelivery: initialFreeDelivery,
         }));
       }
     } else {
       setDiscountPercentage({ uuid: "", percentage: 0 });
       setFreeDelivery(false);
-      setMaimumQuantity(maxQuantity);
+      setDeliveryCharges(100);
+      setMaximumQuantity(maxQuantity);
       setQuantity(null);
-      setCheckOutState((prev) => ({
+      setCheckOutState(prev => ({
         ...prev,
         product_quantity: 0,
+        DeliveryCharges: 100,
+        FreeDelivery: false,
       }));
     }
   }, [quantityDiscounts, quantityType, maxQuantity, user.role]);
 
+  // Rating calculations
   useEffect(() => {
     const ratingSum = rate.reduce(
       (totalSum, num) => totalSum + Math.round(num.rating),
@@ -451,6 +449,7 @@ const ProductDetails = ({
     }
   }, [reviewData]);
 
+  // Initialize product variants and stock
   useEffect(() => {
     if (product_type === "Stand Alone Product") {
       setCheckOutState((prevState) => ({
@@ -494,12 +493,13 @@ const ProductDetails = ({
     }
   }, [product, product_type, price, data]);
 
+  // Handle variant selection
   const handleOnChangeSelectOption = async (selectedValue, index) => {
     try {
       const updatedVariant = [...variant];
       updatedVariant[index] = selectedValue;
 
-      setVariant((prev) => updatedVariant);
+      setVariant(updatedVariant);
       const key = updatedVariant.join("-");
       const result = await getVariantPrice(data._id, { key: key });
       setCurrentPriceSplitup(_.get(result, "data.data", {}));
@@ -510,9 +510,11 @@ const ProductDetails = ({
       }));
       setStockCount(_.get(result, "data.data.stock", {}));
     } catch (err) {
+      console.error("Error fetching variant price:", err);
     }
   };
 
+  // Scroll to product details
   const scrollToproductDetails = useCallback(() => {
     const targetId = "overview";
     const targetElement = document.getElementById(targetId);
@@ -529,6 +531,7 @@ const ProductDetails = ({
     }
   }, []);
 
+  // Handle file upload
   const handleUploadImage = (fileString) => {
     setCheckOutState((prev) => ({ ...prev, product_design_file: fileString }));
   };
@@ -537,22 +540,18 @@ const ProductDetails = ({
     navigate("/shopping-cart");
   };
 
-  
-
+  // Handle quantity selection with delivery charges
   const handleQuantitySelect = (selectedQuantity) => {
     const roleFields = getRoleFields(user.role);
     
-    
     if (quantityType === "textbox") {
-      // For textbox type, find the best matching discount based on quantity
       const availableDiscounts = quantityDiscounts
         .filter(item => item[roleFields.quantity] && Number(item[roleFields.quantity]) <= selectedQuantity)
         .sort((a, b) => Number(b[roleFields.quantity]) - Number(a[roleFields.quantity]));
         
-        const selectedDiscount = availableDiscounts[0];
+      const selectedDiscount = availableDiscounts[0];
 
       setQuantity(selectedQuantity);
-      setD
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: selectedQuantity,
@@ -564,18 +563,29 @@ const ProductDetails = ({
           percentage: Number(selectedDiscount[roleFields.discount] || 0),
         });
         setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
+        setDeliveryCharges(selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100));
+        
+        setCheckOutState(prev => ({
+          ...prev,
+          DeliveryCharges: selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100),
+          FreeDelivery: selectedDiscount[roleFields.freeDelivery] || false,
+        }));
       } else {
         setDiscountPercentage({ uuid: "", percentage: 0 });
         setFreeDelivery(false);
+        setDeliveryCharges(100);
+        setCheckOutState(prev => ({
+          ...prev,
+          DeliveryCharges: 100,
+          FreeDelivery: false,
+        }));
       }
     } else {
-      // For dropdown type, find exact match
       const selectedDiscount = quantityDiscounts.find(
         (item) => Number(item[roleFields.quantity]) === selectedQuantity
       );
 
       setQuantity(selectedQuantity);
-      setDeliveryCharges(selectedDiscount[roleFields.freeDelivery] ? 0 : selectedDiscount[roleFields.deliveryCharges] || 0);
       setCheckOutState((prev) => ({
         ...prev,
         product_quantity: selectedQuantity,
@@ -587,11 +597,29 @@ const ProductDetails = ({
           percentage: Number(selectedDiscount[roleFields.discount] || 0),
         });
         setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
+        const charges = selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
+        setDeliveryCharges(charges);
+        
+        setCheckOutState(prev => ({
+          ...prev,
+          DeliveryCharges: charges,
+          FreeDelivery: selectedDiscount[roleFields.freeDelivery] || false,
+        }));
+      } else {
+        setDiscountPercentage({ uuid: "", percentage: 0 });
+        setFreeDelivery(false);
+        setDeliveryCharges(100);
+        setCheckOutState(prev => ({
+          ...prev,
+          DeliveryCharges: 100,
+          FreeDelivery: false,
+        }));
       }
     }
     setQuantityDropdownVisible(false);
   };
 
+  // Handle add to cart
   const handlebuy = async () => {
     try {
       setLoading(true);
@@ -600,7 +628,6 @@ const ProductDetails = ({
         toast.error("Please select quantity first");
         return;
       }
-     
 
       if (needDesignUpload && !checkOutState.product_design_file) {
         toast.error("Please upload your design file first");
@@ -619,16 +646,21 @@ const ProductDetails = ({
       }
 
       setError("");
-      checkOutState.sgst = Number(_.get(data, "GST", 0) / 2);
-      checkOutState.cgst = Number(_.get(data, "GST", 0) / 2);
-      checkOutState.MRP_savings = calculateMRPSavings();
-      checkOutState.TotalSavings = calculateSavings();
-      checkOutState.FreeDelivery = freeDelivery;
-      checkOutState.final_total = Number(
-        checkOutState?.product_price * checkOutState.product_quantity
-      );
+      const Gst = _.get(data, "GST", 0);
+      
+      const finalCheckoutState = {
+        ...checkOutState,
+        sgst: Number(Gst / 2),
+        cgst: Number(Gst / 2),
+        MRP_savings: calculateMRPSavings(),
+        TotalSavings: calculateSavings(),
+        FreeDelivery: freeDelivery,
+        DeliveryCharges: deliveryCharges,
+        noCustomtation: noDesignUpload,
+        final_total: Number(checkOutState?.product_price * checkOutState.product_quantity) + (freeDelivery ? 0 : deliveryCharges),
+      };
 
-      const result = await addToShoppingCart(checkOutState);
+      const result = await addToShoppingCart(finalCheckoutState);
 
       Swal.fire({
         title: "Product Added To Cart",
@@ -657,63 +689,24 @@ const ProductDetails = ({
     }
   };
 
-  const calculateDeliveryDate = (days) => {
-    const today = new Date();
-    const deliveryDate = new Date(today);
-    deliveryDate.setDate(
-      today.getDate() + (Number(days) + Number(processing_item))
-    );
-
-    return deliveryDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const generateLabel = (label) => {
-    switch (label) {
-      case "new":
-        return <Tag color="green">New</Tag>;
-      case "popular":
-        return <Tag color="purple">Popular</Tag>;
-      case "only-for-today":
-        return <Tag color="red">Only For Today</Tag>;
-      default:
-        return <></>;
-    }
-  };
-
-  const handleQuantityDetails = (stock, quantity) => {
-    try {
-      return _.get(data, "stocks_status", "") === "Don't Track Stocks"
-        ? true
-        : Number(stock) > Number(quantity);
-    } catch (err) {}
-  };
-
-  // Format price functions
+  // Price calculation functions
   const formatPrice = (price) => {
-    
-    
     return `₹${parseFloat(price).toFixed(2)}`;
   };
 
   const formatMRPPrice = (price) => {
-     const mrpPrice = Number(_.get(data, "MRP_price", 0));
-    console.log(mrpPrice*quantity);
-    return ` ₹${parseFloat(price).toFixed(2)}`;
+    return `₹${parseFloat(price).toFixed(2)}`;
   };
 
-  // Calculate total price
   const calculateTotalPrice = () => {
     if (!quantity) return 0;
     const unitPrice = DISCOUNT_HELPER(
       discountPercentage.percentage,
       Number(_.get(checkOutState, "product_price", 0))
     );
-    const freeDeliveryCharges = freeDelivery ? 0 : deliveryCharges;
-    return Number(unitPrice * quantity+freeDelivery).toFixed(2);
+    const productTotal = Number(unitPrice * quantity);
+    const totalWithDelivery = productTotal + (freeDelivery ? 0 : deliveryCharges);
+    return totalWithDelivery.toFixed(2);
   };
 
   const calculateMRPTotalPrice = () => {
@@ -722,13 +715,11 @@ const ProductDetails = ({
     return Number(unitPrice * quantity).toFixed(2);
   };
 
-  // Calculate savings
   const calculateSavings = () => {
     if (!quantity) return 0;
     const original = calculateMRPTotalPrice();
     const discounted = calculateTotalPrice();
-    
-    return (original - discounted ).toFixed(2);
+    return (original - discounted).toFixed(2);
   };
 
   const calculateMRPSavings = () => {
@@ -745,33 +736,16 @@ const ProductDetails = ({
     return (Number(totalSavings) + Number(mrpSavings)).toFixed(2);
   };
 
-
-  // Custom dropdown renderer for quantity selection
+  // Quantity dropdown renderer
   const quantityDropdownRender = (menu) => {
     const roleFields = getRoleFields(user.role);
     const quantityOptions = generateQuantityOptions();
 
-
-    
     return (
       <div
         className="p-2 rounded-lg shadow-xl bg-white"
         onMouseLeave={() => setQuantityDropdownVisible(false)}
       >
-        {/* Role indicator badge */}
-        {/* <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-blue-800">
-              Pricing for: <strong>{user.role}</strong>
-            </span>
-            {user.role !== 'Customer' && (
-              <Tag color="blue" className="text-xs">
-                {user.role} Pricing
-              </Tag>
-            )}
-          </div>
-        </div> */}
-
         <div className="overflow-y-auto max-h-80 space-y-3">
           {quantityOptions.map((item) => {
             const unitPrice = DISCOUNT_HELPER(
@@ -820,11 +794,6 @@ const ProductDetails = ({
                         Free Delivery
                       </span>
                     )}
-                    {/* {quantityType === "dropdown" && !item.Free_Delivery && (
-                      <span className="text-gray-500 text-sm inline-flex items-center">
-                        Delivery: ₹{item.deliveryCharges}
-                      </span>
-                    )} */}
                   </div>
                 </div>
 
@@ -845,7 +814,6 @@ const ProductDetails = ({
           })}
         </div>
 
-        {/* No options available message */}
         {quantityOptions.length === 0 && (
           <div className="text-center py-4 text-gray-500">
             No quantity options available for {user.role} role
@@ -867,11 +835,6 @@ const ProductDetails = ({
       </div>
     );
   };
-
-  const handleBulkOrder = () => {
-    setShowBulkOrderForm(true);
-    setQuantityDropdownVisible(false);
-  }
 
   // Share functionality
   const shareProduct = (platform) => {
@@ -898,17 +861,17 @@ const ProductDetails = ({
           url: window.location.href,
         });
       } catch (err) {
+        console.error("Error sharing:", err);
       }
     } else {
       setShowShareMenu(!showShareMenu);
     }
   };
 
-  // Bulk order form submission
+  // Bulk order functions
   const handleBulkOrderSubmit = async (values) => {
     try {
       const result = await bulkOrder(values);
-
       message.success("Bulk order inquiry submitted successfully!");
       setShowBulkOrderForm(false);
       form.resetFields();
@@ -917,39 +880,6 @@ const ProductDetails = ({
     }
   };
 
-  // Processing Time Info Content
-  const ProcessingTimeInfo = () => (
-    <div className="max-h-[400px] overflow-y-auto text-gray-700">
-      <Paragraph>
-       After our <b> designing team </b> completes your design, you’ll receive a <b> WhatsApp message </b> from us. You just need to reply “Yes” — and we’ll immediately start processing your order to the next step.
-      </Paragraph>
-      <Paragraph>
-     Please note that <b> delivery time may delay</b>, but don’t worry — your order is <b> 100% safe and secure</b> and will reach your <b>doorstep</b>.
-      </Paragraph>
-      <Paragraph>
-     However, kindly note that  <b>returns or exchanges are not applicable for customized products</b> due to their personalized nature. So please share your <b>expectations clearly</b> — we’ll make sure your order is prepared <b>perfectly</b>.
-      </Paragraph>
-      <Alert
-                  message={
-                    <span>
-                      If you place an order without a custom design, it will be delivered within 3–4 working days.
-                    </span>
-                  }
-                  type="info"
-                  showIcon
-                  className="!py-2"
-                />
-      
-    </div>
-  );
-
-  const Gst = _.get(data, "GST", 0);
-
-  const [otpSent, setOtpSent] = useState(false);
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(false);
-
-  // Functions
   const handleSendOtp = async (email) => {
     if (emailVerified) return;
 
@@ -992,6 +922,43 @@ const ProductDetails = ({
     }
   };
 
+  // Processing Time Info
+  const ProcessingTimeInfo = () => (
+    <div className="max-h-[400px] overflow-y-auto text-gray-700">
+      <Paragraph>
+        After our <b>designing team</b> completes your design, you'll receive a <b>WhatsApp message</b> from us. You just need to reply "Yes" — and we'll immediately start processing your order to the next step.
+      </Paragraph>
+      <Paragraph>
+        Please note that <b>delivery time may delay</b>, but don't worry — your order is <b>100% safe and secure</b> and will reach your <b>doorstep</b>.
+      </Paragraph>
+      <Paragraph>
+        However, kindly note that <b>returns or exchanges are not applicable for customized products</b> due to their personalized nature. So please share your <b>expectations clearly</b> — we'll make sure your order is prepared <b>perfectly</b>.
+      </Paragraph>
+      <Alert
+        message="If you place an order without a custom design, it will be delivered within 3–4 working days."
+        type="info"
+        showIcon
+        className="!py-2"
+      />
+    </div>
+  );
+
+  const Gst = _.get(data, "GST", 0);
+
+  // Label generator
+  const generateLabel = (label) => {
+    switch (label) {
+      case "new":
+        return <Tag color="green">New</Tag>;
+      case "popular":
+        return <Tag color="purple">Popular</Tag>;
+      case "only-for-today":
+        return <Tag color="red">Only For Today</Tag>;
+      default:
+        return <></>;
+    }
+  };
+
   return (
     <Spin
       spinning={loading}
@@ -1000,9 +967,8 @@ const ProductDetails = ({
       }
     >
       <div className="font-primary w-full space-y-2 relative">
-        {/* Product Header - Responsive Layout */}
+        {/* Product Header */}
         <div className="space-y-1 flex flex-col md:flex-row justify-between items-start gap-4">
-          {/* Left Section - Title and Labels */}
           <div className="flex-1 w-full md:w-auto">
             <h1 className="text-gray-900 font-bold mb-2 text-xl md:text-2xl lg:text-2xl leading-tight w-full md:w-[80%]">
               {data.name}
@@ -1011,18 +977,10 @@ const ProductDetails = ({
               {data.label?.map((label, index) => (
                 <span key={index}>{generateLabel(label)}</span>
               ))}
-              {/* Role badge */}
-              {/* {user.role !== 'Customer' && (
-                <Tag color="blue" className="text-xs">
-                  {user.role} Pricing
-                </Tag>
-              )} */}
             </div>
           </div>
 
-          {/* Right Section - Price and Share Button */}
           <div className="w-full md:w-auto flex flex-col md:flex-row items-start md:items-center gap-3 md:relative">
-            {/* Share Button - Mobile */}
             <div className="md:hidden flex flex-row-reverse items-center gap-3 w-full justify-between my-2">
               <button
                 onClick={handleNativeShare}
@@ -1031,7 +989,6 @@ const ProductDetails = ({
                 <IoShareSocial />
               </button>
               
-              {/* Price Badge - Mobile */}
               <motion.div
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{
@@ -1059,7 +1016,6 @@ const ProductDetails = ({
               </motion.div>
             </div>
 
-            {/* Share Button - Desktop */}
             <div className="hidden md:flex items-center gap-3">
               <button
                 onClick={handleNativeShare}
@@ -1068,7 +1024,6 @@ const ProductDetails = ({
                 <IoShareSocial />
               </button>
 
-              {/* Price Badge - Desktop */}
               <motion.div
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{
@@ -1096,7 +1051,6 @@ const ProductDetails = ({
               </motion.div>
             </div>
 
-            {/* Share Menu Popover */}
             <AnimatePresence>
               {showShareMenu && (
                 <CustomPopover
@@ -1257,7 +1211,7 @@ const ProductDetails = ({
               </Text>
               <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
                 <Text delete className="text-md text-gray-500 md:mr-2">
-                   ₹{Number(_.get(data, "MRP_price", 0))*quantity}
+                  {formatMRPPrice(Number(_.get(data, "MRP_price", 0)) * quantity)}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
@@ -1345,7 +1299,7 @@ const ProductDetails = ({
           <div className="flex flex-col w-full justify-between mt-4">
             <div className="flex items-center gap-2">
               <Text strong className="text-gray-700">
-                Proccessing Time:
+                Processing Time:
               </Text>
               <Tooltip title="Learn more about processing time">
                 <Button
@@ -1358,13 +1312,12 @@ const ProductDetails = ({
               <span className="font-bold">{processing_item} days</span>
             </div>
 
-            {/* Custom Modal for Processing Time */}
             <CustomModal
               open={isModalOpen}
               onClose={() => setIsModalOpen(false)}
               title="Once you confirm, your order will get the green signal for processing"
               width={700}
-              topPosition="!top-[-300px]"
+              topPosition="!top-[-500px]"
             >
               <ProcessingTimeInfo />
             </CustomModal>
@@ -1393,74 +1346,72 @@ const ProductDetails = ({
         {/* File Upload Section */}
         <div className="space-y-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-            <Text strong className="text-gray-800">
-             { noDesignUpload?"Your Product is Ready to Ship":"Upload Your Design"}
-            </Text>
+            <Checkbox
+              checked={noDesignUpload}
+              onChange={handleNoCustomization}
+            >
+              Proceed without Design
+            </Checkbox>
                
-                {noDesignUpload?null:
-            <div className="flex items-center gap-2">
-              <Text>Already have a Design</Text>
-              <Switch
-                checked={needDesignUpload}
-                onChange={(checked) => {
-                  setNeedDesignUpload(checked);
-                  if (!checked) {
-                    setCheckOutState((prev) => ({
-                      ...prev,
-                      product_design_file: "",
-                    }));
-                    setChecked(false);
-                  }
-                }}
-              />
-            </div>}
- <Checkbox
-                  checked={noDesignUpload}
-                  onChange={handleNoCustomization }
-                >
-                  Procced without Design
-                </Checkbox>
+            {!noDesignUpload && (
+              <div className="flex items-center gap-2">
+                <Text>Already have a Design</Text>
+                <Switch
+                  checked={needDesignUpload}
+                  onChange={(checked) => {
+                    setNeedDesignUpload(checked);
+                    if (!checked) {
+                      setCheckOutState((prev) => ({
+                        ...prev,
+                        product_design_file: "",
+                      }));
+                      setChecked(false);
+                    }
+                  }}
+                />
+              </div>
+            )}
           </div>
-{noDesignUpload?null:
-<div className="">
-          {needDesignUpload ? (
-            <>
-              <UploadFileButton
-                handleUploadImage={handleUploadImage}
-                buttonText="Drag & Drop Files Here or Browse Files"
-                className="w-full border-dotted rounded-lg flex flex-col items-center justify-center transition-colors"
-              />
 
-              {checkOutState.product_design_file && (
-                <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
-                  <Button
-                    type="link"
-                    icon={<EyeOutlined />}
-                    onClick={() => setDesignPreviewVisible(true)}
-                    className="md:order-1"
-                  >
-                    View Design
-                  </Button>
-                  <Checkbox
-                    checked={checked}
-                    onChange={(e) => setChecked(e.target.checked)}
-                    className="md:order-2"
-                  >
-                    I confirm this design
-                  </Checkbox>
-                </div>
+          {!noDesignUpload && (
+            <div className="">
+              {needDesignUpload ? (
+                <>
+                  <UploadFileButton
+                    handleUploadImage={handleUploadImage}
+                    buttonText="Drag & Drop Files Here or Browse Files"
+                    className="w-full border-dotted rounded-lg flex flex-col items-center justify-center transition-colors"
+                  />
+
+                  {checkOutState.product_design_file && (
+                    <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                      <Button
+                        type="link"
+                        icon={<EyeOutlined />}
+                        onClick={() => setDesignPreviewVisible(true)}
+                        className="md:order-1"
+                      >
+                        View Design
+                      </Button>
+                      <Checkbox
+                        checked={checked}
+                        onChange={(e) => setChecked(e.target.checked)}
+                        className="md:order-2"
+                      >
+                        I confirm this design
+                      </Checkbox>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Alert
+                  message="Our Designing Team will contact you within 24 Hours After Booking"
+                  type="info"
+                  showIcon
+                />
               )}
-            </>
-          ) : (
-            <Alert
-              message="Our Designing Team will contact you within 24 Hours After Booking"
-              type="info"
-              showIcon
-            />
+            </div>
           )}
-          </div>
-          
-}
 
           {/* Instructions Section */}
           <div>
@@ -1501,7 +1452,6 @@ const ProductDetails = ({
                 onClick={handlebuy}
                 loading={loading}
               >
-                
                 Add To Cart
               </Button>
             )}
@@ -1509,7 +1459,7 @@ const ProductDetails = ({
 
           <Divider className="!my-4" />
           
-          {/* Custom Modal for Design Preview */}
+          {/* Design Preview Modal */}
           <CustomModal
             open={designPreviewVisible}
             onClose={() => setDesignPreviewVisible(false)}
@@ -1535,7 +1485,7 @@ const ProductDetails = ({
           </CustomModal>
         </div>
 
-        {/* Bulk Order Custom Modal */}
+        {/* Bulk Order Modal */}
         <CustomModal
           open={showBulkOrderForm}
           onClose={() => setShowBulkOrderForm(false)}
@@ -1593,7 +1543,6 @@ const ProductDetails = ({
                 />
               </Form.Item>
 
-              {/* OTP Input Section */}
               {otpSent && !emailVerified && (
                 <Form.Item
                   label="Enter OTP"
@@ -1688,9 +1637,10 @@ const ProductDetails = ({
 
 export default ProductDetails;
 
+// PincodeDeliveryCalculator Component
 import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
 
-export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCharges }) => {
+export const PincodeDeliveryCalculator = ({ Production, freeDelivery, deliveryCharges }) => {
   const [pincode, setPincode] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [state, setState] = useState("");
@@ -1725,23 +1675,11 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCha
     return pincodeToStateMap[prefix] || "default";
   };
 
-  // Calculate production completion date only (without delivery days)
   const calculateProductionDate = () => {
     const today = new Date();
     const productionTime = Production || 0;
-
     let productionDate = new Date(today);
     productionDate.setDate(productionDate.getDate() + Number(productionTime));
-
-    // Skip weekends for production time
-    let addedDays = 0;
-    while (addedDays < productionTime) {
-      productionDate.setDate(productionDate.getDate() + 1);
-      if (productionDate.getDay() !== 0 && productionDate.getDay() !== 6) {
-        addedDays++;
-      }
-    }
-
     return productionDate.toLocaleDateString("en-US", {
       weekday: "short",
       day: "numeric",
@@ -1750,31 +1688,13 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCha
     });
   };
 
-  // Calculate delivery date (production + delivery days)
   const calculateDeliveryDate = (state = "tamil nadu") => {
     const { days: deliveryDays } =
       stateDeliveryDays[state] || stateDeliveryDays.default;
     const today = new Date();
     const productionTime = Production || 0;
-    
-
     let deliveryDate = new Date(today);
-    deliveryDate.setDate(deliveryDate.getDate() + Number(productionTime) + Number(deliveryDays)+2);
-
-    let totalDays = productionTime + deliveryDays;
-    
-    let addedDays = 0;
-
-    // while (addedDays < totalDays) {
-    //   deliveryDate.setDate(deliveryDate.getDate() + 1);
-    //   if (deliveryDate.getDay() !== 0 && deliveryDate.getDay() !== 6) {
-    //     addedDays++;
-        
-    //   }
-    // }
-
-    
-
+    deliveryDate.setDate(deliveryDate.getDate() + Number(productionTime) + Number(deliveryDays) + 2);
     return deliveryDate.toLocaleDateString("en-US", {
       weekday: "short",
       day: "numeric",
@@ -1785,8 +1705,6 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCha
 
   const validatePincode = async (pincode) => {
     setIsValidatingPincode(true);
-
-    // Simulate API validation
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     const isValid = /^\d{6}$/.test(pincode);
@@ -1830,14 +1748,10 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCha
   const handleGeolocationError = (error) => {
     switch (error.code) {
       case error.PERMISSION_DENIED:
-        toast.error(
-          "Location access denied. Please enable location permissions."
-        );
+        toast.error("Location access denied. Please enable location permissions.");
         break;
       case error.POSITION_UNAVAILABLE:
-        toast.error(
-          "Location information unavailable. Please check your GPS settings."
-        );
+        toast.error("Location information unavailable. Please check your GPS settings.");
         break;
       case error.TIMEOUT:
         toast.error("Location request timed out. Please try again.");
@@ -1849,7 +1763,6 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCha
 
   const checkLocationPermission = async () => {
     if (!navigator.permissions) return true;
-
     try {
       const permissionStatus = await navigator.permissions.query({
         name: "geolocation",
@@ -1907,17 +1820,6 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCha
       : toast.error("Location permission denied");
   };
 
-  // Delivery Info Content for Custom Modal
-  const DeliveryInfoContent = () => (
-    <div className="delivery-info-content">
-      <ul className="space-y-2">
-        <li>• Delivery times vary by state and region</li>
-        <li>• Orders placed after 3 PM will be processed next business day</li>
-        <li>• Weekends and holidays are not counted as business days</li>
-      </ul>
-    </div>
-  );
-
   const productionDate = calculateProductionDate();
 
   return (
@@ -1962,9 +1864,7 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCha
 
         {error && <div className="error-message">{error}</div>}
 
-        {/* Show different messages based on whether pincode is provided */}
         {pincode && deliveryDate ? (
-          // When pincode is provided and valid
           <motion.div className="delivery-info" whileHover={{ x: 5 }}>
             <span className="delivery-text">
               Expected Delivery by <Text strong>{deliveryDate}</Text>
@@ -1986,7 +1886,6 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCha
             )}
           </motion.div>
         ) : (
-          // When no pincode is provided
           <motion.div className="production-info" whileHover={{ x: 5 }}>
             <span className="production-text">
               Expected Dispatch by <Text strong>{productionDate}</Text>
@@ -1995,26 +1894,23 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery,deliveryCha
             <Text type="secondary">
               Enter pincode for delivery date & charges
             </Text>
-            {freeDelivery ? (
+            {freeDelivery && (
               <div className="flex items-center gap-2">
                 <Text type="success" strong>
                   Cheers – Zero Delivery Charges, 100% Happiness!
                 </Text>
               </div>
-            ) : (
-              <Text type="success" strong></Text>
             )}
           </motion.div>
         )}
 
-        {/* Custom Modal for Delivery Information */}
         <CustomModal
           open={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           title="Delivery Information"
           width={700}
         >
-          {/* <DeliveryInfoContent /> */}
+          {/* Delivery info content can be added here */}
         </CustomModal>
       </div>
     </div>

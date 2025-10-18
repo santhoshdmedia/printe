@@ -273,9 +273,10 @@ const NewCheckout = () => {
   };
   const get_delivery_Fee = () => {
     const freeDelivery = cardData.every((item) => item.FreeDelivery);
-    console.log(freeDelivery, "freeDelivery");
+    const DelivereyCharge=cardData.map((item)=>item.DeliveryCharges)
     
-    return freeDelivery ? 0 : 100;
+    
+    return freeDelivery ? 0 : DelivereyCharge;
   };
 
   const GET_PAYABLE_AMOUNT = () => {
@@ -825,7 +826,7 @@ const NewCheckout = () => {
                             ₹{Number(GET_TOTAL_AMOUNT()).toFixed(2)}
                           </span>
                         </Radio>
-                        <Radio
+                        {cardData.noCustomtation?<></>:  <Radio
                           value="half"
                           className="!flex !items-center !justify-between !py-2 h-full !px-3 !border !rounded-md !m-0"
                         >
@@ -840,7 +841,8 @@ const NewCheckout = () => {
                           <span className="font-bold">
                             ₹{Number(GET_TOTAL_AMOUNT() * 0.5).toFixed(2)}
                           </span>
-                        </Radio>
+                        </Radio>}
+                      
                       </div>
                     </Radio.Group>
                   </div>

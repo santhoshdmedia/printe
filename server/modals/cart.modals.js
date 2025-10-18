@@ -25,6 +25,14 @@ module.exports = model(
         required: true,
         default: false
       },
+      noCustomtation: {
+        type: Boolean,
+        required: true,
+        default: false
+      },
+      DeliveryCharges: {
+        type: Number,
+      },
       product_image: {
         type: String,
         required: true,

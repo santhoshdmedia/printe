@@ -54,6 +54,8 @@ const addToShoppingCart = async (req, res) => {
       product_name: req.body.product_name || 'Product',
       product_image: req.body.product_image || '',
       FreeDelivery: req.body.FreeDelivery || false,
+      noCustomtation: req.body.noCustomtation || false,
+      DeliveryCharges: req.body.DeliveryCharges || 0,
 
       // Add optional fields
       ...(req.body.size && { size: req.body.size }),
@@ -89,6 +91,7 @@ const addToShoppingCart = async (req, res) => {
       data: cartCount,
       guestId: !req.userData ? req.guestId : undefined 
     });
+    console.log();
   } catch (err) {
     console.error("Add to cart error:", err);
     errorResponse(res, "Error adding to shopping cart");
