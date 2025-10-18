@@ -706,7 +706,7 @@ const ProductDetails = ({
     );
     const productTotal = Number(unitPrice * quantity);
     const totalWithDelivery = productTotal + (freeDelivery ? 0 : deliveryCharges);
-    return totalWithDelivery.toFixed(2);
+    return productTotal.toFixed(2);
   };
 
   const calculateMRPTotalPrice = () => {
@@ -1003,7 +1003,7 @@ const ProductDetails = ({
                   <span className="text-white/70 text-xs line-through">
                     ₹
                     {_.get(data, "MRP_price", 0) ||
-                      Number(_.get(checkOutState, "product_price", 0)) + 50}
+                      Number(_.get(checkOutState, "product_price", 0)) }
                   </span>
                   <h3 className="text-white text-base font-semibold">
                     {quantity

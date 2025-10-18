@@ -268,8 +268,9 @@ const NewCheckout = () => {
     );
   };
 
+
   const GET_TOTAL_AMOUNT = () => {
-    return GET_SUB_TOTAL() + GET_TAX_TOTAL() + 100;
+    return GET_SUB_TOTAL() + GET_TAX_TOTAL() + Number(get_delivery_Fee());
   };
   const get_delivery_Fee = () => {
     const freeDelivery = cardData.every((item) => item.FreeDelivery);
