@@ -15,6 +15,7 @@ import Banear from "../../assets/mockup/water_bottles.png";
 import Carry_bag from "../../assets/mockup/women_with_bags.png";
 import Big_sale from "../../assets/mockup/big_sale.png";
 import { motion } from "motion/react";
+import QuickAccess from "../../config/QuickAccess";
 
 const SwiperList = ({
   data = [],
@@ -264,6 +265,11 @@ const SwiperList = ({
       {product_type === "3" && (
         <div className="my-20">
           <ThreeStep />
+        </div>
+      )}
+      {product_type === "1" && (
+        <div className="">
+          <QuickAccess />
         </div>
       )}
       <div className="lg:px-20 px-4">

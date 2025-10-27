@@ -11,7 +11,7 @@ import HistoryProducts from "../Product/HistoryProducts";
 import { useSelector } from "react-redux";
 import BrowseAll from "../../components/Home/BrowseAll";
 import { useNavigate } from "react-router-dom";
-import QuickAccess from "../../config/QuickAccess";
+import {WGDesigns} from "../../config/QuickAccess";
 import ThreeDSlider from "../../components/Home/ThreeDSlider";
 import BeforeAfterSlider from "../../components/Home/BeforeAfter";
 
@@ -110,7 +110,7 @@ const Home = () => {
             <HistoryProducts />
           </>
         )} */}
-        <QuickAccess />
+        <WGDesigns />
       </div>
     </Spin>
   );

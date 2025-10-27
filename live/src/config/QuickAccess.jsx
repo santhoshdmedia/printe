@@ -105,9 +105,9 @@ const QuickAccess = () => {
             </div>
           </div>
         </div>
-        <div className="lg:px-20 px-2 pb-10">
+        {/* <div className="lg:px-20 px-2 pb-10">
           <WGDesigns />
-        </div>
+        </div> */}
       </div>
     </div>
   );

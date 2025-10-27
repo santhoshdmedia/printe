@@ -16,7 +16,8 @@ const customerSection = require("../modals/customer_section.models");
 const shopping_cart_model = require("../modals/cart.modals");
 const product_description = require("../modals/productdescription.models");
 const VendorProduct = require("../modals/vendorProduct.model");
-const BulkOrder =require('../modals/bulkOrder.model')
+const BulkOrder =require('../modals/bulkOrder.model');
+const Coupen = require("../modals/coupen.modals");
 
 
 module.exports = {
@@ -39,5 +40,6 @@ module.exports = {
   ShoppingCardSchema: shopping_cart_model,
   ProdutDescriptionSchema: product_description,
   ProductVendorSchema: VendorProduct,
-  BulkOrderSchem:BulkOrder
+  BulkOrderSchem:BulkOrder,
+  CoupenSchema: Coupen
 };

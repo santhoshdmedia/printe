@@ -82,7 +82,7 @@ const Layout = () => {
          <div
         className={`${
           showIcon ? "" : "hidden"
-        } sticky bottom-24 left-[89.1%] cursor-pointer z-50 w-fit !h-0 overflow-visible `}
+        } sticky bottom-40 left-[89.40%] cursor-pointer z-50 w-fit !h-0 overflow-visible `}
       >
         <div
           className={` transition-all transition-500  sticky bottom-24 !left-[90%] cursor-pointer z-50   rounded-full lg:p-4 p-3`}
@@ -98,7 +98,7 @@ const Layout = () => {
       <div
         className={`${
           showIcon ? "" : "hidden"
-        } sticky bottom-8 left-[90%] cursor-pointer z-50 w-fit h-fit `}
+        } !sticky bottom-24 left-[90%] cursor-pointer z-50 w-fit  !h-0  `}
       >
         <div
           className={`${
