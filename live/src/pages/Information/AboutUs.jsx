@@ -187,24 +187,7 @@ const AboutUs = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-yellow-600 to-[#f2c41a]">
-        <div className="container mx-auto px-6">
-          <div className="text-center text-white max-w-4xl mx-auto">
-            <h2 className="text-4xl font-bold mb-6">Let's Build Your Brand Together</h2>
-            <p className="text-xl mb-8 text-yellow-100 leading-relaxed">
-              At Printe.in, we go beyond printing — we partner with you to enhance your brand presence 
-              through impactful designs and premium quality prints.
-            </p>
-            <p className="text-lg text-yellow-100 mb-8">
-              Experience professional printing made simple, smart, and seamless — only with Printe.in.
-            </p>
-            <Link to={'/'} className="bg-white text-yellow-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-300 shadow-lg">
-              Start Your Printing Project
-            </Link>
-          </div>
-        </div>
-      </section>
+      
     </div>
   );
 };

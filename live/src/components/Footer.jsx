@@ -171,13 +171,13 @@ const Footer = () => {
       {/* Bottom section */}
       <div className="relative z-10 border-t border-gray-800 bg-gray-900 font-primary flex flex-col md:flex-row justify-between items-center py-6 px-[6vw] md:px-[8vw] xl:px-[10vw]">
         <span className="text-sm text-center text-gray-400 order-2 md:order-1">
-          © {moment().format("YYYY")} <a href="https://dmedia.in/" className="hover:text-[#f2c41a]">Dmedia</a>. All Rights Reserved.
+          © {moment().format("YYYY")}  Pazhanam Designs and Constructions Private Limited. All Rights Reserved.
         </span>
-        <div className="flex gap-6 mb-4 md:mb-0 order-1 md:order-2">
+        {/* <div className="flex gap-6 mb-4 md:mb-0 order-1 md:order-2">
           <Link to="#" className="text-gray-400 hover:text-[#f2c41a] text-sm transition-colors">Privacy Policy</Link>
           <Link to="#" className="text-gray-400 hover:text-[#f2c41a] text-sm transition-colors">Terms of Service</Link>
           <Link to="#" className="text-gray-400 hover:text-[#f2c41a] text-sm transition-colors">Cookie Policy</Link>
-        </div>
+        </div> */}
       </div>
     </div>
   );
