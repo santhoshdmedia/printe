@@ -34,6 +34,9 @@ const Navbar = () => {
   const { isSearchingProducts, searchingProducts, menu } = useSelector(
     (state) => state.publicSlice
   );
+
+
+  
   const { isAuth, user } = useSelector((state) => state.authSlice);
   const cartCount = useSelector((state) => state.cartSlice.count);
 
@@ -364,7 +367,7 @@ const Navbar = () => {
 
   // Support Section Component
   const SupportSection = () => (
-    <div className="text-sm flex items-center gap-x-2 hidden lg:flex">
+    <div className="text-sm  items-center gap-x-2 hidden lg:flex">
       <div>
         <IconHelper.SUPPORT_ICON className="text-3xl text-[#121621]" />
       </div>

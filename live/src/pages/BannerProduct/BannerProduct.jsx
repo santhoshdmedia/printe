@@ -19,7 +19,6 @@ const BannerProduct = () => {
     try {
       setLoading(true);
       const result = await getBannerProducts(id);
-      console.log(result, "hlkj");
       setBannerProducts(_.get(result, "data.data[0]", []));
     } catch {
     } finally {

@@ -27,7 +27,6 @@ const CarouselBanner = () => {
 
   useEffect(() => {
     dispatch({ type: "GET_BANNERS" });
-    console.log(banners);
     
   }, [dispatch]);
 

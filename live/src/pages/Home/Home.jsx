@@ -22,7 +22,6 @@ const Home = () => {
 
   const mergeCartItems=async()=>{
     const result=await mergeCart();
-    console.log(result)
   }
   const fetchData = async () => {
     try {
@@ -70,7 +69,6 @@ const Home = () => {
       </div>
       <div className="flex flex-col">
         {sectionData.map((res, index) => {
-          console.log(res);
           return (
             <div key={index}>
               {/* <div className={`grid ${GETGRID_COUNT(res)}  grid-cols-1 gap-y-2 gap-x-2 py-2 lg:py-5`}>

@@ -156,6 +156,14 @@ export const resendWhatsAppOtp = async (formdata) => {
   return await axios.post(`${baseURL}/whatsapp/resend_otp`, formdata);
 }
 
+// coupen
+export const applyCouponCode = async (formdata) => {
+  return await axios.post(`${baseURL}/coupen/apply`, formdata);
+}
+export const getAvailableCoupons = async (formdata) => {
+  return await axios.get(`${baseURL}/whatsapp/resend_otp`, formdata);
+}
+
 
 
 

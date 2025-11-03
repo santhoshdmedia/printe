@@ -5,7 +5,6 @@ import { IconHelper } from "../../helper/IconHelper";
 
 const Profile = () => {
   const { user } = useSelector((state) => state.authSlice);
-  console.log(user);
   const { name, email, phone, picture, gst_no } = user;
   const [isEditDisabled, setIsEditDisabled] = useState(true);
   const dispatch = useDispatch();
@@ -69,7 +68,6 @@ const Profile = () => {
   };
 
   const handleUploadImage = (image) => {
-    console.log(image);
 
     setForm((prev) => ({ ...prev, picture: image }));
   };

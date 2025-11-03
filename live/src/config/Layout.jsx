@@ -82,7 +82,7 @@ const Layout = () => {
          <div
         className={`${
           showIcon ? "" : "hidden"
-        } sticky bottom-40 left-[89.40%] cursor-pointer z-50 w-fit !h-0 overflow-visible `}
+        } fixed bottom-20 right-[4.5rem] cursor-pointer z-50  `}
       >
         <div
           className={` transition-all transition-500  sticky bottom-24 !left-[90%] cursor-pointer z-50   rounded-full lg:p-4 p-3`}
@@ -98,12 +98,12 @@ const Layout = () => {
       <div
         className={`${
           showIcon ? "" : "hidden"
-        } !sticky bottom-24 left-[90%] cursor-pointer z-50 w-fit  !h-0  `}
+        } !sticky bottom-20 right-40 cursor-pointer z-50   `}
       >
         <div
           className={`${
             showIcon ? "" : "hidden"
-          } sticky bottom-8 right-8 cursor-pointer z-50 bg-green-500 rounded-full lg:p-4 p-3`}
+          } fixed bottom-8 right-20 cursor-pointer z-50 bg-green-500 rounded-full lg:p-4 p-3`}
         >
           <a
             href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
