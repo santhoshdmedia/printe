@@ -76,9 +76,8 @@ const SimpleProductCard = ({ data }) => {
   };
 
   const items = _.get(data, "variants_price", []).map((res) => Number(res.price));
-  const lowest_price_index = items.indexOf(Math.min(...items));
   const price =
-    _.get(data, `variants_price[${lowest_price_index}].price`, "") ||
+    _.get(data, `variants_price[0].customer_product_price`, "") ||
     _.get(data, "single_product_price", null) ||_.get(data, "customer_product_price", null);
 
   return (

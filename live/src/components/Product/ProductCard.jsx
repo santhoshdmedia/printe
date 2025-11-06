@@ -101,7 +101,7 @@ const ProductCard = ({ data }) => {
   //     border: "border-amber-400",
   //   },
   // };
-  const price = _.get(data, "variants_price[0].price", "") || _.get(data, "customer_product_price", "");
+  const price = _.get(data, "variants_price[0].customer_product_price", "") || _.get(data, "customer_product_price", "");
 
   useEffect(() => {
     setIsFav(user?.wish_list?.includes(data._id) ?? false);

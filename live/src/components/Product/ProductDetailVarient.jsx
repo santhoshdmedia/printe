@@ -979,7 +979,7 @@ const ProductDetailVarient = ({
                 <div className="flex items-baseline gap-2">
                   <span className="text-white/70 text-xs line-through">
                     ₹
-                    {_.get(data, "MRP_price", 0) ||
+                    { formatPrice(_.get(currentPriceSplitup, "MRP_price", 0)) ||
                       Number(_.get(checkOutState, "product_price", 0)) + 50}
                   </span>
                   <h3 className="text-white text-base font-semibold">
