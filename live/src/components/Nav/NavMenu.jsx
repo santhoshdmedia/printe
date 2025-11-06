@@ -159,7 +159,7 @@ const NavMenu = () => {
             {/* Mega Menu Content */}
             {activeDropdown.megaMenu && (
               <div
-                className="absolute animate-fade-in w-[70vw] max-w-6xl z-50 top-16 -left-1/2 translate-x-1/2 transform bg-white rounded-xl overflow-hidden border border-gray-200 shadow-2xl"
+                className="absolute animate-fade-in w-[70vw] max-w-6xl z-50 top-16 left-0 transform bg-white rounded-xl overflow-hidden border border-gray-200 shadow-2xl"
                 onMouseLeave={closeAllDropdowns}
               >
                 <div className="p-8">
