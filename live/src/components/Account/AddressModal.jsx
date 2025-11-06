@@ -16,7 +16,6 @@ const AddressModal = ({ editAddressIndex = null, modalType = "Add", handleCancel
 
   //redux
   const { user, isUserUpdating } = useSelector((state) => state.authSlice);
-  console.log("Redux User Data After Update:", user);
 
   //state
   const initialFormStateModel = {
@@ -51,7 +50,6 @@ const AddressModal = ({ editAddressIndex = null, modalType = "Add", handleCancel
     } else {
       updatedAddresses = addresses;
     }
-    console.log("Updated Addresses Before Dispatch:", updatedAddresses);
     dispatch({
       type: "UPDATE_USER",
       data: { form: { addresses: updatedAddresses } },

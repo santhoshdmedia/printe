@@ -11,7 +11,7 @@ import HistoryProducts from "../Product/HistoryProducts";
 import { useSelector } from "react-redux";
 import BrowseAll from "../../components/Home/BrowseAll";
 import { useNavigate } from "react-router-dom";
-import QuickAccess from "../../config/QuickAccess";
+import {WGDesigns} from "../../config/QuickAccess";
 import ThreeDSlider from "../../components/Home/ThreeDSlider";
 import BeforeAfterSlider from "../../components/Home/BeforeAfter";
 
@@ -22,7 +22,6 @@ const Home = () => {
 
   const mergeCartItems=async()=>{
     const result=await mergeCart();
-    console.log(result)
   }
   const fetchData = async () => {
     try {
@@ -70,7 +69,6 @@ const Home = () => {
       </div>
       <div className="flex flex-col">
         {sectionData.map((res, index) => {
-          console.log(res);
           return (
             <div key={index}>
               {/* <div className={`grid ${GETGRID_COUNT(res)}  grid-cols-1 gap-y-2 gap-x-2 py-2 lg:py-5`}>
@@ -110,7 +108,7 @@ const Home = () => {
             <HistoryProducts />
           </>
         )} */}
-        <QuickAccess />
+        <WGDesigns />
       </div>
     </Spin>
   );

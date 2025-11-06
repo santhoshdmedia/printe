@@ -34,6 +34,7 @@ const WishList = () => {
   const handleDeleteWishProduct = (productId) => {
     if (!user?.wish_list) return;
     
+    
     const filteredList = user.wish_list.filter(id => id !== productId);
     const form = { wish_list: filteredList };
     
@@ -188,7 +189,7 @@ const WishList = () => {
                         </h3>
                         <button
                           className="delete-btn p-1 rounded-full hover:bg-gray-100"
-                          onClick={() => handleDeleteWishProduct(productId)}
+                          onClick={() => handleDeleteWishProduct(seoUrl)}
                           aria-label="Remove from wishlist"
                         >
                           <MdDelete className="text-gray-400 hover:text-red-500" size={18} />

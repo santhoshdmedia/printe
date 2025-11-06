@@ -147,6 +147,9 @@ const {
   sendOtpHandler,
   verifyOtpHandler,
 } = require("../controller/mailotp.controller");
+
+const { applyCoupon, createCoupon, getAllCoupons, getCouponById, updateCoupon, deleteCoupon } = require("../controller/coupen.controller");
+
 module.exports = {
   login,
   changePasswrod,
@@ -300,4 +303,12 @@ module.exports = {
   resendOtpHandler,
   sendOtpHandler,
   verifyOtpHandler,
+
+  // coupen
+  applyCoupon,
+  createCoupon,
+  getAllCoupons,
+  getCouponById,
+  updateCoupon,
+  deleteCoupon
 };

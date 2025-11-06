@@ -302,7 +302,7 @@ export const footerItems = [
     sub: [
       { value: "Home", link: "/" },
       { value: "About Us", link: "/about-us" },
-      { value: "Blog", link: "/blogs" },
+      { value: "Contact us", link: "/contact-us" },
     ],
   },
   {
@@ -542,9 +542,11 @@ export const aboutUs = [
   {
     title: "About Us",
     img: ImageHelper.ABOUT_US_IMG1,
-    desc: `Welcome to Printe – where printing meets simplicity and excellence! Printe is more than just a printing service; it’s the result of over 20 years of passion and expertise in the printing industry. Founded by an experienced professional with a deep understanding of the field, Printe was created with a vision to serve people across the globe – no matter the location, size, or scope of their needs.
-    
-We are committed to making your printing experience as easy as possible, without ever compromising on quality. From small personal projects to large-scale corporate needs, Printe provides customized solutions tailored to meet your unique requirements. Our motto is simple: steadfast printing with a focus on exceptional quality every time.
+    desc: `This signifies that Printe.in operates with structured processes, expert knowledge, and a corporate ethos. It's not a small-scale, ad-hoc operation. This implies reliability, consistent quality, and professional customer service. As an "online provider," they leverage digital platforms for order management, customer interaction, and workflow automation. This offers convenience, 24/7 accessibility, and often, a more streamlined and efficient process than traditional brick-and-mortar printers.
+
+    This is non-negotiable. It encompasses superior print clarity, color accuracy, use of premium materials (paper, ink, laminates), and excellent finishing (cutting, binding, etc.). The end product must reflect well on the client's brand.They don't just offer a standard catalog. They provide tailored services to meet specific client needs. This could involve unique sizes, special materials, custom finishes (e.g., spot UV, foiling), or creating entirely bespoke packaging solutions.
+
+
 `,
     children: [
       {

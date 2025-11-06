@@ -19,6 +19,7 @@ const vendorProductRoutes = require("./venderproduct.routes");
 const BulkOrderRoutes = require("./bulkOrder.routers");
 const OtpRoutes = require("./Otp.routes");
 const whatsappRoutes = require("./whatsapp.routes");
+const coupenRoutes= require("./coupen.route");
 
 
 
@@ -43,5 +44,6 @@ module.exports = {
   vendorProductRoutes,
   BulkOrderRoutes,
   OtpRoutes,
-  whatsappRoutes
+  whatsappRoutes,
+  coupenRoutes
 };

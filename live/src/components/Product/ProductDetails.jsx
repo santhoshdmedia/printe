@@ -533,7 +533,10 @@ const ProductDetails = ({
 
   // Handle file upload
   const handleUploadImage = (fileString) => {
+
     setCheckOutState((prev) => ({ ...prev, product_design_file: fileString }));
+    console.log(checkOutState.product_design_file,"file");
+    
   };
 
   const goToShoppingCart = () => {
@@ -785,7 +788,7 @@ const ProductDetails = ({
                     {quantityType === "dropdown" && item.discount > 0 && (
                       <span className="text-green-600 text-sm font-medium inline-flex items-center">
                         <CheckCircleOutlined className="mr-1" />
-                        {item.discount}% {user.role.toLowerCase()} discount
+                        {item.discount}%  discount
                       </span>
                     )}
                     {quantityType === "dropdown" && item.Free_Delivery && (
@@ -816,7 +819,7 @@ const ProductDetails = ({
 
         {quantityOptions.length === 0 && (
           <div className="text-center py-4 text-gray-500">
-            No quantity options available for {user.role} role
+            No quantity options available 
           </div>
         )}
 
@@ -829,7 +832,7 @@ const ProductDetails = ({
             Bulk Order Inquiry
           </button>
           <p className="text-xs text-gray-500 mt-2 text-center">
-            Prices include all applicable taxes • {user.role} pricing applied
+            Prices include all applicable taxes • 
           </p>
         </div>
       </div>
@@ -958,6 +961,10 @@ const ProductDetails = ({
         return <></>;
     }
   };
+
+  const handleDesignRemove=()=>{
+    setCheckOutState(checkOutState.product_design_file=="")
+  }
 
   return (
     <Spin
@@ -1236,7 +1243,7 @@ const ProductDetails = ({
                           <div>
                             Kudos! Additionally you saved{" "}
                             {formatPrice(calculateSavings())} (
-                            {discountPercentage.percentage}% {user.role.toLowerCase()} discount)
+                            {discountPercentage.percentage}%  discount)
                           </div>
                           <div
                             style={{
@@ -1385,7 +1392,8 @@ const ProductDetails = ({
 
                   {checkOutState.product_design_file && (
                     <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
-                      <Button
+                      <div className="md:order-1">
+                        <Button
                         type="link"
                         icon={<EyeOutlined />}
                         onClick={() => setDesignPreviewVisible(true)}
@@ -1393,6 +1401,16 @@ const ProductDetails = ({
                       >
                         View Design
                       </Button>
+                      <Button
+                        type="link"
+                        // icon={<EyeOutlined />}
+                        onClick={handleDesignRemove}
+                        className="md:order-1"
+                      >
+                        remove
+                      </Button>
+                      </div>
+                      
                       <Checkbox
                         checked={checked}
                         onChange={(e) => setChecked(e.target.checked)}
@@ -1473,7 +1491,7 @@ const ProductDetails = ({
                 Close
               </Button>,
             ]}
-            topPosition="top-[-170%]"
+            topPosition=""
           >
             <div className="flex justify-center">
               <img

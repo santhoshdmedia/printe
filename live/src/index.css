@@ -380,7 +380,7 @@ span.swiper-pagination-bullet.swiper-pagination-bullet-active {
 
 .policy_section{
   background: url('assets/mockup/shoping-png.png') no-repeat 50% 80%;
-  background-size: 70%;
+  background-size: 65%;
 }
 
 @media (Max-width:1500px) {
@@ -429,25 +429,7 @@ span.swiper-pagination-bullet.swiper-pagination-bullet-active {
   }
 }
 
-.group:hover .relative span:last-child {
-  animation: slideUp 0.3s ease-out;
-}
 
-/* Smooth scaling for better performance */
-* {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-
-/* login */
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
-}
 
 
 .logo_printe{
@@ -474,3 +456,5 @@ span.swiper-pagination-bullet.swiper-pagination-bullet-active {
   height: auto;
 } 
 }
+
+

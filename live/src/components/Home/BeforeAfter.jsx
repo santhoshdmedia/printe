@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import before from "../../assets/beforeAfter/before.jpg"
-import after from "../../assets/beforeAfter/after.webp"
+import before from "../../assets/beforeAfter/before.png"
+import after from "../../assets/beforeAfter/after.jpg"
+
 
 
 const BeforeAfterSlider = () => {

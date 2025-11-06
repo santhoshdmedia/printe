@@ -104,13 +104,10 @@ const ImagesliderVarient = ({
   useEffect(() => {
     let imagesToShow = imageList || [];
     
-    console.log("Variant Images:", variantImages);
-    console.log("Selected Variants:", selectedVariants);
 
     // Check if we have variant-specific images
     if (Object.keys(selectedVariants).length > 0 && Object.keys(variantImages).length > 0) {
       const variantKey = Object.values(selectedVariants).join('_');
-      console.log("Selected Variant Key:", variantKey);
       
       if (variantImages[variantKey]) {
         imagesToShow = variantImages[variantKey];
@@ -125,7 +122,6 @@ const ImagesliderVarient = ({
       }
     }
 
-    console.log("Images to show:", imagesToShow);
 
     if (imagesToShow && imagesToShow.length > 0) {
       setCurrentImages(imagesToShow);

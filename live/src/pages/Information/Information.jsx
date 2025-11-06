@@ -73,7 +73,7 @@ const DoubleHeading = ({ data, headingImg, subHeadingImg, breadcrumbs }) => {
                 </div>
                 {subHeadingImg && (
                   <div className={`w-[40rem] rounded-lg center_div p-4 mt-2  `}>
-                    <img src={sub.img} alt="" className="object-cover h-[20rem] w-full rounded-lg opacity-95" />
+                    <img src={sub.img} alt="" className="object-cover h-auto w-full rounded-lg opacity-95" />
                   </div>
                 )}
               </div>

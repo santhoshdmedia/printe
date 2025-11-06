@@ -34,6 +34,7 @@ import ShoppingCart from "../pages/shopping/ShoppingCart.jsx";
 import NewCheckout from "../pages/shopping/NewCheckout.jsx";
 import SectionExplore from "../pages/Home/SectionExplore.jsx";
 import HistoryExplore from "../pages/Product/HistoryExplore.jsx";
+import AboutUs from "../pages/Information/AboutUs.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -90,7 +91,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/about-us",
-        element: <Information data={aboutUs} subHeadingAvailable={true} headingImg={true} subHeadingImg={true} />,
+        element: <AboutUs/>,
       },
       {
         path: "/account",
