@@ -74,46 +74,8 @@ const Login = () => {
           }
   };
 
-  // Handle Google Login Success
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setIsGoogleLoading(true);
-    try {
-      const decoded = jwtDecode(credentialResponse.credential);
-      const { name, email, picture, sub } = decoded;
 
-      const response = await googleLogin({
-        googleId: sub,
-        name,
-        email,
-        picture,
-      });
-
-      if (response.status === 200) {
-        const data = response.data;
-        // saveTokenToLocalStorage()
-        // console.log
-        localStorage.setItem("authToken", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        
-        dispatch({ type: "LOGIN_SUCCESS", payload: data.user });
-        message.success("Logged in successfully with Google!");
-      } else {
-        throw new Error(response.data?.message || "Failed to authenticate with Google");
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-      message.error(error.message || "Google login failed. Please try again.");
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-
-  // Handle Google Login Error
-  const handleGoogleError = () => {
-    console.error("Google Login Failed");
-    message.error("Google login failed. Please try again.");
-    setIsGoogleLoading(false);
-  };
+ 
 
   return (
     <div className={`w-full min-h-screen flex !font-primary transition-all duration-500 ${isMounted ? (isExiting ? "exit-animation" : "enter-animation") : "opacity-0"}`}>

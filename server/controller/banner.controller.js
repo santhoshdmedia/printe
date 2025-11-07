@@ -19,13 +19,21 @@ const getAllBannerProducts = async (req, res) => {
           _id: 1,
           name: 1,
           images: 1,
+          is_visible: 1,
+          is_cloned: 1,
+          seo_url: 1,
+          // Add these fields for proper display
+          MRP_price: 1,
+          customer_product_price: 1,
+          type: 1,
+          product_code: 1
         },
       },
     ]);
     successResponse(res, "get success ", result);
   } catch (err) {
     console.log(err);
-    errorResponse(res, PRODUCT_GET_SUCCESS);
+    errorResponse(res, "Failed to get products"); // Fixed the error message
   }
 };
 

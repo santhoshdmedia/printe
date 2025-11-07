@@ -102,7 +102,7 @@ const ProductDetailVarient = ({
   const [designPreviewVisible, setDesignPreviewVisible] = useState(false);
   const [quantityDropdownVisible, setQuantityDropdownVisible] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
-   const[deliveryCharges,setDeliveryCharges]=useState(0);
+  const [deliveryCharges, setDeliveryCharges] = useState(0);
 
   // Checkout state
   const [checkOutState, setCheckOutState] = useState({
@@ -123,33 +123,33 @@ const ProductDetailVarient = ({
 
 
   const getRoleFields = (role) => {
-  switch(role) {
-    case 'Dealer':
-      return {
-        quantity: 'Dealer_quantity',
-        discount: 'Dealer_discount',
-        freeDelivery: 'free_delivery_dealer',
-        recommended: 'recommended_stats_dealer',
-        deliveryCharges: 'delivery_charges_dealer'
-      };
-    case 'Corporate':
-      return {
-        quantity: 'Corporate_quantity',
-        discount: 'Corporate_discount',
-        freeDelivery: 'free_delivery_corporate',
-        recommended: 'recommended_stats_corporate',
-        deliveryCharges: 'delivery_charges_corporate'
-      };
-    default: // Customer
-      return {
-        quantity: 'Customer_quantity',
-        discount: 'Customer_discount',
-        freeDelivery: 'free_delivery_customer',
-        recommended: 'recommended_stats_customer',
-        deliveryCharges: 'delivery_charges_customer'
-      };
-  }
-};
+    switch (role) {
+      case 'Dealer':
+        return {
+          quantity: 'Dealer_quantity',
+          discount: 'Dealer_discount',
+          freeDelivery: 'free_delivery_dealer',
+          recommended: 'recommended_stats_dealer',
+          deliveryCharges: 'delivery_charges_dealer'
+        };
+      case 'Corporate':
+        return {
+          quantity: 'Corporate_quantity',
+          discount: 'Corporate_discount',
+          freeDelivery: 'free_delivery_corporate',
+          recommended: 'recommended_stats_corporate',
+          deliveryCharges: 'delivery_charges_corporate'
+        };
+      default: // Customer
+        return {
+          quantity: 'Customer_quantity',
+          discount: 'Customer_discount',
+          freeDelivery: 'free_delivery_customer',
+          recommended: 'recommended_stats_customer',
+          deliveryCharges: 'delivery_charges_customer'
+        };
+    }
+  };
   // Helper function to get role-specific quantity
   const getRoleSpecificQuantity = useCallback(
     (item) => {
@@ -467,11 +467,10 @@ const ProductDetailVarient = ({
               {options.map((option, index) => (
                 <Tooltip key={index} title={option.value}>
                   <div
-                    className={`flex flex-col items-center cursor-pointer transition-all duration-200 p-1 ${
-                      selectedVariants[variant_name] === option.value
+                    className={`flex flex-col items-center cursor-pointer transition-all duration-200 p-1 ${selectedVariants[variant_name] === option.value
                         ? "ring-2 ring-blue-500 rounded-lg"
                         : "border border-gray-200 rounded-lg hover:border-blue-300"
-                    }`}
+                      }`}
                     onClick={() =>
                       handleVariantChange(variant_name, option.value)
                     }
@@ -516,11 +515,10 @@ const ProductDetailVarient = ({
               {options.map((option, index) => (
                 <button
                   key={index}
-                  className={`px-4 py-2 border rounded-lg transition-all duration-200 font-medium ${
-                    selectedVariants[variant_name] === option.value
+                  className={`px-4 py-2 border rounded-lg transition-all duration-200 font-medium ${selectedVariants[variant_name] === option.value
                       ? "bg-blue-500 text-white border-blue-500 shadow-md"
                       : "bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50"
-                  }`}
+                    }`}
                   onClick={() =>
                     handleVariantChange(variant_name, option.value)
                   }
@@ -607,9 +605,9 @@ const ProductDetailVarient = ({
   }, []);
 
 
-    const generateQuantityOptions = () => {
+  const generateQuantityOptions = () => {
     const roleFields = getRoleFields(user.role);
-    
+
     if (quantityType === "textbox") {
       const options = [];
       for (let i = dropdownGap; i <= maxQuantity; i += dropdownGap) {
@@ -711,19 +709,17 @@ const ProductDetailVarient = ({
             return (
               <div
                 key={item.value}
-                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                  isSelected
+                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${isSelected
                     ? "border-blue-500 bg-blue-50 shadow-sm"
                     : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
-                }`}
+                  }`}
                 onClick={() => handleQuantitySelect(item.value)}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span
-                      className={`text-base font-medium ${
-                        isSelected ? "text-blue-700" : "text-gray-800"
-                      }`}
+                      className={`text-base font-medium ${isSelected ? "text-blue-700" : "text-gray-800"
+                        }`}
                     >
                       {item.value} {unit}
                     </span>
@@ -751,9 +747,8 @@ const ProductDetailVarient = ({
 
                 <div className="text-right">
                   <p
-                    className={`font-semibold ${
-                      isSelected ? "text-blue-700" : "text-gray-900"
-                    }`}
+                    className={`font-semibold ${isSelected ? "text-blue-700" : "text-gray-900"
+                      }`}
                   >
                     {formatPrice(itemTotalPrice)}
                   </p>
@@ -948,8 +943,8 @@ const ProductDetailVarient = ({
                   <h3 className="text-white text-base font-semibold">
                     {quantity
                       ? formatPrice(
-                          Number(_.get(checkOutState, "product_price", 0))
-                        )
+                        Number(_.get(checkOutState, "product_price", 0))
+                      )
                       : "Select Qty"}
                   </h3>
                 </div>
@@ -979,14 +974,14 @@ const ProductDetailVarient = ({
                 <div className="flex items-baseline gap-2">
                   <span className="text-white/70 text-xs line-through">
                     ₹
-                    { formatPrice(_.get(currentPriceSplitup, "MRP_price", 0)) ||
+                    {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0)) ||
                       Number(_.get(checkOutState, "product_price", 0)) + 50}
                   </span>
                   <h3 className="text-white text-base font-semibold">
                     {quantity
                       ? formatPrice(
-                          Number(_.get(checkOutState, "product_price", 0))
-                        )
+                        Number(_.get(checkOutState, "product_price", 0))
+                      )
                       : "Select Qty"}
                   </h3>
                 </div>
@@ -1249,13 +1244,9 @@ const ProductDetailVarient = ({
                 className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
                 onClick={handleBuy}
                 loading={loading}
-                disabled={!quantity || !handleQuantityDetails(stock, quantity)}
               >
-                {!quantity
-                  ? "Select quantity first"
-                  : !handleQuantityDetails(stock, quantity)
-                  ? "Out of stock"
-                  : "Add To Cart"}
+                {
+                  "Add To Cart"}
               </Button>
             )}
           </div>

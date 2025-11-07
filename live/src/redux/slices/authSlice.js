@@ -106,16 +106,12 @@ const authSlice = createSlice({
     isSignUpStarted: (state) => {
       state.isSigningUp = true;
     },
- isSignUpSuccess: (state, action) => {
-  state.isAuth = true;
-  state.isSigningUp = false;
-  state.user = action.payload.data._doc;
-  // Save token if present
-  if (action.payload.data.token) {
-    saveTokenToLocalStorage(action.payload.data.token);
-  }
-  message.success("...");
-},
+    isSignUpSuccess: (state, action) => {
+      state.isAuth = true;
+      state.isSigningUp = false;
+      state.user = action.payload.data._doc;
+      message.success("Account created successfully!");
+    },
     isSignUpFailed: (state, action) => {
       state.isSigningUp = false;
       message.error({
