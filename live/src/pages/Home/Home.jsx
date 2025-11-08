@@ -2,7 +2,7 @@
 import StepProcess from "../../components/Home/StepProcess";
 import CarouselBanner from "../../components/Home/CarouselBanner";
 import { useEffect, useState } from "react";
-import { getCustomHomeSections,mergeCart } from "../../helper/api_helper";
+import { getCustomHomeSections, mergeCart } from "../../helper/api_helper";
 import { Divider, Spin } from "antd";
 import { IconHelper } from "../../helper/IconHelper";
 import _ from "lodash";
@@ -11,7 +11,7 @@ import HistoryProducts from "../Product/HistoryProducts";
 import { useSelector } from "react-redux";
 import BrowseAll from "../../components/Home/BrowseAll";
 import { useNavigate } from "react-router-dom";
-import {WGDesigns} from "../../config/QuickAccess";
+import { WGDesigns } from "../../config/QuickAccess";
 import ThreeDSlider from "../../components/Home/ThreeDSlider";
 import BeforeAfterSlider from "../../components/Home/BeforeAfter";
 
@@ -19,10 +19,25 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [sectionData, setSectionData] = useState([]);
   const { user } = useSelector((state) => state.authSlice);
+  const [hasRefreshed, setHasRefreshed] = useState(false);
 
-  const mergeCartItems=async()=>{
-    const result=await mergeCart();
-  }
+  const mergeCartItems = async () => {
+    const result = await mergeCart();
+  };
+
+  // Token-based refresh (runs only once)
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const refreshFlag = sessionStorage.getItem("hasRefreshed");
+    
+    if (token && token !== "" && !refreshFlag && !hasRefreshed) {
+      console.log("Token detected - refreshing page once");
+      sessionStorage.setItem("hasRefreshed", "true");
+      setHasRefreshed(true);
+      window.location.reload();
+    }
+  }, []);
+
   const fetchData = async () => {
     try {
       const result = await getCustomHomeSections();
@@ -50,7 +65,6 @@ const Home = () => {
         return "lg:grid-cols-4";
       default:
         return "lg:grid-cols-2";
-        z;
     }
   };
 
@@ -71,16 +85,6 @@ const Home = () => {
         {sectionData.map((res, index) => {
           return (
             <div key={index}>
-              {/* <div className={`grid ${GETGRID_COUNT(res)}  grid-cols-1 gap-y-2 gap-x-2 py-2 lg:py-5`}>
-                  {!_.isEmpty(_.get(res, "banner_images", [])) && (
-                    <>
-                      {_.get(res, "banner_images", []).map((pic, index) => {
-                        return <img src={pic.path} key={index} className="w-full !h-full object-fill rounded-xl" />;
-                      })}
-                    </>
-                  )}
-                </div> */}
-
               <SwiperList
                 product_type={_.get(res, "product_display", "1")}
                 title={_.get(res, "section_name", "")}
@@ -99,7 +103,7 @@ const Home = () => {
         })}
       </div>
       <div className="">
-        <BeforeAfterSlider/>
+        <BeforeAfterSlider />
       </div>
 
       <div className="">

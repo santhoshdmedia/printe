@@ -1,7 +1,7 @@
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const filepath = require("path");
 const _ = require("lodash");
-const { successResponse } = require("../helper/response.helper");
+const { successResponse,errorResponse } = require("../helper/response.helper");
 require("dotenv").config();
 
 const s3Client = new S3Client({

@@ -12,21 +12,29 @@ const SubcategoryProduct = () => {
   const [productDatas, setProductData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const result = await getAllSubCategoryProducts(_.get(params, "id", ""));
-      setProductData(_.get(result, "data.data", []));
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+const fetchData = async () => {
+  try {
+    setLoading(true);
+    const result = await getAllSubCategoryProducts(_.get(params, "id", ""));
+    
+    // Filter products where is_visible is true
+    const filteredProducts = _.get(result, "data.data", []).filter(
+      product => product.is_visible === true
+    );
+    
+    setProductData(filteredProducts);
+  } catch (err) {
+    console.log(err);
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     fetchData();
   }, [_.get(params, "id", "")]);
+
+  console.log(productDatas,"pro");
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -88,7 +96,9 @@ const SubcategoryProduct = () => {
             <>
               
               {productDatas.length > 0 ? (
+                <>
                 <GridList data={productDatas} type="Product" productCardType="Simple" />
+                </>
               ) : (
                 <div className="text-center py-12">
                   <div className="text-gray-400 mb-4">
