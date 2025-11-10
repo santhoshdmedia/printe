@@ -162,98 +162,30 @@ const SwiperList = ({
   );
 
   // Desktop Swiper View
-  const DesktopSwiperView = () => (
-    <Swiper
-      spaceBetween={20}
-      breakpoints={{
-        0: {
-          slidesPerView: config.slidesPerView.default,
-          spaceBetween: 15,
-        },
-        640: {
-          slidesPerView: config.slidesPerView[640],
-          spaceBetween: 15,
-        },
-        768: {
-          slidesPerView: config.slidesPerView[768],
-          spaceBetween: 20,
-        },
-        1024: {
-          slidesPerView: config.slidesPerView[1024],
-          spaceBetween: 20,
-        },
-        1440: {
-          slidesPerView: config.slidesPerView[1440],
-          spaceBetween: 20,
-        },
-      }}
-      className="w-full lg:!py-5 !rounded-lg overflow-visible"
-      modules={[Autoplay, Navigation]}
-      autoplay={{
-        delay: 5000,
-        disableOnInteraction: true,
-        pauseOnMouseEnter: true,
-      }}
-      speed={2000}
-      navigation={{
-        prevEl: ".banner-prev",
-        nextEl: ".banner-next",
-      }}
-      onSlideChange={handleSlideChange}
-      onSwiper={handleSwiperInit}
-    >
-      {products.map((product, index) => (
-        <SwiperSlide key={index} className="px-1.5">
-          <GET_PRODUCT_DISPLAY_TYPE data={product} />
-        </SwiperSlide>
-      ))}
-
-      {/* Navigation Buttons */}
-      {!isBeginning && (
-        <button
-          className="banner-prev hidden lg:block absolute left-0 top-1/2 z-10 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors"
-          aria-label="Previous slide"
-          onClick={() => swiperRef.current?.slidePrev()}
-        >
-          <svg
-            className="w-6 h-6 text-gray-800"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-      )}
-      
-      {!isEnd && (
-        <button
-          className="banner-next hidden lg:block absolute right-[-10px] top-1/2 z-10 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors"
-          aria-label="Next slide"
-          onClick={() => swiperRef.current?.slideNext()}
-        >
-          <svg
-            className="w-6 h-6 text-gray-800"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-      )}
-    </Swiper>
-  );
+ const DesktopSwiperView = () => (
+  <Swiper
+    spaceBetween={16}
+    slidesPerView={config.slidesPerView.default}
+    breakpoints={{
+      640: { slidesPerView: config.slidesPerView[640], spaceBetween: 14 },
+      768: { slidesPerView: config.slidesPerView[768], spaceBetween: 16 },
+      1024: { slidesPerView: config.slidesPerView[1024], spaceBetween: 18 },
+      1440: { slidesPerView: config.slidesPerView[1440], spaceBetween: 20 },
+    }}
+    className="w-full"
+    modules={[Navigation]}
+    navigation={false}
+    speed={400}
+    resistance={true}
+    resistanceRatio={0.85}
+  >
+    {products.map((product, index) => (
+      <SwiperSlide key={index}>
+        <GET_PRODUCT_DISPLAY_TYPE data={product} />
+      </SwiperSlide>
+    ))}
+  </Swiper>
+);
 
   return (
     <div>
