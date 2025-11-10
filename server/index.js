@@ -8,15 +8,18 @@ const path = require("path");
 
 const app = express();
 
-// Trust proxy settings
+// Trust proxy settings (essential for proper header forwarding)
 app.set("trust proxy", 1);
 
-// Enhanced CORS configuration - PUT THIS RIGHT AFTER express()
+// Middleware pipeline
+app.use(morgan("dev"));
+
+// Enhanced CORS configuration
 const allowedOrigins = [
   "https://printe.in",
   "https://www.printe.in",
-  "https://admin.printe.in",
   "https://www.admin.printe.in",
+  "https://admin.printe.in",
   "https://vendor.printe.in",  
   "http://62.72.58.252",
   "https://62.72.58.252",
@@ -26,42 +29,40 @@ const allowedOrigins = [
   "http://localhost:8080"
 ];
 
-// SIMPLIFIED CORS CONFIGURATION
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"]
-}));
-
-// Handle preflight requests globally
-app.options('*', cors());
-
-// Middleware pipeline
-app.use(morgan("dev"));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `The CORS policy for this site does not allow access from ${origin}`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    credentials: true,
+    maxAge: 86400,
+  })
+);
 
 // Body parsers
-app.use(express.json({ limit: '10gb' }));
-app.use(express.urlencoded({ extended: true, limit: '10gb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use((req, res, next) => {
-  req.setTimeout(300000); // 5 minutes
-  res.setTimeout(300000);
-  next();
-});
+// REMOVED HTTPS ENFORCEMENT MIDDLEWARE - Let Nginx handle this
+
 // Security headers middleware
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "1; mode=block");
-  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains"
+  );
   next();
 });
 
@@ -86,7 +87,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// Routes
 app.use("/api", router);
 
 const Port = process.env.PORT || 8080;
