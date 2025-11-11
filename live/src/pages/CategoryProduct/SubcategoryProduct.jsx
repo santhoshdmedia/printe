@@ -33,7 +33,6 @@ const fetchData = async () => {
     fetchData();
   }, [_.get(params, "id", "")]);
 
-  console.log(productDatas,"pro");
   
 
   return (

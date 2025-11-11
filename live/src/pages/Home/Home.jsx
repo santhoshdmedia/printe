@@ -31,7 +31,6 @@ const Home = () => {
     const refreshFlag = sessionStorage.getItem("hasRefreshed");
     
     if (token && token !== "" && !refreshFlag && !hasRefreshed) {
-      console.log("Token detected - refreshing page once");
       sessionStorage.setItem("hasRefreshed", "true");
       setHasRefreshed(true);
       window.location.reload();

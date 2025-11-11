@@ -22,6 +22,11 @@ const SimpleProductCard = ({ data }) => {
   const rotateX = useTransform(y, [-100, 100], [10, -10]);
   const rotateY = useTransform(x, [-100, 100], [-10, 10]);
 
+  // Early return if product is not visible
+  if (!data.is_visible) {
+    return null;
+  }
+
   useEffect(() => {
     setIsFav(user?.wish_list?.includes(data.seo_url) ?? false);
   }, [user]);
@@ -79,12 +84,11 @@ const SimpleProductCard = ({ data }) => {
   const price =
     _.get(data, `variants_price[0].customer_product_price`, "") ||
     _.get(data, "single_product_price", null) ||_.get(data, "customer_product_price", null);
-
+  
   return (
-    <div className="">
-      {data.is_visible?<motion.div
+    <motion.div
       ref={cardRef}
-      className="relative  w-full overflow-hidden cursor-pointer rounded-2xl  shadow-md"
+      className="relative w-full overflow-hidden cursor-pointer rounded-2xl shadow-md"
       onClick={handleCardClick}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
@@ -110,7 +114,7 @@ const SimpleProductCard = ({ data }) => {
       <div className="relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl overflow-hidden">
         {/* Image container with floating effect */}
         <motion.div 
-          className="relative  lg:h-3/4 w-full overflow-hidden"
+          className="relative lg:h-3/4 w-full overflow-hidden"
           animate={{
             y: isHovered ? -10 : 0,
           }}
@@ -122,7 +126,7 @@ const SimpleProductCard = ({ data }) => {
         >
           <motion.img
             className="w-full h-full object-cover"
-            src={_.get(data.images, "[0].path", "")}
+            src={_.get(data.images, "[0].path", "")||_.get(data.variants, "[0].options[0].image_names[0].path", "")}
             alt={data.name}
             animate={{
               scale: isHovered ? 1.1 : 1,
@@ -265,8 +269,7 @@ const SimpleProductCard = ({ data }) => {
           ))}
         </>
       )}
-    </motion.div>:<></>}
-    </div>
+    </motion.div>
   );
 };
 

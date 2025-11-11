@@ -145,7 +145,6 @@ const CheckOut = () => {
 
   const handleOnSubmit = (e) => {
     e.preventDefault();
-    // console.log(teamsAndConditionsBox);
     if (!designVerificationStatus) {
       setDesignVerificationError(true);
       message.warning("Please verify the product design");

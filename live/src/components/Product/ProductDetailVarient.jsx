@@ -45,6 +45,114 @@ import toast from "react-hot-toast";
 import { PincodeDeliveryCalculator } from "./ProductDetails.jsx";
 
 const { Title, Text } = Typography;
+const getRoleFields = (role) => {
+  switch (role) {
+    case 'Dealer':
+      return {
+        quantity: 'Dealer_quantity',
+        discount: 'Dealer_discount',
+        freeDelivery: 'free_delivery_dealer',
+        recommended: 'recommended_stats_dealer',
+        deliveryCharges: 'delivery_charges_dealer'
+      };
+    case 'Corporate':
+      return {
+        quantity: 'Corporate_quantity',
+        discount: 'Corporate_discount',
+        freeDelivery: 'free_delivery_corporate',
+        recommended: 'recommended_stats_corporate',
+        deliveryCharges: 'delivery_charges_corporate'
+      };
+    default:
+      return {
+        quantity: 'Customer_quantity',
+        discount: 'Customer_discount',
+        freeDelivery: 'free_delivery_customer',
+        recommended: 'recommended_stats_customer',
+        deliveryCharges: 'delivery_charges_customer'
+      };
+  }
+};
+
+export const CustomModal = ({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  width = 520,
+  className = "",
+  closable = true,
+  topPosition = "top-0",
+}) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${isMobile ? "items-end" : "items-center"
+        }`}
+    >
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      />
+
+      {/* Modal Content */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
+        className={`relative bg-white rounded-lg shadow-xl ${isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
+          } overflow-hidden flex flex-col ${className}`}
+        style={isMobile ? {} : { width }}
+      >
+        {/* Header */}
+        {title && (
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            {closable && (
+              <button
+                onClick={onClose}
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <CloseOutlined className="text-gray-500" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Body */}
+        <div className={`flex-1 overflow-auto ${isMobile ? "p-4" : "p-6"}`}>
+          {children}
+        </div>
+
+        {/* Footer */}
+        {footer && (
+          <div className="flex justify-start gap-3 p-6 border-t border-gray-200">
+            {footer}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+};
 
 const ProductDetailVarient = ({
   data = {
@@ -69,8 +177,30 @@ const ProductDetailVarient = ({
     stockCount === 0
       ? Number(productionTime) + Number(ArrangeTime)
       : Number(productionTime);
+  const getRoleBasedPrice = () => {
+    const product_type = _.get(data, "type", "Stand Alone Product");
+
+    if (user.role === "Dealer") {
+      return product_type === "Stand Alone Product"
+        ? _.get(data, "Deler_product_price", 0) || _.get(data, "single_product_price", 0)
+        : _.get(data, "variants_price[0].Deler_product_price", "");
+    } else if (user.role === "Corporate") {
+      return product_type === "Stand Alone Product"
+        ? _.get(data, "corporate_product_price", 0) || _.get(data, "single_product_price", 0)
+        : _.get(data, "variants_price[0].corporate_product_price", "");
+    } else {
+      return product_type === "Stand Alone Product"
+        ? _.get(data, "customer_product_price", 0) || _.get(data, "single_product_price", 0)
+        : _.get(data, "variants_price[0].customer_product_price", "");
+    }
+  };
+
+  const price = getRoleBasedPrice();
+  const [totalPrice, setTotalPrice] = useState(price);
 
   const { isGettingVariantPrice } = useSelector((state) => state.publicSlice);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Product data constants
   const productType = _.get(data, "type", "Variable Product");
@@ -420,10 +550,7 @@ const ProductDetailVarient = ({
     [discountPercentage.percentage, checkOutState.product_price]
   );
 
-  const totalPrice = useMemo(
-    () => (quantity ? Number(unitPrice * quantity).toFixed(2) : 0),
-    [unitPrice, quantity]
-  );
+
 
   const mrpTotalPrice = useMemo(
     () =>
@@ -468,8 +595,8 @@ const ProductDetailVarient = ({
                 <Tooltip key={index} title={option.value}>
                   <div
                     className={`flex flex-col items-center cursor-pointer transition-all duration-200 p-1 ${selectedVariants[variant_name] === option.value
-                        ? "ring-2 ring-blue-500 rounded-lg"
-                        : "border border-gray-200 rounded-lg hover:border-blue-300"
+                      ? "ring-2 ring-blue-500 rounded-lg"
+                      : "border border-gray-200 rounded-lg hover:border-blue-300"
                       }`}
                     onClick={() =>
                       handleVariantChange(variant_name, option.value)
@@ -516,8 +643,8 @@ const ProductDetailVarient = ({
                 <button
                   key={index}
                   className={`px-4 py-2 border rounded-lg transition-all duration-200 font-medium ${selectedVariants[variant_name] === option.value
-                      ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                      : "bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50"
+                    ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                    : "bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50"
                     }`}
                   onClick={() =>
                     handleVariantChange(variant_name, option.value)
@@ -632,63 +759,83 @@ const ProductDetailVarient = ({
 
   // Generate quantity options based on user role
   const quantityOptions = generateQuantityOptions();
-  const handleQuantitySelect = useCallback(
-    (selectedQuantity) => {
-      if (quantityType === "textbox") {
-        // For textbox type, find the best matching discount based on quantity
-        const selectedDiscount = quantityDiscounts
-          .filter((item) => getRoleSpecificQuantity(item) <= selectedQuantity)
-          .sort(
-            (a, b) => getRoleSpecificQuantity(b) - getRoleSpecificQuantity(a)
-          )[0];
+   const handleQuantitySelect = (selectedQuantity) => {
+    const roleFields = getRoleFields(user.role);
+    
+    if (quantityType === "textbox") {
+      const availableDiscounts = quantityDiscounts
+        .filter(item => item[roleFields.quantity] && Number(item[roleFields.quantity]) <= selectedQuantity)
+        .sort((a, b) => Number(b[roleFields.quantity]) - Number(a[roleFields.quantity]));
+        
+      const selectedDiscount = availableDiscounts[0];
 
-        setQuantity(selectedQuantity);
-        setCheckOutState((prev) => ({
+      setQuantity(selectedQuantity);
+      setCheckOutState((prev) => ({
+        ...prev,
+        product_quantity: selectedQuantity,
+      }));
+
+      if (selectedDiscount) {
+        setDiscountPercentage({
+          uuid: selectedDiscount.uniqe_id,
+          percentage: Number(selectedDiscount[roleFields.discount] || 0),
+        });
+        setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
+        setDeliveryCharges(selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100));
+        
+        setCheckOutState(prev => ({
           ...prev,
-          product_quantity: selectedQuantity,
+          DeliveryCharges: selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100),
+          FreeDelivery: selectedDiscount[roleFields.freeDelivery] || false,
         }));
-
-        if (selectedDiscount) {
-          setDiscountPercentage({
-            uuid: selectedDiscount.uniqe_id,
-            percentage: getRoleSpecificDiscount(selectedDiscount),
-          });
-          setFreeDelivery(getRoleSpecificFreeDelivery(selectedDiscount));
-        } else {
-          setDiscountPercentage({ uuid: "", percentage: 0 });
-          setFreeDelivery(false);
-        }
       } else {
-        // For dropdown type, find the exact matching item
-        const selectedDiscount = quantityDiscounts.find(
-          (item) => getRoleSpecificQuantity(item) === selectedQuantity
-        );
-
-        setQuantity(selectedQuantity);
-        setCheckOutState((prev) => ({
+        setDiscountPercentage({ uuid: "", percentage: 0 });
+        setFreeDelivery(false);
+        setDeliveryCharges(100);
+        setCheckOutState(prev => ({
           ...prev,
-          product_quantity: selectedQuantity,
+          DeliveryCharges: 100,
+          FreeDelivery: false,
         }));
-
-        if (selectedDiscount) {
-          setDiscountPercentage({
-            uuid: selectedDiscount.uniqe_id,
-            percentage: getRoleSpecificDiscount(selectedDiscount),
-          });
-          setFreeDelivery(getRoleSpecificFreeDelivery(selectedDiscount));
-        }
       }
-      setQuantityDropdownVisible(false);
-    },
-    [
-      quantityType,
-      quantityDiscounts,
-      user?.role,
-      getRoleSpecificQuantity,
-      getRoleSpecificDiscount,
-      getRoleSpecificFreeDelivery,
-    ]
-  );
+    } else {
+      const selectedDiscount = quantityDiscounts.find(
+        (item) => Number(item[roleFields.quantity]) === selectedQuantity
+      );
+
+      setQuantity(selectedQuantity);
+      setCheckOutState((prev) => ({
+        ...prev,
+        product_quantity: selectedQuantity,
+      }));
+
+      if (selectedDiscount) {
+        setDiscountPercentage({
+          uuid: selectedDiscount.uniqe_id,
+          percentage: Number(selectedDiscount[roleFields.discount] || 0),
+        });
+        setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
+        const charges = selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
+        setDeliveryCharges(charges);
+        
+        setCheckOutState(prev => ({
+          ...prev,
+          DeliveryCharges: charges,
+          FreeDelivery: selectedDiscount[roleFields.freeDelivery] || false,
+        }));
+      } else {
+        setDiscountPercentage({ uuid: "", percentage: 0 });
+        setFreeDelivery(false);
+        setDeliveryCharges(100);
+        setCheckOutState(prev => ({
+          ...prev,
+          DeliveryCharges: 100,
+          FreeDelivery: false,
+        }));
+      }
+    }
+    setQuantityDropdownVisible(false);
+  };
 
   // Quantity dropdown render
   const quantityDropdownRender = useCallback(
@@ -710,8 +857,8 @@ const ProductDetailVarient = ({
               <div
                 key={item.value}
                 className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${isSelected
-                    ? "border-blue-500 bg-blue-50 shadow-sm"
-                    : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
+                  ? "border-blue-500 bg-blue-50 shadow-sm"
+                  : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
                   }`}
                 onClick={() => handleQuantitySelect(item.value)}
               >
@@ -935,17 +1082,17 @@ const ProductDetailVarient = ({
                 className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
               >
                 <div className="flex items-baseline gap-2">
-                  <span className="text-white/70 text-xs line-through">
+                   <span className="text-white/70 text-xs line-through">
                     ₹
-                    {_.get(data, "MRP_price", 0) ||
+                    {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0)) ||
                       Number(_.get(checkOutState, "product_price", 0)) + 50}
                   </span>
                   <h3 className="text-white text-base font-semibold">
-                    {quantity
-                      ? formatPrice(
+                    {
+                       formatPrice(
                         Number(_.get(checkOutState, "product_price", 0))
                       )
-                      : "Select Qty"}
+                      }
                   </h3>
                 </div>
               </motion.div>
@@ -978,11 +1125,10 @@ const ProductDetailVarient = ({
                       Number(_.get(checkOutState, "product_price", 0)) + 50}
                   </span>
                   <h3 className="text-white text-base font-semibold">
-                    {quantity
-                      ? formatPrice(
+                    {formatPrice(
                         Number(_.get(checkOutState, "product_price", 0))
                       )
-                      : "Select Qty"}
+                      }
                   </h3>
                 </div>
               </motion.div>
@@ -1091,13 +1237,13 @@ const ProductDetailVarient = ({
         {/* Total Price Section */}
         <Card className="bg-blue-50 rounded-lg border-0">
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <Text strong className="text-gray-800">
                 Deal Price:
               </Text>
-              <div className="text-right flex items-baseline">
-                <Text delete className="text-md text-gray-500 mr-2">
-                  {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
+              <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
+                <Text delete className="text-md text-gray-500 md:mr-2">
+                  {formatMRPPrice(mrpTotalPrice)}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
@@ -1113,14 +1259,24 @@ const ProductDetailVarient = ({
                 <Alert
                   message={
                     <div>
-                      <div>You saved {formatPrice(mrpSavings)} </div>
+                      <div>
+                        You saved {formatPrice(mrpSavings)} <br></br>
+                        {discountPercentage.percentage == 0 ? "select more quantity to get extra discount" : ""}
+                      </div>
                       {quantity && savings > 0 && (
                         <div className="mt-1">
                           <div>
-                            Additionally you saved {formatPrice(savings)} (
-                            {discountPercentage.percentage}% quantity discount)
+                            Kudos! Additionally you saved{" "}
+                            {formatPrice(savings)} (
+                            {discountPercentage.percentage}% discount)
                           </div>
-                          <div className="font-bold text-lg mt-1">
+                          <div
+                            style={{
+                              fontWeight: "bold",
+                              fontSize: "1.125rem",
+                              marginTop: "4px",
+                            }}
+                          >
                             Total Savings: {formatPrice(totalSavings)}
                           </div>
                         </div>
@@ -1138,27 +1294,82 @@ const ProductDetailVarient = ({
               <div className="text-gray-600">
                 <h1 className="!text-md text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
-                  (<Text strong>{formatPrice(unitPrice)}</Text>/ piece)
+                  (
+                  <Text strong>
+                    {formatPrice(unitPrice)}
+                  </Text>
+                  / piece)
                 </h1>
               </div>
             )}
-            <PincodeDeliveryCalculator
-              Production={processing_item}
-              freeDelivery={freeDelivery}
-              deliveryCharges={deliveryCharges}
-            />
+            {quantity && (
+              <div className="!text-[12px] text-gray-600">
+                <h1>
+                  Inclusive of all taxes for <span strong>{quantity}</span> Qty
+                  (
+                  <span className="font-bold">
+                    {formatPrice(
+                      GST_DISCOUNT_HELPER(
+                        discountPercentage.percentage,
+                        Number(_.get(checkOutState, "product_price", 0)),
+                        gst
+                      )
+                    )}
+                  </span>
+                  / piece)
+                </h1>
+              </div>
+            )}
           </div>
 
-          {/* <div className="flex flex-col w-full justify-between mt-4">
+          <div className="flex flex-col w-full justify-between mt-4">
             <div className="flex items-center gap-2">
               <Text strong className="text-gray-700">
-                {noDesignUpload
-                  ? "Your Product is Ready to Ship"
-                  : "Upload Your Design"}
+                Processing Time:
               </Text>
-              <span className="font-bold">{processingTime} days</span>
+              <Tooltip title="Learn more about processing time">
+                <Button
+                  type="text"
+                  icon={<IconHelper.QUESTION_MARK />}
+                  size="small"
+                  onClick={() => setIsModalOpen(true)}
+                />
+              </Tooltip>
+              <span className="font-bold">{processing_item} days</span>
             </div>
-          </div> */}
+
+            <CustomModal
+              open={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              title="Once you confirm, your order will get the green signal for processing"
+              width={700}
+              topPosition="!top-[-500px]"
+            >
+              {/* <ProcessingTimeInfo /> */}
+            </CustomModal>
+          </div>
+
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+            }}
+            className="mt-4"
+          >
+            <Text strong className="block mb-2 text-gray-700">
+              Estimated Delivery
+            </Text>
+            {/* You'll need to import or create PincodeDeliveryCalculator component */}
+            <div className="">
+              <PincodeDeliveryCalculator
+                Production={processing_item}
+                freeDelivery={freeDelivery}
+                deliveryCharges={deliveryCharges}
+              />
+            </div>
+          </motion.div>
         </Card>
 
         {/* File Upload Section */}

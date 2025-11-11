@@ -15,7 +15,6 @@ const App = () => {
   
   useEffect(() => {
     const result=dispatch({ type: "CHECK_LOGIN" });
-    console.log(result.data);
     
   }, []);
   // aos animation

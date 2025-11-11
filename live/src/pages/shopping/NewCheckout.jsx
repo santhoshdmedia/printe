@@ -50,7 +50,6 @@ const NewCheckout = () => {
   const [gstNo, setGstNo] = useState(user.gst_no || "");
   const navigation = useNavigate();
 
-  console.log(user);
   useEffect(() => {
     if (user.name == "") {
       navigation("/login");
@@ -143,7 +142,6 @@ const NewCheckout = () => {
       const allCartItems = _.get(result, "data.data", []);
       const gst = Number(_.get(result, "data.data[0].sgst", 0)) * 2;
       setGstRate(gst / 100);
-      console.log(gstRate, "5455");
 
       if (selectedProducts.length > 0) {
         const selectedIds = selectedProducts.map((p) => p._id);
@@ -272,13 +270,19 @@ const NewCheckout = () => {
   const GET_TOTAL_AMOUNT = () => {
     return GET_SUB_TOTAL() + GET_TAX_TOTAL() + Number(get_delivery_Fee());
   };
-  const get_delivery_Fee = () => {
-    const freeDelivery = cardData.every((item) => item.FreeDelivery);
-    const DelivereyCharge=cardData.map((item)=>item.DeliveryCharges)
-    
-    
-    return freeDelivery ? 0 : DelivereyCharge;
-  };
+const get_delivery_Fee = () => {
+  const freeDelivery = cardData.every((item) => item.FreeDelivery);
+  
+  if (freeDelivery) {
+    return 0;
+  } else {
+    // Sum all delivery charges from items that don't have free delivery
+    const totalDeliveryCharge = cardData.reduce((total, item) => {
+      return total + (item.FreeDelivery ? 0 : item.DeliveryCharges);
+    }, 0);
+    return totalDeliveryCharge;
+  }
+};
 
   const GET_PAYABLE_AMOUNT = () => {
     const total = GET_TOTAL_AMOUNT();
@@ -383,7 +387,6 @@ const NewCheckout = () => {
         payment: payableAmount,
       });
 
-      console.log(orderIds, "order");
 
       const options = {
         key: EnvHelper.RAZORPAY_KEY,
@@ -496,7 +499,6 @@ const NewCheckout = () => {
     return e;
   };
 
-  console.log(cardData, "cardData");
   
   return (
     <Spin

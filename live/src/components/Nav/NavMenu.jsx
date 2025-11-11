@@ -176,11 +176,10 @@ const NavMenu = () => {
                             onMouseEnter={() =>
                               handleHoverState("side_category_id", category._id)
                             }
-                            className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                              hoverStates.side_category_id === category._id
+                            className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${hoverStates.side_category_id === category._id
                                 ? "bg-blue-50 border border-blue-200"
                                 : "hover:bg-gray-50"
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center justify-between">
                               <span className="font-semibold text-gray-800 text-sm">
@@ -188,11 +187,10 @@ const NavMenu = () => {
                               </span>
                               <SafeIcon
                                 icon={IconHelper.RIGHT_ARROW_ICON}
-                                className={`text-xs ${
-                                  hoverStates.side_category_id === category._id
+                                className={`text-xs ${hoverStates.side_category_id === category._id
                                     ? "text-blue-500"
                                     : "text-gray-400"
-                                }`}
+                                  }`}
                               />
                             </div>
                           </div>
@@ -229,20 +227,19 @@ const NavMenu = () => {
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                                   {allSubcategories.map((subcat) => {
                                     const hasProducts = hasVisibleProducts(selectedCategory, subcat._id);
-                                    
+
                                     return (
                                       <div
                                         key={subcat._id}
                                         onMouseEnter={() =>
                                           handleHoverState("sideSubcatId", subcat._id)
                                         }
-                                        className={`p-4 rounded-lg border transition-all duration-200 cursor-pointer ${
-                                          hoverStates.sideSubcatId === subcat._id
-                                            ? hasProducts 
+                                        className={`p-4 rounded-lg border transition-all duration-200 cursor-pointer ${hoverStates.sideSubcatId === subcat._id
+                                            ? hasProducts
                                               ? "border-yellow-300 bg-yellow-50 shadow-md"
                                               : "border-gray-300 bg-gray-50 shadow-md"
                                             : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                                        } ${!hasProducts ? 'opacity-80' : ''}`}
+                                          } ${!hasProducts ? 'opacity-80' : ''}`}
                                       >
                                         {/* Subcategory Image and Name */}
                                         <div className="flex items-center gap-4 mb-3">
@@ -254,10 +251,10 @@ const NavMenu = () => {
                                               {!hasProducts && <ComingSoonBadge />}
                                             </div>
                                             <p className="text-xs text-gray-500 mt-1">
-                                              {hasProducts 
+                                              {hasProducts
                                                 ? `${selectedCategory.product_details?.filter(
-                                                    p => p.sub_category_details === subcat._id && p.is_visible
-                                                  ).length || 0} products`
+                                                  p => p.sub_category_details === subcat._id && p.is_visible
+                                                ).length || 0} products`
                                                 : ''
                                               }
                                             </p>
@@ -283,7 +280,11 @@ const NavMenu = () => {
                                                 >
                                                   <div className="w-8 h-8 rounded border border-gray-200 overflow-hidden flex-shrink-0">
                                                     <img
-                                                      src={_.get(product, "images[0].path", "/placeholder-product.jpg")}
+                                                      src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
+                                                        product,
+                                                        "images[0].path",
+                                                        "/placeholder-product.jpg"
+                                                      )}
                                                       alt={product.name}
                                                       className="w-full h-full object-cover"
                                                       onError={(e) => {
@@ -309,21 +310,21 @@ const NavMenu = () => {
                                         {hasProducts && selectedCategory.product_details?.filter(
                                           p => p.sub_category_details === subcat._id && p.is_visible
                                         ).length > 3 && (
-                                          <div className="mt-3 pt-2 border-t border-gray-100">
-                                            <div
-                                              className="text-xs text-black  font-medium cursor-pointer flex items-center gap-1"
-                                              onClick={() => {
-                                                navigation(
-                                                  `/category/${selectedCategory.main_category_name}/${subcat.sub_category_name}/${selectedCategory._id}/${subcat._id}`
-                                                );
-                                                closeAllDropdowns();
-                                              }}
-                                            >
-                                              View all products
-                                              <SafeIcon icon={IconHelper.RIGHT_ARROW_ICON} className="text-xs" />
+                                            <div className="mt-3 pt-2 border-t border-gray-100">
+                                              <div
+                                                className="text-xs text-black  font-medium cursor-pointer flex items-center gap-1"
+                                                onClick={() => {
+                                                  navigation(
+                                                    `/category/${selectedCategory.main_category_name}/${subcat.sub_category_name}/${selectedCategory._id}/${subcat._id}`
+                                                  );
+                                                  closeAllDropdowns();
+                                                }}
+                                              >
+                                                View all products
+                                                <SafeIcon icon={IconHelper.RIGHT_ARROW_ICON} className="text-xs" />
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
+                                          )}
                                       </div>
                                     );
                                   })}
@@ -397,9 +398,9 @@ const NavMenu = () => {
                 className={`text-[16px] items-center ${showAsMegaMenu ? "" : "relative"
                   }`}
                 ref={(el) =>
-                  (dropdownRefs.current[`category-${category._id}`] = {
-                    current: el,
-                  })
+                (dropdownRefs.current[`category-${category._id}`] = {
+                  current: el,
+                })
                 }
               >
                 <div
@@ -445,15 +446,14 @@ const NavMenu = () => {
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                           {allSubCategories.map((subcat) => {
                             const hasProducts = hasVisibleProducts(category, subcat._id);
-                            
+
                             return (
                               <div
                                 key={subcat._id}
-                                className={`group transition-all duration-300 rounded-lg p-4 border ${
-                                  hasProducts 
+                                className={`group transition-all duration-300 rounded-lg p-4 border ${hasProducts
                                     ? 'bg-white hover:bg-gray-50 border-transparent hover:border-gray-200'
                                     : 'bg-gray-50 border-gray-200 opacity-80'
-                                }`}
+                                  }`}
                               >
                                 {/* Subcategory Title */}
                                 <div
@@ -472,11 +472,10 @@ const NavMenu = () => {
                                   className={`relative pb-2 mb-3 ${hasProducts ? 'cursor-pointer' : 'cursor-default'}`}
                                 >
                                   <div className="flex items-center justify-between">
-                                    <h3 className={`text-lg font-bold flex flex-col items-center gap-2 ${
-                                      hasProducts 
+                                    <h3 className={`text-lg font-bold flex flex-col items-center gap-2 ${hasProducts
                                         ? 'text-gray-800 group-hover:text-yellow-600 transition-colors'
                                         : 'text-gray-500'
-                                    }`}>
+                                      }`}>
                                       {subcat.sub_category_name}
                                       {!hasProducts && <ComingSoonBadge />}
                                     </h3>
@@ -509,7 +508,7 @@ const NavMenu = () => {
                                         >
                                           <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gray-200 group-hover/product:border-yellow-300 transition-all">
                                             <img
-                                              src={_.get(
+                                              src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
                                                 product,
                                                 "images[0].path",
                                                 "/placeholder-product.jpg"
@@ -534,6 +533,22 @@ const NavMenu = () => {
                                     <p className="text-gray-400 text-sm italic">
                                       Guess what’s coming? Stay tuned!
                                     </p>
+                                  </div>
+                                )}
+                                {hasAnyProducts && (
+                                  <div className="mt-2 text-center pt-4 border-t border-gray-200">
+                                    <Link
+                                      to={`/category/${encodeURIComponent(
+                                        category.main_category_name
+                                      )}}/${encodeURIComponent(
+                                        subcat.sub_category_name
+                                      )}/${category._id}/${subcat._id}`}
+                                      className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-yellow-200 to-yellow-500 text-black hover:!text-black rounded-lg  transition-all duration-300 shadow-md hover:shadow-lg font-medium transform hover:scale-105"
+                                      onClick={closeAllDropdowns}
+                                    >
+                                      View All {category.main_category_name}
+                                      <IconHelper.RIGHT_ARROW_ICON className="text-sm" />
+                                    </Link>
                                   </div>
                                 )}
                               </div>
@@ -570,7 +585,7 @@ const NavMenu = () => {
                     >
                       {allSubCategories.map((subcat) => {
                         const hasProducts = hasVisibleProducts(category, subcat._id);
-                        
+
                         return (
                           <div key={subcat._id} className="group">
                             <div
@@ -582,16 +597,15 @@ const NavMenu = () => {
                                   closeAllDropdowns();
                                 }
                               }}
-                              className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-100 flex items-center justify-between transition-colors ${
-                                hasProducts ? 'text-gray-800 cursor-pointer' : 'text-gray-500 cursor-default'
-                              }`}
+                              className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-100 flex items-center justify-between transition-colors ${hasProducts ? 'text-gray-800 cursor-pointer' : 'text-gray-500 cursor-default'
+                                }`}
                             >
                               <div className="flex flex-col items-center gap-2">
                                 {subcat.sub_category_name}
                                 {!hasProducts && <ComingSoonBadge />}
                               </div>
                             </div>
-                            
+
                             {/* Product List - Only show if has visible products */}
                             {hasProducts && (
                               <div className="flex flex-col pl-4">
@@ -618,7 +632,7 @@ const NavMenu = () => {
                           </div>
                         );
                       })}
-                      
+
                       {/* View All Button - Only show if category has visible products */}
                       {hasAnyProducts && (
                         <div className="mt-2 text-center pt-4 border-t border-gray-200">

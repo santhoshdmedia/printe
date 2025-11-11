@@ -14,20 +14,39 @@ const SimilarProducts = ({ category_id, left }) => {
     try {
       setLoading(true);
       const result = await getAllCategoryProducts(category_id);
-      setRelatedProducts(_.get(result, "data.data[0].product", []));
-    } catch {
+      const productDetails = _.get(result, "data.data[0].product", []);
+      
+      // Filter visible products before setting state
+      const visibleProducts = productDetails.filter((p) => p.is_visible === true);
+      setRelatedProducts(visibleProducts);
+    } catch (error) {
+      console.error("Error fetching similar products:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (category_id) {
+      fetchData();
+    }
+  }, [category_id]);
+
+  // Only render if there are visible products
+  if (relatedProducts.length === 0) {
+    return null;
+  }
 
   return (
     <Spin spinning={loading}>
-      <SwiperList left={left} title={"Similar Products"} to={""} data={relatedProducts} type="Product" productCardType="Simple" />
+      <SwiperList 
+        left={left} 
+        title={"Similar Products"} 
+        to={""} 
+        data={relatedProducts} 
+        type="Product" 
+        productCardType="Simple" 
+      />
     </Spin>
   );
 };

@@ -86,7 +86,6 @@ const Product = () => {
 
   // Handle variant changes from ProductDetailVarient
   const handleVariantChange = useCallback((variants) => {
-    console.log("Variants changed to:", variants);
     setSelectedVariants(variants);
   }, []);
 

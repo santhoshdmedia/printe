@@ -535,7 +535,6 @@ const ProductDetails = ({
   const handleUploadImage = (fileString) => {
 
     setCheckOutState((prev) => ({ ...prev, product_design_file: fileString }));
-    console.log(checkOutState.product_design_file,"file");
     
   };
 

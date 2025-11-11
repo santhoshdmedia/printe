@@ -63,7 +63,6 @@ const Login = () => {
     }
      const guest = localStorage.getItem("guest");
           if (user._id && guest != "") {
-            // console.log(`user:${user._id},guest:${guest}`);
             const mergeData={
               guestId:guest,
               id:{

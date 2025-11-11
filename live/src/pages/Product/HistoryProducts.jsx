@@ -11,14 +11,20 @@ import SwiperList from "../../components/Lists/SwiperList";
 const HistoryProducts = ({ left }) => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const fetchData = async () => {
     try {
       setLoading(true);
       const result = await getHistoryProducts();
 
-      setRelatedProducts(_.get(result, "data.data[0].product_details", []));
-    } catch {
+      const productDetails = _.get(result, "data.data[0].product_details", []);
+
+      // Filter BEFORE setting state
+      const visibleProducts = productDetails.filter((p) => p.is_visible === true);
+
+      setRelatedProducts(visibleProducts);
+
+    } catch (error) {
+      console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
     }
