@@ -113,9 +113,8 @@ export const CustomModal = ({
 
   return (
     <div
-      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${
-        isMobile ? "items-end" : "items-center"
-      }`}
+      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${isMobile ? "items-end" : "items-center"
+        }`}
     >
       {/* Backdrop */}
       <motion.div
@@ -131,9 +130,8 @@ export const CustomModal = ({
         initial={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
-        className={`relative bg-white rounded-lg shadow-xl ${
-          isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
-        } overflow-hidden flex flex-col ${className}`}
+        className={`relative bg-white rounded-lg shadow-xl ${isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
+          } overflow-hidden flex flex-col ${className}`}
         style={isMobile ? {} : { width }}
       >
         {/* Header */}
@@ -207,7 +205,7 @@ export const CustomPopover = ({
 const getProductImages = (data) => {
   const images = _.get(data, "images", []);
   if (!images || images.length === 0) return [];
-  
+
   return images.map(image => {
     if (typeof image === 'string') {
       return image;
@@ -224,7 +222,7 @@ const getFirstProductImage = (data) => {
 };
 
 const getRoleFields = (role) => {
-  switch(role) {
+  switch (role) {
     case 'Dealer':
       return {
         quantity: 'Dealer_quantity',
@@ -270,7 +268,7 @@ const ProductDetails = ({
   // Get role-based price
   const getRoleBasedPrice = () => {
     const product_type = _.get(data, "type", "Stand Alone Product");
-    
+
     if (user.role === "Dealer") {
       return product_type === "Stand Alone Product"
         ? _.get(data, "Deler_product_price", 0) || _.get(data, "single_product_price", 0)
@@ -304,7 +302,7 @@ const ProductDetails = ({
   const [freeDelivery, setFreeDelivery] = useState(false);
   const [deliveryCharges, setDeliveryCharges] = useState(100); // Default delivery charges
   const [noDesignUpload, setNoDesignUpload] = useState(false);
-  
+
   const [checkOutState, setCheckOutState] = useState({
     product_image: getFirstProductImage(data),
     product_design_file: "",
@@ -354,14 +352,14 @@ const ProductDetails = ({
   const stockCount = _.get(data, "stock_count", "");
   const productionTime = _.get(data, "Production_time", "");
   const ArrangeTime = _.get(data, "Stock_Arrangement_time", "");
-  const processing_item = stockCount === 0 
-    ? Number(productionTime) + Number(ArrangeTime) 
+  const processing_item = stockCount === 0
+    ? Number(productionTime) + Number(ArrangeTime)
     : Number(productionTime);
 
   // Generate quantity options based on user role
   const generateQuantityOptions = () => {
     const roleFields = getRoleFields(user.role);
-    
+
     if (quantityType === "textbox") {
       const options = [];
       for (let i = dropdownGap; i <= maxQuantity; i += dropdownGap) {
@@ -391,7 +389,7 @@ const ProductDetails = ({
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
       const roleFields = getRoleFields(user.role);
       const firstAvailableItem = quantityDiscounts.find(item => item[roleFields.quantity]);
-      
+
       if (firstAvailableItem) {
         const initialQuantity = Number(firstAvailableItem[roleFields.quantity]);
         const initialDiscount = Number(firstAvailableItem[roleFields.discount] || 0);
@@ -535,7 +533,7 @@ const ProductDetails = ({
   const handleUploadImage = (fileString) => {
 
     setCheckOutState((prev) => ({ ...prev, product_design_file: fileString }));
-    
+
   };
 
   const goToShoppingCart = () => {
@@ -545,12 +543,12 @@ const ProductDetails = ({
   // Handle quantity selection with delivery charges
   const handleQuantitySelect = (selectedQuantity) => {
     const roleFields = getRoleFields(user.role);
-    
+
     if (quantityType === "textbox") {
       const availableDiscounts = quantityDiscounts
         .filter(item => item[roleFields.quantity] && Number(item[roleFields.quantity]) <= selectedQuantity)
         .sort((a, b) => Number(b[roleFields.quantity]) - Number(a[roleFields.quantity]));
-        
+
       const selectedDiscount = availableDiscounts[0];
 
       setQuantity(selectedQuantity);
@@ -566,7 +564,7 @@ const ProductDetails = ({
         });
         setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
         setDeliveryCharges(selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100));
-        
+
         setCheckOutState(prev => ({
           ...prev,
           DeliveryCharges: selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100),
@@ -601,7 +599,7 @@ const ProductDetails = ({
         setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
         const charges = selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
         setDeliveryCharges(charges);
-        
+
         setCheckOutState(prev => ({
           ...prev,
           DeliveryCharges: charges,
@@ -649,7 +647,7 @@ const ProductDetails = ({
 
       setError("");
       const Gst = _.get(data, "GST", 0);
-      
+
       const finalCheckoutState = {
         ...checkOutState,
         sgst: Number(Gst / 2),
@@ -760,19 +758,17 @@ const ProductDetails = ({
             return (
               <div
                 key={item.value}
-                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                  isSelected
-                    ? "border-blue-500 bg-blue-50 shadow-sm"
-                    : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
-                }`}
+                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${isSelected
+                  ? "border-blue-500 bg-blue-50 shadow-sm"
+                  : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
+                  }`}
                 onClick={() => handleQuantitySelect(item.value)}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span
-                      className={`text-base font-medium ${
-                        isSelected ? "text-blue-700" : "text-gray-800"
-                      }`}
+                      className={`text-base font-medium ${isSelected ? "text-blue-700" : "text-gray-800"
+                        }`}
                     >
                       {item.value} {unit}
                     </span>
@@ -801,9 +797,8 @@ const ProductDetails = ({
 
                 <div className="text-right">
                   <p
-                    className={`font-semibold ${
-                      isSelected ? "text-blue-700" : "text-gray-900"
-                    }`}
+                    className={`font-semibold ${isSelected ? "text-blue-700" : "text-gray-900"
+                      }`}
                   >
                     {formatPrice(totalPrice)}
                   </p>
@@ -818,7 +813,7 @@ const ProductDetails = ({
 
         {quantityOptions.length === 0 && (
           <div className="text-center py-4 text-gray-500">
-            No quantity options available 
+            No quantity options available
           </div>
         )}
 
@@ -831,7 +826,7 @@ const ProductDetails = ({
             Bulk Order Inquiry
           </button>
           <p className="text-xs text-gray-500 mt-2 text-center">
-            Prices include all applicable taxes • 
+            Prices include all applicable taxes •
           </p>
         </div>
       </div>
@@ -839,33 +834,77 @@ const ProductDetails = ({
   };
 
   // Share functionality
-  const shareProduct = (platform) => {
+
+  const shareProduct = async (platform) => {
     const productUrl = encodeURIComponent(window.location.href);
     const productName = encodeURIComponent(data.name);
+    const productTitle = encodeURIComponent(_.get(data, "product_description_tittle", ""));
+    const productImage = getFirstProductImage(data);
+
     const shareUrls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${productUrl}`,
-      twitter: `https://twitter.com/intent/tweet?text=Check out this product: ${productName}&url=${productUrl}`,
-      whatsapp: `https://api.whatsapp.com/send?text=Check out this product: ${productName} ${productUrl}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${productUrl}&quote=${productTitle}`,
+      twitter: `https://twitter.com/intent/tweet?text=${productTitle}&url=${productUrl}`,
+      whatsapp: `https://api.whatsapp.com/send?text=${productTitle} - ${productUrl}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${productUrl}&title=${productTitle}`,
+      email: `mailto:?subject=${productTitle}&body=Check out this product: ${productTitle} - ${productUrl}`,
     };
 
-    if (shareUrls[platform]) {
+    // For platforms that support image sharing
+    if (platform === 'facebook' && productImage) {
+      // Facebook doesn't directly support image parameter, but we can try with Open Graph tags
       window.open(shareUrls[platform], "_blank");
     }
+    else if (platform === 'whatsapp' && productImage) {
+      // WhatsApp - include image in the message
+      const message = `${productTitle} - ${window.location.href}`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, "_blank");
+    }
+    else if (platform === 'email') {
+      window.location.href = shareUrls[platform];
+    }
+    else if (shareUrls[platform]) {
+      window.open(shareUrls[platform], "_blank");
+    }
+
     setShowShareMenu(false);
   };
 
+  // Enhanced Native Share Function with Image
   const handleNativeShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({
+        const shareData = {
           title: data.name,
-          text: "Check out this amazing product!",
+          text: _.get(data, "product_description_tittle", ""),
           url: window.location.href,
-        });
+        };
+
+        // Add image if available and supported
+        const productImage = getFirstProductImage(data);
+        if (productImage) {
+          try {
+            // Convert image URL to blob for sharing
+            const response = await fetch(productImage);
+            const blob = await response.blob();
+            const file = new File([blob], 'product-image.jpg', { type: blob.type });
+
+            // Check if files can be shared
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              shareData.files = [file];
+            }
+          } catch (error) {
+            console.log('Image sharing not supported, sharing without image');
+          }
+        }
+
+        await navigator.share(shareData);
       } catch (err) {
         console.error("Error sharing:", err);
+        // Fallback to custom share menu
+        setShowShareMenu(!showShareMenu);
       }
     } else {
+      // Fallback for browsers that don't support Web Share API
       setShowShareMenu(!showShareMenu);
     }
   };
@@ -961,8 +1000,8 @@ const ProductDetails = ({
     }
   };
 
-  const handleDesignRemove=()=>{
-    setCheckOutState(checkOutState.product_design_file=="")
+  const handleDesignRemove = () => {
+    setCheckOutState(checkOutState.product_design_file == "")
   }
 
   return (
@@ -994,7 +1033,7 @@ const ProductDetails = ({
               >
                 <IoShareSocial />
               </button>
-              
+
               <motion.div
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{
@@ -1009,13 +1048,13 @@ const ProductDetails = ({
                   <span className="text-white/70 text-xs line-through">
                     ₹
                     {_.get(data, "MRP_price", 0) ||
-                      Number(_.get(checkOutState, "product_price", 0)) }
+                      Number(_.get(checkOutState, "product_price", 0))}
                   </span>
                   <h3 className="text-white text-base font-semibold">
                     {quantity
                       ? formatPrice(
-                          Number(_.get(checkOutState, "product_price", 0))
-                        )
+                        Number(_.get(checkOutState, "product_price", 0))
+                      )
                       : "Select Qty"}
                   </h3>
                 </div>
@@ -1049,8 +1088,8 @@ const ProductDetails = ({
                   <h3 className="text-white text-base font-semibold">
                     {quantity
                       ? formatPrice(
-                          Number(_.get(checkOutState, "product_price", 0))
-                        )
+                        Number(_.get(checkOutState, "product_price", 0))
+                      )
                       : "Select Qty"}
                   </h3>
                 </div>
@@ -1166,15 +1205,14 @@ const ProductDetails = ({
                                     index
                                   )
                                 }
-                                className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
-                                  _.get(
-                                    currentPriceSplitup,
-                                    `[${variant.variant_name}]`,
-                                    ""
-                                  ) === option.value
-                                    ? "border-blue-500 shadow-md"
-                                    : "border-gray-300 hover:border-blue-400"
-                                }`}
+                                className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${_.get(
+                                  currentPriceSplitup,
+                                  `[${variant.variant_name}]`,
+                                  ""
+                                ) === option.value
+                                  ? "border-blue-500 shadow-md"
+                                  : "border-gray-300 hover:border-blue-400"
+                                  }`}
                                 style={{ width: "50px", height: "50px" }}
                               >
                                 <img
@@ -1235,7 +1273,7 @@ const ProductDetails = ({
                     <div>
                       <div>
                         You saved {formatPrice(calculateMRPSavings())} <br></br>
-                        {discountPercentage.percentage == 0 ? "select more quantity to get extra discount":""}
+                        {discountPercentage.percentage == 0 ? "select more quantity to get extra discount" : ""}
                       </div>
                       {quantity && calculateSavings() > 0 && (
                         <div className="mt-1">
@@ -1358,7 +1396,7 @@ const ProductDetails = ({
             >
               Proceed without Design
             </Checkbox>
-               
+
             {!noDesignUpload && (
               <div className="flex items-center gap-2">
                 <Text>Already have a Design</Text>
@@ -1393,23 +1431,23 @@ const ProductDetails = ({
                     <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
                       <div className="md:order-1">
                         <Button
-                        type="link"
-                        icon={<EyeOutlined />}
-                        onClick={() => setDesignPreviewVisible(true)}
-                        className="md:order-1"
-                      >
-                        View Design
-                      </Button>
-                      <Button
-                        type="link"
-                        // icon={<EyeOutlined />}
-                        onClick={handleDesignRemove}
-                        className="md:order-1"
-                      >
-                        remove
-                      </Button>
+                          type="link"
+                          icon={<EyeOutlined />}
+                          onClick={() => setDesignPreviewVisible(true)}
+                          className="md:order-1"
+                        >
+                          View Design
+                        </Button>
+                        <Button
+                          type="link"
+                          // icon={<EyeOutlined />}
+                          onClick={handleDesignRemove}
+                          className="md:order-1"
+                        >
+                          remove
+                        </Button>
                       </div>
-                      
+
                       <Checkbox
                         checked={checked}
                         onChange={(e) => setChecked(e.target.checked)}
@@ -1475,7 +1513,7 @@ const ProductDetails = ({
           </div>
 
           <Divider className="!my-4" />
-          
+
           {/* Design Preview Modal */}
           <CustomModal
             open={designPreviewVisible}

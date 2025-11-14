@@ -296,9 +296,8 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
         <img
           ref={imgRef}
           src={currentImage}
-          className={`absolute inset-0 w-full h-full object-cover rounded-xl transition-all duration-300 ${
-            isTransitioning ? "opacity-70 scale-105" : "opacity-100 scale-100"
-          } hover:scale-105`}
+          className={`absolute inset-0 w-full h-full object-cover rounded-xl transition-all duration-300 ${isTransitioning ? "opacity-70 scale-105" : "opacity-100 scale-100"
+            } hover:scale-105`}
           alt={data?.name || "product"}
           onError={() => handleImageError(currentImage)}
         />
@@ -348,11 +347,10 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
       <Tooltip title={`${isAutoPlaying ? "Pause" : "Play"} slideshow`}>
         <button
           onClick={toggleAutoPlay}
-          className={`absolute bottom-4 left-4 w-10 h-10 p-2 flex justify-center items-center text-xl rounded-full z-30 shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white ${
-            isAutoPlaying
-              ? "bg-red-500 text-white hover:bg-red-600"
-              : "bg-white text-gray-600 hover:bg-gray-100"
-          }`}
+          className={`absolute bottom-4 left-4 w-10 h-10 p-2 flex justify-center items-center text-xl rounded-full z-30 shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white ${isAutoPlaying
+            ? "bg-red-500 text-white hover:bg-red-600"
+            : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
           aria-label={isAutoPlaying ? "Pause slideshow" : "Play slideshow"}
         >
           {isAutoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
@@ -361,10 +359,9 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     );
 
   const renderActionButtons = () => (
-    <div 
-      className={`flex flex-col gap-2 absolute top-4 right-4 z-40 transition-all duration-300 ${
-        isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
-      }`}
+    <div
+      className={`flex flex-col gap-2 absolute top-4 right-4 z-40 transition-all duration-300 ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+        }`}
     >
       {/* Wishlist Button */}
       <Tooltip
@@ -372,9 +369,8 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
         placement="left"
       >
         <button
-          className={`p-2 w-10 h-10 !border-none bg-white bg-opacity-90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 focus:outline-none flex items-center justify-center ${
-            isFav ? "text-red-500" : "text-gray-600 hover:text-red-500"
-          }`}
+          className={`p-2 w-10 h-10 !border-none bg-white bg-opacity-90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 focus:outline-none flex items-center justify-center ${isFav ? "text-red-500" : "text-gray-600 hover:text-red-500"
+            }`}
           onClick={handleAddWishList}
           aria-label={isFav ? "Remove from wishlist" : "Add to wishlist"}
         >
@@ -388,6 +384,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
           )}
         </button>
       </Tooltip>
+
 
       {/* Share Button */}
       <Tooltip title="Share this product" placement="left">
@@ -435,9 +432,8 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   const renderOverviewButton = () => (
     <Tooltip title="View product details">
       <button
-        className={`absolute top-4 left-4 p-2 bg-white bg-opacity-90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          isHovered ? 'opacity-100' : 'opacity-0'
-        }`}
+        className={`absolute top-4 left-4 p-2 bg-white bg-opacity-90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isHovered ? 'opacity-100' : 'opacity-0'
+          }`}
         onClick={handleMoveToOverview}
         aria-label="View product details"
       >
@@ -456,11 +452,10 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
         {processedImages.map((imageUrl, index) => (
           <button
             key={index}
-            className={`flex-shrink-0 bg-white border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              activeIndex === index
-                ? "border-blue-500 shadow-md"
-                : "border-gray-200 hover:border-gray-400"
-            }`}
+            className={`flex-shrink-0 bg-white border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeIndex === index
+              ? "border-blue-500 shadow-md"
+              : "border-gray-200 hover:border-gray-400"
+              }`}
             onClick={() => handleThumbnailClick(index)}
             style={{ width: "80px", height: "80px" }}
             role="tab"
@@ -505,7 +500,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
       </div>
 
       {/* Main Image Container */}
-      <div 
+      <div
         ref={containerRef}
         className="relative w-full h-0 pb-[100%] bg-white border rounded-xl overflow-hidden group"
         onMouseEnter={handleMouseEnter}
