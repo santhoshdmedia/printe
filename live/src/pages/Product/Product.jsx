@@ -165,7 +165,7 @@ const Product = () => {
           name="keywords" 
           content={getProductValue("seo_keywords", productName)} 
         />
-        <link rel="icon" type="image/svg+xml" href={`${productImg}`} />
+        <meta property="og:image" content={`${productImg}`} />
       </Helmet>
 
       {/* Breadcrumbs */}
