@@ -38,6 +38,8 @@ import {
   LinkedinShareButton,
   WhatsappIcon,
   WhatsappShareButton,
+  PinterestIcon,
+  TwitterIcon,
 } from "react-share";
 import { IoShareSocial } from "react-icons/io5";
 import { MdOutlineMailOutline } from "react-icons/md";
@@ -85,6 +87,7 @@ import {
   resendWhatsAppOtp,
 } from "../../helper/api_helper";
 
+// Custom Modal Component
 export const CustomModal = ({
   open,
   onClose,
@@ -113,8 +116,9 @@ export const CustomModal = ({
 
   return (
     <div
-      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${isMobile ? "items-end" : "items-center"
-        }`}
+      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${
+        isMobile ? "items-end" : "items-center"
+      }`}
     >
       {/* Backdrop */}
       <motion.div
@@ -130,8 +134,9 @@ export const CustomModal = ({
         initial={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
-        className={`relative bg-white rounded-lg shadow-xl ${isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
-          } overflow-hidden flex flex-col ${className}`}
+        className={`relative bg-white rounded-lg shadow-xl ${
+          isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
+        } overflow-hidden flex flex-col ${className}`}
         style={isMobile ? {} : { width }}
       >
         {/* Header */}
@@ -206,14 +211,16 @@ const getProductImages = (data) => {
   const images = _.get(data, "images", []);
   if (!images || images.length === 0) return [];
 
-  return images.map(image => {
-    if (typeof image === 'string') {
-      return image;
-    } else if (image && image.path) {
-      return image.path;
-    }
-    return '';
-  }).filter(Boolean);
+  return images
+    .map((image) => {
+      if (typeof image === "string") {
+        return image;
+      } else if (image && image.path) {
+        return image.path;
+      }
+      return "";
+    })
+    .filter(Boolean);
 };
 
 const getFirstProductImage = (data) => {
@@ -223,31 +230,178 @@ const getFirstProductImage = (data) => {
 
 const getRoleFields = (role) => {
   switch (role) {
-    case 'Dealer':
+    case "Dealer":
       return {
-        quantity: 'Dealer_quantity',
-        discount: 'Dealer_discount',
-        freeDelivery: 'free_delivery_dealer',
-        recommended: 'recommended_stats_dealer',
-        deliveryCharges: 'delivery_charges_dealer'
+        quantity: "Dealer_quantity",
+        discount: "Dealer_discount",
+        freeDelivery: "free_delivery_dealer",
+        recommended: "recommended_stats_dealer",
+        deliveryCharges: "delivery_charges_dealer",
       };
-    case 'Corporate':
+    case "Corporate":
       return {
-        quantity: 'Corporate_quantity',
-        discount: 'Corporate_discount',
-        freeDelivery: 'free_delivery_corporate',
-        recommended: 'recommended_stats_corporate',
-        deliveryCharges: 'delivery_charges_corporate'
+        quantity: "Corporate_quantity",
+        discount: "Corporate_discount",
+        freeDelivery: "free_delivery_corporate",
+        recommended: "recommended_stats_corporate",
+        deliveryCharges: "delivery_charges_corporate",
       };
     default:
       return {
-        quantity: 'Customer_quantity',
-        discount: 'Customer_discount',
-        freeDelivery: 'free_delivery_customer',
-        recommended: 'recommended_stats_customer',
-        deliveryCharges: 'delivery_charges_customer'
+        quantity: "Customer_quantity",
+        discount: "Customer_discount",
+        freeDelivery: "free_delivery_customer",
+        recommended: "recommended_stats_customer",
+        deliveryCharges: "delivery_charges_customer",
       };
   }
+};
+
+// Enhanced Share Functionality
+const useShareProduct = (data) => {
+  const shareProduct = async (platform) => {
+    try {
+      const productUrl = window.location.href;
+      const productName = data.name || "Product";
+      const productDescription =
+        _.get(data, "product_description_tittle", "") || "Check out this product";
+      const productImage = getFirstProductImage(data);
+
+      const shareData = {
+        title: productName,
+        text: productDescription,
+        url: productUrl,
+      };
+
+      // Platform-specific sharing
+      switch (platform) {
+        case "native":
+          if (navigator.share) {
+            if (productImage) {
+              try {
+                // Convert image to blob for sharing
+                const response = await fetch(productImage);
+                const blob = await response.blob();
+                const file = new File([blob], "product-image.jpg", {
+                  type: blob.type,
+                });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                  shareData.files = [file];
+                }
+              } catch (error) {
+                console.log("Image sharing failed, sharing without image");
+              }
+            }
+            await navigator.share(shareData);
+          } else {
+            // Fallback to custom share menu
+            return "fallback";
+          }
+          break;
+
+        case "whatsapp":
+          const whatsappMessage = `${productName} - ${productDescription}\n${productUrl}`;
+          if (productImage) {
+            // For WhatsApp, we can try to share image via native share
+            if (navigator.share) {
+              try {
+                const response = await fetch(productImage);
+                const blob = await response.blob();
+                const file = new File([blob], "product.jpg", { type: blob.type });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                  await navigator.share({
+                    files: [file],
+                    text: whatsappMessage,
+                  });
+                  break;
+                }
+              } catch (error) {
+                console.log("Direct image share failed");
+              }
+            }
+          }
+          window.open(
+            `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappMessage)}`,
+            "_blank"
+          );
+          break;
+
+        case "facebook":
+          window.open(
+            `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+              productUrl
+            )}&quote=${encodeURIComponent(productDescription)}`,
+            "_blank",
+            "width=600,height=400"
+          );
+          break;
+
+        case "pinterest":
+          if (productImage) {
+            window.open(
+              `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(
+                productUrl
+              )}&media=${encodeURIComponent(productImage)}&description=${encodeURIComponent(
+                productDescription
+              )}`,
+              "_blank",
+              "width=750,height=600"
+            );
+          } else {
+            window.open(
+              `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(
+                productUrl
+              )}&description=${encodeURIComponent(productDescription)}`,
+              "_blank"
+            );
+          }
+          break;
+
+        case "twitter":
+          window.open(
+            `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+              productDescription
+            )}&url=${encodeURIComponent(productUrl)}`,
+            "_blank",
+            "width=550,height=420"
+          );
+          break;
+
+        case "linkedin":
+          window.open(
+            `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+              productUrl
+            )}`,
+            "_blank"
+          );
+          break;
+
+        case "email":
+          const emailBody = productImage
+            ? `${productDescription}%0A%0A${productUrl}%0A%0AProduct Image: ${productImage}`
+            : `${productDescription}%0A%0A${productUrl}`;
+          window.location.href = `mailto:?subject=${encodeURIComponent(
+            productName
+          )}&body=${emailBody}`;
+          break;
+
+        default:
+          break;
+      }
+
+      // Analytics or tracking can be added here
+      console.log(`Shared via ${platform}`);
+      return "success";
+    } catch (error) {
+      console.error("Sharing failed:", error);
+      toast.error("Sharing failed. Please try again.");
+      return "error";
+    }
+  };
+
+  return { shareProduct };
 };
 
 const ProductDetails = ({
@@ -264,6 +418,7 @@ const ProductDetails = ({
   const [form] = Form.useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { shareProduct } = useShareProduct(data);
 
   // Get role-based price
   const getRoleBasedPrice = () => {
@@ -300,7 +455,7 @@ const ProductDetails = ({
   const [error, setError] = useState("");
   const [maximum_quantity, setMaximumQuantity] = useState();
   const [freeDelivery, setFreeDelivery] = useState(false);
-  const [deliveryCharges, setDeliveryCharges] = useState(100); // Default delivery charges
+  const [deliveryCharges, setDeliveryCharges] = useState(100);
   const [noDesignUpload, setNoDesignUpload] = useState(false);
 
   const [checkOutState, setCheckOutState] = useState({
@@ -352,9 +507,10 @@ const ProductDetails = ({
   const stockCount = _.get(data, "stock_count", "");
   const productionTime = _.get(data, "Production_time", "");
   const ArrangeTime = _.get(data, "Stock_Arrangement_time", "");
-  const processing_item = stockCount === 0
-    ? Number(productionTime) + Number(ArrangeTime)
-    : Number(productionTime);
+  const processing_item =
+    stockCount === 0
+      ? Number(productionTime) + Number(ArrangeTime)
+      : Number(productionTime);
 
   // Generate quantity options based on user role
   const generateQuantityOptions = () => {
@@ -368,7 +524,7 @@ const ProductDetails = ({
       return options;
     } else {
       return quantityDiscounts
-        .filter(item => item[roleFields.quantity])
+        .filter((item) => item[roleFields.quantity])
         .map((item) => ({
           value: Number(item[roleFields.quantity]),
           label: `${item[roleFields.quantity]}`,
@@ -376,7 +532,7 @@ const ProductDetails = ({
           discount: Number(item[roleFields.discount] || 0),
           uuid: item.uniqe_id,
           stats: item[roleFields.recommended] || "No comments",
-          deliveryCharges: Number(item[roleFields.deliveryCharges] || 100)
+          deliveryCharges: Number(item[roleFields.deliveryCharges] || 100),
         }))
         .sort((a, b) => a.value - b.value);
     }
@@ -388,13 +544,17 @@ const ProductDetails = ({
   useEffect(() => {
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
       const roleFields = getRoleFields(user.role);
-      const firstAvailableItem = quantityDiscounts.find(item => item[roleFields.quantity]);
+      const firstAvailableItem = quantityDiscounts.find(
+        (item) => item[roleFields.quantity]
+      );
 
       if (firstAvailableItem) {
         const initialQuantity = Number(firstAvailableItem[roleFields.quantity]);
         const initialDiscount = Number(firstAvailableItem[roleFields.discount] || 0);
         const initialFreeDelivery = firstAvailableItem[roleFields.freeDelivery] || false;
-        const initialDeliveryCharges = initialFreeDelivery ? 0 : Number(firstAvailableItem[roleFields.deliveryCharges] || 100);
+        const initialDeliveryCharges = initialFreeDelivery
+          ? 0
+          : Number(firstAvailableItem[roleFields.deliveryCharges] || 100);
 
         setQuantity(initialQuantity);
         setDiscountPercentage({
@@ -403,7 +563,7 @@ const ProductDetails = ({
         });
         setFreeDelivery(initialFreeDelivery);
         setDeliveryCharges(initialDeliveryCharges);
-        setCheckOutState(prev => ({
+        setCheckOutState((prev) => ({
           ...prev,
           product_quantity: initialQuantity,
           DeliveryCharges: initialDeliveryCharges,
@@ -416,7 +576,7 @@ const ProductDetails = ({
       setDeliveryCharges(100);
       setMaximumQuantity(maxQuantity);
       setQuantity(null);
-      setCheckOutState(prev => ({
+      setCheckOutState((prev) => ({
         ...prev,
         product_quantity: 0,
         DeliveryCharges: 100,
@@ -424,6 +584,14 @@ const ProductDetails = ({
       }));
     }
   }, [quantityDiscounts, quantityType, maxQuantity, user.role]);
+
+  // Enhanced Share Handler
+  const handleShare = async () => {
+    const result = await shareProduct("native");
+    if (result === "fallback") {
+      setShowShareMenu(true);
+    }
+  };
 
   // Rating calculations
   useEffect(() => {
@@ -531,9 +699,7 @@ const ProductDetails = ({
 
   // Handle file upload
   const handleUploadImage = (fileString) => {
-
     setCheckOutState((prev) => ({ ...prev, product_design_file: fileString }));
-
   };
 
   const goToShoppingCart = () => {
@@ -546,8 +712,15 @@ const ProductDetails = ({
 
     if (quantityType === "textbox") {
       const availableDiscounts = quantityDiscounts
-        .filter(item => item[roleFields.quantity] && Number(item[roleFields.quantity]) <= selectedQuantity)
-        .sort((a, b) => Number(b[roleFields.quantity]) - Number(a[roleFields.quantity]));
+        .filter(
+          (item) =>
+            item[roleFields.quantity] &&
+            Number(item[roleFields.quantity]) <= selectedQuantity
+        )
+        .sort(
+          (a, b) =>
+            Number(b[roleFields.quantity]) - Number(a[roleFields.quantity])
+        );
 
       const selectedDiscount = availableDiscounts[0];
 
@@ -563,18 +736,24 @@ const ProductDetails = ({
           percentage: Number(selectedDiscount[roleFields.discount] || 0),
         });
         setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
-        setDeliveryCharges(selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100));
+        setDeliveryCharges(
+          selectedDiscount[roleFields.freeDelivery]
+            ? 0
+            : Number(selectedDiscount[roleFields.deliveryCharges] || 100)
+        );
 
-        setCheckOutState(prev => ({
+        setCheckOutState((prev) => ({
           ...prev,
-          DeliveryCharges: selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100),
+          DeliveryCharges: selectedDiscount[roleFields.freeDelivery]
+            ? 0
+            : Number(selectedDiscount[roleFields.deliveryCharges] || 100),
           FreeDelivery: selectedDiscount[roleFields.freeDelivery] || false,
         }));
       } else {
         setDiscountPercentage({ uuid: "", percentage: 0 });
         setFreeDelivery(false);
         setDeliveryCharges(100);
-        setCheckOutState(prev => ({
+        setCheckOutState((prev) => ({
           ...prev,
           DeliveryCharges: 100,
           FreeDelivery: false,
@@ -597,10 +776,12 @@ const ProductDetails = ({
           percentage: Number(selectedDiscount[roleFields.discount] || 0),
         });
         setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
-        const charges = selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
+        const charges = selectedDiscount[roleFields.freeDelivery]
+          ? 0
+          : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
         setDeliveryCharges(charges);
 
-        setCheckOutState(prev => ({
+        setCheckOutState((prev) => ({
           ...prev,
           DeliveryCharges: charges,
           FreeDelivery: selectedDiscount[roleFields.freeDelivery] || false,
@@ -609,7 +790,7 @@ const ProductDetails = ({
         setDiscountPercentage({ uuid: "", percentage: 0 });
         setFreeDelivery(false);
         setDeliveryCharges(100);
-        setCheckOutState(prev => ({
+        setCheckOutState((prev) => ({
           ...prev,
           DeliveryCharges: 100,
           FreeDelivery: false,
@@ -657,7 +838,9 @@ const ProductDetails = ({
         FreeDelivery: freeDelivery,
         DeliveryCharges: deliveryCharges,
         noCustomtation: noDesignUpload,
-        final_total: Number(checkOutState?.product_price * checkOutState.product_quantity) + (freeDelivery ? 0 : deliveryCharges),
+        final_total:
+          Number(checkOutState?.product_price * checkOutState.product_quantity) +
+          (freeDelivery ? 0 : deliveryCharges),
       };
 
       const result = await addToShoppingCart(finalCheckoutState);
@@ -758,17 +941,19 @@ const ProductDetails = ({
             return (
               <div
                 key={item.value}
-                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${isSelected
-                  ? "border-blue-500 bg-blue-50 shadow-sm"
-                  : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
-                  }`}
+                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-50 shadow-sm"
+                    : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
+                }`}
                 onClick={() => handleQuantitySelect(item.value)}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span
-                      className={`text-base font-medium ${isSelected ? "text-blue-700" : "text-gray-800"
-                        }`}
+                      className={`text-base font-medium ${
+                        isSelected ? "text-blue-700" : "text-gray-800"
+                      }`}
                     >
                       {item.value} {unit}
                     </span>
@@ -783,7 +968,7 @@ const ProductDetails = ({
                     {quantityType === "dropdown" && item.discount > 0 && (
                       <span className="text-green-600 text-sm font-medium inline-flex items-center">
                         <CheckCircleOutlined className="mr-1" />
-                        {item.discount}%  discount
+                        {item.discount}% discount
                       </span>
                     )}
                     {quantityType === "dropdown" && item.Free_Delivery && (
@@ -797,8 +982,9 @@ const ProductDetails = ({
 
                 <div className="text-right">
                   <p
-                    className={`font-semibold ${isSelected ? "text-blue-700" : "text-gray-900"
-                      }`}
+                    className={`font-semibold ${
+                      isSelected ? "text-blue-700" : "text-gray-900"
+                    }`}
                   >
                     {formatPrice(totalPrice)}
                   </p>
@@ -831,82 +1017,6 @@ const ProductDetails = ({
         </div>
       </div>
     );
-  };
-
-  // Share functionality
-
-  const shareProduct = async (platform) => {
-    const productUrl = encodeURIComponent(window.location.href);
-    const productName = encodeURIComponent(data.name);
-    const productTitle = encodeURIComponent(_.get(data, "product_description_tittle", ""));
-    const productImage = getFirstProductImage(data);
-
-    const shareUrls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${productUrl}&quote=${productTitle}`,
-      twitter: `https://twitter.com/intent/tweet?text=${productTitle}&url=${productUrl}`,
-      whatsapp: `https://api.whatsapp.com/send?text=${productTitle} - ${productUrl}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${productUrl}&title=${productTitle}`,
-      email: `mailto:?subject=${productTitle}&body=Check out this product: ${productTitle} - ${productUrl}`,
-    };
-
-    // For platforms that support image sharing
-    if (platform === 'facebook' && productImage) {
-      // Facebook doesn't directly support image parameter, but we can try with Open Graph tags
-      window.open(shareUrls[platform], "_blank");
-    }
-    else if (platform === 'whatsapp' && productImage) {
-      // WhatsApp - include image in the message
-      const message = `${productTitle} - ${window.location.href}`;
-      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, "_blank");
-    }
-    else if (platform === 'email') {
-      window.location.href = shareUrls[platform];
-    }
-    else if (shareUrls[platform]) {
-      window.open(shareUrls[platform], "_blank");
-    }
-
-    setShowShareMenu(false);
-  };
-
-  // Enhanced Native Share Function with Image
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        const shareData = {
-          title: data.name,
-          text: _.get(data, "product_description_tittle", ""),
-          url: window.location.href,
-        };
-
-        // Add image if available and supported
-        const productImage = getFirstProductImage(data);
-        if (productImage) {
-          try {
-            // Convert image URL to blob for sharing
-            const response = await fetch(productImage);
-            const blob = await response.blob();
-            const file = new File([blob], 'product-image.jpg', { type: blob.type });
-
-            // Check if files can be shared
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-              shareData.files = [file];
-            }
-          } catch (error) {
-            console.log('Image sharing not supported, sharing without image');
-          }
-        }
-
-        await navigator.share(shareData);
-      } catch (err) {
-        console.error("Error sharing:", err);
-        // Fallback to custom share menu
-        setShowShareMenu(!showShareMenu);
-      }
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      setShowShareMenu(!showShareMenu);
-    }
   };
 
   // Bulk order functions
@@ -967,13 +1077,18 @@ const ProductDetails = ({
   const ProcessingTimeInfo = () => (
     <div className="max-h-[400px] overflow-y-auto text-gray-700">
       <Paragraph>
-        After our <b>designing team</b> completes your design, you'll receive a <b>WhatsApp message</b> from us. You just need to reply "Yes" — and we'll immediately start processing your order to the next step.
+        After our <b>designing team</b> completes your design, you'll receive a{" "}
+        <b>WhatsApp message</b> from us. You just need to reply "Yes" — and we'll
+        immediately start processing your order to the next step.
       </Paragraph>
       <Paragraph>
-        Please note that <b>delivery time may delay</b>, but don't worry — your order is <b>100% safe and secure</b> and will reach your <b>doorstep</b>.
+        Please note that <b>delivery time may delay</b>, but don't worry — your order is{" "}
+        <b>100% safe and secure</b> and will reach your <b>doorstep</b>.
       </Paragraph>
       <Paragraph>
-        However, kindly note that <b>returns or exchanges are not applicable for customized products</b> due to their personalized nature. So please share your <b>expectations clearly</b> — we'll make sure your order is prepared <b>perfectly</b>.
+        However, kindly note that <b>returns or exchanges are not applicable for customized products</b>{" "}
+        due to their personalized nature. So please share your <b>expectations clearly</b>{" "}
+        — we'll make sure your order is prepared <b>perfectly</b>.
       </Paragraph>
       <Alert
         message="If you place an order without a custom design, it will be delivered within 3–4 working days."
@@ -1001,8 +1116,8 @@ const ProductDetails = ({
   };
 
   const handleDesignRemove = () => {
-    setCheckOutState(checkOutState.product_design_file == "")
-  }
+    setCheckOutState({ ...checkOutState, product_design_file: "" });
+  };
 
   return (
     <Spin
@@ -1028,10 +1143,10 @@ const ProductDetails = ({
           <div className="w-full md:w-auto flex flex-col md:flex-row items-start md:items-center gap-3 md:relative">
             <div className="md:hidden flex flex-row-reverse items-center gap-3 w-full justify-between my-2">
               <button
-                onClick={handleNativeShare}
-                className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300"
+                onClick={handleShare}
+                className="bg-[#f2c41a] hover:bg-[#e6b800] text-black p-3 rounded-full shadow-md transition-all duration-300 hover:scale-105"
               >
-                <IoShareSocial />
+                <IoShareSocial size={18} />
               </button>
 
               <motion.div
@@ -1052,9 +1167,7 @@ const ProductDetails = ({
                   </span>
                   <h3 className="text-white text-base font-semibold">
                     {quantity
-                      ? formatPrice(
-                        Number(_.get(checkOutState, "product_price", 0))
-                      )
+                      ? formatPrice(Number(_.get(checkOutState, "product_price", 0)))
                       : "Select Qty"}
                   </h3>
                 </div>
@@ -1063,10 +1176,10 @@ const ProductDetails = ({
 
             <div className="hidden md:flex items-center gap-3">
               <button
-                onClick={handleNativeShare}
-                className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300 hidden"
+                onClick={handleShare}
+                className="bg-[#f2c41a] hover:bg-[#e6b800] text-black p-3 rounded-full shadow-md transition-all duration-300 hover:scale-105"
               >
-                <IoShareSocial />
+                <IoShareSocial size={18} />
               </button>
 
               <motion.div
@@ -1087,41 +1200,89 @@ const ProductDetails = ({
                   </span>
                   <h3 className="text-white text-base font-semibold">
                     {quantity
-                      ? formatPrice(
-                        Number(_.get(checkOutState, "product_price", 0))
-                      )
+                      ? formatPrice(Number(_.get(checkOutState, "product_price", 0)))
                       : "Select Qty"}
                   </h3>
                 </div>
               </motion.div>
             </div>
 
+            {/* Share Menu */}
             <AnimatePresence>
               {showShareMenu && (
                 <CustomPopover
                   open={showShareMenu}
                   onClose={() => setShowShareMenu(false)}
-                  className="w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200"
+                  className="w-64 bg-white rounded-xl shadow-2xl z-50 p-4 border border-gray-200"
                 >
-                  <p className="text-xs text-gray-500 font-semibold p-2">
-                    Share via
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => shareProduct("facebook")}
-                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 transition-all"
-                    >
-                      <FacebookIcon size={35} round />
-                      <span className="text-xs mt-1">Facebook</span>
-                    </button>
+                  <div className="text-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">Share Product</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Share this amazing product with others
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 mb-4">
                     <button
                       onClick={() => shareProduct("whatsapp")}
-                      className="flex flex-col items-center justify-center p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-500 transition-all"
+                      className="flex flex-col items-center justify-center p-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-600 transition-all hover:scale-105 hover:shadow-md"
                     >
-                      <WhatsappIcon size={35} round />
-                      <span className="text-xs mt-1">WhatsApp</span>
+                      <WhatsappIcon size={40} round />
+                      <span className="text-xs mt-2 font-medium">WhatsApp</span>
+                    </button>
+
+                    <button
+                      onClick={() => shareProduct("facebook")}
+                      className="flex flex-col items-center justify-center p-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-105 hover:shadow-md"
+                    >
+                      <FacebookIcon size={40} round />
+                      <span className="text-xs mt-2 font-medium">Facebook</span>
+                    </button>
+
+                    <button
+                      onClick={() => shareProduct("pinterest")}
+                      className="flex flex-col items-center justify-center p-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-all hover:scale-105 hover:shadow-md"
+                    >
+                      <PinterestIcon size={40} round />
+                      <span className="text-xs mt-2 font-medium">Pinterest</span>
+                    </button>
+
+                    <button
+                      onClick={() => shareProduct("twitter")}
+                      className="flex flex-col items-center justify-center p-3 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-500 transition-all hover:scale-105 hover:shadow-md"
+                    >
+                      <TwitterIcon size={40} round />
+                      <span className="text-xs mt-2 font-medium">Twitter</span>
+                    </button>
+
+                    <button
+                      onClick={() => shareProduct("linkedin")}
+                      className="flex flex-col items-center justify-center p-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 transition-all hover:scale-105 hover:shadow-md"
+                    >
+                      <LinkedinIcon size={40} round />
+                      <span className="text-xs mt-2 font-medium">LinkedIn</span>
+                    </button>
+
+                    <button
+                      onClick={() => shareProduct("email")}
+                      className="flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 transition-all hover:scale-105 hover:shadow-md"
+                    >
+                      <MdOutlineMailOutline size={40} className="rounded-full bg-gray-200 p-2" />
+                      <span className="text-xs mt-2 font-medium">Email</span>
                     </button>
                   </div>
+
+                  {navigator.share && (
+                    <div className="border-t border-gray-100 pt-3">
+                      <button
+                        onClick={() => shareProduct("native")}
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium text-sm hover:from-purple-600 hover:to-purple-700 transition-all hover:shadow-lg"
+                      >
+                        <IoShareSocial className="text-lg" />
+                        Share via System
+                      </button>
+                    </div>
+                  )}
                 </CustomPopover>
               )}
             </AnimatePresence>
@@ -1139,7 +1300,7 @@ const ProductDetails = ({
             <li>{_.get(data, "Point_three", "")}</li>
             <li>{_.get(data, "Point_four", "")}</li>
             <li
-              className="list-none text-blue-600 cursor-pointer"
+              className="list-none text-blue-600 cursor-pointer hover:underline"
               onClick={scrollToproductDetails}
             >
               read more
@@ -1170,7 +1331,10 @@ const ProductDetails = ({
               !_.isEmpty(currentPriceSplitup) && (
                 <>
                   {_.get(data, "variants", []).map((variant, index) => (
-                    <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
+                    <div
+                      key={index}
+                      className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0"
+                    >
                       <Text strong className="block mb-2 md:mb-0 md:w-24">
                         {variant.variant_name}:
                       </Text>
@@ -1200,19 +1364,17 @@ const ProductDetails = ({
                             >
                               <div
                                 onClick={() =>
-                                  handleOnChangeSelectOption(
-                                    option.value,
-                                    index
-                                  )
+                                  handleOnChangeSelectOption(option.value, index)
                                 }
-                                className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${_.get(
-                                  currentPriceSplitup,
-                                  `[${variant.variant_name}]`,
-                                  ""
-                                ) === option.value
-                                  ? "border-blue-500 shadow-md"
-                                  : "border-gray-300 hover:border-blue-400"
-                                  }`}
+                                className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
+                                  _.get(
+                                    currentPriceSplitup,
+                                    `[${variant.variant_name}]`,
+                                    ""
+                                  ) === option.value
+                                    ? "border-blue-500 shadow-md"
+                                    : "border-gray-300 hover:border-blue-400"
+                                }`}
                                 style={{ width: "50px", height: "50px" }}
                               >
                                 <img
@@ -1247,7 +1409,7 @@ const ProductDetails = ({
         </div>
 
         {/* Total Price Section */}
-        <Card className="bg-blue-50 rounded-lg border-0">
+        <Card className="bg-blue-50 rounded-lg border-0 shadow-sm">
           <div className="space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <Text strong className="text-gray-800">
@@ -1273,14 +1435,16 @@ const ProductDetails = ({
                     <div>
                       <div>
                         You saved {formatPrice(calculateMRPSavings())} <br></br>
-                        {discountPercentage.percentage == 0 ? "select more quantity to get extra discount" : ""}
+                        {discountPercentage.percentage == 0
+                          ? "select more quantity to get extra discount"
+                          : ""}
                       </div>
                       {quantity && calculateSavings() > 0 && (
                         <div className="mt-1">
                           <div>
                             Kudos! Additionally you saved{" "}
                             {formatPrice(calculateSavings())} (
-                            {discountPercentage.percentage}%  discount)
+                            {discountPercentage.percentage}% discount)
                           </div>
                           <div
                             style={{
@@ -1289,8 +1453,7 @@ const ProductDetails = ({
                               marginTop: "4px",
                             }}
                           >
-                            Total Savings:{" "}
-                            {formatPrice(calculateTotalSavings())}
+                            Total Savings: {formatPrice(calculateTotalSavings())}
                           </div>
                         </div>
                       )}
@@ -1306,8 +1469,7 @@ const ProductDetails = ({
             {quantity && (
               <div className="text-gray-600">
                 <h1 className="!text-md text-gray-600">
-                  Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
-                  (
+                  Exclusive of all taxes for <Text strong>{quantity}</Text> Qty (
                   <Text strong>
                     {formatPrice(
                       DISCOUNT_HELPER(
@@ -1323,8 +1485,7 @@ const ProductDetails = ({
             {quantity && (
               <div className="!text-[12px] text-gray-600">
                 <h1>
-                  Inclusive of all taxes for <span strong>{quantity}</span> Qty
-                  (
+                  Inclusive of all taxes for <span strong>{quantity}</span> Qty (
                   <span className="font-bold">
                     {formatPrice(
                       GST_DISCOUNT_HELPER(
@@ -1440,7 +1601,6 @@ const ProductDetails = ({
                         </Button>
                         <Button
                           type="link"
-                          // icon={<EyeOutlined />}
                           onClick={handleDesignRemove}
                           className="md:order-1"
                         >
@@ -1503,7 +1663,7 @@ const ProductDetails = ({
                 type="primary"
                 size="large"
                 icon={<ShoppingCartOutlined />}
-                className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full shadow-md hover:shadow-lg transition-all"
                 onClick={handlebuy}
                 loading={loading}
               >
@@ -1658,7 +1818,7 @@ const ProductDetails = ({
                 <Button
                   type="primary"
                   htmlType="submit"
-                  className="flex-1 bg-yellow-500"
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-600"
                   disabled={!emailVerified}
                 >
                   Submit Inquiry
@@ -1695,7 +1855,11 @@ export default ProductDetails;
 // PincodeDeliveryCalculator Component
 import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
 
-export const PincodeDeliveryCalculator = ({ Production, freeDelivery, deliveryCharges }) => {
+export const PincodeDeliveryCalculator = ({
+  Production,
+  freeDelivery,
+  deliveryCharges,
+}) => {
   const [pincode, setPincode] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [state, setState] = useState("");
@@ -1749,7 +1913,12 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery, deliveryCh
     const today = new Date();
     const productionTime = Production || 0;
     let deliveryDate = new Date(today);
-    deliveryDate.setDate(deliveryDate.getDate() + Number(productionTime) + Number(deliveryDays) + 2);
+    deliveryDate.setDate(
+      deliveryDate.getDate() +
+        Number(productionTime) +
+        Number(deliveryDays) +
+        2
+    );
     return deliveryDate.toLocaleDateString("en-US", {
       weekday: "short",
       day: "numeric",
@@ -1803,10 +1972,14 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery, deliveryCh
   const handleGeolocationError = (error) => {
     switch (error.code) {
       case error.PERMISSION_DENIED:
-        toast.error("Location access denied. Please enable location permissions.");
+        toast.error(
+          "Location access denied. Please enable location permissions."
+        );
         break;
       case error.POSITION_UNAVAILABLE:
-        toast.error("Location information unavailable. Please check your GPS settings.");
+        toast.error(
+          "Location information unavailable. Please check your GPS settings."
+        );
         break;
       case error.TIMEOUT:
         toast.error("Location request timed out. Please try again.");
@@ -1965,7 +2138,6 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery, deliveryCh
           title="Delivery Information"
           width={700}
         >
-          {/* Delivery info content can be added here */}
         </CustomModal>
       </div>
     </div>
