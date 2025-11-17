@@ -96,11 +96,13 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     };
   }, [isAutoPlaying, hasMultipleImages, handleNext]);
 
-  // Enhanced Share Functionality
+  // Fixed Share Functionality
   const shareProduct = useCallback(async (platform) => {
     const productName = data?.name || "Check out this product";
     const productDescription = data?.product_description_tittle || "Amazing product from our store";
     const productUrl = window.location.href;
+    
+    // Use the current image for sharing
     const productImage = currentImage;
 
     try {
@@ -109,27 +111,32 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
           if (navigator.share) {
             const shareData = {
               title: productName,
-              text: productDescription,
+              text: `${productDescription}\n\n${productUrl}`,
               url: productUrl,
             };
 
-            // Try to include image in share
-            if (productImage && navigator.canShare && navigator.canShare({ files: true })) {
-              try {
+            // For native sharing, we'll try to share the image if possible
+            // but many browsers don't support file sharing yet
+            try {
+              // Check if browser supports file sharing
+              if (navigator.canShare && productImage) {
+                // Try to fetch and share the image
                 const response = await fetch(productImage);
                 const blob = await response.blob();
                 const file = new File([blob], 'product-image.jpg', { type: blob.type });
                 
+                // Check if files can be shared
                 if (navigator.canShare({ files: [file] })) {
                   shareData.files = [file];
                 }
-              } catch (error) {
-                console.log('Image sharing failed, sharing without image');
               }
+            } catch (fileError) {
+              console.log('File sharing not supported, sharing without image');
             }
 
             await navigator.share(shareData);
           } else {
+            // Fallback to custom share menu
             setShowShareMenu(true);
           }
           break;
@@ -145,14 +152,15 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
         case "whatsapp":
           const whatsappMessage = `${productName} - ${productDescription}\n${productUrl}`;
           window.open(
-            `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappMessage)}`,
+            `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`,
             "_blank"
           );
           break;
 
         case "twitter":
+          const twitterMessage = `${productName} - ${productDescription}`;
           window.open(
-            `https://twitter.com/intent/tweet?text=${encodeURIComponent(productName)}&url=${encodeURIComponent(productUrl)}`,
+            `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterMessage)}&url=${encodeURIComponent(productUrl)}`,
             "_blank",
             "width=550,height=420"
           );
@@ -165,11 +173,30 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
           );
           break;
 
+        case "pinterest":
+          if (productImage) {
+            window.open(
+              `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(productUrl)}&media=${encodeURIComponent(productImage)}&description=${encodeURIComponent(productDescription)}`,
+              "_blank"
+            );
+          } else {
+            window.open(
+              `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(productUrl)}&description=${encodeURIComponent(productDescription)}`,
+              "_blank"
+            );
+          }
+          break;
+
         default:
           break;
       }
     } catch (error) {
       console.error("Sharing failed:", error);
+      
+      // If native sharing fails, fallback to custom share menu
+      if (platform === "native") {
+        setShowShareMenu(true);
+      }
     }
 
     setShowShareMenu(false);
@@ -228,17 +255,18 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
           } hover:scale-105`}
           alt={data?.name || "product"}
           onError={(e) => {
+            console.error('Failed to load image:', currentImage);
             e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'block';
           }}
         />
-      ) : null}
-      <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl hidden">
-        <div className="text-center text-gray-400">
-          <PictureOutlined style={{ fontSize: "48px" }} className="mx-auto mb-2" />
-          <p>No image available</p>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl">
+          <div className="text-center text-gray-400">
+            <PictureOutlined style={{ fontSize: "48px" }} className="mx-auto mb-2" />
+            <p>No image available</p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
@@ -252,6 +280,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
         >
           <div className="text-center mb-4">
             <h3 className="text-lg font-semibold text-gray-800">Share Product</h3>
+            <p className="text-sm text-gray-600 mt-1">Share via</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -287,6 +316,16 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               <span className="text-xs mt-2 font-medium">LinkedIn</span>
             </button>
           </div>
+
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <button
+              onClick={handleNativeShare}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium text-sm hover:from-purple-600 hover:to-purple-700 transition-all"
+            >
+              <IoShareSocial className="text-lg" />
+              System Share
+            </button>
+          </div>
         </CustomPopover>
       )}
     </AnimatePresence>
@@ -312,12 +351,14 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
             <button
               onClick={handlePrevious}
               className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-70 text-white p-3 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200 hover:bg-opacity-90 z-30"
+              aria-label="Previous image"
             >
               <LeftOutlined />
             </button>
             <button
               onClick={handleNext}
               className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-70 text-white p-3 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200 hover:bg-opacity-90 z-30"
+              aria-label="Next image"
             >
               <RightOutlined />
             </button>
@@ -331,29 +372,48 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
           </div>
         )}
 
+        {/* Auto Play Toggle */}
+        {hasMultipleImages && (
+          <Tooltip title={`${isAutoPlaying ? "Pause" : "Play"} slideshow`}>
+            <button
+              onClick={toggleAutoPlay}
+              className={`absolute bottom-4 left-4 w-10 h-10 p-2 flex justify-center items-center text-xl rounded-full z-30 shadow-md hover:shadow-lg transition-all duration-200 ${
+                isAutoPlaying
+                  ? "bg-red-500 text-white hover:bg-red-600"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+              aria-label={isAutoPlaying ? "Pause slideshow" : "Play slideshow"}
+            >
+              {isAutoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+            </button>
+          </Tooltip>
+        )}
+
         {/* Action Buttons */}
         <div className={`flex flex-col gap-2 absolute top-4 right-4 z-40 transition-all duration-300 ${
           isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
         }`}>
           {/* Wishlist Button */}
-          <Tooltip title={`${isFav ? "Remove from" : "Add to"} wishlist`}>
+          <Tooltip title={`${isFav ? "Remove from" : "Add to"} wishlist`} placement="left">
             <button
               className={`p-2 w-10 h-10 bg-white bg-opacity-90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-40 flex items-center justify-center ${
                 isFav ? "text-red-500" : "text-gray-600 hover:text-red-500"
               }`}
               onClick={handleAddWishList}
+              aria-label={isFav ? "Remove from wishlist" : "Add to wishlist"}
             >
               {isFav ? <HeartFilled className="!text-red-500" /> : <HeartOutlined />}
             </button>
           </Tooltip>
 
           {/* Share Button */}
-          <Tooltip title="Share this product">
+          <Tooltip title="Share this product" placement="left">
             <button
               onClick={handleNativeShare}
               className="bg-white bg-opacity-90 hover:bg-[#f2c41a] text-gray-600 hover:text-black p-2 rounded-full shadow-md transition-all duration-300 flex items-center justify-center w-10 h-10"
+              aria-label="Share product"
             >
-              <IoShareSocial />
+              <IoShareSocial style={{ fontSize: "18px" }} />
             </button>
           </Tooltip>
         </div>
@@ -363,7 +423,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
 
       {/* Thumbnails */}
       {hasMultipleImages && (
-        <div className="flex gap-3 overflow-x-auto py-2 px-1 mt-4">
+        <div className="flex gap-3 overflow-x-auto py-2 px-1 mt-4 scrollbar-thin">
           {processedImages.map((imageUrl, index) => (
             <button
               key={index}
@@ -374,11 +434,18 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               }`}
               onClick={() => handleThumbnailClick(index)}
               style={{ width: "80px", height: "80px" }}
+              aria-label={`View image ${index + 1}`}
+              aria-selected={activeIndex === index}
             >
               <img
                 src={imageUrl}
                 className="w-full h-full object-cover"
                 alt={`Thumbnail ${index + 1}`}
+                loading="lazy"
+                onError={(e) => {
+                  console.error('Failed to load thumbnail:', imageUrl);
+                  e.target.style.display = 'none';
+                }}
               />
             </button>
           ))}
