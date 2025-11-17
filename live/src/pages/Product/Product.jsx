@@ -151,7 +151,7 @@ const Product = () => {
   const productName = getProductValue("name", "Product");
   const productImg = getProductValue("images[0].path", "Product");
   const hasVariants = product.type === "Variable Product" && product.variants?.length > 0;
-
+// 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
       {/* SEO Head */}
