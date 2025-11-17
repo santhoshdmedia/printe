@@ -39,59 +39,6 @@ const Product = () => {
     return _.get(product, path, defaultValue);
   }, [product]);
 
-  // Get absolute URL for images
-  const getAbsoluteImageUrl = (imagePath) => {
-    if (!imagePath) return '';
-    
-    // If already absolute URL
-    if (imagePath.startsWith('http')) {
-      return imagePath;
-    }
-    
-    // If relative path, make it absolute
-    if (imagePath.startsWith('/')) {
-      return `${window.location.origin}${imagePath}`;
-    }
-    
-    // For other cases, return as is (might need adjustment based on your setup)
-    return imagePath;
-  };
-
-  // Get product images for OG tags
-  const getProductImages = useCallback(() => {
-    const images = product?.images || [];
-    return images.map(img => ({
-      path: typeof img === 'string' ? img : img.path,
-      url: typeof img === 'string' ? img : img.url
-    }));
-  }, [product]);
-
-  // Get main product image for OG tags
-  const getMainProductImage = useCallback(() => {
-    const images = getProductImages();
-    if (images.length > 0) {
-      return getAbsoluteImageUrl(images[0].path || images[0].url);
-    }
-    return getAbsoluteImageUrl('/assets/images/default-product.png'); // Fallback image
-  }, [getProductImages]);
-
-  // Get product data for SEO
-  const getSEOData = useCallback(() => {
-    const productName = getProductValue("name", "Product");
-    const productDescription = getProductValue("product_description_tittle", 
-      getProductValue("short_description", "Check out this amazing product"));
-    const productImage = getMainProductImage();
-    const currentUrl = window.location.href;
-    
-    return {
-      title: getProductValue("seo_title", `${productName} | Your Store`),
-      description: productDescription,
-      image: productImage,
-      url: currentUrl,
-      keywords: getProductValue("seo_keywords", productName),
-    };
-  }, [getProductValue, getMainProductImage]);
-
   // Add to history function
   const addTohistoryDb = useCallback(async () => {
     try {
@@ -173,6 +120,15 @@ const Product = () => {
     }
   }, [product, user, addTohistoryDb]);
 
+  // Get main product images
+  const getProductImages = useCallback(() => {
+    const images = product?.images || [];
+    return images.map(img => ({
+      path: typeof img === 'string' ? img : img.path,
+      url: typeof img === 'string' ? img : img.url
+    }));
+  }, [product]);
+
   // Loading state
   if (isGettingProduct) {
     return <ProductPageLoadingSkeleton />;
@@ -187,56 +143,29 @@ const Product = () => {
     );
   }
 
-  // Get SEO data
-  const seoData = getSEOData();
-  const hasVariants = product.type === "Variable Product" && product.variants?.length > 0;
-
-  // Product data for breadcrumbs
+  // Product data
   const categoryId = getProductValue("category_details._id");
   const mainCategoryName = getProductValue("category_details.main_category_name");
   const subCategoryName = getProductValue("sub_category_details.sub_category_name");
   const subCategoryId = getProductValue("sub_category_details._id");
   const productName = getProductValue("name", "Product");
+  const productImg = getProductValue("images[0].path", "Product");
+  const hasVariants = product.type === "Variable Product" && product.variants?.length > 0;
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
-      {/* Complete SEO Head with Open Graph Tags */}
+      {/* SEO Head */}
       <Helmet>
-        {/* Basic Meta Tags */}
-        <title>{seoData.title}</title>
-        <meta name="description" content={seoData.description} />
-        <meta name="keywords" content={seoData.keywords} />
-        
-        {/* Open Graph Meta Tags */}
-        <meta property="og:title" content={seoData.title} />
-        <meta property="og:description" content={seoData.description} />
-        <meta property="og:image" content={seoData.image} />
-        <meta property="og:url" content={seoData.url} />
-        <meta property="og:type" content="product" />
-        <meta property="og:site_name" content="Your Store Name" />
-        
-        {/* Additional OG Tags for Better Sharing */}
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:type" content="image/jpeg" />
-        
-        {/* Product Specific OG Tags */}
-        <meta property="product:price:amount" content={getProductValue("price", "0")} />
-        <meta property="product:price:currency" content="INR" />
-        <meta property="product:availability" content={getProductValue("stock_count", 0) > 0 ? "in stock" : "out of stock"} />
-        <meta property="product:category" content={mainCategoryName} />
-        
-        {/* Twitter Card Meta Tags */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={seoData.title} />
-        <meta name="twitter:description" content={seoData.description} />
-        <meta name="twitter:image" content={seoData.image} />
-        <meta name="twitter:site" content="@yourstorehandle" />
-        <meta name="twitter:creator" content="@yourstorehandle" />
-        
-        {/* Additional Meta Tags */}
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={seoData.url} />
+        <title>{getProductValue("seo_title", `${productName} | Product Page`)}</title>
+        <meta 
+          name="description" 
+          content={getProductValue("short_description", `Learn more about ${productName}`)} 
+        />
+        <meta 
+          name="keywords" 
+          content={getProductValue("seo_keywords", productName)} 
+        />
+        <link rel="icon" type="image/svg+xml" href={`${productImg}`} />
       </Helmet>
 
       {/* Breadcrumbs */}
