@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Image, Tooltip } from "antd";
+import { Image, Tooltip, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import _ from "lodash";
@@ -16,7 +16,7 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import { IoShareSocial } from "react-icons/io5";
-import { FacebookIcon, WhatsappIcon, TwitterIcon, LinkedinIcon } from "react-share";
+import { FacebookIcon, WhatsappIcon, TwitterIcon, LinkedinIcon, EmailIcon } from "react-share";
 
 // Components
 import DividerCards from "../cards/DividerCards";
@@ -49,6 +49,26 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
 
   const currentImage = processedImages[activeIndex] || "";
   const hasMultipleImages = processedImages.length > 1;
+
+  // Get product details for sharing
+  const getProductShareDetails = useCallback(() => {
+    const productName = data?.name || "Amazing Product";
+    const productDescription = data?.seo_description || data?.short_description || "Check out this product";
+    const productPrice = data?.price || data?.customer_product_price || "";
+    const productUrl = window.location.href;
+    const productImage = currentImage;
+    
+    // Format price if available
+    const formattedPrice = productPrice ? `₹${productPrice}` : "";
+    
+    return {
+      productName,
+      productDescription,
+      productPrice: formattedPrice,
+      productUrl,
+      productImage,
+    };
+  }, [data, currentImage]);
 
   // Effects
   useEffect(() => {
@@ -96,52 +116,115 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     };
   }, [isAutoPlaying, hasMultipleImages, handleNext]);
 
-  // Fixed Share Functionality
+  // Create a downloadable image with product details
+  const createImageWithDetails = useCallback(async () => {
+    const {
+      productName,
+      productDescription,
+      productPrice,
+      productImage
+    } = getProductShareDetails();
+
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.crossOrigin = "anonymous";
+      img.onload = function() {
+        // Set canvas size
+        canvas.width = 800;
+        canvas.height = 600;
+        
+        // Fill background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw product image (60% of canvas height)
+        const imgHeight = 360; // 60% of 600
+        const imgWidth = (img.width * imgHeight) / img.height;
+        const imgX = (canvas.width - imgWidth) / 2;
+        
+        ctx.drawImage(img, imgX, 20, imgWidth, imgHeight);
+        
+        // Add product name
+        ctx.fillStyle = '#333333';
+        ctx.font = 'bold 28px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(productName, canvas.width / 2, 420);
+        
+        // Add product description
+        ctx.fillStyle = '#666666';
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        
+        // Split description into multiple lines if needed
+        const maxWidth = 700;
+        const words = productDescription.split(' ');
+        let line = '';
+        let y = 460;
+        
+        for (let i = 0; i < words.length; i++) {
+          const testLine = line + words[i] + ' ';
+          const metrics = ctx.measureText(testLine);
+          const testWidth = metrics.width;
+          
+          if (testWidth > maxWidth && i > 0) {
+            ctx.fillText(line, canvas.width / 2, y);
+            line = words[i] + ' ';
+            y += 30;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, canvas.width / 2, y);
+        
+        // Add price
+        if (productPrice) {
+          ctx.fillStyle = '#1890ff';
+          ctx.font = 'bold 24px Arial';
+          ctx.fillText(productPrice, canvas.width / 2, y + 50);
+        }
+        
+        // Add website URL
+        ctx.fillStyle = '#999999';
+        ctx.font = '14px Arial';
+        ctx.fillText('Shared via OurStore', canvas.width / 2, 580);
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
+      };
+      
+      img.onerror = () => {
+        // Fallback to original image if canvas fails
+        resolve(productImage);
+      };
+      
+      img.src = productImage;
+    });
+  }, [getProductShareDetails]);
+
+  // Enhanced Share Functionality with proper image sharing
   const shareProduct = useCallback(async (platform) => {
-    const productName = data?.name || "Check out this product";
-    const productDescription = data?.product_description_tittle || "Amazing product from our store";
-    const productUrl = window.location.href;
-    
-    // Use the current image for sharing
-    const productImage = currentImage;
+    const {
+      productName,
+      productDescription,
+      productPrice,
+      productUrl,
+      productImage
+    } = getProductShareDetails();
 
     try {
       switch (platform) {
-        case "native":
-          if (navigator.share) {
-            const shareData = {
-              title: productName,
-              text: `${productDescription}\n\n${productUrl}`,
-              url: productUrl,
-            };
-
-            // For native sharing, we'll try to share the image if possible
-            // but many browsers don't support file sharing yet
-            try {
-              // Check if browser supports file sharing
-              if (navigator.canShare && productImage) {
-                // Try to fetch and share the image
-                const response = await fetch(productImage);
-                const blob = await response.blob();
-                const file = new File([blob], 'product-image.jpg', { type: blob.type });
-                
-                // Check if files can be shared
-                if (navigator.canShare({ files: [file] })) {
-                  shareData.files = [file];
-                }
-              }
-            } catch (fileError) {
-              console.log('File sharing not supported, sharing without image');
-            }
-
-            await navigator.share(shareData);
-          } else {
-            // Fallback to custom share menu
-            setShowShareMenu(true);
-          }
+        case "whatsapp":
+          const whatsappMessage = `🚀 *${productName}* 🚀\n\n${productDescription}${productPrice ? `\n💰 Price: ${productPrice}` : ''}\n\n🔗 ${productUrl}`;
+          window.open(
+            `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`,
+            "_blank"
+          );
           break;
 
         case "facebook":
+          // Facebook uses Open Graph tags from the URL
           window.open(
             `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}`,
             "_blank",
@@ -149,16 +232,8 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
           );
           break;
 
-        case "whatsapp":
-          const whatsappMessage = `${productName} - ${productDescription}\n${productUrl}`;
-          window.open(
-            `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`,
-            "_blank"
-          );
-          break;
-
         case "twitter":
-          const twitterMessage = `${productName} - ${productDescription}`;
+          const twitterMessage = `Check out: ${productName} - ${productDescription}${productPrice ? ` | ${productPrice}` : ''}`;
           window.open(
             `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterMessage)}&url=${encodeURIComponent(productUrl)}`,
             "_blank",
@@ -176,14 +251,110 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
         case "pinterest":
           if (productImage) {
             window.open(
-              `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(productUrl)}&media=${encodeURIComponent(productImage)}&description=${encodeURIComponent(productDescription)}`,
+              `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(productUrl)}&media=${encodeURIComponent(productImage)}&description=${encodeURIComponent(`${productName} - ${productDescription}`)}`,
               "_blank"
             );
+          }
+          break;
+
+        case "email":
+          const emailSubject = `Check out this product: ${productName}`;
+          const emailBody = `Hi,\n\nI found this amazing product and thought you might like it:\n\n*${productName}*\n\n${productDescription}${productPrice ? `\nPrice: ${productPrice}` : ''}\n\nView it here: ${productUrl}\n\n${productImage ? `Product Image: ${productImage}` : ''}\n\nBest regards,\n${user?.name || ''}`;
+          window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+          break;
+
+        case "copy-link":
+          const copyText = `🌟 *${productName}* 🌟\n\n${productDescription}${productPrice ? `\n💰 Price: ${productPrice}` : ''}\n\n🔗 ${productUrl}${productImage ? `\n\n📸 Product Image: ${productImage}` : ''}`;
+          try {
+            await navigator.clipboard.writeText(copyText);
+            message.success('Product details copied to clipboard!');
+          } catch (err) {
+            const textArea = document.createElement('textarea');
+            textArea.value = copyText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            message.success('Product details copied to clipboard!');
+          }
+          break;
+
+        case "copy-image-url":
+          if (productImage) {
+            try {
+              await navigator.clipboard.writeText(productImage);
+              message.success('Image URL copied to clipboard!');
+            } catch (err) {
+              const textArea = document.createElement('textarea');
+              textArea.value = productImage;
+              document.body.appendChild(textArea);
+              textArea.select();
+              document.execCommand('copy');
+              document.body.removeChild(textArea);
+              message.success('Image URL copied to clipboard!');
+            }
           } else {
-            window.open(
-              `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(productUrl)}&description=${encodeURIComponent(productDescription)}`,
-              "_blank"
-            );
+            message.warning('No image available to copy');
+          }
+          break;
+
+        case "download-image":
+          if (productImage) {
+            try {
+              // Create enhanced image with product details
+              const enhancedImage = await createImageWithDetails();
+              
+              const response = await fetch(enhancedImage);
+              const blob = await response.blob();
+              const blobUrl = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              link.download = `${productName.replace(/\s+/g, '-')}-with-details.jpg`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(blobUrl);
+              message.success('Product image with details downloaded!');
+            } catch (error) {
+              console.error('Error downloading image:', error);
+              // Fallback to simple image download
+              const link = document.createElement('a');
+              link.href = productImage;
+              link.download = `${productName.replace(/\s+/g, '-')}.jpg`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              message.success('Product image downloaded!');
+            }
+          } else {
+            message.warning('No image available to download');
+          }
+          break;
+
+        case "share-with-image":
+          // Try to use Web Share API with image if available
+          if (navigator.share) {
+            try {
+              const response = await fetch(productImage);
+              const blob = await response.blob();
+              const file = new File([blob], 'product-image.jpg', { type: blob.type });
+              
+              await navigator.share({
+                title: productName,
+                text: `${productDescription}${productPrice ? ` | ${productPrice}` : ''}`,
+                url: productUrl,
+                files: [file]
+              });
+            } catch (shareError) {
+              console.log('File sharing not supported, sharing without image');
+              await navigator.share({
+                title: productName,
+                text: `${productDescription}${productPrice ? ` | ${productPrice}` : ''}`,
+                url: productUrl,
+              });
+            }
+          } else {
+            message.info('Native sharing not supported in your browser');
           }
           break;
 
@@ -192,19 +363,16 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
       }
     } catch (error) {
       console.error("Sharing failed:", error);
-      
-      // If native sharing fails, fallback to custom share menu
-      if (platform === "native") {
-        setShowShareMenu(true);
-      }
+      message.error('Failed to share product');
     }
 
     setShowShareMenu(false);
-  }, [data, currentImage]);
+  }, [getProductShareDetails, user, createImageWithDetails]);
 
-  const handleNativeShare = useCallback(() => {
-    shareProduct("native");
-  }, [shareProduct]);
+  // Always show custom share menu when share button is clicked
+  const handleShareClick = useCallback(() => {
+    setShowShareMenu(true);
+  }, []);
 
   // Other event handlers
   const handleAddWishList = useCallback(() => {
@@ -224,11 +392,11 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     };
 
     const form = updateWishList();
-    const message = isFav ? "Remove from WishList" : "Added to WishList";
+    const successMessage = isFav ? "Remove from WishList" : "Added to WishList";
 
     dispatch({
       type: "UPDATE_USER",
-      data: { form, type: "custom", message },
+      data: { form, type: "custom", message: successMessage },
     });
 
     setIsFav(!isFav);
@@ -270,66 +438,158 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     </div>
   );
 
-  const renderShareMenu = () => (
-    <AnimatePresence>
-      {showShareMenu && (
-        <CustomPopover
-          open={showShareMenu}
-          onClose={() => setShowShareMenu(false)}
-          className="w-64 bg-white rounded-xl shadow-2xl z-50 p-4 border border-gray-200"
-        >
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Share Product</h3>
-            <p className="text-sm text-gray-600 mt-1">Share via</p>
-          </div>
+  const renderShareMenu = () => {
+    const { productName, productDescription, productPrice } = getProductShareDetails();
+    
+    return (
+      <AnimatePresence>
+        {showShareMenu && (
+          <CustomPopover
+            open={showShareMenu}
+            onClose={() => setShowShareMenu(false)}
+            className="w-80 bg-white rounded-xl shadow-2xl z-50 p-4 border border-gray-200"
+          >
+            {/* Product Preview in Share Menu */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-start gap-3">
+                <img
+                  src={currentImage}
+                  className="w-12 h-12 object-cover rounded border"
+                  alt="Product"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-semibold text-gray-800 truncate">
+                    {productName}
+                  </h4>
+                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                    {productDescription}
+                  </p>
+                  {productPrice && (
+                    <p className="text-sm font-bold text-green-600 mt-1">
+                      {productPrice}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => shareProduct("whatsapp")}
-              className="flex flex-col items-center justify-center p-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-600 transition-all hover:scale-105"
-            >
-              <WhatsappIcon size={40} round />
-              <span className="text-xs mt-2 font-medium">WhatsApp</span>
-            </button>
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Share Product</h3>
+              <p className="text-sm text-gray-600 mt-1">Share product image and details</p>
+            </div>
 
-            <button
-              onClick={() => shareProduct("facebook")}
-              className="flex flex-col items-center justify-center p-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-105"
-            >
-              <FacebookIcon size={40} round />
-              <span className="text-xs mt-2 font-medium">Facebook</span>
-            </button>
+            {/* Share Platform Grid */}
+            <div className="grid grid-cols-4 gap-3 mb-4">
+              <button
+                onClick={() => shareProduct("whatsapp")}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-600 transition-all hover:scale-105"
+              >
+                <WhatsappIcon size={32} round />
+                <span className="text-xs mt-2 font-medium">WhatsApp</span>
+              </button>
 
-            <button
-              onClick={() => shareProduct("twitter")}
-              className="flex flex-col items-center justify-center p-3 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-500 transition-all hover:scale-105"
-            >
-              <TwitterIcon size={40} round />
-              <span className="text-xs mt-2 font-medium">Twitter</span>
-            </button>
+              <button
+                onClick={() => shareProduct("facebook")}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-105"
+              >
+                <FacebookIcon size={32} round />
+                <span className="text-xs mt-2 font-medium">Facebook</span>
+              </button>
 
-            <button
-              onClick={() => shareProduct("linkedin")}
-              className="flex flex-col items-center justify-center p-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 transition-all hover:scale-105"
-            >
-              <LinkedinIcon size={40} round />
-              <span className="text-xs mt-2 font-medium">LinkedIn</span>
-            </button>
-          </div>
+              <button
+                onClick={() => shareProduct("twitter")}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-500 transition-all hover:scale-105"
+              >
+                <TwitterIcon size={32} round />
+                <span className="text-xs mt-2 font-medium">Twitter</span>
+              </button>
 
-          <div className="mt-4 pt-3 border-t border-gray-100">
-            <button
-              onClick={handleNativeShare}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium text-sm hover:from-purple-600 hover:to-purple-700 transition-all"
-            >
-              <IoShareSocial className="text-lg" />
-              System Share
-            </button>
-          </div>
-        </CustomPopover>
-      )}
-    </AnimatePresence>
-  );
+              <button
+                onClick={() => shareProduct("pinterest")}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-all hover:scale-105"
+                disabled={!currentImage}
+              >
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">P</span>
+                </div>
+                <span className="text-xs mt-2 font-medium">Pinterest</span>
+              </button>
+
+              <button
+                onClick={() => shareProduct("email")}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 transition-all hover:scale-105"
+              >
+                <EmailIcon size={32} round />
+                <span className="text-xs mt-2 font-medium">Email</span>
+              </button>
+
+              {/* Image Share Options */}
+              <button
+                onClick={() => shareProduct("download-image")}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-600 transition-all hover:scale-105"
+                disabled={!currentImage}
+              >
+                <PictureOutlined className="text-lg" />
+                <span className="text-xs mt-2 font-medium">Save Image</span>
+              </button>
+
+              <button
+                onClick={() => shareProduct("copy-image-url")}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-all hover:scale-105"
+                disabled={!currentImage}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span className="text-xs mt-2 font-medium">Copy Image</span>
+              </button>
+
+              {navigator.share && (
+                <button
+                  onClick={() => shareProduct("share-with-image")}
+                  className="flex flex-col items-center justify-center p-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-600 transition-all hover:scale-105"
+                >
+                  <IoShareSocial className="text-lg" />
+                  <span className="text-xs mt-2 font-medium">Native Share</span>
+                </button>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2">
+              <button
+                onClick={() => shareProduct("copy-link")}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium text-sm hover:from-blue-600 hover:to-blue-700 transition-all shadow-md"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy Product Details
+              </button>
+              
+              <button
+                onClick={() => setShowShareMenu(false)}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-200 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {/* Info Text */}
+            <div className="mt-3 p-2 bg-yellow-50 rounded-lg">
+              <p className="text-xs text-yellow-700 text-center">
+                <InfoCircleOutlined className="mr-1" />
+                Social platforms will show image if your website has proper meta tags
+              </p>
+            </div>
+          </CustomPopover>
+        )}
+      </AnimatePresence>
+    );
+  };
 
   return (
     <div className="!sticky !top-24 w-full h-full">
@@ -406,10 +666,10 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
             </button>
           </Tooltip>
 
-          {/* Share Button */}
+          {/* Share Button - Always opens custom share menu */}
           <Tooltip title="Share this product" placement="left">
             <button
-              onClick={handleNativeShare}
+              onClick={handleShareClick}
               className="bg-white bg-opacity-90 hover:bg-[#f2c41a] text-gray-600 hover:text-black p-2 rounded-full shadow-md transition-all duration-300 flex items-center justify-center w-10 h-10"
               aria-label="Share product"
             >

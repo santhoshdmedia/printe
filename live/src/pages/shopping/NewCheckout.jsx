@@ -18,6 +18,7 @@ import {
   Tag,
   Tooltip,
   Switch,
+  message,
 } from "antd";
 import { emailValidation, formValidation } from "../../helper/form_validation";
 import { IconHelper } from "../../helper/IconHelper";
@@ -32,6 +33,7 @@ import {
   createOrder,
   getMyShoppingCart,
   removeMyShoppingCart,
+  applyCouponCode,
 } from "../../helper/api_helper";
 import { useSelector } from "react-redux";
 import Confetti from "react-confetti";
@@ -50,11 +52,18 @@ const NewCheckout = () => {
   const [gstNo, setGstNo] = useState(user.gst_no || "");
   const navigation = useNavigate();
 
+  // Coupon states
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+
   useEffect(() => {
     if (user.name == "") {
       navigation("/login");
     }
   }, []);
+
   const PAYMENT_TYPE = [
     {
       id: 2,
@@ -68,10 +77,9 @@ const NewCheckout = () => {
   const [termsClick, setTermsClick] = useState(false);
   const [designModalVisible, setDesignModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [paymentOption, setPaymentOption] = useState("full"); // 'full' or 'half'
+  const [paymentOption, setPaymentOption] = useState("full");
 
   const gstin_ref = useRef();
-
   const [form] = Form.useForm();
 
   const [cardData, setCardData] = useState([]);
@@ -85,16 +93,12 @@ const NewCheckout = () => {
       if (!value) {
         return Promise.reject(new Error("Please enter mobile number"));
       }
-
-      // Remove any non-digit characters
       const cleanValue = value.replace(/\D/g, "");
-
       if (cleanValue.length !== 10) {
         return Promise.reject(
           new Error("Mobile number must be exactly 10 digits")
         );
       }
-
       return Promise.resolve();
     },
   });
@@ -104,16 +108,13 @@ const NewCheckout = () => {
       if (!value) {
         return Promise.reject(new Error("Please enter email address"));
       }
-
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
         return Promise.reject(new Error("Please enter a valid email address"));
       }
-
       if (!value.endsWith("@gmail.com")) {
         return Promise.reject(new Error("Email must end with @gmail.com"));
       }
-
       return Promise.resolve();
     },
   });
@@ -123,17 +124,54 @@ const NewCheckout = () => {
       if (!value) {
         return Promise.reject(new Error("Please enter pincode"));
       }
-
-      // Remove any non-digit characters
       const cleanValue = value.replace(/\D/g, "");
-
       if (cleanValue.length !== 6) {
         return Promise.reject(new Error("Pincode must be exactly 6 digits"));
       }
-
       return Promise.resolve();
     },
   });
+
+  // Coupon Functions
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+
+    try {
+      setCouponLoading(true);
+      setCouponError("");
+
+      const productIds = cardData.map(item => item.product_id || item._id);
+      
+      const result = await applyCouponCode({
+        code: couponCode.toUpperCase(),
+        orderAmount: GET_TOTAL_AMOUNT_BEFORE_DISCOUNT(),
+        productIds: productIds,
+        userId: user._id
+      });
+
+      const couponData = _.get(result, "data.data.coupon", {});
+      setAppliedCoupon(couponData);
+      
+      message.success("Coupon applied successfully!");
+
+    } catch (err) {
+      const errorMessage = _.get(err, "response.data.message", "Invalid coupon code");
+      setCouponError(errorMessage);
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError("");
+    message.info("Coupon removed");
+  };
 
   const fetchData = async () => {
     try {
@@ -229,7 +267,7 @@ const NewCheckout = () => {
     },
   ];
 
-  const  GET_SUB_TOTAL = () => {
+  const GET_SUB_TOTAL = () => {
     return _.sum(
       cardData.map((res) => {
         return Number(res.final_total);
@@ -238,51 +276,71 @@ const NewCheckout = () => {
   };
 
   const GET_TAX_TOTAL = () => {
-    // console.log(_.get(result, "data.data.[0].sgst", 0),)
     return _.sum(
       cardData.map((res) => {
-        // Calculate 18% tax on the product total
         return Number(res.final_total) * gstRate;
       })
     );
   };
 
   const GET_Mrp_savings = () => {
-    // console.log(_.get(result, "data.data.[0].sgst", 0),)
     return _.sum(
       cardData.map((res) => {
-        // Calculate 18% tax on the product total
         return Number(res.MRP_savings);
       })
     );
   };
+
   const GET_additonal_savings = () => {
-    // console.log(_.get(result, "data.data.[0].sgst", 0),)
     return _.sum(
       cardData.map((res) => {
-        // Calculate 18% tax on the product total
         return Number(res.TotalSavings);
       })
     );
   };
 
+  // Calculate coupon discount amount
+  const GET_COUPON_DISCOUNT = () => {
+    if (appliedCoupon && appliedCoupon.discountAmount) {
+      return Number(appliedCoupon.discountAmount);
+    }
+    return 0;
+  };
 
-  const GET_TOTAL_AMOUNT = () => {
+  // Calculate total savings including coupon discount
+  const GET_TOTAL_SAVINGS = () => {
+    return GET_Mrp_savings() + GET_additonal_savings() + GET_COUPON_DISCOUNT();
+  };
+
+  const get_delivery_Fee = () => {
+    const freeDelivery = cardData.every((item) => item.FreeDelivery);
+    
+    if (freeDelivery) {
+      return 0;
+    } else {
+      const totalDeliveryCharge = cardData.reduce((total, item) => {
+        return total + (item.FreeDelivery ? 0 : item.DeliveryCharges);
+      }, 0);
+      return totalDeliveryCharge;
+    }
+  };
+
+  // Total amount before any discount (for coupon validation)
+  const GET_TOTAL_AMOUNT_BEFORE_DISCOUNT = () => {
     return GET_SUB_TOTAL() + GET_TAX_TOTAL() + Number(get_delivery_Fee());
   };
-const get_delivery_Fee = () => {
-  const freeDelivery = cardData.every((item) => item.FreeDelivery);
-  
-  if (freeDelivery) {
-    return 0;
-  } else {
-    // Sum all delivery charges from items that don't have free delivery
-    const totalDeliveryCharge = cardData.reduce((total, item) => {
-      return total + (item.FreeDelivery ? 0 : item.DeliveryCharges);
-    }, 0);
-    return totalDeliveryCharge;
-  }
-};
+
+  // Final total amount after discount
+  const GET_TOTAL_AMOUNT = () => {
+    const baseTotal = GET_TOTAL_AMOUNT_BEFORE_DISCOUNT();
+    
+    if (appliedCoupon) {
+      const discountAmount = appliedCoupon.discountAmount || 0;
+      return Math.max(0, baseTotal - discountAmount);
+    }
+    
+    return baseTotal;
+  };
 
   const GET_PAYABLE_AMOUNT = () => {
     const total = GET_TOTAL_AMOUNT();
@@ -295,18 +353,13 @@ const get_delivery_Fee = () => {
 
       const formValues = await form.validateFields();
 
-      // Determine payment mode from Razorpay response
-      const paymentModeMap = {
-        card: "card",
-        netbanking: "netbanking",
-        upi: "upi",
-        wallet: "wallet",
-      };
+      // Validate coupon again before placing order
+      if (appliedCoupon && appliedCoupon.finalAmount !== GET_TOTAL_AMOUNT()) {
+        CUSTOM_ERROR_NOTIFICATION("Cart amount has changed. Please reapply the coupon.");
+        return;
+      }
 
-      // This would come from the Razorpay response in a real implementation
-      // For now, we'll default to 'card' for demo purposes
-      const paymentMode = "card"; // Replace with actual payment mode from response
-
+      const paymentMode = "card";
       const invoiceNumber = `INV-${Date.now()}-${Math.floor(
         Math.random() * 1000
       )}`;
@@ -322,7 +375,8 @@ const get_delivery_Fee = () => {
         },
         payment_type: paymentType,
         cart_items: cardData,
-        total_price: GET_TOTAL_AMOUNT(),
+        total_price: GET_TOTAL_AMOUNT_BEFORE_DISCOUNT(),
+        final_amount: GET_TOTAL_AMOUNT(),
         gst_no: gstNo,
         payment_id: values.payment_id,
         transaction_id: values.transaction_id,
@@ -334,6 +388,8 @@ const get_delivery_Fee = () => {
             : 0,
         payment_mode: paymentMode,
         invoice_no: invoiceNumber,
+        coupon_code: appliedCoupon?.code || "",
+        discount_amount: appliedCoupon?.discountAmount || 0,
       };
 
       await createOrder(orderData);
@@ -345,7 +401,7 @@ const get_delivery_Fee = () => {
       CUSTOM_SUCCESS_SWALFIRE_NOTIFICATION({
         title: `Your order has been successfully placed with ${
           paymentOption === "full" ? "full" : "50%"
-        } payment`,
+        } payment${appliedCoupon ? ` using coupon ${appliedCoupon.code}` : ''}`,
         icon: "success",
         confirmButtonText: "My orders",
         cancelButtonText: "Continue Shopping",
@@ -387,7 +443,6 @@ const get_delivery_Fee = () => {
         payment: payableAmount,
       });
 
-
       const options = {
         key: EnvHelper.RAZORPAY_KEY,
         key_secret: EnvHelper.RAZORPAY_SECRET_KEY,
@@ -398,8 +453,7 @@ const get_delivery_Fee = () => {
         handler: async (response) => {
           try {
             if (response.razorpay_payment_id) {
-              // Get payment method from response
-              const paymentMethod = response.method || "card"; // Default to card if not specified
+              const paymentMethod = response.method || "card";
 
               const formValues = await form.validateFields();
               await handlePlaceOrder({
@@ -425,7 +479,6 @@ const get_delivery_Fee = () => {
           email: _.get(values, "email", ""),
           contact: _.get(values, "mobile_number", ""),
         },
-
         modal: {
           ondismiss: function () {
             CUSTOM_ERROR_NOTIFICATION(
@@ -469,11 +522,9 @@ const get_delivery_Fee = () => {
     }
   };
 
-  // Format input values with spaces
   const formatMobileNumber = (e) => {
     const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 10) {
-      // Format as XXX XX XXX XX
       let formattedValue = value;
       if (value.length > 5) {
         formattedValue = `${value.slice(0, 5)} ${value.slice(5)}`;
@@ -489,7 +540,6 @@ const get_delivery_Fee = () => {
   const formatPincode = (e) => {
     const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 6) {
-      // Format as XXX XXX
       let formattedValue = value;
       if (value.length > 3) {
         formattedValue = `${value.slice(0, 3)} ${value.slice(3)}`;
@@ -499,7 +549,6 @@ const get_delivery_Fee = () => {
     return e;
   };
 
-  
   return (
     <Spin
       spinning={loading}
@@ -584,7 +633,6 @@ const get_delivery_Fee = () => {
                         {
                           validator: (_, value) => {
                             if (!value) return Promise.resolve();
-
                             const cleanValue = value.replace(/\D/g, "");
                             if (cleanValue.length !== 10) {
                               return Promise.reject(
@@ -593,7 +641,6 @@ const get_delivery_Fee = () => {
                                 )
                               );
                             }
-
                             return Promise.resolve();
                           },
                         },
@@ -633,30 +680,74 @@ const get_delivery_Fee = () => {
                 </Form>
               </div>
 
-              {/* Payment Method */}
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-4 border border-gray-200">
-                <h2 className="text-lg font-bold mb-4">2. Payment Method</h2>
-                <div className="space-y-3">
-                  {PAYMENT_TYPE.map((res, index) => (
-                    <div
-                      key={index}
-                      className={`flex items-center p-3 border rounded-md cursor-pointer ${
-                        paymentType === res.name
-                          ? "border-yellow-500 bg-yellow-50"
-                          : "border-gray-200"
-                      }`}
-                      onClick={() => setPaymentType(res.name)}
+              
+
+               {/* Coupon Code Section */}
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 mt-4">
+                <h2 className="text-lg font-bold mb-4">2. Apply Coupon Code</h2>
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Enter coupon code"
+                    size="large"
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value);
+                      setCouponError("");
+                    }}
+                    disabled={!!appliedCoupon || couponLoading}
+                    onPressEnter={handleApplyCoupon}
+                  />
+                  
+                  {!appliedCoupon ? (
+                    <Button
+                      type="primary"
+                      onClick={handleApplyCoupon}
+                      loading={couponLoading}
+                      disabled={!couponCode.trim()}
+                      size="large"
                     >
-                      <div className="mr-3">{res.icon}</div>
+                      Apply
+                    </Button>
+                  ) : (
+                    <Button
+                      type="default"
+                      onClick={handleRemoveCoupon}
+                      size="large"
+                      danger
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                
+                {/* Coupon Error Message */}
+                {couponError && (
+                  <div className="text-red-500 text-sm mt-2">
+                    {couponError}
+                  </div>
+                )}
+                
+                {/* Applied Coupon Details */}
+                {appliedCoupon && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <div className="flex justify-between items-center">
                       <div>
-                        <div className="font-medium">{res.name}</div>
-                        <div className="text-sm text-gray-600">
-                          Pay using Razorpay secure payment gateway
+                        <span className="font-medium text-green-700">
+                          Coupon Applied: {appliedCoupon.code}
+                        </span>
+                        <div className="text-sm text-green-600">
+                          {appliedCoupon.discountType === 'percentage' 
+                            ? `${appliedCoupon.discountValue}% off`
+                            : `₹${appliedCoupon.discountValue} off`
+                          }
                         </div>
                       </div>
+                      <div className="text-green-700 font-bold">
+                        -₹{Number(appliedCoupon.discountAmount || 0).toFixed(2)}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* GST Information */}
@@ -697,34 +788,34 @@ const get_delivery_Fee = () => {
                   </div>
                 )}
               </div>
-              <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                <h2 className="text-lg font-bold mb-4">
-                  Coupen code
-                </h2>
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Enter Enter Coupen code"
-                    size="large"
-                    onChange={(e) => setGstNo(e.target.value)}
-                    maxLength={15}
-                  />
-                 
-                  {isEditable && (
-                    <Button
-                      type="default"
-                      onClick={() => setIsEditable(false)}
-                      size="large"
+
+              {/* Payment Method */}
+             <div className="bg-white rounded-lg shadow-sm p-4 mb-4 border border-gray-200">
+                <h2 className="text-lg font-bold mb-4">2. Payment Method</h2>
+                <div className="space-y-3">
+                  {PAYMENT_TYPE.map((res, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center p-3 border rounded-md cursor-pointer ${
+                        paymentType === res.name
+                          ? "border-yellow-500 bg-yellow-50"
+                          : "border-gray-200"
+                      }`}
+                      onClick={() => setPaymentType(res.name)}
                     >
-                      I don't have GSTIN
-                    </Button>
-                  )}
+                      <div className="mr-3">{res.icon}</div>
+                      <div>
+                        <div className="font-medium">{res.name}</div>
+                        <div className="text-sm text-gray-600">
+                          Pay using Razorpay secure payment gateway
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {gstNo && gstNo.length !== 15 && (
-                  <div className="text-red-500 text-sm mt-2">
-                    GST number must be exactly 15 characters long.
-                  </div>
-                )}
-              </div>
+              </div> 
+
+             
             </div>
 
             {/* Right Column - Order Summary */}
@@ -771,11 +862,28 @@ const get_delivery_Fee = () => {
                     <span>Delivery charges</span>
                     <span>₹{Number(get_delivery_Fee()).toFixed(2)}</span>
                   </div>
+
+                  {/* Discount Row */}
+                  {appliedCoupon && (
+                    <div className="flex justify-between mb-2 text-green-600">
+                      <span>
+                        Discount 
+                        <span className="text-sm text-green-500">
+                          ({appliedCoupon.code})
+                        </span>
+                        :
+                      </span>
+                      <span>-₹{Number(GET_COUPON_DISCOUNT()).toFixed(2)}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between font-bold text-lg mt-4 pt-4 border-t border-gray-200">
                     <span>Order Total:</span>
                     <span>₹{Number(GET_TOTAL_AMOUNT()).toFixed(2)}</span>
                   </div>
                 </div>
+
+                {/* Savings Section */}
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between mb-2">
                     <span>
@@ -791,16 +899,22 @@ const get_delivery_Fee = () => {
                     <span>₹{Number(GET_Mrp_savings()).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span>Additonal Savings</span>
+                    <span>Additional Savings</span>
                     <span>₹{Number(GET_additonal_savings()).toFixed(2)}</span>
                   </div>
+                  
+                  {/* Coupon Savings Row */}
+                  {appliedCoupon && (
+                    <div className="flex justify-between mb-2 text-green-600">
+                      <span>Coupon Savings</span>
+                      <span>₹{Number(GET_COUPON_DISCOUNT()).toFixed(2)}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between font-bold text-lg mt-4 pt-4 border-t border-gray-200">
                     <span>Total Savings:</span>
                     <span>
-                      ₹
-                      {Number(
-                        GET_Mrp_savings() + GET_additonal_savings()
-                      ).toFixed(2)}
+                      ₹{Number(GET_TOTAL_SAVINGS()).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -845,7 +959,6 @@ const get_delivery_Fee = () => {
                             ₹{Number(GET_TOTAL_AMOUNT() * 0.5).toFixed(2)}
                           </span>
                         </Radio>}
-                      
                       </div>
                     </Radio.Group>
                   </div>
@@ -877,8 +990,8 @@ const get_delivery_Fee = () => {
                     disabled={!acceptTerms}
                   >
                     {paymentOption === "full"
-                      ? "Pay Full Amount"
-                      : "Pay 50% Advance"}
+                      ? `Pay ₹${Number(GET_PAYABLE_AMOUNT()).toFixed(2)}`
+                      : `Pay 50% Advance ₹${Number(GET_PAYABLE_AMOUNT()).toFixed(2)}`}
                   </Button>
                 </div>
               </div>
@@ -947,7 +1060,6 @@ const get_delivery_Fee = () => {
       }
         /* Razorpay full screen styling */
         .razorpay-container {
-          
           height: 100vh !important;
           position: sticky !important;
           top: 0 !important;
