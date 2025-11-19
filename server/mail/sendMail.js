@@ -1,66 +1,54 @@
-const nodemailer = require ("nodemailer");
+const nodemailer = require("nodemailer");
 const { TemplateHelper } = require("./templateHelper");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
+// Correct Hostinger SMTP configuration
+const webmailTransporter = nodemailer.createTransport({
+  host: "smtp.hostinger.com", // Use SMTP, not IMAP
+  port: 587,
+  secure: false,
   auth: {
-    user: "santhoshprinte@gmail.com",
-    pass: "yzce dawn tdtp jfbt",
+    user: "info@printe.in",
+    pass: "Printeinfo@2025", 
   },
+  tls: {
+    rejectUnauthorized: false
+  },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000
+});
+
+// Test connection on startup
+webmailTransporter.verify(function(error, success) {
+  if (error) {
+    console.log('❌ Hostinger SMTP Connection failed:', error.message);
+  } else {
+    console.log('✅ Hostinger SMTP Server is ready to send emails');
+  }
 });
 
 const sendMail = async (values) => {
   try {
-    const result = await transporter.sendMail({
-      from: "santhoshprinte@gmail.com",
+    const result = await webmailTransporter.sendMail({
+      from: '"Printe" <info@printe.in>',
       to: values.email,
       subject: TemplateHelper(values)?.subject,
       html: TemplateHelper(values)?.templete,
     });
 
+    console.log('✅ Email sent successfully via Hostinger');
     return true;
   } catch (err) {
-    console.log(err);
+    console.log("❌ Error sending email:", err.message);
+    return false;
   }
 };
 
-const inquiryMail = async (values) => {
-  try {
-    const result = await transporter.sendMail({
-      from: `"${values.name}" <${values.email}>`,
-      to: "santhoshprinte@gmail.com",
-      subject: `New Inquiry from ${values.name}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
-  <div style="max-width: 600px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.1);">
-    <h2 style="background:#007BFF; color: white; padding: 12px; border-radius: 5px; text-align: center; font-size: 20px;">
-      📩 New Inquiry Notification
-    </h2>
-    <p style="font-size: 16px; color: #333;">
-      <strong>Name:</strong> ${values.name}<br>
-      <strong>Email:</strong> ${values.email}<br>
-      <strong>Phone:</strong> ${values.phone}<br>
-      <strong>Message:</strong><br> ${values.message}
-    </p>
-    <hr style="border: 0; border-top: 1px solid #ddd;">
-    <p style="text-align: center; font-size: 14px; color: #666;">
-      Thank you for reaching out! Our team will get back to you soon.
-    </p>
-  </div>
-</div>
-
-      `,
-    });
-  } catch (err) {
-    console.log("Error sending email:", err);
-  }
-};
 const otpMail = async (values) => {
   try {
-    const result = await transporter.sendMail({
-      from: "santhoshprinte@gmail.com",
+    const result = await webmailTransporter.sendMail({
+      from: '"Printe" <info@printe.in>',
       to: values.email,
-      subject: "Your OTP Verification Code",
+      subject: "Your OTP Verification Code - Printe",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
           <div style="max-width: 600px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.1);">
@@ -91,14 +79,48 @@ const otpMail = async (values) => {
       `,
     });
 
+    console.log('✅ OTP email sent successfully to:', values.email);
     return true;
   } catch (err) {
-    console.log("Error sending OTP email:", err);
+    console.log("❌ Error sending OTP email:", err.message);
     return false;
   }
 };
 
-
+const inquiryMail = async (values) => {
+  try {
+    const result = await webmailTransporter.sendMail({
+      from: '"Printe" <info@printe.in>',
+      to: 'info@printe.in',
+      subject: `New Inquiry from ${values.name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+          <div style="max-width: 600px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.1);">
+            <h2 style="background:#007BFF; color: white; padding: 12px; border-radius: 5px; text-align: center; font-size: 20px;">
+              📩 New Inquiry Notification
+            </h2>
+            <p style="font-size: 16px; color: #333;">
+              <strong>Name:</strong> ${values.name}<br>
+              <strong>Email:</strong> ${values.email}<br>
+              <strong>Phone:</strong> ${values.phone}<br>
+              <strong>Message:</strong><br> ${values.message}
+            </p>
+            <hr style="border: 0; border-top: 1px solid #ddd;">
+            <p style="text-align: center; font-size: 14px; color: #666;">
+              Thank you for reaching out! Our team will get back to you soon.
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    
+    console.log('✅ Inquiry email sent successfully');
+    return true;
+  } catch (err) {
+    console.log("❌ Error sending inquiry email:", err.message);
+    return false;
+  }
+};
 
 const orderMail = async (values) => {
   try {
@@ -107,16 +129,18 @@ const orderMail = async (values) => {
       target: "placed order",
     });
 
-    const result = await transporter.sendMail({
-      from: "mlcreation806r@gmail.com",
+    const result = await webmailTransporter.sendMail({
+      from: '"Printe" <info@printe.in>',
       to: values?.delivery_address?.email,
       subject,
       html: template,
     });
 
-    console.log("Email Sent:", result);
+    console.log("✅ Order email sent successfully");
+    return true;
   } catch (err) {
-    console.error("Error Sending Email:", err);
+    console.error("❌ Error sending order email:", err.message);
+    return false;
   }
 };
 
@@ -127,15 +151,19 @@ const orderStatusMail = async (values) => {
       target: "order status",
     });
 
-    const result = await transporter.sendMail({
-      from: "santhoshprinte@gmail.com",
+    const result = await webmailTransporter.sendMail({
+      from: '"Printe" <info@printe.in>',
       to: values?.delivery_address?.email,
       subject,
       html: template,
     });
+
+    console.log("✅ Order status email sent successfully");
+    return true;
   } catch (err) {
-    console.log(err);
+    console.log("❌ Error sending order status email:", err.message);
+    return false;
   }
 };
 
-module.exports = { sendMail,otpMail, inquiryMail, orderMail, orderStatusMail };
+module.exports = { sendMail, otpMail, inquiryMail, orderMail, orderStatusMail };
