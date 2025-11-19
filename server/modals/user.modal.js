@@ -43,6 +43,24 @@ const userSchema = new mongoose.Schema(
     gst_no: {
       type: String,
     },
+     business_name: {
+      type: String,
+    },
+    business_phone: {
+      type: String,
+    },
+    business_email: {
+      type: String,
+    },
+    business_address: {
+      type: String,
+    },
+    person_address: {
+      type: String,
+    },
+    person_phone: {
+      type: String,
+    },
     role: {
       type: String,
       default: "user",
@@ -57,6 +75,7 @@ const userSchema = new mongoose.Schema(
         ref: "product",
       },
     ],
+
     addresses: [addressSchema],
     // corporate and dealer
     unique_code: {
