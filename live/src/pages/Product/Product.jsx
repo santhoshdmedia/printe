@@ -204,6 +204,7 @@ const Product = () => {
   const subCategoryName = getProductValue("sub_category_details.sub_category_name");
   const subCategoryId = getProductValue("sub_category_details._id");
   const productName = getProductValue("name", "Product");
+  const productImage = getProductValue("images[0].path", "Product");
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
@@ -217,7 +218,7 @@ const Product = () => {
         {/* Open Graph Meta Tags */}
         <meta property="og:title" content={seoData.title} />
         <meta property="og:description" content={seoData.description} />
-        <meta property="og:image" content={seoData.image} />
+        <meta property="og:image" content={productImage} />
         <meta property="og:url" content={seoData.url} />
         <meta property="og:type" content="product" />
         <meta property="og:site_name" content="Prine" />
@@ -226,7 +227,7 @@ const Product = () => {
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/jpeg" />
-        
+                     
         {/* Product Specific OG Tags */}
         <meta property="product:price:amount" content={getProductValue("price", "0")} />
         <meta property="product:price:currency" content="INR" />
@@ -323,4 +324,4 @@ const Product = () => {
   );
 };
 
-export default Product;
+export default Product; 

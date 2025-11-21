@@ -21,6 +21,8 @@ const OtpRoutes = require("./Otp.routes");
 const whatsappRoutes = require("./whatsapp.routes");
 const coupenRoutes= require("./coupen.route");
 
+const paymentRoutes=require('./Payment.route')
+
 
 
 module.exports = {
@@ -45,5 +47,6 @@ module.exports = {
   BulkOrderRoutes,
   OtpRoutes,
   whatsappRoutes,
-  coupenRoutes
+  coupenRoutes,
+  paymentRoutes
 };

@@ -26,27 +26,30 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
-  "http://localhost:8080"
+  "http://localhost:8080",
+  "null" // Add null as string for file:// protocol
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
+      // Allow requests with no origin (like mobile apps, curl requests, file://)
       if (!origin) return callback(null, true);
       
-      if (allowedOrigins.indexOf(origin) === -1) {
+      // Check if origin is in allowed list or if it's null
+      if (allowedOrigins.indexOf(origin) !== -1 || origin === "null") {
+        return callback(null, true);
+      } else {
         const msg = `The CORS policy for this site does not allow access from ${origin}`;
+        console.log('CORS blocked:', origin);
         return callback(new Error(msg), false);
       }
-      return callback(null, true);
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     credentials: true,
     maxAge: 86400,
-  })
-);
+  }))
 
 // Body parsers
 app.use(express.json());

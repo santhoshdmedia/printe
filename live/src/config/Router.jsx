@@ -36,6 +36,12 @@ import SectionExplore from "../pages/Home/SectionExplore.jsx";
 import HistoryExplore from "../pages/Product/HistoryExplore.jsx";
 import AboutUs from "../pages/Information/AboutUs.jsx";
 
+// payment
+import PaymentCancelled from "../pages/shopping/pay/PaymentCancelled.jsx";
+import PaymentFailed from "../pages/shopping/pay/PaymentFailled.jsx";
+import PaymentSuccess from "../pages/shopping/pay/PaymentSuccess.jsx";
+import PaymentMethod from "../components/CheckOut/PaymentMethod.jsx";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -91,7 +97,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/about-us",
-        element: <AboutUs/>,
+        element: <AboutUs />,
       },
       {
         path: "/account",
@@ -137,4 +143,17 @@ export const router = createBrowserRouter([
     path: "/not-found",
     element: <NotFound />,
   },
+  {
+    path: "/payment/cancelled",
+    element: <PaymentCancelled />,
+  },
+  {
+    path: "/payment/success",
+    element: <PaymentSuccess />,
+  },
+  {
+    path: "/payment/Failed",
+    element: <PaymentFailed />,
+  },
+
 ]);
