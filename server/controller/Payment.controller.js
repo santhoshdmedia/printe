@@ -1,6 +1,7 @@
 const { errorResponse, successResponse } = require("../helper/response.helper");
 const { SOMETHING_WENT_WRONG } = require("../helper/message.helper");
 const CCAvenue = require("../utils/ccavenue");
+require("dotenv").config();
 
 const createPaymentOrder = async (req, res) => {
   try {
@@ -61,7 +62,9 @@ const createPaymentOrder = async (req, res) => {
     const encryptedData = ccavenue.encryptData(ccavenueParams);
 
     const isProduction = process.env.NODE_ENV === 'production';
-    const gatewayUrl =  'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+    const gatewayUrl = isProduction
+      ? 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction'
+      : 'https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
 
     const orderData = {
       order_id: finalOrderId,

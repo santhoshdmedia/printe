@@ -204,7 +204,6 @@ const Product = () => {
   const subCategoryName = getProductValue("sub_category_details.sub_category_name");
   const subCategoryId = getProductValue("sub_category_details._id");
   const productName = getProductValue("name", "Product");
-  const productImage = getProductValue("images[0].path", "Product");
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
@@ -218,7 +217,7 @@ const Product = () => {
         {/* Open Graph Meta Tags */}
         <meta property="og:title" content={seoData.title} />
         <meta property="og:description" content={seoData.description} />
-        <meta property="og:image" content={productImage} />
+        <meta property="og:image" content={seoData.image} />
         <meta property="og:url" content={seoData.url} />
         <meta property="og:type" content="product" />
         <meta property="og:site_name" content="Prine" />
@@ -244,6 +243,40 @@ const Product = () => {
         {/* Additional Meta Tags */}
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={seoData.url} />
+        
+        {/* Structured Data for SEO */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": productName,
+            "image": [seoData.image],
+            "description": seoData.description,
+            "sku": getProductValue("sku", ""),
+            "brand": {
+              "@type": "Brand",
+              "name": getProductValue("brand_details.name", "Unknown Brand")
+            },
+            "offers": {
+              "@type": "Offer",
+              "url": seoData.url,
+              "priceCurrency": "INR",
+              "price": getProductValue("price", "0"),
+              "availability": getProductValue("stock_count", 0) > 0 
+                ? "https://schema.org/InStock" 
+                : "https://schema.org/OutOfStock",
+              "seller": {
+                "@type": "Organization",
+                "name": "Your Store"
+              }
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": getProductValue("average_rating", "0"),
+              "reviewCount": getProductValue("review_count", "0")
+            }
+          })}
+        </script>
       </Helmet>
 
       {/* Breadcrumbs */}
@@ -324,4 +357,4 @@ const Product = () => {
   );
 };
 
-export default Product; 
+export default Product;
