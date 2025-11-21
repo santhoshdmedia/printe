@@ -62,9 +62,8 @@ const createPaymentOrder = async (req, res) => {
     const encryptedData = ccavenue.encryptData(ccavenueParams);
 
     const isProduction = process.env.NODE_ENV === 'production';
-    const gatewayUrl = isProduction
-      ? 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction'
-      : 'https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+    const gatewayUrl =  'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction'
+      
 
     const orderData = {
       order_id: finalOrderId,
