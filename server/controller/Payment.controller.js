@@ -106,7 +106,8 @@ const handleCCAvenueCallback = async (req, res) => {
       tracking_id: decryptedData.tracking_id,
     });
 
-    const customerUrl =  'https://printe.in/';
+    const customerUrl='https://printe.in';
+    
     
 
     if (decryptedData.order_status === 'Success') {
