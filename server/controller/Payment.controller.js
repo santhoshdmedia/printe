@@ -62,7 +62,7 @@ const createPaymentOrder = async (req, res) => {
     const encryptedData = ccavenue.encryptData(ccavenueParams);
 
     const isProduction = process.env.NODE_ENV === 'production';
-    const gatewayUrl =  'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction'
+    const gatewayUrl =  'https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction'
       
 
     const orderData = {
@@ -107,6 +107,7 @@ const handleCCAvenueCallback = async (req, res) => {
     });
 
     const customerUrl = process.env.CUSTOMER_SIDE_URL || 'http://localhost:5173';
+    
 
     if (decryptedData.order_status === 'Success') {
       const successUrl = `${customerUrl}/payment/success?order_id=${decryptedData.order_id}&tracking_id=${decryptedData.tracking_id}&amount=${decryptedData.amount}`;
