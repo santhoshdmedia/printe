@@ -34,70 +34,133 @@ const Product = () => {
   const [selectedVariants, setSelectedVariants] = useState({});
   const [variantImages, setVariantImages] = useState({});
 
+  // Enhanced absolute URL getter with cache busting
+  const getAbsoluteImageUrl = useCallback((imagePath) => {
+    if (!imagePath) return '';
+    
+    let absoluteUrl = '';
+    
+    // Handle different image path formats
+    if (imagePath.startsWith('http')) {
+      absoluteUrl = imagePath;
+    } else if (imagePath.startsWith('/')) {
+      absoluteUrl = `${window.location.origin}${imagePath}`;
+    } else {
+      absoluteUrl = `${window.location.origin}/${imagePath.replace(/^\/+/, '')}`;
+    }
+    
+    // Add cache busting parameter for social media
+    const timestamp = new Date().getTime();
+    return `${absoluteUrl}${absoluteUrl.includes('?') ? '&' : '?'}t=${timestamp}`;
+  }, []);
+
   // Safe value getter with better error handling
   const getProductValue = useCallback((path, defaultValue = "") => {
     return _.get(product, path, defaultValue);
   }, [product]);
 
-  // Get absolute URL for images
-  const getAbsoluteImageUrl = useCallback((imagePath) => {
-    if (!imagePath) return '';
-    
-    // If already absolute URL
-    if (imagePath.startsWith('http')) {
-      return imagePath;
-    }
-    
-    // If relative path, make it absolute
-    if (imagePath.startsWith('/')) {
-      return `${window.location.origin}${imagePath}`;
-    }
-    
-    // For other cases, prepend with origin
-    return `${window.location.origin}/${imagePath}`;
-  }, []);
-
-  // Get product images for OG tags
+  // Get all product images for OG tags
   const getProductImages = useCallback(() => {
     const images = product?.images || [];
-    return images.map(img => ({
-      path: typeof img === 'string' ? img : img.path,
-      url: typeof img === 'string' ? img : img.url
-    }));
-  }, [product]);
+    const processedImages = images.map(img => {
+      const imageUrl = typeof img === 'string' ? img : img.path || img.url;
+      return {
+        path: imageUrl,
+        url: getAbsoluteImageUrl(imageUrl)
+      };
+    }).filter(img => img.url); // Filter out empty URLs
 
-  // Get main product image for OG tags
+    return processedImages;
+  }, [product, getAbsoluteImageUrl]);
+
+  // Get main product image for OG tags with multiple fallbacks
   const getMainProductImage = useCallback(() => {
     const images = getProductImages();
+    
+    // Try main product images first
     if (images.length > 0) {
-      return getAbsoluteImageUrl(images[0].path || images[0].url);
+      return images[0].url;
     }
     
-    // Try to get from variants if no main images
+    // Try variant images
     if (product?.variants?.[0]?.options?.[0]?.image_names?.[0]) {
       const variantImage = product.variants[0].options[0].image_names[0];
-      return getAbsoluteImageUrl(typeof variantImage === 'string' ? variantImage : variantImage.path);
+      const imageUrl = typeof variantImage === 'string' ? variantImage : variantImage.path || variantImage.url;
+      return getAbsoluteImageUrl(imageUrl);
     }
     
+    // Try product thumbnail
+    const thumbnail = getProductValue("thumbnail");
+    if (thumbnail) {
+      return getAbsoluteImageUrl(thumbnail);
+    }
+    
+    // Final fallback to default image
     return getAbsoluteImageUrl('/assets/images/default-product.png');
-  }, [getProductImages, getAbsoluteImageUrl, product]);
+  }, [getProductImages, getAbsoluteImageUrl, product, getProductValue]);
 
-  // Get SEO data
+  // Get all available product images for multiple OG tags
+  const getAllProductImages = useCallback(() => {
+    const mainImages = getProductImages();
+    const allImages = [...mainImages];
+    
+    // Add variant images if available
+    if (product?.variants) {
+      product.variants.forEach(variant => {
+        variant.options?.forEach(option => {
+          if (option.image_names && option.image_names.length > 0) {
+            option.image_names.forEach(img => {
+              const imageUrl = typeof img === 'string' ? img : img.path || img.url;
+              allImages.push({
+                path: imageUrl,
+                url: getAbsoluteImageUrl(imageUrl)
+              });
+            });
+          }
+        });
+      });
+    }
+    
+    // Remove duplicates and return unique images
+    const uniqueImages = allImages.filter((image, index, self) =>
+      index === self.findIndex((img) => img.url === image.url)
+    );
+    
+    return uniqueImages.slice(0, 6); // Limit to 6 images for social media
+  }, [product, getProductImages, getAbsoluteImageUrl]);
+
+  // Enhanced SEO data with better social media optimization
   const getSEOData = useCallback(() => {
     const productName = getProductValue("name", "Product");
     const productDescription = getProductValue("product_description_tittle", 
       getProductValue("short_description", "Check out this amazing product"));
     const productImage = getMainProductImage();
+    const allProductImages = getAllProductImages();
     const currentUrl = window.location.href;
     
+    // Clean description for meta tags
+    const cleanDescription = productDescription
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .substring(0, 160) // Limit length
+      .trim();
+    
+    // Clean product name
+    const cleanProductName = productName.substring(0, 60).trim();
+    
     return {
-      title: getProductValue("seo_title", `${productName} | Your Store`),
-      description: productDescription,
+      title: getProductValue("seo_title", `${cleanProductName} | Prine`),
+      description: cleanDescription || "Discover this amazing product at Prine",
       image: productImage,
+      images: allProductImages.map(img => img.url),
       url: currentUrl,
-      keywords: getProductValue("seo_keywords", productName),
+      keywords: getProductValue("seo_keywords", cleanProductName),
+      price: getProductValue("price", "0"),
+      availability: getProductValue("stock_count", 0) > 0 ? "in stock" : "out of stock",
+      brand: getProductValue("brand_details.name", "Prine"),
+      category: getProductValue("category_details.main_category_name", "General")
     };
-  }, [getProductValue, getMainProductImage]);
+  }, [getProductValue, getMainProductImage, getAllProductImages]);
 
   // Add to history function
   const addTohistoryDb = useCallback(async () => {
@@ -125,7 +188,7 @@ const Product = () => {
             // Use variant value as key and store array of images
             imagesMap[option.value] = option.image_names.map(img => ({
               path: typeof img === 'string' ? img : img.path || img.url,
-              url: typeof img === 'string' ? img : img.url || img.path
+              url: getAbsoluteImageUrl(typeof img === 'string' ? img : img.path || img.url)
             }));
           }
         });
@@ -142,7 +205,7 @@ const Product = () => {
       });
       setSelectedVariants(initialVariants);
     }
-  }, [product]);
+  }, [product, getAbsoluteImageUrl]);
 
   // Handle variant changes from ProductDetailVarient
   const handleVariantChange = useCallback((variants) => {
@@ -207,74 +270,107 @@ const Product = () => {
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
-      {/* Complete SEO Head with Open Graph Tags */}
+      {/* Enhanced SEO Head with Comprehensive Social Media Tags */}
       <Helmet>
         {/* Basic Meta Tags */}
         <title>{seoData.title}</title>
         <meta name="description" content={seoData.description} />
         <meta name="keywords" content={seoData.keywords} />
         
-        {/* Open Graph Meta Tags */}
+        {/* Open Graph Meta Tags - Facebook, LinkedIn, Pinterest */}
         <meta property="og:title" content={seoData.title} />
         <meta property="og:description" content={seoData.description} />
-        <meta property="og:image" content={seoData.image} />
         <meta property="og:url" content={seoData.url} />
         <meta property="og:type" content="product" />
         <meta property="og:site_name" content="Prine" />
+        <meta property="og:locale" content="en_US" />
         
-        {/* Additional OG Tags for Better Sharing */}
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:type" content="image/jpeg" />
-                     
+        {/* Multiple OG Image Tags for Better Compatibility */}
+        {seoData.images.map((image, index) => (
+          <React.Fragment key={index}>
+            <meta property="og:image" content={image} />
+            {index === 0 && (
+              <>
+                <meta property="og:image:width" content="1200" />
+                <meta property="og:image:height" content="630" />
+                <meta property="og:image:type" content="image/jpeg" />
+                <meta property="og:image:alt" content={productName} />
+              </>
+            )}
+          </React.Fragment>
+        ))}
+        
+        {/* Ensure at least one OG image is set */}
+        {seoData.images.length === 0 && (
+          <>
+            <meta property="og:image" content={seoData.image} />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
+            <meta property="og:image:type" content="image/jpeg" />
+            <meta property="og:image:alt" content={productName} />
+          </>
+        )}
+
         {/* Product Specific OG Tags */}
-        <meta property="product:price:amount" content={getProductValue("price", "0")} />
+        <meta property="product:price:amount" content={seoData.price} />
         <meta property="product:price:currency" content="INR" />
-        <meta property="product:availability" content={getProductValue("stock_count", 0) > 0 ? "in stock" : "out of stock"} />
-        <meta property="product:category" content={mainCategoryName} />
+        <meta property="product:availability" content={seoData.availability} />
+        <meta property="product:category" content={seoData.category} />
+        <meta property="product:brand" content={seoData.brand} />
         
         {/* Twitter Card Meta Tags */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={seoData.title} />
         <meta name="twitter:description" content={seoData.description} />
         <meta name="twitter:image" content={seoData.image} />
-        <meta name="twitter:site" content="@yourstorehandle" />
+        <meta name="twitter:image:alt" content={productName} />
+        <meta name="twitter:site" content="@prine" />
+        <meta name="twitter:creator" content="@prine" />
         
         {/* Additional Meta Tags */}
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={seoData.url} />
         
-        {/* Structured Data for SEO */}
+        {/* WhatsApp Specific Tags */}
+        <meta property="og:image" content={seoData.image} />
+        <meta property="og:image:secure_url" content={seoData.image} />
+        
+        {/* Structured Data for SEO (Schema.org) */}
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org/",
             "@type": "Product",
             "name": productName,
-            "image": [seoData.image],
+            "image": seoData.images.length > 0 ? seoData.images : [seoData.image],
             "description": seoData.description,
             "sku": getProductValue("sku", ""),
+            "mpn": getProductValue("sku", ""),
             "brand": {
               "@type": "Brand",
-              "name": getProductValue("brand_details.name", "Unknown Brand")
+              "name": seoData.brand
             },
             "offers": {
               "@type": "Offer",
               "url": seoData.url,
               "priceCurrency": "INR",
-              "price": getProductValue("price", "0"),
-              "availability": getProductValue("stock_count", 0) > 0 
+              "price": seoData.price,
+              "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              "availability": seoData.availability === "in stock" 
                 ? "https://schema.org/InStock" 
                 : "https://schema.org/OutOfStock",
               "seller": {
                 "@type": "Organization",
-                "name": "Your Store"
+                "name": "Prine"
               }
             },
             "aggregateRating": {
               "@type": "AggregateRating",
               "ratingValue": getProductValue("average_rating", "0"),
-              "reviewCount": getProductValue("review_count", "0")
-            }
+              "reviewCount": getProductValue("review_count", "0"),
+              "bestRating": "5",
+              "worstRating": "1"
+            },
+            "category": seoData.category
           })}
         </script>
       </Helmet>
