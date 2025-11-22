@@ -16,6 +16,8 @@ export const initiateCCAvenuePayment = async (paymentData) => {
     }
 
     const data = await response.json();
+    console.log(data,"intiate");
+    
     const paymentResponse = data.data;
 
     if (!paymentResponse.encrypted_data || !paymentResponse.access_code) {
@@ -37,7 +39,7 @@ const submitPaymentForm = (paymentResponse) => {
 
   const fields = {
     encRequest: paymentResponse.encrypted_data,
-    access_code: paymentResponse.access_code,
+    access_code: "AVUR86MK03BT13RUTB",
   };
 
   Object.entries(fields).forEach(([name, value]) => {
