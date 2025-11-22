@@ -123,7 +123,7 @@ const handleCCAvenueCallback = async (req, res) => {
     }
   } catch (err) {
     console.error('Error in CCAvenue callback:', err);
-    const customerUrl = process.env.CUSTOMER_SIDE_URL || 'http://localhost:5173';
+  const customerUrl='https://printe.in';
     return res.redirect(`${customerUrl}/payment/error?message=Processing error`);
   }
 };
