@@ -3,7 +3,7 @@ export const initiateCCAvenuePayment = async (paymentData) => {
     const apiUrl = import.meta.env.VITE_BASE_API_URL || 'http://localhost:8080';
     
 
-    const response = await fetch(`${apiUrl}/api/payment/create-order`, {
+    const response = await fetch(`${apiUrl}/payment/create-order`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
