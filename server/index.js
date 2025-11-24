@@ -7,18 +7,16 @@ const morgan = require("morgan");
 const path = require("path");
 const fs = require("fs");
 
-// Import your ProductSchema (adjust the path as needed)
+// Import your ProductSchema
 const { ProductSchema } = require("./controller/models_import");
 
 const app = express();
 
-// Trust proxy settings (essential for proper header forwarding)
+// Trust proxy settings
 app.set("trust proxy", 1);
-
-// Middleware pipeline
 app.use(morgan("dev"));
 
-// Enhanced CORS configuration
+// CORS configuration (your existing code)
 const allowedOrigins = [
   "https://printe.in",
   "https://www.printe.in",
@@ -31,49 +29,38 @@ const allowedOrigins = [
   "http://localhost:5174",
   "http://localhost:5175",
   "http://localhost:8080",
-  "null" // Add null as string for file:// protocol
+  "null"
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl requests, file://)
-      if (!origin) return callback(null, true);
-      
-      // Check if origin is in allowed list or if it's null
-      if (allowedOrigins.indexOf(origin) !== -1 || origin === "null") {
-        return callback(null, true);
-      } else {
-        const msg = `The CORS policy for this site does not allow access from ${origin}`;
-        console.log('CORS blocked:', origin);
-        return callback(new Error(msg), false);
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    credentials: true,
-    maxAge: 86400,
-  }));
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || origin === "null") {
+      return callback(null, true);
+    } else {
+      console.log('CORS blocked:', origin);
+      return callback(new Error('CORS blocked'), false);
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: true,
+  maxAge: 86400,
+}));
 
-// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// REMOVED HTTPS ENFORCEMENT MIDDLEWARE - Let Nginx handle this
-
-// Security headers middleware
+// Security headers
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "1; mode=block");
-  res.setHeader(
-    "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains"
-  );
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   next();
 });
 
-// Test endpoints
+// Your existing API routes
 app.get("/api/test-https", (req, res) => {
   res.json({
     protocol: req.protocol,
@@ -96,167 +83,214 @@ app.get("/", (req, res) => {
 
 app.use("/api", router);
 
-// Serve static files from React build (important for production)
-app.use(express.static(path.join(__dirname, 'build')));
+// ==================== SSR ROUTES FOR OG TAGS ====================
 
-// Dynamic OG Tags Middleware for All Routes
-app.get('*', async (req, res, next) => {
-  // Skip API routes and static files
-  if (req.path.startsWith('/api') || 
-      req.path.includes('.') || 
-      req.path.startsWith('/static/') ||
-      req.path.startsWith('/assets/')) {
-    return next();
+// Serve static files from Vite dist folder
+const distPath = path.join(__dirname, '../../dist');
+app.use(express.static(distPath));
+
+// Function to get product image URL
+function getProductImageUrl(product) {
+  if (!product?.images || product.images.length === 0) {
+    return 'https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533';
   }
 
-  // Try multiple possible build paths
-  const possiblePaths = [
-    path.resolve(__dirname, './dist', 'index.html'),
-    path.resolve(__dirname, '../live/dist', 'index.html'),
-    path.resolve(__dirname, 'build', 'index.html'),
-    path.resolve(__dirname, '../client/build', 'index.html')
-  ];
+  const firstImage = product.images[0];
+  let imagePath = '';
 
-  let filePath;
-  for (const possiblePath of possiblePaths) {
-    if (fs.existsSync(possiblePath)) {
-      filePath = possiblePath;
-      break;
+  if (typeof firstImage === 'string') {
+    imagePath = firstImage;
+  } else if (typeof firstImage === 'object') {
+    imagePath = firstImage.path || firstImage.url || '';
+  }
+
+  if (imagePath && imagePath.trim() !== '') {
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    } else {
+      return `https://printe.s3.ap-south-1.amazonaws.com/${imagePath.replace(/^\//, '')}`;
     }
   }
 
-  if (!filePath) {
-    console.error('Build file not found in any location');
-    return res.status(404).send('Build files not found. Please build the React app.');
-  }
+  return 'https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533';
+}
 
-  console.log(`Using build file: ${filePath}`);
+// SSR Route for Product Pages
+app.get("/product/:id", async (req, res) => {
+  const productId = req.params.id;
 
   try {
-    const data = await fs.promises.readFile(filePath, 'utf8');
+    // Fetch product data from database
+    const product = await ProductSchema.findOne({ seo_url: productId })
+      .populate("category_details", "main_category_name")
+      .populate("sub_category_details", "sub_category_name");
 
-    // Log what we're reading (first 500 chars to check placeholders)
-    console.log('File content starts with:', data.substring(0, 500));
-
-    // Default OG values
-    let ogTitle = 'PRINTE - Amazing Products';
-    let ogDescription = 'Discover amazing products at Printe';
-    let ogImage = 'https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533';
-    let ogUrl = `https://printe.in${req.path}`;
-    let ogType = 'website';
-    let canonicalUrl = `https://printe.in${req.path}`;
-
-    console.log(`Processing OG tags for route: ${req.path}`);
-
-    // Handle product routes
-    if (req.path.startsWith('/product/')) {
-      const productSeoUrl = req.path.split('/product/')[1];
-      console.log(`Looking for product with SEO URL: ${productSeoUrl}`);
-      
-      try {
-        // Fetch product from database using seo_url
-        const product = await ProductSchema.findOne({ seo_url: productSeoUrl })
-          .populate("category_details", "main_category_name")
-          .populate("sub_category_details", "sub_category_name");
-
-        if (product) {
-          console.log(`✅ Found product: ${product.name}`);
-          console.log(`Product images:`, product.images);
-          
-          // Use product data for OG tags
-          ogTitle = product.seo_title || `${product.name} | PRINTE`;
-          
-          // Truncate description if too long
-          let description = product.short_description || 
-                           product.product_description_tittle || 
-                           'Check out this amazing product on Printe';
-          if (description.length > 155) {
-            description = description.substring(0, 152) + '...';
-          }
-          ogDescription = description;
-          
-          // Handle product images
-          if (product.images && product.images.length > 0) {
-            const firstImage = product.images[0];
-            let imagePath = '';
-            
-            console.log('First image data:', firstImage);
-            
-            if (typeof firstImage === 'string') {
-              imagePath = firstImage;
-            } else {
-              imagePath = firstImage.path || firstImage.url || '';
-            }
-            
-            console.log(`Extracted image path: ${imagePath}`);
-            
-            if (imagePath) {
-              if (imagePath.startsWith('http')) {
-                ogImage = imagePath;
-              } else {
-                // Remove leading slash if present
-                const cleanPath = imagePath.replace(/^\//, '');
-                ogImage = `https://printe.s3.ap-south-1.amazonaws.com/${cleanPath}`;
-              }
-              console.log(`✅ Final OG Image URL: ${ogImage}`);
-            } else {
-              console.log('❌ No valid image path found');
-            }
-          } else {
-            console.log('❌ No images found for product');
-          }
-          
-          ogUrl = `https://printe.in${req.path}`;
-          ogType = 'product';
-          canonicalUrl = `https://printe.in/product/${product.seo_url}`;
-        } else {
-          console.log(`❌ Product not found for seo_url: ${productSeoUrl}`);
-        }
-      } catch (error) {
-        console.log('❌ Error fetching product for OG tags:', error.message);
-      }
+    if (!product) {
+      return res.status(404).send('Product not found');
     }
 
-    console.log(`🎯 Final OG Tags - Title: ${ogTitle}`);
-    console.log(`🎯 Final OG Tags - Image: ${ogImage}`);
-    console.log(`🎯 Final OG Tags - Description: ${ogDescription}`);
+    console.log(`🎯 Generating SSR HTML for product: ${product.name}`);
 
-    // Check if placeholders exist in the file
-    const hasTitlePlaceholder = data.includes('$OG_TITLE');
-    const hasImagePlaceholder = data.includes('$OG_IMAGE');
-    const hasDescriptionPlaceholder = data.includes('$OG_DESCRIPTION');
+    // Prepare OG data
+    const ogTitle = product.seo_title || `${product.name} | PRINTE`;
+    const ogDescription = product.short_description || 
+                         product.product_description_tittle || 
+                         'Check out this amazing product on Printe';
+    const ogImage = getProductImageUrl(product);
+    const ogUrl = `https://printe.in/product/${productId}`;
+    const canonicalUrl = `https://printe.in/product/${product.seo_url}`;
 
-    console.log(`Placeholders found - Title: ${hasTitlePlaceholder}, Image: ${hasImagePlaceholder}, Description: ${hasDescriptionPlaceholder}`);
+    console.log(`📸 OG Image: ${ogImage}`);
 
-    // Replace placeholders in index.html
-    const result = data
-      .replace(/\$OG_TITLE/g, ogTitle)
-      .replace(/\$OG_DESCRIPTION/g, ogDescription)
-      .replace(/\$OG_IMAGE/g, ogImage)
-      .replace(/\$OG_URL/g, ogUrl)
-      .replace(/\$OG_TYPE/g, ogType)
-      .replace(/\$CANONICAL_URL/g, canonicalUrl);
-
-    // Log a snippet of the result to verify replacement
-    const resultSnippet = result.substring(0, 800);
-    console.log('Result snippet (first 800 chars):', resultSnippet);
-
-    res.send(result);
-  } catch (err) {
-    console.error('❌ Error serving dynamic OG tags:', err);
+    // Generate complete HTML with OG tags
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/assets/fav-B54vuM6T.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${ogTitle}</title>
     
-    // Fallback: serve the original index.html
-    try {
-      const fallbackData = await fs.promises.readFile(filePath, 'utf8');
-      res.send(fallbackData);
-    } catch (fallbackErr) {
-      console.error('❌ Fallback also failed:', fallbackErr);
-      res.status(500).send('Error loading page');
-    }
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="${ogDescription}" />
+    <meta name="keywords" content="printe, products, shopping, ${product.name}" />
+    <meta name="author" content="Printe" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="${ogTitle}" />
+    <meta property="og:description" content="${ogDescription}" />
+    <meta property="og:image" content="${ogImage}" />
+    <meta property="og:url" content="${ogUrl}" />
+    <meta property="og:type" content="product" />
+    <meta property="og:site_name" content="Printe" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    
+    <!-- Product Specific OG Tags -->
+    <meta property="product:price:amount" content="${product.price || '0'}" />
+    <meta property="product:price:currency" content="INR" />
+    <meta property="product:availability" content="${product.stock_count > 0 ? 'in stock' : 'out of stock'}" />
+    <meta property="product:category" content="${product.category_details?.main_category_name || 'Products'}" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${ogTitle}" />
+    <meta name="twitter:description" content="${ogDescription}" />
+    <meta name="twitter:image" content="${ogImage}" />
+    <meta name="twitter:site" content="@printe" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="${canonicalUrl}" />
+    
+    <!-- External Scripts -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-PHZNNT6QB8');
+    </script>
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+      ${JSON.stringify({
+        "@context": "https://schema.org/",
+        "@type": "Product",
+        "name": product.name,
+        "description": ogDescription,
+        "image": ogImage,
+        "sku": product._id,
+        "brand": {
+          "@type": "Brand",
+          "name": "Printe"
+        },
+        "offers": {
+          "@type": "Offer",
+          "url": ogUrl,
+          "priceCurrency": "INR",
+          "price": product.price || "0",
+          "availability": `https://schema.org/${product.stock_count > 0 ? "InStock" : "OutOfStock"}`,
+          "seller": {
+            "@type": "Organization",
+            "name": "Printe"
+          }
+        }
+      })}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/assets/index-CHICNOfp.js"></script>
+    <link rel="stylesheet" href="/assets/index-DDKRWMw0.css">
+    
+    <!-- Initialize React with product data -->
+    <script>
+      window.__INITIAL_STATE__ = {
+        product: ${JSON.stringify(product)},
+        seoData: {
+          title: "${ogTitle}",
+          description: "${ogDescription}",
+          image: "${ogImage}",
+          url: "${ogUrl}"
+        }
+      };
+    </script>
+  </body>
+</html>`;
+
+    res.send(html);
+  } catch (error) {
+    console.error('❌ Error generating SSR HTML:', error);
+    
+    // Fallback: serve default HTML
+    const fallbackHtml = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/assets/fav-B54vuM6T.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PRINTE - Amazing Products</title>
+    <meta name="description" content="Discover amazing products at Printe" />
+    <meta property="og:title" content="PRINTE - Amazing Products" />
+    <meta property="og:description" content="Discover amazing products at Printe" />
+    <meta property="og:image" content="https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533" />
+    <meta property="og:url" content="https://printe.in" />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/assets/index-CHICNOfp.js"></script>
+    <link rel="stylesheet" href="/assets/index-DDKRWMw0.css">
+  </body>
+</html>`;
+    
+    res.send(fallbackHtml);
   }
 });
 
-// Error handling middleware
+// Other routes (non-product) can still use the static files
+app.get('*', (req, res) => {
+  // Skip API routes
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+
+  // For non-product routes, serve the static index.html
+  const filePath = path.join(distPath, 'index.html');
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Frontend not built. Please run: npm run build');
+  }
+});
+
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({
@@ -265,25 +299,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({
-    error: 'API endpoint not found',
-    path: req.originalUrl
-  });
-});
-
 const Port = process.env.PORT || 8080;
 const Host = process.env.HOST || "0.0.0.0";
 
 // MongoDB connection and server start
-mongoose
-  .connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     app.listen(Port, Host, () => {
-      console.log(`🚀 Server running on http://${Host}:${Port}`);
+      console.log(`\n🚀 Server running on http://${Host}:${Port}`);
       console.log(`📦 MongoDB connected successfully`);
-      console.log(`🔍 Dynamic OG tags middleware is active`);
+      console.log(`🔍 SSR OG tags active for product routes`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   })

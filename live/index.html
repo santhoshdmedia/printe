@@ -2,23 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./src/assets/logo/fav.png" />
+    <link rel="icon" type="image/svg+xml" href="/src/assets/logo/fav.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PRINTE</title>
+    <title>$OG_TITLE</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="$OG_DESCRIPTION" />
+    <meta name="keywords" content="printe, products, shopping" />
+    <meta name="author" content="Printe" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="$OG_TITLE" />
+    <meta property="og:description" content="$OG_DESCRIPTION" />
+    <meta property="og:image" content="$OG_IMAGE" />
+    <meta property="og:url" content="$OG_URL" />
+    <meta property="og:type" content="$OG_TYPE" />
+    <meta property="og:site_name" content="Printe" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="$OG_TITLE" />
+    <meta name="twitter:description" content="$OG_DESCRIPTION" />
+    <meta name="twitter:image" content="$OG_IMAGE" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="$CANONICAL_URL" />
+    
+    <!-- External Scripts -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <!-- Google tag (gtag.js) -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"
-    ></script>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-
-      gtag("config", "G-PHZNNT6QB8");
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-PHZNNT6QB8');
     </script>
   </head>
   <body>
