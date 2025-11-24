@@ -33,10 +33,13 @@ const Product = () => {
   const [selectedVariants, setSelectedVariants] = useState({});
   const [variantImages, setVariantImages] = useState({});
 
+  // Use SSR data if available, otherwise use Redux
+  const productData = window.__INITIAL_STATE__?.product || product;
+
   // Safe value getter with better error handling
   const getProductValue = useCallback((path, defaultValue = "") => {
-    return _.get(product, path, defaultValue);
-  }, [product]);
+    return _.get(productData, path, defaultValue);
+  }, [productData]);
 
   // Get absolute URL for images
   const getAbsoluteImageUrl = useCallback((imagePath) => {
@@ -55,7 +58,7 @@ const Product = () => {
 
   // Get product images
   const getProductImages = useCallback(() => {
-    const images = product?.images || [];
+    const images = productData?.images || [];
     return images.map(img => {
       if (typeof img === 'string') {
         return {
@@ -70,13 +73,13 @@ const Product = () => {
         absoluteUrl: getAbsoluteImageUrl(img.path || img.url)
       };
     });
-  }, [product, getAbsoluteImageUrl]);
+  }, [productData, getAbsoluteImageUrl]);
 
   // Add to history function
   const addTohistoryDb = useCallback(async () => {
     try {
       const userId = _.get(user, "_id", "");
-      const productId = _.get(product, "_id", "");
+      const productId = _.get(productData, "_id", "");
 
       if (userId && productId) {
         await addTohistory({ product_id: productId });
@@ -84,14 +87,14 @@ const Product = () => {
     } catch (error) {
       console.error("Failed to add to history:", error);
     }
-  }, [user, product]);
+  }, [user, productData]);
 
   // Process variant images when product loads
   useEffect(() => {
-    if (product?.variants) {
+    if (productData?.variants) {
       const imagesMap = {};
 
-      product.variants.forEach(variant => {
+      productData.variants.forEach(variant => {
         variant.options?.forEach(option => {
           if (option.image_names && option.image_names.length > 0) {
             imagesMap[option.value] = option.image_names.map(img => {
@@ -115,63 +118,54 @@ const Product = () => {
       setVariantImages(imagesMap);
 
       const initialVariants = {};
-      product.variants.forEach(variant => {
+      productData.variants.forEach(variant => {
         if (variant.options?.length > 0) {
           initialVariants[variant.variant_name] = variant.options[0].value;
         }
       });
       setSelectedVariants(initialVariants);
     }
-  }, [product, getAbsoluteImageUrl]);
+  }, [productData, getAbsoluteImageUrl]);
 
   // Handle variant changes
   const handleVariantChange = useCallback((variants) => {
     setSelectedVariants(variants);
   }, []);
 
-  // Fetch product data
+  // Fetch product data only if not provided by SSR
   useEffect(() => {
-    const fetchProductData = async () => {
-      if (!id) return;
+    if (!window.__INITIAL_STATE__?.product && id) {
+      const fetchProductData = async () => {
+        try {
+          await Promise.all([
+            dispatch({ type: "GET_PRODUCT", data: { id } }),
+            dispatch({ type: "GET_PRODUCT_REVIEW", data: { id } })
+          ]);
 
-      try {
-        await Promise.all([
-          dispatch({ type: "GET_PRODUCT", data: { id } }),
-          dispatch({ type: "GET_PRODUCT_REVIEW", data: { id } })
-        ]);
+          localStorage.removeItem("redirect_url");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (error) {
+          console.error("Failed to fetch product data:", error);
+        }
+      };
 
-        localStorage.removeItem("redirect_url");
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } catch (error) {
-        console.error("Failed to fetch product data:", error);
-      }
-    };
-
-    fetchProductData();
+      fetchProductData();
+    }
   }, [id, dispatch]);
 
   // Add to history when product is loaded
   useEffect(() => {
-    if (product?._id && user?._id) {
+    if (productData?._id && user?._id) {
       addTohistoryDb();
     }
-  }, [product, user, addTohistoryDb]);
+  }, [productData, user, addTohistoryDb]);
 
   // Loading state
-  if (isGettingProduct) {
+  if ((isGettingProduct && !window.__INITIAL_STATE__?.product) || !productData) {
     return <ProductPageLoadingSkeleton />;
   }
 
-  // Product not found state
-  if (!product) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="text-lg text-gray-600">Product not found</div>
-      </div>
-    );
-  }
-
-  const hasVariants = product.type === "Variable Product" && product.variants?.length > 0;
+  const hasVariants = productData.type === "Variable Product" && productData.variants?.length > 0;
 
   // Product data for breadcrumbs
   const categoryId = getProductValue("category_details._id");
@@ -182,7 +176,7 @@ const Product = () => {
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
-      {/* REMOVED HELMET - SSR handles all OG tags */}
+      {/* NO HELMET - SSR handles all OG tags */}
 
       {/* Breadcrumbs */}
       <div className="pt-5 pb-0">
@@ -202,14 +196,14 @@ const Product = () => {
               {hasVariants ? (
                 <ImagesliderVarient
                   imageList={getProductImages()}
-                  data={product}
+                  data={productData}
                   selectedVariants={selectedVariants}
                   variantImages={variantImages}
                 />
               ) : (
                 <Imageslider
                   imageList={getProductImages()}
-                  data={product}
+                  data={productData}
                 />
               )}
             </div>
@@ -217,18 +211,18 @@ const Product = () => {
             <div className="w-full lg:w-1/2 lg:pl-8">
               {hasVariants ? (
                 <ProductDetailVarient
-                  data={product}
+                  data={productData}
                   onVariantChange={handleVariantChange}
                   selectedVariants={selectedVariants}
                 />
               ) : (
-                <ProductDetails data={product} />
+                <ProductDetails data={productData} />
               )}
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-6 border">
-            <OverViewDetails data={product} />
+            <OverViewDetails data={productData} />
           </div>
 
           <div className="h-8" />

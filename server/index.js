@@ -16,7 +16,7 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(morgan("dev"));
 
-// CORS configuration (your existing code)
+// CORS configuration
 const allowedOrigins = [
   "https://printe.in",
   "https://www.printe.in",
@@ -60,7 +60,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Your existing API routes
+// Test endpoints
 app.get("/api/test-https", (req, res) => {
   res.json({
     protocol: req.protocol,
@@ -83,11 +83,37 @@ app.get("/", (req, res) => {
 
 app.use("/api", router);
 
-// ==================== SSR ROUTES FOR OG TAGS ====================
+// ==================== SSR CONFIGURATION ====================
 
-// Serve static files from Vite dist folder
-const distPath = path.join(__dirname, '../../dist');
-app.use(express.static(distPath));
+// Find the correct dist folder path
+function findDistPath() {
+  const possiblePaths = [
+    path.join(__dirname, '../live/dist'),      // live/server -> ../dist
+    path.join(__dirname, '../live/dist'),   // live/server -> ../../dist  
+    path.join(process.cwd(), 'dist'),     // Current directory
+    path.join(__dirname, 'dist'),         // Server directory
+  ];
+
+  for (const distPath of possiblePaths) {
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      console.log(`✅ Found dist folder at: ${distPath}`);
+      return distPath;
+    }
+  }
+  
+  console.log('❌ Dist folder not found in any location');
+  return null;
+}
+
+const distPath = findDistPath();
+
+if (distPath) {
+  console.log(`📁 Serving static files from: ${distPath}`);
+  app.use(express.static(distPath));
+} else {
+  console.log('❌ No dist folder found');
+}
 
 // Function to get product image URL
 function getProductImageUrl(product) {
@@ -101,14 +127,18 @@ function getProductImageUrl(product) {
   if (typeof firstImage === 'string') {
     imagePath = firstImage;
   } else if (typeof firstImage === 'object') {
-    imagePath = firstImage.path || firstImage.url || '';
+    imagePath = firstImage.path || firstImage.url || firstImage.image_url || '';
   }
+
+  console.log('📸 Raw image path:', imagePath);
 
   if (imagePath && imagePath.trim() !== '') {
     if (imagePath.startsWith('http')) {
       return imagePath;
     } else {
-      return `https://printe.s3.ap-south-1.amazonaws.com/${imagePath.replace(/^\//, '')}`;
+      // Remove leading slash and construct S3 URL
+      const cleanPath = imagePath.replace(/^\//, '');
+      return `https://printe.s3.ap-south-1.amazonaws.com/${cleanPath}`;
     }
   }
 
@@ -119,6 +149,8 @@ function getProductImageUrl(product) {
 app.get("/product/:id", async (req, res) => {
   const productId = req.params.id;
 
+  console.log(`\n🎯 Processing product route: /product/${productId}`);
+
   try {
     // Fetch product data from database
     const product = await ProductSchema.findOne({ seo_url: productId })
@@ -126,25 +158,60 @@ app.get("/product/:id", async (req, res) => {
       .populate("sub_category_details", "sub_category_name");
 
     if (!product) {
-      return res.status(404).send('Product not found');
+      console.log(`❌ Product not found: ${productId}`);
+      // Fallback to static file if product not found
+      if (distPath) {
+        return res.sendFile(path.join(distPath, 'index.html'));
+      } else {
+        return res.status(404).send('Product not found');
+      }
     }
 
-    console.log(`🎯 Generating SSR HTML for product: ${product.name}`);
+    console.log(`✅ Found product: ${product.name}`);
+    console.log(`📸 Product images:`, product.images);
 
     // Prepare OG data
     const ogTitle = product.seo_title || `${product.name} | PRINTE`;
-    const ogDescription = product.short_description || 
-                         product.product_description_tittle || 
-                         'Check out this amazing product on Printe';
+    let ogDescription = product.short_description || 
+                       product.product_description_tittle || 
+                       'Check out this amazing product on Printe';
+    
+    // Truncate description for SEO
+    if (ogDescription.length > 155) {
+      ogDescription = ogDescription.substring(0, 152) + '...';
+    }
+    
     const ogImage = getProductImageUrl(product);
     const ogUrl = `https://printe.in/product/${productId}`;
     const canonicalUrl = `https://printe.in/product/${product.seo_url}`;
 
-    console.log(`📸 OG Image: ${ogImage}`);
+    console.log(`📊 OG Data:`);
+    console.log(`   Title: ${ogTitle}`);
+    console.log(`   Description: ${ogDescription}`);
+    console.log(`   Image: ${ogImage}`);
+    console.log(`   URL: ${ogUrl}`);
+
+    // Read the built index.html to get the asset paths
+    let assetJs = '/assets/index.js';
+    let assetCss = '/assets/index.css';
+    
+    if (distPath) {
+      try {
+        const files = fs.readdirSync(path.join(distPath, 'assets'));
+        const jsFile = files.find(f => f.endsWith('.js') && f.startsWith('index-'));
+        const cssFile = files.find(f => f.endsWith('.css') && f.startsWith('index-'));
+        
+        if (jsFile) assetJs = `/assets/${jsFile}`;
+        if (cssFile) assetCss = `/assets/${cssFile}`;
+        
+        console.log(`📦 Assets: JS=${assetJs}, CSS=${assetCss}`);
+      } catch (err) {
+        console.log('📦 Using default asset paths');
+      }
+    }
 
     // Generate complete HTML with OG tags
-    const html = `
-<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -204,7 +271,7 @@ app.get("/product/:id", async (req, res) => {
         "name": product.name,
         "description": ogDescription,
         "image": ogImage,
-        "sku": product._id,
+        "sku": product._id?.toString() || productId,
         "brand": {
           "@type": "Brand",
           "name": "Printe"
@@ -222,11 +289,12 @@ app.get("/product/:id", async (req, res) => {
         }
       })}
     </script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="${assetCss}">
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/assets/index-CHICNOfp.js"></script>
-    <link rel="stylesheet" href="/assets/index-DDKRWMw0.css">
     
     <!-- Initialize React with product data -->
     <script>
@@ -240,51 +308,43 @@ app.get("/product/:id", async (req, res) => {
         }
       };
     </script>
+    
+    <!-- JavaScript -->
+    <script type="module" src="${assetJs}"></script>
   </body>
 </html>`;
 
+    console.log(`✅ SSR HTML generated successfully`);
     res.send(html);
+
   } catch (error) {
     console.error('❌ Error generating SSR HTML:', error);
     
-    // Fallback: serve default HTML
-    const fallbackHtml = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/assets/fav-B54vuM6T.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PRINTE - Amazing Products</title>
-    <meta name="description" content="Discover amazing products at Printe" />
-    <meta property="og:title" content="PRINTE - Amazing Products" />
-    <meta property="og:description" content="Discover amazing products at Printe" />
-    <meta property="og:image" content="https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533" />
-    <meta property="og:url" content="https://printe.in" />
-    <meta property="og:type" content="website" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/assets/index-CHICNOfp.js"></script>
-    <link rel="stylesheet" href="/assets/index-DDKRWMw0.css">
-  </body>
-</html>`;
-    
-    res.send(fallbackHtml);
+    // Fallback: serve static index.html
+    if (distPath) {
+      console.log('🔄 Falling back to static file');
+      res.sendFile(path.join(distPath, 'index.html'));
+    } else {
+      res.status(500).send('Error loading page');
+    }
   }
 });
 
-// Other routes (non-product) can still use the static files
+// All other routes serve the static React app
 app.get('*', (req, res) => {
   // Skip API routes
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
 
-  // For non-product routes, serve the static index.html
-  const filePath = path.join(distPath, 'index.html');
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
+  // Skip product routes (handled by SSR)
+  if (req.path.startsWith('/product/')) {
+    return res.status(404).send('Product route error');
+  }
+
+  // Serve static React app for all other routes
+  if (distPath) {
+    res.sendFile(path.join(distPath, 'index.html'));
   } else {
     res.status(404).send('Frontend not built. Please run: npm run build');
   }
@@ -308,8 +368,14 @@ mongoose.connect(process.env.MONGODB_URI)
     app.listen(Port, Host, () => {
       console.log(`\n🚀 Server running on http://${Host}:${Port}`);
       console.log(`📦 MongoDB connected successfully`);
-      console.log(`🔍 SSR OG tags active for product routes`);
+      console.log(`🔍 SSR OG tags active for /product/:id routes`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+      
+      if (distPath) {
+        console.log(`📁 Serving frontend from: ${distPath}`);
+      } else {
+        console.log(`❌ Frontend not built - run 'npm run build' in live folder`);
+      }
     });
   })
   .catch((err) => {
