@@ -39,7 +39,7 @@ const Product = () => {
     return _.get(product, path, defaultValue);
   }, [product]);
 
-  // Get absolute URL for images
+  // Get absolute URL for images - IMPROVED
   const getAbsoluteImageUrl = useCallback((imagePath) => {
     if (!imagePath) return '';
     
@@ -48,54 +48,78 @@ const Product = () => {
       return imagePath;
     }
     
-    // If relative path, make it absolute
+    // If relative path starting with /, make it absolute
     if (imagePath.startsWith('/')) {
       return `${window.location.origin}${imagePath}`;
     }
     
-    // For other cases, prepend with origin
-    return `${window.location.origin}/${imagePath}`;
+    // For other relative paths, prepend with origin and slash
+    return `${window.location.origin}/${imagePath.replace(/^\//, '')}`;
   }, []);
 
-  // Get product images for OG tags
+  // Get product images for OG tags - IMPROVED
   const getProductImages = useCallback(() => {
     const images = product?.images || [];
-    return images.map(img => ({
-      path: typeof img === 'string' ? img : img.path,
-      url: typeof img === 'string' ? img : img.url
-    }));
-  }, [product]);
+    return images.map(img => {
+      if (typeof img === 'string') {
+        return { 
+          path: img, 
+          url: getAbsoluteImageUrl(img),
+          absoluteUrl: getAbsoluteImageUrl(img)
+        };
+      }
+      return {
+        path: img.path || img.url,
+        url: img.url || img.path,
+        absoluteUrl: getAbsoluteImageUrl(img.path || img.url)
+      };
+    });
+  }, [product, getAbsoluteImageUrl]);
 
-  // Get main product image for OG tags
+  // Get main product image for OG tags - IMPROVED
   const getMainProductImage = useCallback(() => {
     const images = getProductImages();
+    
+    // Try main product images first
     if (images.length > 0) {
-      return getAbsoluteImageUrl(images[0].path || images[0].url);
+      return images[0].absoluteUrl || images[0].url;
     }
     
-    // Try to get from variants if no main images
+    // Try variant images as fallback
     if (product?.variants?.[0]?.options?.[0]?.image_names?.[0]) {
       const variantImage = product.variants[0].options[0].image_names[0];
-      return getAbsoluteImageUrl(typeof variantImage === 'string' ? variantImage : variantImage.path);
+      const imagePath = typeof variantImage === 'string' ? variantImage : variantImage.path;
+      return getAbsoluteImageUrl(imagePath);
     }
     
-    return getAbsoluteImageUrl('/assets/images/default-product.png');
+    // Final fallback - use a reliable default image
+    return "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533";
   }, [getProductImages, getAbsoluteImageUrl, product]);
 
-  // Get SEO data
+  // Get SEO data - IMPROVED
   const getSEOData = useCallback(() => {
-    const productName = getProductValue("name", "Product");
-    const productDescription = getProductValue("product_description_tittle", 
-      getProductValue("short_description", "Check out this amazing product"));
+    const productName = getProductValue("name", "Amazing Product");
+    const productDescription = getProductValue(
+      "product_description_tittle", 
+      getProductValue("short_description", "Discover this amazing product at Printe")
+    );
+    
     const productImage = getMainProductImage();
     const currentUrl = window.location.href;
     
+    // Format title and description for SEO
+    const title = getProductValue("seo_title", `${productName} | Printe`);
+    const description = productDescription.length > 155 
+      ? `${productDescription.substring(0, 155)}...` 
+      : productDescription;
+    
     return {
-      title: getProductValue("seo_title", `${productName} | Your Store`),
-      description: productDescription,
-      image: productImage,
+      title,
+      description,
+      image: productImage, // This is now absolute URL
       url: currentUrl,
-      keywords: getProductValue("seo_keywords", productName),
+      keywords: getProductValue("seo_keywords", `${productName}, buy online, printe`),
+      productName,
     };
   }, [getProductValue, getMainProductImage]);
 
@@ -123,10 +147,20 @@ const Product = () => {
         variant.options?.forEach(option => {
           if (option.image_names && option.image_names.length > 0) {
             // Use variant value as key and store array of images
-            imagesMap[option.value] = option.image_names.map(img => ({
-              path: typeof img === 'string' ? img : img.path || img.url,
-              url: typeof img === 'string' ? img : img.url || img.path
-            }));
+            imagesMap[option.value] = option.image_names.map(img => {
+              if (typeof img === 'string') {
+                return { 
+                  path: img, 
+                  url: img,
+                  absoluteUrl: getAbsoluteImageUrl(img)
+                };
+              }
+              return {
+                path: img.path || img.url,
+                url: img.url || img.path,
+                absoluteUrl: getAbsoluteImageUrl(img.path || img.url)
+              };
+            });
           }
         });
       });
@@ -142,7 +176,7 @@ const Product = () => {
       });
       setSelectedVariants(initialVariants);
     }
-  }, [product]);
+  }, [product, getAbsoluteImageUrl]);
 
   // Handle variant changes from ProductDetailVarient
   const handleVariantChange = useCallback((variants) => {
@@ -180,6 +214,14 @@ const Product = () => {
     }
   }, [product, user, addTohistoryDb]);
 
+  // Debug: Log SEO data for verification
+  useEffect(() => {
+    if (product) {
+      console.log('Product OG Image URL:', getMainProductImage());
+      console.log('Full SEO Data:', getSEOData());
+    }
+  }, [product, getMainProductImage, getSEOData]);
+
   // Loading state
   if (isGettingProduct) {
     return <ProductPageLoadingSkeleton />;
@@ -204,29 +246,29 @@ const Product = () => {
   const subCategoryName = getProductValue("sub_category_details.sub_category_name");
   const subCategoryId = getProductValue("sub_category_details._id");
   const productName = getProductValue("name", "Product");
-  const productImage = getProductValue("images[0].path", "Product");
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
-      {/* Complete SEO Head with Open Graph Tags */}
+      {/* Complete SEO Head with Open Graph Tags - FIXED */}
       <Helmet>
         {/* Basic Meta Tags */}
         <title>{seoData.title}</title>
         <meta name="description" content={seoData.description} />
         <meta name="keywords" content={seoData.keywords} />
         
-        {/* Open Graph Meta Tags */}
+        {/* Open Graph Meta Tags - ALL USING seoData.image (absolute URL) */}
         <meta property="og:title" content={seoData.title} />
         <meta property="og:description" content={seoData.description} />
-        <meta property="og:image" content={productImage} />
+        <meta property="og:image" content={seoData.image} />
         <meta property="og:url" content={seoData.url} />
         <meta property="og:type" content="product" />
-        <meta property="og:site_name" content="Prine" />
+        <meta property="og:site_name" content="Printe" />
         
         {/* Additional OG Tags for Better Sharing */}
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:alt" content={seoData.productName} />
                      
         {/* Product Specific OG Tags */}
         <meta property="product:price:amount" content={getProductValue("price", "0")} />
@@ -234,19 +276,19 @@ const Product = () => {
         <meta property="product:availability" content={getProductValue("stock_count", 0) > 0 ? "in stock" : "out of stock"} />
         <meta property="product:category" content={mainCategoryName} />
         
-        {/* Twitter Card Meta Tags */}
+        {/* Twitter Card Meta Tags - ALL USING seoData.image (absolute URL) */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={seoData.title} />
         <meta name="twitter:description" content={seoData.description} />
         <meta name="twitter:image" content={seoData.image} />
-        <meta name="twitter:site" content="@yourstorehandle" />
+        <meta name="twitter:site" content="@printe" />
         
         {/* Additional Meta Tags */}
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={seoData.url} />
       </Helmet>
 
-      {/* Breadcrumbs */}
+      {/* Rest of your component remains the same */}
       <div className="pt-5 pb-0">
         <Breadcrumbs
           title3={productName}
@@ -257,12 +299,9 @@ const Product = () => {
         />
       </div>
 
-      {/* Main Product Content */}
       <Spin spinning={isUploadingFile} tip="Loading product...">
         <div className="flex flex-col space-y-6">
-          {/* Product Overview Section */}
           <div className="flex flex-col lg:flex-row gap-8 lg:py-4 rounded-xl py-2">
-            {/* Product Images */}
             <div className="w-full lg:w-1/2">
               {hasVariants ? (
                 <ImagesliderVarient
@@ -279,7 +318,6 @@ const Product = () => {
               )}
             </div>
 
-            {/* Product Details */}
             <div className="w-full lg:w-1/2 lg:pl-8">
               {hasVariants ? (
                 <ProductDetailVarient 
@@ -293,15 +331,12 @@ const Product = () => {
             </div>
           </div>
 
-          {/* Product Overview Details */}
           <div className="bg-white rounded-xl shadow-sm p-6 border">
             <OverViewDetails data={product} />
           </div>
 
-          {/* Spacing */}
           <div className="h-8" />
 
-          {/* Similar Products */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <SimilarProducts
               left={true}
@@ -309,14 +344,12 @@ const Product = () => {
             />
           </div>
 
-          {/* Recently Viewed Products (for logged-in users) */}
           {user?._id && (
             <div className="bg-white rounded-xl shadow-sm p-6">
               <HistoryProducts left={true} />
             </div>
           )}
 
-          {/* Bottom Spacing */}
           <div className="h-8" />
         </div>
       </Spin>
