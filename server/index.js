@@ -5,6 +5,10 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const morgan = require("morgan");
 const path = require("path");
+const fs = require("fs");
+
+// Import your ProductSchema (adjust the path as needed)
+const { ProductSchema } = require("./controller/models_import");
 
 const app = express();
 
@@ -49,7 +53,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     credentials: true,
     maxAge: 86400,
-  }))
+  }));
 
 // Body parsers
 app.use(express.json());
@@ -92,6 +96,142 @@ app.get("/", (req, res) => {
 
 app.use("/api", router);
 
+// Serve static files from React build (important for production)
+app.use(express.static(path.join(__dirname, 'build')));
+
+// Dynamic OG Tags Middleware for All Routes
+app.get('*', async (req, res, next) => {
+  // Skip API routes and static files
+  if (req.path.startsWith('/api') || 
+      req.path.includes('.') || 
+      req.path.startsWith('/static/')) {
+    return next();
+  }
+
+  const filePath = path.resolve(__dirname, './build', 'index.html');
+  
+  // Check if build file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send('Build files not found. Please build the React app.');
+  }
+
+  try {
+    const data = await fs.promises.readFile(filePath, 'utf8');
+
+    // Default OG values
+    let ogTitle = 'PRINTE - Amazing Products';
+    let ogDescription = 'Discover amazing products at Printe';
+    let ogImage = 'https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533';
+    let ogUrl = `https://printe.in${req.path}`;
+    let canonicalUrl = `https://printe.in${req.path}`;
+
+    console.log(`Processing OG tags for route: ${req.path}`);
+
+    // Handle product routes
+    if (req.path.startsWith('/product/')) {
+      const productSeoUrl = req.path.split('/product/')[1];
+      
+      try {
+        // Fetch product from database using seo_url
+        const product = await ProductSchema.findOne({ seo_url: productSeoUrl })
+          .populate("category_details", "main_category_name")
+          .populate("sub_category_details", "sub_category_name");
+
+        if (product) {
+          console.log(`Found product: ${product.name}`);
+          
+          // Use product data for OG tags
+          ogTitle = product.seo_title || `${product.name} | PRINTE`;
+          ogDescription = product.short_description || 
+                         product.product_description_tittle || 
+                         'Check out this amazing product on Printe';
+          
+          // Handle product images
+          if (product.images && product.images.length > 0) {
+            const firstImage = product.images[0];
+            let imagePath = '';
+            
+            if (typeof firstImage === 'string') {
+              imagePath = firstImage;
+            } else {
+              imagePath = firstImage.path || firstImage.url || '';
+            }
+            
+            if (imagePath) {
+              if (imagePath.startsWith('http')) {
+                ogImage = imagePath;
+              } else {
+                // Construct absolute URL for S3 images or relative paths
+                ogImage = `https://printe.s3.ap-south-1.amazonaws.com/${imagePath.replace(/^\//, '')}`;
+              }
+            }
+          }
+          
+          ogUrl = `https://printe.in${req.path}`;
+          canonicalUrl = `https://printe.in/product/${product.seo_url}`;
+        } else {
+          console.log(`Product not found for seo_url: ${productSeoUrl}`);
+        }
+      } catch (error) {
+        console.log('Error fetching product for OG tags:', error.message);
+      }
+    }
+    // Handle other specific routes
+    else if (req.path === '/contact') {
+      ogTitle = 'Contact Us | PRINTE';
+      ogDescription = 'Get in touch with Printe team for any queries';
+      ogImage = 'https://i.imgur.com/V7irMl8.png';
+    }
+    else if (req.path === '/about') {
+      ogTitle = 'About Us | PRINTE';
+      ogDescription = 'Learn more about Printe and our mission';
+    }
+    else if (req.path === '/products' || req.path.startsWith('/category/')) {
+      ogTitle = 'Products | PRINTE';
+      ogDescription = 'Browse our amazing collection of products';
+    }
+
+    console.log(`OG Tags - Title: ${ogTitle}, Image: ${ogImage}`);
+
+    // Replace placeholders in index.html
+    const result = data
+      .replace(/\$OG_TITLE/g, ogTitle)
+      .replace(/\$OG_DESCRIPTION/g, ogDescription)
+      .replace(/\$OG_IMAGE/g, ogImage)
+      .replace(/\$OG_URL/g, ogUrl)
+      .replace(/\$CANONICAL_URL/g, canonicalUrl);
+
+    res.send(result);
+  } catch (err) {
+    console.error('Error serving dynamic OG tags:', err);
+    
+    // Fallback: serve the original index.html
+    try {
+      const fallbackData = await fs.promises.readFile(filePath, 'utf8');
+      res.send(fallbackData);
+    } catch (fallbackErr) {
+      res.status(500).send('Error loading page');
+    }
+  }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message
+  });
+});
+
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    error: 'API endpoint not found',
+    path: req.originalUrl
+  });
+});
+
 const Port = process.env.PORT || 8080;
 const Host = process.env.HOST || "0.0.0.0";
 
@@ -100,8 +240,10 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
     app.listen(Port, Host, () => {
-      console.log(`Server running on http://${Host}:${Port}`);
-      console.log(`MongoDB connected successfully 🚀`);
+      console.log(`🚀 Server running on http://${Host}:${Port}`);
+      console.log(`📦 MongoDB connected successfully`);
+      console.log(`🔍 Dynamic OG tags middleware is active`);
+      console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   })
   .catch((err) => {
