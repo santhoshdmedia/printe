@@ -4,7 +4,9 @@ const { ShoppingCardSchema } = require("./models_import");
 
 // Generate a unique guest ID
 const generateGuestId = () => {
-  return new mongoose.Types.ObjectId().toString();
+  const timestamp = Date.now().toString(36);
+  const random = crypto.randomBytes(4).toString('hex');
+  return `guest_${timestamp}_${random}`;
 };
 
 // Middleware to handle guest ID

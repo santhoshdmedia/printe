@@ -41,6 +41,7 @@ import PaymentCancelled from "../pages/shopping/pay/PaymentCancelled.jsx";
 import PaymentFailed from "../pages/shopping/pay/PaymentFailled.jsx";
 import PaymentSuccess from "../pages/shopping/pay/PaymentSuccess.jsx";
 import PaymentMethod from "../components/CheckOut/PaymentMethod.jsx";
+import PaymentError from "../pages/shopping/pay/PaymentError.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -154,6 +155,10 @@ export const router = createBrowserRouter([
   {
     path: "/payment/Failed",
     element: <PaymentFailed />,
+  },
+  {
+    path: "/payment/error",
+    element: <PaymentError />,
   },
 
 ]);

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { Image, Tooltip, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { Helmet } from "react-helmet-async";
 import _ from "lodash";
 
 // Icons
@@ -39,16 +40,110 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   // Refs
   const transitionTimeoutRef = useRef(null);
 
-  // Process images
+  // Process images and ensure absolute URLs
   const processedImages = useMemo(() => {
     return imageList?.map(img => {
-      if (typeof img === "string") return img;
-      return img.path || img.url || "";
+      if (typeof img === "string") {
+        // Convert relative URLs to absolute
+        if (img.startsWith('http')) return img;
+        if (img.startsWith('/')) return `${window.location.origin}${img}`;
+        return `${window.location.origin}/${img}`;
+      }
+      const url = img.path || img.url || "";
+      if (url.startsWith('http')) return url;
+      if (url.startsWith('/')) return `${window.location.origin}${url}`;
+      return `${window.location.origin}/${url}`;
     }).filter(Boolean) || [];
   }, [imageList]);
 
   const currentImage = processedImages[activeIndex] || "";
   const hasMultipleImages = processedImages.length > 1;
+
+  // Get absolute URL for current image (for sharing)
+  const getAbsoluteImageUrl = useCallback((imageUrl) => {
+    if (!imageUrl) return '';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    if (imageUrl.startsWith('/')) return `${window.location.origin}${imageUrl}`;
+    return `${window.location.origin}/${imageUrl}`;
+  }, []);
+
+  // Get the main product image for SEO (first image or current image)
+  const getMainProductImage = useCallback(() => {
+    const mainImage = processedImages[0] || currentImage;
+    if (!mainImage) return '';
+    
+    const absoluteUrl = getAbsoluteImageUrl(mainImage);
+    // Add cache busting parameter
+    return `${absoluteUrl}?v=${Date.now()}`;
+  }, [processedImages, currentImage, getAbsoluteImageUrl]);
+
+  // Get SEO data for meta tags
+  const getSeoData = useCallback(() => {
+    const productName = data?.name || "Amazing Product";
+    const productDescription = data?.seo_description || data?.short_description || "Check out this amazing product";
+    const productUrl = window.location.href;
+    const productImage = getMainProductImage();
+
+    return {
+      title: productName,
+      description: productDescription,
+      url: productUrl,
+      image: productImage,
+      keywords: data?.keywords || "product, shopping, ecommerce",
+    };
+  }, [data, getMainProductImage]);
+
+  const seoData = getSeoData();
+
+  // Update meta tags dynamically when component mounts and when data changes
+  useEffect(() => {
+    const updateMetaTags = () => {
+      if (!seoData.image) return;
+
+      const metaTags = [
+        { property: 'og:title', content: seoData.title },
+        { property: 'og:description', content: seoData.description },
+        { property: 'og:image', content: seoData.image },
+        { property: 'og:url', content: seoData.url },
+        { property: 'og:type', content: 'product' },
+        { property: 'og:site_name', content: 'Prine' },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        { property: 'og:image:type', content: 'image/jpeg' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: seoData.title },
+        { name: 'twitter:description', content: seoData.description },
+        { name: 'twitter:image', content: seoData.image },
+      ];
+
+      metaTags.forEach(({ property, name, content }) => {
+        const selector = property ? `meta[property="${property}"]` : `meta[name="${name}"]`;
+        let metaTag = document.querySelector(selector);
+        
+        if (!metaTag) {
+          metaTag = document.createElement('meta');
+          if (property) {
+            metaTag.setAttribute('property', property);
+          } else {
+            metaTag.setAttribute('name', name);
+          }
+          document.head.appendChild(metaTag);
+        }
+        metaTag.setAttribute('content', content);
+      });
+
+      // Also update link[rel="canonical"]
+      let canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (!canonicalLink) {
+        canonicalLink = document.createElement('link');
+        canonicalLink.setAttribute('rel', 'canonical');
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.setAttribute('href', seoData.url);
+    };
+
+    updateMetaTags();
+  }, [seoData]);
 
   // Get product details for sharing
   const getProductShareDetails = useCallback(() => {
@@ -56,19 +151,38 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     const productDescription = data?.seo_description || data?.short_description || "Check out this product";
     const productPrice = data?.price || data?.customer_product_price || "";
     const productUrl = window.location.href;
-    const productImage = currentImage;
+    const productImage = getAbsoluteImageUrl(currentImage);
     
     // Format price if available
     const formattedPrice = productPrice ? `₹${productPrice}` : "";
     
+    // Create beautiful formatted message
+    const formattedMessage = `❖ **${productName}** ❖\n\n${productDescription}\n\n❖ Price: ${formattedPrice}\n\n❖ ${productUrl}\n${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ✅`;
+    
+    const htmlMessage = `
+      <div style="font-family: Arial, sans-serif; max-width: 500px;">
+        <h2 style="color: #333; border-bottom: 2px solid #1890ff; padding-bottom: 8px;">${productName}</h2>
+        <p style="color: #666; line-height: 1.5; margin: 12px 0;">${productDescription}</p>
+        ${formattedPrice ? `<p style="color: #52c41a; font-size: 18px; font-weight: bold; margin: 12px 0;">${formattedPrice}</p>` : ''}
+        <p style="margin: 16px 0;">
+          <a href="${productUrl}" style="color: #1890ff; text-decoration: none; font-weight: bold;">View Product →</a>
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 20px;">
+          Shared via OurStore • ${new Date().toLocaleString()}
+        </p>
+      </div>
+    `;
+
     return {
       productName,
       productDescription,
       productPrice: formattedPrice,
       productUrl,
       productImage,
+      formattedMessage,
+      htmlMessage
     };
-  }, [data, currentImage]);
+  }, [data, currentImage, getAbsoluteImageUrl]);
 
   // Effects
   useEffect(() => {
@@ -116,115 +230,28 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     };
   }, [isAutoPlaying, hasMultipleImages, handleNext]);
 
-  // Create a downloadable image with product details
-  const createImageWithDetails = useCallback(async () => {
-    const {
-      productName,
-      productDescription,
-      productPrice,
-      productImage
-    } = getProductShareDetails();
-
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.crossOrigin = "anonymous";
-      img.onload = function() {
-        // Set canvas size
-        canvas.width = 800;
-        canvas.height = 600;
-        
-        // Fill background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw product image (60% of canvas height)
-        const imgHeight = 360; // 60% of 600
-        const imgWidth = (img.width * imgHeight) / img.height;
-        const imgX = (canvas.width - imgWidth) / 2;
-        
-        ctx.drawImage(img, imgX, 20, imgWidth, imgHeight);
-        
-        // Add product name
-        ctx.fillStyle = '#333333';
-        ctx.font = 'bold 28px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(productName, canvas.width / 2, 420);
-        
-        // Add product description
-        ctx.fillStyle = '#666666';
-        ctx.font = '18px Arial';
-        ctx.textAlign = 'center';
-        
-        // Split description into multiple lines if needed
-        const maxWidth = 700;
-        const words = productDescription.split(' ');
-        let line = '';
-        let y = 460;
-        
-        for (let i = 0; i < words.length; i++) {
-          const testLine = line + words[i] + ' ';
-          const metrics = ctx.measureText(testLine);
-          const testWidth = metrics.width;
-          
-          if (testWidth > maxWidth && i > 0) {
-            ctx.fillText(line, canvas.width / 2, y);
-            line = words[i] + ' ';
-            y += 30;
-          } else {
-            line = testLine;
-          }
-        }
-        ctx.fillText(line, canvas.width / 2, y);
-        
-        // Add price
-        if (productPrice) {
-          ctx.fillStyle = '#1890ff';
-          ctx.font = 'bold 24px Arial';
-          ctx.fillText(productPrice, canvas.width / 2, y + 50);
-        }
-        
-        // Add website URL
-        ctx.fillStyle = '#999999';
-        ctx.font = '14px Arial';
-        ctx.fillText('Shared via OurStore', canvas.width / 2, 580);
-        
-        resolve(canvas.toDataURL('image/jpeg', 0.9));
-      };
-      
-      img.onerror = () => {
-        // Fallback to original image if canvas fails
-        resolve(productImage);
-      };
-      
-      img.src = productImage;
-    });
-  }, [getProductShareDetails]);
-
-  // Enhanced Share Functionality with proper image sharing
+  // Enhanced Share Functionality
   const shareProduct = useCallback(async (platform) => {
     const {
       productName,
       productDescription,
       productPrice,
       productUrl,
-      productImage
+      productImage,
+      formattedMessage,
+      htmlMessage
     } = getProductShareDetails();
 
     try {
       switch (platform) {
         case "whatsapp":
-          const whatsappMessage = `🚀 *${productName}* 🚀\n\n${productDescription}${productPrice ? `\n💰 Price: ${productPrice}` : ''}\n\n🔗 ${productUrl}`;
           window.open(
-            `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`,
+            `https://wa.me/?text=${encodeURIComponent(formattedMessage)}`,
             "_blank"
           );
           break;
 
         case "facebook":
-          // Facebook uses Open Graph tags from the URL
           window.open(
             `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}`,
             "_blank",
@@ -254,28 +281,29 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(productUrl)}&media=${encodeURIComponent(productImage)}&description=${encodeURIComponent(`${productName} - ${productDescription}`)}`,
               "_blank"
             );
+          } else {
+            message.warning('Image required for Pinterest sharing');
           }
           break;
 
         case "email":
-          const emailSubject = `Check out this product: ${productName}`;
-          const emailBody = `Hi,\n\nI found this amazing product and thought you might like it:\n\n*${productName}*\n\n${productDescription}${productPrice ? `\nPrice: ${productPrice}` : ''}\n\nView it here: ${productUrl}\n\n${productImage ? `Product Image: ${productImage}` : ''}\n\nBest regards,\n${user?.name || ''}`;
+          const emailSubject = `Check out: ${productName}`;
+          const emailBody = formattedMessage;
           window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
           break;
 
         case "copy-link":
-          const copyText = `🌟 *${productName}* 🌟\n\n${productDescription}${productPrice ? `\n💰 Price: ${productPrice}` : ''}\n\n🔗 ${productUrl}${productImage ? `\n\n📸 Product Image: ${productImage}` : ''}`;
           try {
-            await navigator.clipboard.writeText(copyText);
-            message.success('Product details copied to clipboard!');
+            await navigator.clipboard.writeText(formattedMessage);
+            message.success('Product details copied to clipboard! 📋');
           } catch (err) {
             const textArea = document.createElement('textarea');
-            textArea.value = copyText;
+            textArea.value = formattedMessage;
             document.body.appendChild(textArea);
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            message.success('Product details copied to clipboard!');
+            message.success('Product details copied to clipboard! 📋');
           }
           break;
 
@@ -283,7 +311,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
           if (productImage) {
             try {
               await navigator.clipboard.writeText(productImage);
-              message.success('Image URL copied to clipboard!');
+              message.success('Image URL copied to clipboard! 🖼️');
             } catch (err) {
               const textArea = document.createElement('textarea');
               textArea.value = productImage;
@@ -291,7 +319,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               textArea.select();
               document.execCommand('copy');
               document.body.removeChild(textArea);
-              message.success('Image URL copied to clipboard!');
+              message.success('Image URL copied to clipboard! 🖼️');
             }
           } else {
             message.warning('No image available to copy');
@@ -301,30 +329,16 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
         case "download-image":
           if (productImage) {
             try {
-              // Create enhanced image with product details
-              const enhancedImage = await createImageWithDetails();
-              
-              const response = await fetch(enhancedImage);
-              const blob = await response.blob();
-              const blobUrl = window.URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.href = blobUrl;
-              link.download = `${productName.replace(/\s+/g, '-')}-with-details.jpg`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              window.URL.revokeObjectURL(blobUrl);
-              message.success('Product image with details downloaded!');
-            } catch (error) {
-              console.error('Error downloading image:', error);
-              // Fallback to simple image download
               const link = document.createElement('a');
               link.href = productImage;
               link.download = `${productName.replace(/\s+/g, '-')}.jpg`;
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
-              message.success('Product image downloaded!');
+              message.success('Product image downloaded! 💾');
+            } catch (error) {
+              console.error('Error downloading image:', error);
+              message.error('Failed to download image');
             }
           } else {
             message.warning('No image available to download');
@@ -332,26 +346,15 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
           break;
 
         case "share-with-image":
-          // Try to use Web Share API with image if available
           if (navigator.share) {
             try {
-              const response = await fetch(productImage);
-              const blob = await response.blob();
-              const file = new File([blob], 'product-image.jpg', { type: blob.type });
-              
               await navigator.share({
                 title: productName,
                 text: `${productDescription}${productPrice ? ` | ${productPrice}` : ''}`,
                 url: productUrl,
-                files: [file]
               });
             } catch (shareError) {
-              console.log('File sharing not supported, sharing without image');
-              await navigator.share({
-                title: productName,
-                text: `${productDescription}${productPrice ? ` | ${productPrice}` : ''}`,
-                url: productUrl,
-              });
+              console.log('Sharing cancelled or failed');
             }
           } else {
             message.info('Native sharing not supported in your browser');
@@ -367,7 +370,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     }
 
     setShowShareMenu(false);
-  }, [getProductShareDetails, user, createImageWithDetails]);
+  }, [getProductShareDetails]);
 
   // Always show custom share menu when share button is clicked
   const handleShareClick = useCallback(() => {
@@ -439,7 +442,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   );
 
   const renderShareMenu = () => {
-    const { productName, productDescription, productPrice } = getProductShareDetails();
+    const { productName, productDescription, productPrice, formattedMessage } = getProductShareDetails();
     
     return (
       <AnimatePresence>
@@ -449,6 +452,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
             onClose={() => setShowShareMenu(false)}
             className="w-80 bg-white rounded-xl shadow-2xl z-50 p-4 border border-gray-200"
           >
+            
             {/* Product Preview in Share Menu */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <div className="flex items-start gap-3">
@@ -526,7 +530,6 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
                 <span className="text-xs mt-2 font-medium">Email</span>
               </button>
 
-              {/* Image Share Options */}
               <button
                 onClick={() => shareProduct("download-image")}
                 className="flex flex-col items-center justify-center p-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-600 transition-all hover:scale-105"
@@ -582,7 +585,15 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
             <div className="mt-3 p-2 bg-yellow-50 rounded-lg">
               <p className="text-xs text-yellow-700 text-center">
                 <InfoCircleOutlined className="mr-1" />
-                Social platforms will show image if your website has proper meta tags
+                For image previews in shares, clear cache using Facebook Debugger
+              </p>
+            </div>
+
+            {/* Preview of what will be shared */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg border">
+              <p className="text-xs text-gray-600 mb-2 font-medium">Preview:</p>
+              <p className="text-xs text-gray-500 whitespace-pre-wrap bg-white p-2 rounded border">
+                {formattedMessage.substring(0, 150)}...
               </p>
             </div>
           </CustomPopover>
@@ -593,6 +604,49 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
 
   return (
     <div className="!sticky !top-24 w-full h-full">
+      {/* Dynamic Meta Tags for Social Sharing */}
+      <Helmet>
+        <title>{seoData.title}</title>
+        <meta name="description" content={seoData.description} />
+        <meta name="keywords" content={seoData.keywords} />
+        
+        {/* Open Graph Meta Tags */}
+        <meta property="og:title" content={seoData.title} />
+        <meta property="og:description" content={seoData.description} />
+        <meta property="og:image" content={seoData.image} />
+        <meta property="og:url" content={seoData.url} />
+        <meta property="og:type" content="product" />
+        <meta property="og:site_name" content="Prine" />
+        
+        {/* Additional OG Tags for Better Sharing */}
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/jpeg" />
+                     
+        {/* Product Specific OG Tags */}
+        {data?.price && (
+          <>
+            <meta property="product:price:amount" content={data.price} />
+            <meta property="product:price:currency" content="INR" />
+          </>
+        )}
+        <meta property="product:availability" content={(data?.stock_count || 0) > 0 ? "in stock" : "out of stock"} />
+        {data?.category && (
+          <meta property="product:category" content={data.category} />
+        )}
+        
+        {/* Twitter Card Meta Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoData.title} />
+        <meta name="twitter:description" content={seoData.description} />
+        <meta name="twitter:image" content={seoData.image} />
+        <meta name="twitter:site" content="@prine" />
+        
+        {/* Additional Meta Tags */}
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={seoData.url} />
+      </Helmet>
+
       <div className="lg:hidden block">
         <DividerCards name={data?.name} />
       </div>

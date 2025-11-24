@@ -107,8 +107,7 @@ const {
   resetPassword,
   verfiyLink,
   craeteOrderId,
-  handleCCAVenueCallback
-} = require("../controller/mail.controller");
+  } = require("../controller/mail.controller");
 const {
   getAllCategoryProducts,
   getAllSubCategoryProducts,
@@ -267,7 +266,7 @@ module.exports = {
   craeteOrderId,
   verfiyLink,
   resetPassword,
-  handleCCAVenueCallback,
+  
 
   // category products
   getAllCategoryProducts,

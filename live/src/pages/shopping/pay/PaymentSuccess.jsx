@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FaCheckCircle } from 'react-icons/fa';
-
+import { removeMyShoppingCart } from '../../../helper/api_helper';
+import { useSelector } from 'react-redux';
 const PaymentSuccess = () => {
+    const { user } = useSelector((state) => state.authSlice);
+    
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(5);
@@ -11,12 +14,19 @@ const PaymentSuccess = () => {
   const trackingId = searchParams.get('tracking_id');
   const amount = searchParams.get('amount');
 
+const removeCart=async()=>{
+  const result=await removeMyShoppingCart(user._id)
+}
+
   useEffect(() => {
+removeCart()
+
+
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          navigate('/orders');
+          navigate('/account/my-orders');
           return 0;
         }
         return prev - 1;
@@ -68,7 +78,7 @@ const PaymentSuccess = () => {
 
         <div className="flex gap-3">
           <button
-            onClick={() => navigate('/orders')}
+            onClick={() => navigate('/account/my-orders')}
             className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             View Orders
