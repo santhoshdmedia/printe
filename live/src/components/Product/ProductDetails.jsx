@@ -658,7 +658,7 @@ const ProductDetails = ({
         FreeDelivery: freeDelivery,
         DeliveryCharges: deliveryCharges,
         noCustomtation: noDesignUpload,
-        final_total: Number(checkOutState?.product_price * checkOutState.product_quantity) + (freeDelivery ? 0 : deliveryCharges),
+        final_total: Number(checkOutState?.product_price * checkOutState.product_quantity),
       };
 
       const result = await addToShoppingCart(finalCheckoutState);
