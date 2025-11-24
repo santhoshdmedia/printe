@@ -255,37 +255,7 @@ const Product = () => {
         <title>{seoData.title}</title>
         <meta name="description" content={seoData.description} />
         <meta name="keywords" content={seoData.keywords} />
-        
-        {/* Open Graph Meta Tags - ALL USING seoData.image (absolute URL) */}
-        <meta property="og:title" content={seoData.title} />
-        <meta property="og:description" content={seoData.description} />
-        <meta property="og:image" content={seoData.image} />
-        <meta property="og:url" content={seoData.url} />
-        <meta property="og:type" content="product" />
-        <meta property="og:site_name" content="Printe" />
-        
-        {/* Additional OG Tags for Better Sharing */}
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:type" content="image/jpeg" />
-        <meta property="og:image:alt" content={seoData.productName} />
-                     
-        {/* Product Specific OG Tags */}
-        <meta property="product:price:amount" content={getProductValue("price", "0")} />
-        <meta property="product:price:currency" content="INR" />
-        <meta property="product:availability" content={getProductValue("stock_count", 0) > 0 ? "in stock" : "out of stock"} />
-        <meta property="product:category" content={mainCategoryName} />
-        
-        {/* Twitter Card Meta Tags - ALL USING seoData.image (absolute URL) */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={seoData.title} />
-        <meta name="twitter:description" content={seoData.description} />
-        <meta name="twitter:image" content={seoData.image} />
-        <meta name="twitter:site" content="@printe" />
-        
-        {/* Additional Meta Tags */}
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={seoData.url} />
+      
       </Helmet>
 
       {/* Rest of your component remains the same */}

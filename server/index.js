@@ -123,6 +123,7 @@ app.get('*', async (req, res, next) => {
     let ogDescription = 'Discover amazing products at Printe';
     let ogImage = 'https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533';
     let ogUrl = `https://printe.in${req.path}`;
+    let ogType = 'website';
     let canonicalUrl = `https://printe.in${req.path}`;
 
     console.log(`Processing OG tags for route: ${req.path}`);
@@ -142,9 +143,15 @@ app.get('*', async (req, res, next) => {
           
           // Use product data for OG tags
           ogTitle = product.seo_title || `${product.name} | PRINTE`;
-          ogDescription = product.short_description || 
-                         product.product_description_tittle || 
-                         'Check out this amazing product on Printe';
+          
+          // Truncate description if too long (for SEO)
+          let description = product.short_description || 
+                           product.product_description_tittle || 
+                           'Check out this amazing product on Printe';
+          if (description.length > 155) {
+            description = description.substring(0, 152) + '...';
+          }
+          ogDescription = description;
           
           // Handle product images
           if (product.images && product.images.length > 0) {
@@ -168,6 +175,7 @@ app.get('*', async (req, res, next) => {
           }
           
           ogUrl = `https://printe.in${req.path}`;
+          ogType = 'product';
           canonicalUrl = `https://printe.in/product/${product.seo_url}`;
         } else {
           console.log(`Product not found for seo_url: ${productSeoUrl}`);
@@ -193,12 +201,13 @@ app.get('*', async (req, res, next) => {
 
     console.log(`OG Tags - Title: ${ogTitle}, Image: ${ogImage}`);
 
-    // Replace placeholders in index.html
+    // Replace ALL placeholders in index.html
     const result = data
       .replace(/\$OG_TITLE/g, ogTitle)
       .replace(/\$OG_DESCRIPTION/g, ogDescription)
       .replace(/\$OG_IMAGE/g, ogImage)
       .replace(/\$OG_URL/g, ogUrl)
+      .replace(/\$OG_TYPE/g, ogType)
       .replace(/\$CANONICAL_URL/g, canonicalUrl);
 
     res.send(result);
