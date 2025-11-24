@@ -104,19 +104,39 @@ app.get('*', async (req, res, next) => {
   // Skip API routes and static files
   if (req.path.startsWith('/api') || 
       req.path.includes('.') || 
-      req.path.startsWith('/static/')) {
+      req.path.startsWith('/static/') ||
+      req.path.startsWith('/assets/')) {
     return next();
   }
 
-  const filePath = path.resolve(__dirname, './build', 'index.html');
-  
-  // Check if build file exists
-  if (!fs.existsSync(filePath)) {
+  // Try multiple possible build paths
+  const possiblePaths = [
+    path.resolve(__dirname, './dist', 'index.html'),
+    path.resolve(__dirname, '../live/dist', 'index.html'),
+    path.resolve(__dirname, 'build', 'index.html'),
+    path.resolve(__dirname, '../client/build', 'index.html')
+  ];
+
+  let filePath;
+  for (const possiblePath of possiblePaths) {
+    if (fs.existsSync(possiblePath)) {
+      filePath = possiblePath;
+      break;
+    }
+  }
+
+  if (!filePath) {
+    console.error('Build file not found in any location');
     return res.status(404).send('Build files not found. Please build the React app.');
   }
 
+  console.log(`Using build file: ${filePath}`);
+
   try {
     const data = await fs.promises.readFile(filePath, 'utf8');
+
+    // Log what we're reading (first 500 chars to check placeholders)
+    console.log('File content starts with:', data.substring(0, 500));
 
     // Default OG values
     let ogTitle = 'PRINTE - Amazing Products';
@@ -131,6 +151,7 @@ app.get('*', async (req, res, next) => {
     // Handle product routes
     if (req.path.startsWith('/product/')) {
       const productSeoUrl = req.path.split('/product/')[1];
+      console.log(`Looking for product with SEO URL: ${productSeoUrl}`);
       
       try {
         // Fetch product from database using seo_url
@@ -139,12 +160,13 @@ app.get('*', async (req, res, next) => {
           .populate("sub_category_details", "sub_category_name");
 
         if (product) {
-          console.log(`Found product: ${product.name}`);
+          console.log(`✅ Found product: ${product.name}`);
+          console.log(`Product images:`, product.images);
           
           // Use product data for OG tags
           ogTitle = product.seo_title || `${product.name} | PRINTE`;
           
-          // Truncate description if too long (for SEO)
+          // Truncate description if too long
           let description = product.short_description || 
                            product.product_description_tittle || 
                            'Check out this amazing product on Printe';
@@ -158,50 +180,55 @@ app.get('*', async (req, res, next) => {
             const firstImage = product.images[0];
             let imagePath = '';
             
+            console.log('First image data:', firstImage);
+            
             if (typeof firstImage === 'string') {
               imagePath = firstImage;
             } else {
               imagePath = firstImage.path || firstImage.url || '';
             }
             
+            console.log(`Extracted image path: ${imagePath}`);
+            
             if (imagePath) {
               if (imagePath.startsWith('http')) {
                 ogImage = imagePath;
               } else {
-                // Construct absolute URL for S3 images or relative paths
-                ogImage = `https://printe.s3.ap-south-1.amazonaws.com/${imagePath.replace(/^\//, '')}`;
+                // Remove leading slash if present
+                const cleanPath = imagePath.replace(/^\//, '');
+                ogImage = `https://printe.s3.ap-south-1.amazonaws.com/${cleanPath}`;
               }
+              console.log(`✅ Final OG Image URL: ${ogImage}`);
+            } else {
+              console.log('❌ No valid image path found');
             }
+          } else {
+            console.log('❌ No images found for product');
           }
           
           ogUrl = `https://printe.in${req.path}`;
           ogType = 'product';
           canonicalUrl = `https://printe.in/product/${product.seo_url}`;
         } else {
-          console.log(`Product not found for seo_url: ${productSeoUrl}`);
+          console.log(`❌ Product not found for seo_url: ${productSeoUrl}`);
         }
       } catch (error) {
-        console.log('Error fetching product for OG tags:', error.message);
+        console.log('❌ Error fetching product for OG tags:', error.message);
       }
     }
-    // Handle other specific routes
-    else if (req.path === '/contact') {
-      ogTitle = 'Contact Us | PRINTE';
-      ogDescription = 'Get in touch with Printe team for any queries';
-      ogImage = 'https://i.imgur.com/V7irMl8.png';
-    }
-    else if (req.path === '/about') {
-      ogTitle = 'About Us | PRINTE';
-      ogDescription = 'Learn more about Printe and our mission';
-    }
-    else if (req.path === '/products' || req.path.startsWith('/category/')) {
-      ogTitle = 'Products | PRINTE';
-      ogDescription = 'Browse our amazing collection of products';
-    }
 
-    console.log(`OG Tags - Title: ${ogTitle}, Image: ${ogImage}`);
+    console.log(`🎯 Final OG Tags - Title: ${ogTitle}`);
+    console.log(`🎯 Final OG Tags - Image: ${ogImage}`);
+    console.log(`🎯 Final OG Tags - Description: ${ogDescription}`);
 
-    // Replace ALL placeholders in index.html
+    // Check if placeholders exist in the file
+    const hasTitlePlaceholder = data.includes('$OG_TITLE');
+    const hasImagePlaceholder = data.includes('$OG_IMAGE');
+    const hasDescriptionPlaceholder = data.includes('$OG_DESCRIPTION');
+
+    console.log(`Placeholders found - Title: ${hasTitlePlaceholder}, Image: ${hasImagePlaceholder}, Description: ${hasDescriptionPlaceholder}`);
+
+    // Replace placeholders in index.html
     const result = data
       .replace(/\$OG_TITLE/g, ogTitle)
       .replace(/\$OG_DESCRIPTION/g, ogDescription)
@@ -210,15 +237,20 @@ app.get('*', async (req, res, next) => {
       .replace(/\$OG_TYPE/g, ogType)
       .replace(/\$CANONICAL_URL/g, canonicalUrl);
 
+    // Log a snippet of the result to verify replacement
+    const resultSnippet = result.substring(0, 800);
+    console.log('Result snippet (first 800 chars):', resultSnippet);
+
     res.send(result);
   } catch (err) {
-    console.error('Error serving dynamic OG tags:', err);
+    console.error('❌ Error serving dynamic OG tags:', err);
     
     // Fallback: serve the original index.html
     try {
       const fallbackData = await fs.promises.readFile(filePath, 'utf8');
       res.send(fallbackData);
     } catch (fallbackErr) {
+      console.error('❌ Fallback also failed:', fallbackErr);
       res.status(500).send('Error loading page');
     }
   }
