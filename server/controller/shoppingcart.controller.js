@@ -2,15 +2,13 @@ const { default: mongoose } = require("mongoose");
 const { errorResponse, successResponse } = require("../helper/response.helper");
 const { ShoppingCardSchema } = require("./models_import");
 
-// Generate a unique guest ID
 const generateGuestId = () => {
-  return new mongoose.Types.ObjectId().toString();
+  return `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-// Middleware to handle guest ID
 const attachGuestId = (req, res, next) => {
   if (!req.userData) {
-    req.guestId = req.headers['x-guest-id'] || req.cookies?.guestId || generateGuestId();
+    req.guestId = generateGuestId();
     
     res.cookie('guestId', req.guestId, { 
       maxAge: 30 * 24 * 60 * 60 * 1000,

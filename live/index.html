@@ -2,23 +2,38 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./src/assets/logo/fav.png" />
+    <link rel="icon" type="image/svg+xml" href="/src/assets/logo/fav.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PRINTE</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Discover amazing products at Printe" />
+    <meta name="keywords" content="printe, products, shopping" />
+    <meta name="author" content="Printe" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Printe - Amazing Products" />
+    <meta property="og:description" content="Discover amazing products at Printe" />
+    <meta property="og:image" content="https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533" />
+    <meta property="og:url" content="https://printe.in" />
+    <meta property="og:type" content="website" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Printe - Amazing Products" />
+    <meta name="twitter:description" content="Discover amazing products at Printe" />
+    <meta name="twitter:image" content="/src/assets/logo/fav.png" />
+    
+    <!-- External Scripts -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <!-- Google tag (gtag.js) -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"
-    ></script>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-
-      gtag("config", "G-PHZNNT6QB8");
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-PHZNNT6QB8');
     </script>
   </head>
   <body>

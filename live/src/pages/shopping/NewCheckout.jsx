@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { FaCreditCard, FaSpinner, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaCity, FaGlobeAsia, FaMapPin, FaReceipt } from 'react-icons/fa';
+import { FaCreditCard, FaSpinner, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaCity, FaGlobeAsia, FaMapPin, FaReceipt, FaTag } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import _ from 'lodash';
+import { applyCouponCode } from '../../helper/api_helper';
 
 import { initiateCCAvenuePayment } from './pay/utils/payment';
 
@@ -14,6 +15,10 @@ const NewCheckout = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [paymentOption, setPaymentOption] = useState('full');
   const [cardData, setCardData] = useState([]);
@@ -78,8 +83,17 @@ const NewCheckout = () => {
     return freeDelivery ? 0 : (cardData[0]?.DeliveryCharges || 0);
   };
 
-  const GET_TOTAL_AMOUNT = () => {
+  const GET_COUPON_DISCOUNT = () => {
+    return appliedCoupon ? Number(appliedCoupon.discountAmount) : 0;
+  };
+
+  const GET_TOTAL_AMOUNT_BEFORE_DISCOUNT = () => {
     return GET_SUB_TOTAL() + GET_TAX_TOTAL() + Number(get_delivery_Fee());
+  };
+
+  const GET_TOTAL_AMOUNT = () => {
+    const baseTotal = GET_TOTAL_AMOUNT_BEFORE_DISCOUNT();
+    return appliedCoupon ? Math.max(0, baseTotal - GET_COUPON_DISCOUNT()) : baseTotal;
   };
 
   const GET_PAYABLE_AMOUNT = () => {
@@ -122,7 +136,53 @@ const NewCheckout = () => {
     return true;
   };
 
-  // Payment handler - UPDATED to match your data structure
+  // Coupon functions
+const handleApplyCoupon = async () => {
+  if (!couponCode.trim()) {
+    setCouponError('Please enter a coupon code');
+    return;
+  }
+
+  try {
+    setCouponLoading(true);
+    setCouponError('');
+
+    const orderAmount = GET_TOTAL_AMOUNT_BEFORE_DISCOUNT();
+    const productIds = cardData.map(item => item.product_id || item._id);
+    
+    const couponData = {
+      code: couponCode,
+      orderAmount: orderAmount,
+      productIds: productIds,
+      userId: user?._id
+    };
+
+    const result = await applyCouponCode(couponData);
+    console.log(result.data.data.coupon,"coupen");
+    
+
+    if (result.success) {
+      setAppliedCoupon(result.data.data.coupon.code);
+      setCouponError('');
+    } else {
+      throw new Error(result.message || 'Failed to apply coupon');
+    }
+
+  } catch (err) {
+    console.error('Coupon application error:', err);
+    setCouponError(err.message || 'Invalid coupon code');
+    setAppliedCoupon(null);
+  } finally {
+    setCouponLoading(false);
+  }
+};
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
+
+  // Payment handler
   const handlePayment = async () => {
     if (!validateForm()) return;
 
@@ -144,7 +204,6 @@ const NewCheckout = () => {
         alternateMobileNumber: '', // You can add this field to your form if needed
         street: formData.address,
         pincode: formData.pincode
-        // Note: city and state are included in street as per your example
       };
 
       const paymentData = {
@@ -333,6 +392,69 @@ const NewCheckout = () => {
               </div>
             </div>
 
+            {/* Coupon Code Section */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <FaTag className="text-green-600" />
+                Apply Coupon Code
+              </h2>
+              
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value);
+                      setCouponError('');
+                    }}
+                    placeholder="Enter coupon code"
+                    disabled={!!appliedCoupon || couponLoading}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
+                  />
+                </div>
+                {!appliedCoupon ? (
+                  <button
+                    onClick={handleApplyCoupon}
+                    disabled={!couponCode.trim() || couponLoading}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                  >
+                    {couponLoading ? 'Applying...' : 'Apply'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRemoveCoupon}
+                    className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              
+              {couponError && (
+                <div className="mt-2 text-red-600 text-sm">{couponError}</div>
+              )}
+              
+              {appliedCoupon && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-medium text-green-700">Coupon Applied: {appliedCoupon.code}</span>
+                      <div className="text-sm text-green-600">
+                        {appliedCoupon.discountType === 'percentage' 
+                          ? `${appliedCoupon.discountValue}% off` 
+                          : `₹${appliedCoupon.discountValue} off`
+                        }
+                      </div>
+                    </div>
+                    <div className="text-green-700 font-bold">
+                      -₹{Number(appliedCoupon.discountAmount).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* GST Information */}
             <div className="bg-white rounded-2xl shadow-xl p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -414,6 +536,13 @@ const NewCheckout = () => {
                   <span className="font-semibold">₹{get_delivery_Fee().toFixed(2)}</span>
                 </div>
                 
+                {appliedCoupon && (
+                  <div className="flex justify-between items-center text-green-600">
+                    <span>Discount ({appliedCoupon.code}):</span>
+                    <span className="font-bold">-₹{GET_COUPON_DISCOUNT().toFixed(2)}</span>
+                  </div>
+                )}
+                
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between items-center text-lg font-bold">
                     <span>Order Total:</span>
@@ -486,7 +615,7 @@ const NewCheckout = () => {
               {/* Payment Button */}
               <button
                 onClick={handlePayment}
-                disabled={loading || !acceptTerms}
+                disabled={loading || !acceptTerms || cardData.length === 0}
                 className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-white py-4 px-6 rounded-xl hover:from-yellow-500 hover:to-yellow-700 transition-all duration-300 font-bold flex items-center justify-center gap-3 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:scale-100 shadow-lg hover:shadow-xl"
               >
                 {loading ? (
@@ -505,7 +634,16 @@ const NewCheckout = () => {
                 )}
               </button>
 
-             
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-center gap-2 text-blue-700">
+                  <div className="flex items-center gap-1 text-sm">
+                    <span>🔒</span>
+                    <span className="font-medium">Secure Payment</span>
+                  </div>
+                  <span className="text-blue-400">•</span>
+                  <span className="text-sm">Powered by CCAvenue</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
