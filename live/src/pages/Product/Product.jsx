@@ -1,7 +1,6 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Helmet } from "react-helmet-async";
 import { Spin } from "antd";
 import _ from "lodash";
 
@@ -39,25 +38,22 @@ const Product = () => {
     return _.get(product, path, defaultValue);
   }, [product]);
 
-  // Get absolute URL for images - IMPROVED
+  // Get absolute URL for images
   const getAbsoluteImageUrl = useCallback((imagePath) => {
     if (!imagePath) return '';
 
-    // If already absolute URL
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
 
-    // If relative path starting with /, make it absolute
     if (imagePath.startsWith('/')) {
       return `${window.location.origin}${imagePath}`;
     }
 
-    // For other relative paths, prepend with origin and slash
     return `${window.location.origin}/${imagePath.replace(/^\//, '')}`;
   }, []);
 
-  // Get product images for OG tags - IMPROVED
+  // Get product images
   const getProductImages = useCallback(() => {
     const images = product?.images || [];
     return images.map(img => {
@@ -75,53 +71,6 @@ const Product = () => {
       };
     });
   }, [product, getAbsoluteImageUrl]);
-
-  // Get main product image for OG tags - IMPROVED
-  const getMainProductImage = useCallback(() => {
-    const images = getProductImages();
-
-    // Try main product images first
-    if (images.length > 0) {
-      return images[0].absoluteUrl || images[0].url;
-    }
-
-    // Try variant images as fallback
-    if (product?.variants?.[0]?.options?.[0]?.image_names?.[0]) {
-      const variantImage = product.variants[0].options[0].image_names[0];
-      const imagePath = typeof variantImage === 'string' ? variantImage : variantImage.path;
-      return getAbsoluteImageUrl(imagePath);
-    }
-
-    // Final fallback - use a reliable default image
-    return "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533";
-  }, [getProductImages, getAbsoluteImageUrl, product]);
-
-  // Get SEO data - IMPROVED
-  const getSEOData = useCallback(() => {
-    const productName = getProductValue("name", "Amazing Product");
-    const productDescription = getProductValue(
-      "product_description_tittle",
-      getProductValue("short_description", "Discover this amazing product at Printe")
-    );
-
-    const productImage = getMainProductImage();
-    const currentUrl = window.location.href;
-
-    // Format title and description for SEO
-    const title = getProductValue("seo_title", `${productName} | Printe`);
-    const description = productDescription.length > 155
-      ? `${productDescription.substring(0, 155)}...`
-      : productDescription;
-
-    return {
-      title,
-      description,
-      image: productImage, // This is now absolute URL
-      url: currentUrl,
-      keywords: getProductValue("seo_keywords", `${productName}, buy online, printe`),
-      productName,
-    };
-  }, [getProductValue, getMainProductImage]);
 
   // Add to history function
   const addTohistoryDb = useCallback(async () => {
@@ -142,11 +91,9 @@ const Product = () => {
     if (product?.variants) {
       const imagesMap = {};
 
-      // Process all variants to build images map
       product.variants.forEach(variant => {
         variant.options?.forEach(option => {
           if (option.image_names && option.image_names.length > 0) {
-            // Use variant value as key and store array of images
             imagesMap[option.value] = option.image_names.map(img => {
               if (typeof img === 'string') {
                 return {
@@ -167,7 +114,6 @@ const Product = () => {
 
       setVariantImages(imagesMap);
 
-      // Set initial selected variants
       const initialVariants = {};
       product.variants.forEach(variant => {
         if (variant.options?.length > 0) {
@@ -178,7 +124,7 @@ const Product = () => {
     }
   }, [product, getAbsoluteImageUrl]);
 
-  // Handle variant changes from ProductDetailVarient
+  // Handle variant changes
   const handleVariantChange = useCallback((variants) => {
     setSelectedVariants(variants);
   }, []);
@@ -194,10 +140,7 @@ const Product = () => {
           dispatch({ type: "GET_PRODUCT_REVIEW", data: { id } })
         ]);
 
-        // Clean up redirect URL if exists
         localStorage.removeItem("redirect_url");
-
-        // Scroll to top on product load
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (error) {
         console.error("Failed to fetch product data:", error);
@@ -214,14 +157,6 @@ const Product = () => {
     }
   }, [product, user, addTohistoryDb]);
 
-  // Debug: Log SEO data for verification
-  useEffect(() => {
-    if (product) {
-      console.log('Product OG Image URL:', getMainProductImage());
-      console.log('Full SEO Data:', getSEOData());
-    }
-  }, [product, getMainProductImage, getSEOData]);
-
   // Loading state
   if (isGettingProduct) {
     return <ProductPageLoadingSkeleton />;
@@ -236,8 +171,6 @@ const Product = () => {
     );
   }
 
-  // Get SEO data
-  const seoData = getSEOData();
   const hasVariants = product.type === "Variable Product" && product.variants?.length > 0;
 
   // Product data for breadcrumbs
@@ -246,20 +179,12 @@ const Product = () => {
   const subCategoryName = getProductValue("sub_category_details.sub_category_name");
   const subCategoryId = getProductValue("sub_category_details._id");
   const productName = getProductValue("name", "Product");
-  const productImg = getProductValue("images[0].path", "Product");
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
-      {/* Complete SEO Head with Open Graph Tags - FIXED */}
-      <Helmet>
-        {/* Basic Meta Tags */}
-        <title>{seoData.title}</title>
-        <meta name="description" content={seoData.description} />
-        <meta name="keywords" content={seoData.keywords} />
-        <link rel="icon" type="image/svg+xml" href={productImg} />
-      </Helmet>
+      {/* REMOVED HELMET - SSR handles all OG tags */}
 
-      {/* Rest of your component remains the same */}
+      {/* Breadcrumbs */}
       <div className="pt-5 pb-0">
         <Breadcrumbs
           title3={productName}
