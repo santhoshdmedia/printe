@@ -42,17 +42,17 @@ const Product = () => {
   // Get absolute URL for images - IMPROVED
   const getAbsoluteImageUrl = useCallback((imagePath) => {
     if (!imagePath) return '';
-    
+
     // If already absolute URL
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
-    
+
     // If relative path starting with /, make it absolute
     if (imagePath.startsWith('/')) {
       return `${window.location.origin}${imagePath}`;
     }
-    
+
     // For other relative paths, prepend with origin and slash
     return `${window.location.origin}/${imagePath.replace(/^\//, '')}`;
   }, []);
@@ -62,8 +62,8 @@ const Product = () => {
     const images = product?.images || [];
     return images.map(img => {
       if (typeof img === 'string') {
-        return { 
-          path: img, 
+        return {
+          path: img,
           url: getAbsoluteImageUrl(img),
           absoluteUrl: getAbsoluteImageUrl(img)
         };
@@ -79,19 +79,19 @@ const Product = () => {
   // Get main product image for OG tags - IMPROVED
   const getMainProductImage = useCallback(() => {
     const images = getProductImages();
-    
+
     // Try main product images first
     if (images.length > 0) {
       return images[0].absoluteUrl || images[0].url;
     }
-    
+
     // Try variant images as fallback
     if (product?.variants?.[0]?.options?.[0]?.image_names?.[0]) {
       const variantImage = product.variants[0].options[0].image_names[0];
       const imagePath = typeof variantImage === 'string' ? variantImage : variantImage.path;
       return getAbsoluteImageUrl(imagePath);
     }
-    
+
     // Final fallback - use a reliable default image
     return "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533";
   }, [getProductImages, getAbsoluteImageUrl, product]);
@@ -100,19 +100,19 @@ const Product = () => {
   const getSEOData = useCallback(() => {
     const productName = getProductValue("name", "Amazing Product");
     const productDescription = getProductValue(
-      "product_description_tittle", 
+      "product_description_tittle",
       getProductValue("short_description", "Discover this amazing product at Printe")
     );
-    
+
     const productImage = getMainProductImage();
     const currentUrl = window.location.href;
-    
+
     // Format title and description for SEO
     const title = getProductValue("seo_title", `${productName} | Printe`);
-    const description = productDescription.length > 155 
-      ? `${productDescription.substring(0, 155)}...` 
+    const description = productDescription.length > 155
+      ? `${productDescription.substring(0, 155)}...`
       : productDescription;
-    
+
     return {
       title,
       description,
@@ -128,7 +128,7 @@ const Product = () => {
     try {
       const userId = _.get(user, "_id", "");
       const productId = _.get(product, "_id", "");
-      
+
       if (userId && productId) {
         await addTohistory({ product_id: productId });
       }
@@ -141,7 +141,7 @@ const Product = () => {
   useEffect(() => {
     if (product?.variants) {
       const imagesMap = {};
-      
+
       // Process all variants to build images map
       product.variants.forEach(variant => {
         variant.options?.forEach(option => {
@@ -149,8 +149,8 @@ const Product = () => {
             // Use variant value as key and store array of images
             imagesMap[option.value] = option.image_names.map(img => {
               if (typeof img === 'string') {
-                return { 
-                  path: img, 
+                return {
+                  path: img,
                   url: img,
                   absoluteUrl: getAbsoluteImageUrl(img)
                 };
@@ -164,9 +164,9 @@ const Product = () => {
           }
         });
       });
-      
+
       setVariantImages(imagesMap);
-      
+
       // Set initial selected variants
       const initialVariants = {};
       product.variants.forEach(variant => {
@@ -193,10 +193,10 @@ const Product = () => {
           dispatch({ type: "GET_PRODUCT", data: { id } }),
           dispatch({ type: "GET_PRODUCT_REVIEW", data: { id } })
         ]);
-        
+
         // Clean up redirect URL if exists
         localStorage.removeItem("redirect_url");
-        
+
         // Scroll to top on product load
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (error) {
@@ -246,6 +246,7 @@ const Product = () => {
   const subCategoryName = getProductValue("sub_category_details.sub_category_name");
   const subCategoryId = getProductValue("sub_category_details._id");
   const productName = getProductValue("name", "Product");
+  const productImg = getProductValue("images[0].path", "Product");
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
@@ -255,7 +256,7 @@ const Product = () => {
         <title>{seoData.title}</title>
         <meta name="description" content={seoData.description} />
         <meta name="keywords" content={seoData.keywords} />
-      
+        <link rel="icon" type="image/svg+xml" href={productImg} />
       </Helmet>
 
       {/* Rest of your component remains the same */}
@@ -282,16 +283,16 @@ const Product = () => {
                 />
               ) : (
                 <Imageslider
-                  imageList={getProductImages()} 
-                  data={product} 
+                  imageList={getProductImages()}
+                  data={product}
                 />
               )}
             </div>
 
             <div className="w-full lg:w-1/2 lg:pl-8">
               {hasVariants ? (
-                <ProductDetailVarient 
-                  data={product} 
+                <ProductDetailVarient
+                  data={product}
                   onVariantChange={handleVariantChange}
                   selectedVariants={selectedVariants}
                 />
