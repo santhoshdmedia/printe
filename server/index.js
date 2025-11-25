@@ -88,10 +88,10 @@ app.use("/api", router);
 // Find the correct dist folder path
 function findDistPath() {
   const possiblePaths = [
-    path.join(__dirname, '../live/dist'),      // live/server -> ../dist
-    path.join(__dirname, '../live/dist'),   // live/server -> ../../dist  
-    path.join(process.cwd(), 'dist'),     // Current directory
-    path.join(__dirname, 'dist'),         // Server directory
+    path.join(__dirname, '../live/dist'),
+    path.join(__dirname, '../live/dist'),
+    path.join(process.cwd(), 'dist'),   
+    path.join(__dirname, 'dist'),       
   ];
 
   for (const distPath of possiblePaths) {
@@ -121,7 +121,7 @@ function getProductImageUrl(product) {
     return 'https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533';
   }
 
-  const firstImage = product.images[0];
+  const firstImage = product.images[0]||product.variants[0].options[0].image_names[0];
   let imagePath = '';
 
   if (typeof firstImage === 'string') {

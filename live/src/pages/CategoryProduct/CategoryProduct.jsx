@@ -18,6 +18,13 @@ const CategoryProduct = () => {
       setLoading(true);
       const result = await getAllCategoryProducts(_.get(params, "id", ""));
       setProductData(_.get(result, "data.data", []));
+      const fillterCategorey= productDatas.filter(
+        product => product.show === true
+      );
+      setProductData(fillterCategorey)
+      
+      
+      
     } catch (err) {
       console.log(err);
     } finally {

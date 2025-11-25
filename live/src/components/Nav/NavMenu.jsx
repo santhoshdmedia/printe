@@ -159,7 +159,7 @@ const NavMenu = () => {
             {/* Mega Menu Content */}
             {activeDropdown.megaMenu && (
               <div
-                className="absolute animate-fade-in w-[70vw] max-w-6xl z-50 top-16 left-0 transform bg-white rounded-xl overflow-hidden border border-gray-200 shadow-2xl"
+                className="absolute animate-fade-in w-[70vw] max-w-6xl z-50 top-16 left-0 transform bg-white rounded-xl  border border-gray-200 shadow-2xl overflow-scroll"
                 onMouseLeave={closeAllDropdowns}
               >
                 <div className="p-8">
@@ -278,7 +278,7 @@ const NavMenu = () => {
                                                     closeAllDropdowns();
                                                   }}
                                                 >
-                                                  <div className="w-8 h-8 rounded border border-gray-200 overflow-hidden flex-shrink-0">
+                                                  <div className="w-8 h-8 rounded border border-gray-200 overflow-scroll flex-shrink-0">
                                                     <img
                                                       src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
                                                         product,
@@ -557,7 +557,7 @@ const NavMenu = () => {
                         </div>
 
                         {/* View All Button - Only show if category has visible products */}
-                        {hasAnyProducts && (
+                        {/* {hasAnyProducts && (
                           <div className="mt-8 text-center">
                             <button
                               onClick={() => {
@@ -572,7 +572,7 @@ const NavMenu = () => {
                               <IconHelper.RIGHT_ARROW_ICON className="text-sm transform group-hover:translate-x-1 transition-transform" />
                             </button>
                           </div>
-                        )}
+                        )} */}
                       </div>
                     </div>
                   )

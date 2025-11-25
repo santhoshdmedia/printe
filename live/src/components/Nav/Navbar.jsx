@@ -240,7 +240,7 @@ const Navbar = () => {
                 <div
                   key={data._id}
                   onClick={() => {
-                    handleDestination(`/product/${data._id}`);
+                    handleDestination(`/product/${data.seo_url}`);
                     closeSearchBar();
                   }}
                   className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
