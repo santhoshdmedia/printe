@@ -148,181 +148,32 @@ function getProductImageUrl(product) {
 // SSR Route for Product Pages
 app.get("/product/:id", async (req, res) => {
   const productId = req.params.id;
-
   console.log(`\n🎯 Processing product route: /product/${productId}`);
 
   try {
-    // Fetch product data from database
     const product = await ProductSchema.findOne({ seo_url: productId })
       .populate("category_details", "main_category_name")
       .populate("sub_category_details", "sub_category_name");
 
     if (!product) {
       console.log(`❌ Product not found: ${productId}`);
-      // Fallback to static file if product not found
       if (distPath) {
         return res.sendFile(path.join(distPath, 'index.html'));
-      } else {
-        return res.status(404).send('Product not found');
       }
+      return res.status(404).send('Product not found');
     }
 
     console.log(`✅ Found product: ${product.name}`);
-    console.log(`📸 Product images:`, product.images);
+    console.log(`📸 Product images structure:`, JSON.stringify(product.images, null, 2));
+    
+    // Test the image URL function
+    const testImageUrl = getProductImageUrl(product);
+    console.log(`🖼️ Final image URL: ${testImageUrl}`);
 
-    // Prepare OG data
-    const ogTitle = product.seo_title || `${product.name} | PRINTE`;
-    let ogDescription = product.short_description || 
-                       product.product_description_tittle || 
-                       'Check out this amazing product on Printe';
-    
-    // Truncate description for SEO
-    if (ogDescription.length > 155) {
-      ogDescription = ogDescription.substring(0, 152) + '...';
-    }
-    
-    const ogImage = getProductImageUrl(product);
-    const ogUrl = `https://printe.in/product/${productId}`;
-    const canonicalUrl = `https://printe.in/product/${product.seo_url}`;
-
-    console.log(`📊 OG Data:`);
-    console.log(`   Title: ${ogTitle}`);
-    console.log(`   Description: ${ogDescription}`);
-    console.log(`   Image: ${ogImage}`);
-    console.log(`   URL: ${ogUrl}`);
-
-    // Read the built index.html to get the asset paths
-    let assetJs = '/assets/index.js';
-    let assetCss = '/assets/index.css';
-    
-    if (distPath) {
-      try {
-        const files = fs.readdirSync(path.join(distPath, 'assets'));
-        const jsFile = files.find(f => f.endsWith('.js') && f.startsWith('index-'));
-        const cssFile = files.find(f => f.endsWith('.css') && f.startsWith('index-'));
-        
-        if (jsFile) assetJs = `/assets/${jsFile}`;
-        if (cssFile) assetCss = `/assets/${cssFile}`;
-        
-        console.log(`📦 Assets: JS=${assetJs}, CSS=${assetCss}`);
-      } catch (err) {
-        console.log('📦 Using default asset paths');
-      }
-    }
-
-    // Generate complete HTML with OG tags
-    const html = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/assets/fav-B54vuM6T.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${ogTitle}</title>
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="${ogDescription}" />
-    <meta name="keywords" content="printe, products, shopping, ${product.name}" />
-    <meta name="author" content="Printe" />
-    
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="${ogTitle}" />
-    <meta property="og:description" content="${ogDescription}" />
-    <meta property="og:image" content="${ogImage}" />
-    <meta property="og:url" content="${ogUrl}" />
-    <meta property="og:type" content="product" />
-    <meta property="og:site_name" content="Printe" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:type" content="image/jpeg" />
-    
-    <!-- Product Specific OG Tags -->
-    <meta property="product:price:amount" content="${product.price || '0'}" />
-    <meta property="product:price:currency" content="INR" />
-    <meta property="product:availability" content="${product.stock_count > 0 ? 'in stock' : 'out of stock'}" />
-    <meta property="product:category" content="${product.category_details?.main_category_name || 'Products'}" />
-    
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${ogTitle}" />
-    <meta name="twitter:description" content="${ogDescription}" />
-    <meta name="twitter:image" content="${ogImage}" />
-    <meta name="twitter:site" content="@printe" />
-    
-    <!-- Canonical URL -->
-    <link rel="canonical" href="${canonicalUrl}" />
-    
-    <!-- External Scripts -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
-      gtag('js', new Date());
-      gtag('config', 'G-PHZNNT6QB8');
-    </script>
-
-    <!-- Structured Data for SEO -->
-    <script type="application/ld+json">
-      ${JSON.stringify({
-        "@context": "https://schema.org/",
-        "@type": "Product",
-        "name": product.name,
-        "description": ogDescription,
-        "image": ogImage,
-        "sku": product._id?.toString() || productId,
-        "brand": {
-          "@type": "Brand",
-          "name": "Printe"
-        },
-        "offers": {
-          "@type": "Offer",
-          "url": ogUrl,
-          "priceCurrency": "INR",
-          "price": product.price || "0",
-          "availability": `https://schema.org/${product.stock_count > 0 ? "InStock" : "OutOfStock"}`,
-          "seller": {
-            "@type": "Organization",
-            "name": "Printe"
-          }
-        }
-      })}
-    </script>
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="${assetCss}">
-  </head>
-  <body>
-    <div id="root"></div>
-    
-    <!-- Initialize React with product data -->
-    <script>
-      window.__INITIAL_STATE__ = {
-        product: ${JSON.stringify(product)},
-        seoData: {
-          title: "${ogTitle}",
-          description: "${ogDescription}",
-          image: "${ogImage}",
-          url: "${ogUrl}"
-        }
-      };
-    </script>
-    
-    <!-- JavaScript -->
-    <script type="module" src="${assetJs}"></script>
-  </body>
-</html>`;
-
-    console.log(`✅ SSR HTML generated successfully`);
-    res.send(html);
-
+    // ... rest of your code
   } catch (error) {
     console.error('❌ Error generating SSR HTML:', error);
-    
-    // Fallback: serve static index.html
     if (distPath) {
-      console.log('🔄 Falling back to static file');
       res.sendFile(path.join(distPath, 'index.html'));
     } else {
       res.status(500).send('Error loading page');
