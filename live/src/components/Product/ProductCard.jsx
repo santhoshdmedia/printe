@@ -127,7 +127,7 @@ const ProductCard = ({ data }) => {
       {data.is_visible?
       <div className={`group ${bg} shadow-[#78c5d65b]   h-[320px] gap-4 center_div shadow-lg rounded-lg transition ease-in-out delay-150 duration-300 z-10 relative`}>
       <div className="flex-1 flex flex-col relative justify-end pb-5 gap-y-2 text-center size-full cursor-pointer" onClick={() => navigate(`/product/${data._id}`)}>
-        <img src={_.get(data.images, "[0].path", "")} alt="img" className="size-52 absolute !z-20 -top-5 left-12 group-hover:-top-10 object-contain drop-shadow group-hover:scale-105 transition-all duration-700" />
+        <img src={_.get(data.images, "[0].path", "")||_.get(data.variants, "[0].options[0].image_names[0].path", "")} alt="img" className="size-52 absolute !z-20 -top-5 left-12 group-hover:-top-10 object-contain drop-shadow group-hover:scale-105 transition-all duration-700" />
         <div className="flex px-5 items-center">
           <div className="flex flex-1 flex-col items-start gap-2 ">
             <span className={`sub_title  text-left ${text} group-hover:ttle transition-all duration-700 z-10`}>{data.name}</span>

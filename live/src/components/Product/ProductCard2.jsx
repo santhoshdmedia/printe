@@ -93,7 +93,7 @@ const ProductCard2 = ({ data }) => {
       <div className="relative h-34  sm:h-60 md:h-42 w-full overflow-hidden">
         <motion.img
           className="h-full w-full object-cover"
-          src={_.get(data.images, "[0].path", "")}
+          src={_.get(data.images, "[0].path", "")||_.get(data.variants, "[0].options[0].image_names[0].path", "")}
           alt={data.name}
           variants={imageVariants}
           transition={{ duration: 0.5 }}

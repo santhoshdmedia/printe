@@ -8,7 +8,7 @@ const PrintProductCard3 = ({ data }) => {
   
   const price = data.variants_price?.[0]?.price || data.single_product_price||data.customer_product_price;
   const productUrl = `/product/${data.seo_url}`;
-  const imageUrl = data.images?.[0]?.path || "";
+  const imageUrl = data.images?.[0]?.path ||data.variants[0].options[0].image_names[0].path;
   const hasVariants = data.variants_price?.length > 0;
   
   const handleCardClick = () => navigate(productUrl);
