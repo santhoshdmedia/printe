@@ -45,6 +45,7 @@ import {
   addToShoppingCart,
   getVariantPrice,
   PUBLIC_URL,
+  
 } from "../../helper/api_helper";
 import Swal from "sweetalert2";
 import {
@@ -303,6 +304,7 @@ const ProductDetails = ({
   const [freeDelivery, setFreeDelivery] = useState(false);
   const [deliveryCharges, setDeliveryCharges] = useState(100); // Default delivery charges
   const [noDesignUpload, setNoDesignUpload] = useState(false);
+  const [ogPrice, setOgPrice] = useState(price);
 
   const [checkOutState, setCheckOutState] = useState({
     product_image: getFirstProductImage(data),
@@ -310,7 +312,7 @@ const ProductDetails = ({
     product_name: _.get(data, "name", ""),
     category_name: _.get(data, "category_details.main_category_name", ""),
     subcategory_name: _.get(data, "sub_category_details.sub_category_name", ""),
-    product_price: price,
+    product_price: ogPrice,
     product_variants: {},
     product_quantity: 0,
     product_seo_url: _.get(data, "seo_url", ""),
@@ -648,9 +650,26 @@ const ProductDetails = ({
 
       setError("");
       const Gst = _.get(data, "GST", 0);
+      let token = localStorage.getItem("userData") || "guest"
+      console.log(token, "role");
 
+      const getGuestId = () => {
+        let guestId = localStorage.getItem('guestId');
+
+        if (!guestId) {
+          guestId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          localStorage.setItem('guestId', guestId);
+        }
+
+        return guestId;
+      };
+      setOgPrice(Number(calculateTotalPrice()))
+
+      // const Role=
       const finalCheckoutState = {
         ...checkOutState,
+        guestId:getGuestId(),
+        userRole: token,
         sgst: Number(Gst / 2),
         cgst: Number(Gst / 2),
         MRP_savings: calculateMRPSavings(),
@@ -658,10 +677,24 @@ const ProductDetails = ({
         FreeDelivery: freeDelivery,
         DeliveryCharges: deliveryCharges,
         noCustomtation: noDesignUpload,
-        final_total: Number(checkOutState?.product_price * checkOutState.product_quantity),
+        final_total: Number(calculateTotalPrice()),
       };
 
-      const result = await addToShoppingCart(finalCheckoutState);
+      const GuestCheckoutState = {
+        ...checkOutState,
+        GuestId: getGuestId(),
+        userRole: token,
+        sgst: Number(Gst / 2),
+        cgst: Number(Gst / 2),
+        MRP_savings: calculateMRPSavings(),
+        TotalSavings: calculateSavings(),
+        FreeDelivery: freeDelivery,
+        DeliveryCharges: deliveryCharges,
+        noCustomtation: noDesignUpload,
+        final_total: Number(calculateTotalPrice()),
+      };
+
+      const result = await addToShoppingCart(token == "user" ? finalCheckoutState : GuestCheckoutState);
 
       Swal.fire({
         title: "Product Added To Cart",

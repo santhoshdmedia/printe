@@ -81,7 +81,6 @@ module.exports = model(
       },
       final_total: {
         type: Number,
-
         required: true,
       },
     },

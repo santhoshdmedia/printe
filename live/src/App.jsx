@@ -3,6 +3,8 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "./config/Router.jsx";
 import { useDispatch, useSelector } from "react-redux";
 import { ConfigProvider, Spin } from "antd";
+
+import { CartProvider } from "./helper/Carthelper.jsx";
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // AOS styles
 const App = () => {
@@ -12,10 +14,10 @@ const App = () => {
   //redux
   const { isAuthenicating } = useSelector((state) => state.authSlice);
 
-  
+
   useEffect(() => {
-    const result=dispatch({ type: "CHECK_LOGIN" });
-    
+    const result = dispatch({ type: "CHECK_LOGIN" });
+
   }, []);
   // aos animation
   useEffect(() => {
@@ -29,15 +31,17 @@ const App = () => {
 
   return (
     <div className={`${isAuthenicating && "h-screen center_div"}`}>
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: "#0369a1",
-          },
-        }}
-      >
-        <Spin spinning={isAuthenicating}>{!isAuthenicating && <RouterProvider router={router} />}</Spin>
-      </ConfigProvider>
+        <CartProvider>
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: "#0369a1",
+            },
+          }}
+        >
+          <Spin spinning={isAuthenicating}>{!isAuthenicating && <RouterProvider router={router} />}</Spin>
+        </ConfigProvider>
+        </CartProvider>
     </div>
   );
 };

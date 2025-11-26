@@ -53,10 +53,10 @@ const BrowseAll = () => {
           768: { slidesPerView: 4 },
           1024: { slidesPerView: 5 },
         }}
-        className="w-full"
+        className="w-full !overflow-visible"
       >
         {data.map((category) => (
-          <SwiperSlide key={category._id} className="flex justify-center">
+          <SwiperSlide key={category._id} className="flex justify-center !overflow-visible">
             <div className="flex flex-col items-center text-center group cursor-pointer">
               <div
                 onClick={() =>
@@ -70,14 +70,14 @@ const BrowseAll = () => {
                     )}`
                   )
                 }
-                className="relative flex items-center justify-center rounded-full overflow-hidden
+                className="relative flex items-center justify-center rounded-full overflow-visible
                 w-[110px] h-[110px] sm:w-[140px] sm:h-[140px] md:w-[180px] md:h-[180px] 
-                group-hover:scale-105 transition-all duration-500 shadow-[0_0_10px_rgba(0,0,0,0.1)]"
+                group-hover:scale-110 transition-all duration-500 shadow-[0_0_10px_rgba(0,0,0,0.1)]"
               >
                 <img
                   src={category.sub_category_image}
                   alt={category.sub_category_name}
-                  className="w-full h-full object-cover rounded-full transition-transform duration-700 group-hover:scale-110"
+                  className="w-full h-full object-cover rounded-full transition-transform duration-700 group-hover:scale-100"
                 />
               </div>
               <h2 className="text-[12px] sm:text-sm md:text-base font-semibold capitalize mt-2 sm:mt-3 text-black group-hover:text-[#f2c41a] transition-all duration-300">

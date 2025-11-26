@@ -28,7 +28,7 @@ import { useNavigate } from "react-router-dom";
 import { IconHelper } from "../../helper/IconHelper";
 import { FacebookIcon, WhatsappIcon } from "react-share";
 import { IoShareSocial } from "react-icons/io5";
-import { addToShoppingCart, getVariantPrice } from "../../helper/api_helper";
+import { addToShoppingCart } from "../../helper/api_helper";
 import Swal from "sweetalert2";
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import {
@@ -45,37 +45,7 @@ import {
 import toast from "react-hot-toast";
 import { PincodeDeliveryCalculator } from "./ProductDetails.jsx";
 
-const { Title, Text } = Typography;
-
-// Move getRoleFields outside component to avoid recreation
-const getRoleFields = (role) => {
-  switch (role) {
-    case 'Dealer':
-      return {
-        quantity: 'Dealer_quantity',
-        discount: 'Dealer_discount',
-        freeDelivery: 'free_delivery_dealer',
-        recommended: 'recommended_stats_dealer',
-        deliveryCharges: 'delivery_charges_dealer'
-      };
-    case 'Corporate':
-      return {
-        quantity: 'Corporate_quantity',
-        discount: 'Corporate_discount',
-        freeDelivery: 'free_delivery_corporate',
-        recommended: 'recommended_stats_corporate',
-        deliveryCharges: 'delivery_charges_corporate'
-      };
-    default:
-      return {
-        quantity: 'Customer_quantity',
-        discount: 'Customer_discount',
-        freeDelivery: 'free_delivery_customer',
-        recommended: 'recommended_stats_customer',
-        deliveryCharges: 'delivery_charges_customer'
-      };
-  }
-};
+const { Title, Text, Paragraph } = Typography;
 
 // Custom Modal Component
 export const CustomModal = ({
@@ -106,8 +76,9 @@ export const CustomModal = ({
 
   return (
     <div
-      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${isMobile ? "items-end" : "items-center"
-        }`}
+      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${
+        isMobile ? "items-end" : "items-center"
+      }`}
     >
       {/* Backdrop */}
       <motion.div
@@ -123,8 +94,9 @@ export const CustomModal = ({
         initial={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
-        className={`relative bg-white rounded-lg shadow-xl ${isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
-          } overflow-hidden flex flex-col ${className}`}
+        className={`relative bg-white rounded-lg shadow-xl ${
+          isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
+        } overflow-hidden flex flex-col ${className}`}
         style={isMobile ? {} : { width }}
       >
         {/* Header */}
@@ -158,6 +130,95 @@ export const CustomModal = ({
   );
 };
 
+// Custom Popover Component
+export const CustomPopover = ({
+  open,
+  onClose,
+  children,
+  placement = "bottom-right",
+  className = "",
+}) => {
+  if (!open) return null;
+
+  const placementClasses = {
+    "bottom-right": "top-full right-0 mt-2",
+    "bottom-left": "top-full left-0 mt-2",
+    "top-right": "bottom-full right-0 mb-2",
+    "top-left": "bottom-full left-0 mb-2",
+  };
+
+  return (
+    <div className="relative">
+      <div className="fixed inset-0 z-40 md:hidden" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+        className={`fixed md:absolute z-50 ${placementClasses[placement]} ${className}`}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+};
+
+// Helper functions
+const getProductImages = (data) => {
+  let images;
+  if (_.get(data, "variants[0].variant_type", [])=="image_variant") {
+    
+    images = _.get(data, "variants[0].options[0].image_names", []);
+  }else{
+     images = _.get(data, "images", []);
+  }
+  console.log(images,"var");
+  
+  if (!images || images.length === 0) return [];
+
+  return images.map(image => {
+    if (typeof image === 'string') {
+      return image;
+    } else if (image && image.path) {
+      return image.path;
+    }
+    return '';
+  }).filter(Boolean);
+};
+
+const getFirstProductImage = (data) => {
+  const images = getProductImages(data);
+  return images.length > 0 ? images[0] : "";
+};
+
+const getRoleFields = (role) => {
+  switch (role) {
+    case 'Dealer':
+      return {
+        quantity: 'Dealer_quantity',
+        discount: 'Dealer_discount',
+        freeDelivery: 'free_delivery_dealer',
+        recommended: 'recommended_stats_dealer',
+        deliveryCharges: 'delivery_charges_dealer'
+      };
+    case 'Corporate':
+      return {
+        quantity: 'Corporate_quantity',
+        discount: 'Corporate_discount',
+        freeDelivery: 'free_delivery_corporate',
+        recommended: 'recommended_stats_corporate',
+        deliveryCharges: 'delivery_charges_corporate'
+      };
+    default:
+      return {
+        quantity: 'Customer_quantity',
+        discount: 'Customer_discount',
+        freeDelivery: 'free_delivery_customer',
+        recommended: 'recommended_stats_customer',
+        deliveryCharges: 'delivery_charges_customer'
+      };
+  }
+};
+
 const ProductDetailVarient = ({
   data = {
     _id: "",
@@ -175,7 +236,7 @@ const ProductDetailVarient = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  // Product data constants from your JSON
+  // Product data constants
   const stockCount = _.get(data, "stock_count", 0);
   const productionTime = _.get(data, "Production_time", "2");
   const arrangeTime = _.get(data, "Stock_Arrangement_time", "3");
@@ -201,19 +262,20 @@ const ProductDetailVarient = ({
   const [currentPriceSplitup, setCurrentPriceSplitup] = useState({});
   const [checked, setChecked] = useState(false);
   const [freeDelivery, setFreeDelivery] = useState(false);
+  const [deliveryCharges, setDeliveryCharges] = useState(100);
   const [needDesignUpload, setNeedDesignUpload] = useState(true);
   const [loading, setLoading] = useState(false);
   const [stock, setStockCount] = useState(0);
   const [designPreviewVisible, setDesignPreviewVisible] = useState(false);
   const [quantityDropdownVisible, setQuantityDropdownVisible] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const [deliveryCharges, setDeliveryCharges] = useState(0);
   const [noDesignUpload, setNoDesignUpload] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [instructionsVisible, setInstructionsVisible] = useState(false);
 
   // Checkout state
   const [checkOutState, setCheckOutState] = useState({
-    product_image: _.get(data, "images[0].path", _.get(data, "images[0]", "")),
+    product_image: getFirstProductImage(data),
     product_design_file: "",
     product_name: _.get(data, "name", ""),
     category_name: _.get(data, "category_details.main_category_name", ""),
@@ -226,62 +288,23 @@ const ProductDetailVarient = ({
     MRP_savings: 0,
     TotalSavings: 0,
     FreeDelivery: false,
-    DeliveryCharges: 0,
+    DeliveryCharges: 100,
   });
 
   const { isGettingVariantPrice } = useSelector((state) => state.publicSlice);
 
-  // Helper function to get role-based price
-  const getRoleBasedPrice = useCallback(() => {
-    const product_type = _.get(data, "type", "Stand Alone Product");
+  // Helper function to get role-based price from variant data
+  const getRoleBasedPrice = useCallback((variantData) => {
+    if (!variantData) return 0;
 
     if (user?.role === "Dealer") {
-      return product_type === "Stand Alone Product"
-        ? _.get(data, "Deler_product_price", 0) || _.get(data, "single_product_price", 0)
-        : _.get(data, "variants_price[0].Deler_product_price", 0);
+      return _.get(variantData, "Deler_product_price", _.get(variantData, "price", 0));
     } else if (user?.role === "Corporate") {
-      return product_type === "Stand Alone Product"
-        ? _.get(data, "corporate_product_price", 0) || _.get(data, "single_product_price", 0)
-        : _.get(data, "variants_price[0].corporate_product_price", 0);
+      return _.get(variantData, "corporate_product_price", _.get(variantData, "price", 0));
     } else {
-      return product_type === "Stand Alone Product"
-        ? _.get(data, "customer_product_price", 0) || _.get(data, "single_product_price", 0)
-        : _.get(data, "variants_price[0].customer_product_price", 0);
+      return _.get(variantData, "customer_product_price", _.get(variantData, "price", 0));
     }
-  }, [data, user?.role]);
-
-  // Helper functions for role-specific data
-  const getRoleSpecificQuantity = useCallback(
-    (item) => {
-      const roleFields = getRoleFields(user?.role);
-      return Number(item[roleFields.quantity] || item.quantity || 0);
-    },
-    [user?.role]
-  );
-
-  const getRoleSpecificDiscount = useCallback(
-    (item) => {
-      const roleFields = getRoleFields(user?.role);
-      return Number(item[roleFields.discount] || item.discount || 0);
-    },
-    [user?.role]
-  );
-
-  const getRoleSpecificFreeDelivery = useCallback(
-    (item) => {
-      const roleFields = getRoleFields(user?.role);
-      return item[roleFields.freeDelivery] || item.Free_Deliverey || false;
-    },
-    [user?.role]
-  );
-
-  const getRoleSpecificStats = useCallback(
-    (item) => {
-      const roleFields = getRoleFields(user?.role);
-      return item[roleFields.recommended] || item.recommended_stats || "No comments";
-    },
-    [user?.role]
-  );
+  }, [user?.role]);
 
   // Find matching variant price based on selected variants
   const findMatchingVariantPrice = useCallback(
@@ -303,16 +326,7 @@ const ProductDetailVarient = ({
       if (!variantData) return;
 
       setCurrentPriceSplitup(variantData);
-
-      // Set price based on user role
-      let price = 0;
-      if (user?.role === "Dealer") {
-        price = _.get(variantData, "Deler_product_price", _.get(variantData, "price", 0));
-      } else if (user?.role === "Corporate") {
-        price = _.get(variantData, "corporate_product_price", _.get(variantData, "price", 0));
-      } else {
-        price = _.get(variantData, "customer_product_price", _.get(variantData, "price", 0));
-      }
+      const price = getRoleBasedPrice(variantData);
 
       setCheckOutState((prevState) => ({
         ...prevState,
@@ -321,7 +335,7 @@ const ProductDetailVarient = ({
       }));
       setStockCount(_.get(variantData, "stock_count", _.get(variantData, "stock", 0)));
     },
-    [user?.role]
+    [getRoleBasedPrice]
   );
 
   // Initialize variants and prices
@@ -380,14 +394,19 @@ const ProductDetailVarient = ({
 
   // Initialize quantity settings
   const initializeQuantity = useCallback(() => {
+    const roleFields = getRoleFields(user?.role);
+
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
       // Get the first available quantity for the current user role
-      const firstAvailableItem = quantityDiscounts.find((item) => getRoleSpecificQuantity(item) > 0) || quantityDiscounts[0];
+      const firstAvailableItem = quantityDiscounts.find((item) => 
+        item[roleFields.quantity] && Number(item[roleFields.quantity]) > 0
+      ) || quantityDiscounts[0];
 
       if (firstAvailableItem) {
-        const initialQuantity = getRoleSpecificQuantity(firstAvailableItem);
-        const initialDiscount = getRoleSpecificDiscount(firstAvailableItem);
-        const initialFreeDelivery = getRoleSpecificFreeDelivery(firstAvailableItem);
+        const initialQuantity = Number(firstAvailableItem[roleFields.quantity]);
+        const initialDiscount = Number(firstAvailableItem[roleFields.discount] || 0);
+        const initialFreeDelivery = firstAvailableItem[roleFields.freeDelivery] || false;
+        const initialDeliveryCharges = initialFreeDelivery ? 0 : Number(firstAvailableItem[roleFields.deliveryCharges] || 100);
 
         setQuantity(initialQuantity);
         setDiscountPercentage({
@@ -395,27 +414,27 @@ const ProductDetailVarient = ({
           percentage: initialDiscount,
         });
         setFreeDelivery(initialFreeDelivery);
-        setCheckOutState((prev) => ({
+        setDeliveryCharges(initialDeliveryCharges);
+        setCheckOutState(prev => ({
           ...prev,
           product_quantity: initialQuantity,
+          DeliveryCharges: initialDeliveryCharges,
+          FreeDelivery: initialFreeDelivery,
         }));
       }
     } else {
       setDiscountPercentage({ uuid: "", percentage: 0 });
       setFreeDelivery(false);
+      setDeliveryCharges(100);
       setQuantity(null);
-      setCheckOutState((prev) => ({
+      setCheckOutState(prev => ({
         ...prev,
         product_quantity: 0,
+        DeliveryCharges: 100,
+        FreeDelivery: false,
       }));
     }
-  }, [
-    quantityType,
-    quantityDiscounts,
-    getRoleSpecificQuantity,
-    getRoleSpecificDiscount,
-    getRoleSpecificFreeDelivery,
-  ]);
+  }, [user?.role, quantityType, quantityDiscounts]);
 
   // Handle variant selection
   const handleVariantChange = useCallback(
@@ -595,8 +614,24 @@ const ProductDetailVarient = ({
   const calculateTotalPrice = useCallback(() => {
     if (!quantity) return 0;
     const productTotal = Number(unitPrice * quantity);
+    const totalWithDelivery = productTotal + (freeDelivery ? 0 : deliveryCharges);
     return productTotal.toFixed(2);
-  }, [unitPrice, quantity]);
+  }, [unitPrice, quantity, freeDelivery, deliveryCharges]);
+
+  const calculateMRPTotalPrice = useCallback(() => {
+    if (!quantity) return 0;
+    const unitPrice = Number(_.get(checkOutState, "product_price", 0));
+    return Number(unitPrice * quantity).toFixed(2);
+  }, [checkOutState.product_price, quantity]);
+
+  // Format price functions
+  const formatPrice = useCallback((price) => {
+    return `₹${parseFloat(price || 0).toFixed(2)}`;
+  }, []);
+
+  const formatMRPPrice = useCallback((price) => {
+    return `₹${parseFloat(price || 0).toFixed(2)}`;
+  }, []);
 
   // Render variant selector based on variant type
   const renderVariantSelector = useCallback(
@@ -608,11 +643,11 @@ const ProductDetailVarient = ({
       // For color variants
       if (variant_type === "color_variant") {
         return (
-          <div className="w-full space-y-3">
-            <Text strong className="block text-gray-800">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
+            <Text strong className="block mb-2 md:mb-0 md:w-24">
               {variant_name}:
             </Text>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {options.map((option, index) => (
                 <Tooltip key={index} title={option.value}>
                   <div
@@ -625,17 +660,12 @@ const ProductDetailVarient = ({
                   >
                     {/* Color variant with color code */}
                     <div
-                      className="w-16 h-16 rounded-md overflow-hidden border border-gray-300"
+                      className="w-12 h-12 rounded-md overflow-hidden border border-gray-300"
                       style={{
                         backgroundColor: option.color_code || '#f0f0f0',
-                        backgroundImage: option.image_names?.[0]?.path
-                          ? `url(${option.image_names[0].path})`
-                          : 'none',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
                       }}
                     >
-                      {!option.color_code && !option.image_names?.[0] && (
+                      {!option.color_code && (
                         <div className="w-full h-full flex items-center justify-center bg-gray-200">
                           <span className="text-xs text-gray-500">
                             {option.value}
@@ -657,70 +687,35 @@ const ProductDetailVarient = ({
       // For image variants
       if (variant_type === "image_variant") {
         return (
-          <div className="w-full space-y-3">
-            <Text strong className="block text-gray-800">
-              {variant_name}:
-            </Text>
-            <div className="flex flex-wrap gap-3">
-              {options.map((option, index) => (
-                <Tooltip key={index} title={option.value}>
-                  <div
-                    className={`flex flex-col items-center cursor-pointer transition-all duration-200 p-1 ${
-                      selectedVariants[variant_name] === option.value
-                        ? "ring-2 ring-blue-500 rounded-lg"
-                        : "border border-gray-200 rounded-lg hover:border-blue-300"
-                    }`}
-                    onClick={() => handleVariantChange(variant_name, option.value)}
-                  >
-                    <div
-                      className="w-16 h-16 rounded-md overflow-hidden bg-gray-100"
-                      style={{
-                        backgroundImage: option.image_names?.[0]?.path
-                          ? `url(${option.image_names[0].path})`
-                          : "none",
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }}
-                    >
-                      {!option.image_names?.[0] && (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <span className="text-xs text-gray-500">
-                            {option.value}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <Text className="text-xs mt-1 text-center capitalize max-w-[60px] truncate">
-                      {option.value}
-                    </Text>
-                  </div>
-                </Tooltip>
-              ))}
-            </div>
-          </div>
-        );
-      }
-
-      // For text variants (like sizes)
-      if (variant_type === "text_box_variant") {
-        return (
-          <div className="w-full space-y-3">
-            <Text strong className="block text-gray-800">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
+            <Text strong className="block mb-2 md:mb-0 md:w-24">
               {variant_name}:
             </Text>
             <div className="flex flex-wrap gap-2">
-              {options.map((option, index) => (
-                <button
-                  key={index}
-                  className={`px-4 py-2 border rounded-lg transition-all duration-200 font-medium ${
-                    selectedVariants[variant_name] === option.value
-                      ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                      : "bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50"
-                  }`}
-                  onClick={() => handleVariantChange(variant_name, option.value)}
-                >
-                  {option.value}
-                </button>
+              {options.map((option, optionIndex) => (
+                <div key={optionIndex} className="flex flex-col items-center">
+                  <div
+                    onClick={() => handleVariantChange(variant_name, option.value)}
+                    className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
+                      selectedVariants[variant_name] === option.value
+                        ? "border-blue-500 shadow-md"
+                        : "border-gray-300 hover:border-blue-400"
+                    }`}
+                    style={{ width: "60px", height: "60px" }}
+                  >
+                    <img
+                      src={option.image_names?.[0]?.path || option.image_names?.[0]}
+                      className="w-full h-full object-contain"
+                      alt={option.value}
+                      onError={(e) => {
+                        e.target.src = "https://via.placeholder.com/60x60?text=No+Image";
+                      }}
+                    />
+                  </div>
+                  <Text className="text-xs mt-1 text-center">
+                    {option.value}
+                  </Text>
+                </div>
               ))}
             </div>
           </div>
@@ -729,8 +724,8 @@ const ProductDetailVarient = ({
 
       // Default dropdown for other variants
       return (
-        <div className="w-full space-y-3">
-          <Text strong className="block text-gray-800">
+        <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
+          <Text strong className="block mb-2 md:mb-0 md:w-24">
             {variant_name}:
           </Text>
           <Select
@@ -738,18 +733,10 @@ const ProductDetailVarient = ({
             onChange={(value) => handleVariantChange(variant_name, value)}
             className="w-full"
             placeholder={`Select ${variant_name}`}
-            size="large"
           >
             {options.map((option, index) => (
               <Select.Option key={index} value={option.value}>
-                <div className="flex items-center justify-between">
-                  <span className="capitalize">{option.value}</span>
-                  {option.additional_price > 0 && (
-                    <span className="text-green-600 text-sm">
-                      +₹{option.additional_price}
-                    </span>
-                  )}
-                </div>
+                {option.value}
               </Select.Option>
             ))}
           </Select>
@@ -777,15 +764,6 @@ const ProductDetailVarient = ({
     navigate("/shopping-cart");
   }, [navigate]);
 
-  // Format price functions
-  const formatPrice = useCallback((price) => {
-    return `₹${parseFloat(price || 0).toFixed(2)}`;
-  }, []);
-
-  const formatMRPPrice = useCallback((price) => {
-    return `MRP ₹${parseFloat(price || 0).toFixed(2)}`;
-  }, []);
-
   // Quantity dropdown render
   const quantityDropdownRender = useCallback(
     (menu) => (
@@ -796,8 +774,8 @@ const ProductDetailVarient = ({
         <div className="overflow-y-auto max-h-80 space-y-3">
           {quantityOptions.map((item) => {
             const itemUnitPrice = DISCOUNT_HELPER(
-              item.discount,
-              Number(checkOutState.product_price)
+              quantityType === "dropdown" ? item.discount : discountPercentage.percentage,
+              Number(_.get(checkOutState, "product_price", 0))
             );
             const itemTotalPrice = itemUnitPrice * item.value;
             const isSelected = quantity === item.value;
@@ -828,15 +806,15 @@ const ProductDetailVarient = ({
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    {item.discount > 0 && (
-                      <span className="text-green-600 text-sm font-medium inline-flex items-center mt-1">
+                  <div className="flex flex-wrap gap-2">
+                    {quantityType === "dropdown" && item.discount > 0 && (
+                      <span className="text-green-600 text-sm font-medium inline-flex items-center">
                         <CheckCircleOutlined className="mr-1" />
                         {item.discount}% discount
                       </span>
                     )}
-                    {item.Free_Delivery && (
-                      <span className="text-blue-600 text-sm font-medium inline-flex items-center mt-1">
+                    {quantityType === "dropdown" && item.Free_Delivery && (
+                      <span className="text-blue-600 text-sm font-medium inline-flex items-center">
                         Free Delivery
                       </span>
                     )}
@@ -859,9 +837,15 @@ const ProductDetailVarient = ({
             );
           })}
         </div>
+
+        {quantityOptions.length === 0 && (
+          <div className="text-center py-4 text-gray-500">
+            No quantity options available
+          </div>
+        )}
       </div>
     ),
-    [quantityOptions, checkOutState.product_price, quantity, unit, handleQuantitySelect, formatPrice]
+    [quantityOptions, checkOutState.product_price, quantity, unit, handleQuantitySelect, formatPrice, quantityType, discountPercentage.percentage]
   );
 
   // Handle buy/add to cart
@@ -890,15 +874,31 @@ const ProductDetailVarient = ({
         return navigate("/login");
       }
 
+      const getGuestId = () => {
+        let guestId = localStorage.getItem('guestId');
+
+        if (!guestId) {
+          guestId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          localStorage.setItem('guestId', guestId);
+        }
+
+        return guestId;
+      };
+
+      const token = localStorage.getItem("userData") || "guest";
+
       const updatedCheckoutState = {
         ...checkOutState,
+        guestId: getGuestId(),
+        userRole: token,
         sgst: Number(gst / 2),
         cgst: Number(gst / 2),
         MRP_savings: mrpSavings,
         TotalSavings: totalSavings,
         FreeDelivery: freeDelivery,
         DeliveryCharges: deliveryCharges,
-        final_total: Number(totalPrice),
+        noCustomtation: noDesignUpload,
+        final_total: Number(calculateTotalPrice()),
       };
 
       const result = await addToShoppingCart(updatedCheckoutState);
@@ -958,26 +958,11 @@ const ProductDetailVarient = ({
         });
       } catch (err) {
         console.log("Error sharing:", err);
+        setShowShareMenu(!showShareMenu);
       }
     } else {
       setShowShareMenu(!showShareMenu);
     }
-  };
-
-  // Custom Popover component
-  const CustomPopover = ({ open, onClose, className, children }) => {
-    if (!open) return null;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className={`absolute top-full right-0 mt-2 ${className}`}
-      >
-        {children}
-      </motion.div>
-    );
   };
 
   const handleNoCustomization = (e) => {
@@ -989,6 +974,45 @@ const ProductDetailVarient = ({
     }
   };
 
+  const handleDesignRemove = () => {
+    setCheckOutState(prev => ({ ...prev, product_design_file: "" }));
+  };
+
+  // Processing Time Info
+  const ProcessingTimeInfo = () => (
+    <div className="max-h-[400px] overflow-y-auto text-gray-700">
+      <Paragraph>
+        After our <b>designing team</b> completes your design, you'll receive a <b>WhatsApp message</b> from us. You just need to reply "Yes" — and we'll immediately start processing your order to the next step.
+      </Paragraph>
+      <Paragraph>
+        Please note that <b>delivery time may delay</b>, but don't worry — your order is <b>100% safe and secure</b> and will reach your <b>doorstep</b>.
+      </Paragraph>
+      <Paragraph>
+        However, kindly note that <b>returns or exchanges are not applicable for customized products</b> due to their personalized nature. So please share your <b>expectations clearly</b> — we'll make sure your order is prepared <b>perfectly</b>.
+      </Paragraph>
+      <Alert
+        message="If you place an order without a custom design, it will be delivered within 3–4 working days."
+        type="info"
+        showIcon
+        className="!py-2"
+      />
+    </div>
+  );
+
+  // Label generator
+  const generateLabel = (label) => {
+    switch (label) {
+      case "new":
+        return <Tag color="green">New</Tag>;
+      case "popular":
+        return <Tag color="purple">Popular</Tag>;
+      case "only-for-today":
+        return <Tag color="red">Only For Today</Tag>;
+      default:
+        return <></>;
+    }
+  };
+
   return (
     <Spin
       spinning={loading}
@@ -996,16 +1020,21 @@ const ProductDetailVarient = ({
         <IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />
       }
     >
-      <div className="font-primary w-full space-y-6 relative">
+      <div className="font-primary w-full space-y-2 relative">
         {/* Product Header */}
-        <div className="space-y-1 flex md:flex-row flex-col justify-between items-end">
-          <div className="flex-1">
-            <h1 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl leading-tight">
+        <div className="space-y-1 flex flex-col md:flex-row justify-between items-start gap-4">
+          <div className="flex-1 w-full md:w-auto">
+            <h1 className="text-gray-900 font-bold mb-2 text-xl md:text-2xl lg:text-2xl leading-tight w-full md:w-[80%]">
               {data.name}
             </h1>
+            <div className="flex flex-wrap gap-2">
+              {data.label?.map((label, index) => (
+                <span key={index}>{generateLabel(label)}</span>
+              ))}
+            </div>
           </div>
+
           <div className="w-full md:w-auto flex flex-col md:flex-row items-start md:items-center gap-3 md:relative">
-            {/* Share Button - Mobile */}
             <div className="md:hidden flex flex-row-reverse items-center gap-3 w-full justify-between my-2">
               <button
                 onClick={handleNativeShare}
@@ -1014,7 +1043,6 @@ const ProductDetailVarient = ({
                 <IoShareSocial />
               </button>
 
-              {/* Price Badge - Mobile */}
               <motion.div
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{
@@ -1030,13 +1058,14 @@ const ProductDetailVarient = ({
                     {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
                   </span>
                   <h3 className="text-white text-base font-semibold">
-                    {formatPrice(Number(_.get(checkOutState, "product_price", 0)))}
+                    {quantity
+                      ? formatPrice(Number(_.get(checkOutState, "product_price", 0)))
+                      : "Select Qty"}
                   </h3>
                 </div>
               </motion.div>
             </div>
 
-            {/* Share Button - Desktop */}
             <div className="hidden md:flex items-center gap-3">
               <button
                 onClick={handleNativeShare}
@@ -1045,7 +1074,6 @@ const ProductDetailVarient = ({
                 <IoShareSocial />
               </button>
 
-              {/* Price Badge - Desktop */}
               <motion.div
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{
@@ -1061,13 +1089,14 @@ const ProductDetailVarient = ({
                     {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
                   </span>
                   <h3 className="text-white text-base font-semibold">
-                    {formatPrice(Number(_.get(checkOutState, "product_price", 0)))}
+                    {quantity
+                      ? formatPrice(Number(_.get(checkOutState, "product_price", 0)))
+                      : "Select Qty"}
                   </h3>
                 </div>
               </motion.div>
             </div>
 
-            {/* Share Menu Popover */}
             <AnimatePresence>
               {showShareMenu && (
                 <CustomPopover
@@ -1101,11 +1130,11 @@ const ProductDetailVarient = ({
         </div>
 
         {/* Product Description */}
-        <div className="">
-          <h2 className="!text-md font-semibold w-[70%]">
+        <div>
+          <h2 className="text-md font-semibold w-full md:w-[70%]">
             {_.get(data, "product_description_tittle", "")}
           </h2>
-          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5 ">
+          <ul className="grid grid-cols-1 my-2 gap-2 text-md list-disc pl-5">
             <li>{_.get(data, "Point_one", "")}</li>
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
@@ -1119,53 +1148,52 @@ const ProductDetailVarient = ({
           </ul>
         </div>
 
-        <div className="p-4 bg-gray-50 rounded-lg">
-          {/* Dynamic Variants Section */}
-          {availableVariants.length > 0 &&
-            availableVariants.some(
-              (v) => v.options && v.options.length > 0
-            ) && (
-              <div className="w-full space-y-6 ">
-                {availableVariants.map((variant, index) => (
-                  <div key={index}>{renderVariantSelector(variant)}</div>
-                ))}
-              </div>
-            )}
-
-          {/* Selected Variants Summary */}
-          {Object.keys(selectedVariants).length > 0 && (
-            <Card size="small" className="!bg-transparent border-none">
-              <Text strong className="text-gray-800 block mb-2">
-                Selected Options:
-              </Text>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(selectedVariants).map(([key, value]) => (
-                  <Tag key={key} color="blue" className="capitalize">
-                    {key}: {value}
-                  </Tag>
-                ))}
-              </div>
-            </Card>
-          )}
+        {/* Variants Section */}
+       
+<div className="w-full flex flex-col space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
+            <Text strong className="block mb-2 md:mb-0 md:w-24">
+              Quantity:
+            </Text>
+            <Select
+              value={quantity}
+              onChange={handleQuantitySelect}
+              options={quantityOptions}
+              className="w-full md:w-[30vw]"
+              placeholder="Select quantity"
+              dropdownRender={quantityDropdownRender}
+              open={quantityDropdownVisible}
+              onDropdownVisibleChange={setQuantityDropdownVisible}
+            />
+          </div>
         </div>
+        {/* Selected Variants Summary */}
+        {Object.keys(selectedVariants).length > 0 && (
+          <Card size="small" className="!bg-blue-50">
+             {availableVariants.length > 0 && (
+          <div className="w-full flex flex-col space-y-4">
+            {availableVariants.map((variant, index) => (
+              <div key={index}>
+                {renderVariantSelector(variant)}
+              </div>
+            ))}
+          </div>
+        )}
+            <Text strong className="text-gray-800 block mb-2">
+              Selected Options:
+            </Text>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(selectedVariants).map(([key, value]) => (
+                <Tag key={key} color="blue" className="capitalize">
+                  {key}: {value}
+                </Tag>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Quantity Section */}
-        <div className="space-y-3">
-          <Text strong className="block text-gray-800">
-            Quantity:
-          </Text>
-          <Select
-            value={quantity}
-            onChange={handleQuantitySelect}
-            options={quantityOptions}
-            className="w-full max-w-md"
-            placeholder="Select quantity"
-            dropdownRender={quantityDropdownRender}
-            open={quantityDropdownVisible}
-            onDropdownVisibleChange={setQuantityDropdownVisible}
-            size="large"
-          />
-        </div>
+        
 
         {/* Total Price Section */}
         <Card className="bg-blue-50 rounded-lg border-0">
@@ -1176,12 +1204,12 @@ const ProductDetailVarient = ({
               </Text>
               <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
                 <Text delete className="text-md text-gray-500 md:mr-2">
-                  {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
+                  {formatMRPPrice(calculateMRPTotalPrice())}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
                     ? formatPrice(calculateTotalPrice())
-                    : formatPrice(Number(_.get(checkOutState, "product_price", 0)))}
+                    : formatMRPPrice(calculateTotalPrice())}
                 </Title>
               </div>
             </div>
@@ -1201,7 +1229,7 @@ const ProductDetailVarient = ({
                           <div>
                             Kudos! Additionally you saved{" "}
                             {formatPrice(savings)} (
-                            {discountPercentage.percentage}%  discount)
+                            {discountPercentage.percentage}% discount)
                           </div>
                           <div
                             style={{
@@ -1231,7 +1259,7 @@ const ProductDetailVarient = ({
                   <Text strong>
                     {formatPrice(unitPrice)}
                   </Text>
-                  / {unit})
+                  / piece)
                 </h1>
               </div>
             )}
@@ -1249,7 +1277,7 @@ const ProductDetailVarient = ({
                       )
                     )}
                   </span>
-                  / {unit})
+                  / piece)
                 </h1>
               </div>
             )}
@@ -1270,6 +1298,16 @@ const ProductDetailVarient = ({
               </Tooltip>
               <span className="font-bold">{processing_item} days</span>
             </div>
+
+            <CustomModal
+              open={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              title="Once you confirm, your order will get the green signal for processing"
+              width={700}
+              topPosition="!top-[-500px]"
+            >
+              <ProcessingTimeInfo />
+            </CustomModal>
           </div>
 
           <motion.div
@@ -1294,10 +1332,14 @@ const ProductDetailVarient = ({
 
         {/* File Upload Section */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Text strong className="text-gray-800">
-              Upload Your Design
-            </Text>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+            <Checkbox
+              checked={noDesignUpload}
+              onChange={handleNoCustomization}
+            >
+              Proceed without Design
+            </Checkbox>
+
             {!noDesignUpload && (
               <div className="flex items-center gap-2">
                 <Text>Already have a Design</Text>
@@ -1316,9 +1358,6 @@ const ProductDetailVarient = ({
                 />
               </div>
             )}
-            <Checkbox checked={noDesignUpload} onChange={handleNoCustomization}>
-              Proceed without Design
-            </Checkbox>
           </div>
 
           {!noDesignUpload && (
@@ -1333,14 +1372,24 @@ const ProductDetailVarient = ({
 
                   {checkOutState.product_design_file && (
                     <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
-                      <Button
-                        type="link"
-                        icon={<EyeOutlined />}
-                        onClick={() => setDesignPreviewVisible(true)}
-                        className="md:order-1"
-                      >
-                        View Design
-                      </Button>
+                      <div className="md:order-1">
+                        <Button
+                          type="link"
+                          icon={<EyeOutlined />}
+                          onClick={() => setDesignPreviewVisible(true)}
+                          className="md:order-1"
+                        >
+                          View Design
+                        </Button>
+                        <Button
+                          type="link"
+                          onClick={handleDesignRemove}
+                          className="md:order-1"
+                        >
+                          remove
+                        </Button>
+                      </div>
+
                       <Checkbox
                         checked={checked}
                         onChange={(e) => setChecked(e.target.checked)}
@@ -1361,6 +1410,30 @@ const ProductDetailVarient = ({
             </div>
           )}
 
+          {/* Instructions Section */}
+          <div>
+            <div className="flex gap-3 mb-2">
+              <Text className="text-gray-800 font-bold">Instructions</Text>
+              <Switch
+                checked={instructionsVisible}
+                onChange={setInstructionsVisible}
+              />
+            </div>
+            {instructionsVisible && (
+              <Input.TextArea
+                rows={4}
+                placeholder="Please provide the instructions for this product. Your response should be clear, concise, and must not exceed 180 words"
+                maxLength={180}
+                onChange={(e) =>
+                  setCheckOutState((prev) => ({
+                    ...prev,
+                    instructions: e.target.value,
+                  }))
+                }
+              />
+            )}
+          </div>
+
           {/* Add to Cart Button */}
           <div className="w-full">
             {isGettingVariantPrice ? (
@@ -1379,6 +1452,51 @@ const ProductDetailVarient = ({
                 Add To Cart
               </Button>
             )}
+          </div>
+
+          <Divider className="!my-4" />
+
+          {/* Design Preview Modal */}
+          <CustomModal
+            open={designPreviewVisible}
+            onClose={() => setDesignPreviewVisible(false)}
+            title="Design Preview"
+            width={700}
+            footer={[
+              <Button
+                key="close"
+                onClick={() => setDesignPreviewVisible(false)}
+              >
+                Close
+              </Button>,
+            ]}
+            topPosition=""
+          >
+            <div className="flex justify-center">
+              <img
+                src={checkOutState.product_design_file}
+                alt="Design Preview"
+                style={{ maxHeight: "400px" }}
+              />
+            </div>
+          </CustomModal>
+        </div>
+
+        {/* Product Meta Information */}
+        <div className="space-y-2 z-0 relative">
+          <div className="flex items-center">
+            <Text strong className="!text-gray-800 !w-20">
+              Categories:
+            </Text>
+            <Text className="text-gray-600">
+              {_.get(data, "category_details.main_category_name", "")}
+              {_.get(data, "sub_category_details.sub_category_name", "") &&
+                `, ${_.get(
+                  data,
+                  "sub_category_details.sub_category_name",
+                  ""
+                )}`}
+            </Text>
           </div>
         </div>
       </div>

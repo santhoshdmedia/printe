@@ -91,23 +91,70 @@ export const getBannerProducts = async (id) => {
   return await custom_axios.get(`${baseURL}/product/get_banner_products/${id}`);
 };
 
-// cart
+export const generateGuestId = () => {
+  return `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+export const getGuestId = () => {
+  let guestId = localStorage.getItem('guestId');
+  
+  if (!guestId) {
+    guestId = generateGuestId();
+    localStorage.setItem('guestId', guestId);
+  }
+  
+  return guestId;
+};
+
+export const clearGuestId = () => {
+  localStorage.removeItem('guestId');
+};
+
+// Shopping Cart APIs
 export const addToShoppingCart = async (cartData) => {
-  return await custom_axios.post(`${baseURL}/shopping/add_to_cart`, cartData);
+  const guestId = getGuestId();
+  const payload = {
+    ...cartData,
+    guestId: guestId
+  };
+  
+  return await custom_axios.post(`${baseURL}/shopping/add_to_cart`, payload);
 };
 
 export const getMyShoppingCart = async () => {
-  return await custom_axios.get(`${baseURL}/shopping/get_my_cart`);
+  const guestId = getGuestId();
+  return await custom_axios.get(`${baseURL}/shopping/get_my_cart`, {
+    params: { guestId }
+  });
 };
 
-export const mergeCart=async (cartData)=>{
-  return await custom_axios.post(`${baseURL}/shopping/merge_cart`, cartData);
-}
+export const mergeCart = async (cartData) => {
+  const guestId = getGuestId();
+  const payload = {
+    ...cartData,
+    guestId: guestId
+  };
+  
+  return await custom_axios.post(`${baseURL}/shopping/merge_cart`, payload);
+};
 
 export const removeMyShoppingCart = async (data) => {
-  // Handle both cases: single ID string or array of IDs
+  const guestId = getGuestId();
   const requestData = typeof data === 'string' ? { ids: [data] } : data;
-  return await custom_axios.post(`${baseURL}/shopping/remove_my_cart`, requestData);
+  
+  return await custom_axios.post(`${baseURL}/shopping/remove_my_cart`, {
+    ...requestData,
+    guestId: guestId
+  });
+};
+
+export const updateCartItemQuantity = async (itemId, quantity) => {
+  const guestId = getGuestId();
+  return await custom_axios.post(`${baseURL}/shopping/update_cart_quantity`, {
+    itemId,
+    quantity,
+    guestId
+  });
 };
 
 // order
