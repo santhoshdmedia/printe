@@ -2,11 +2,7 @@ export const initiateCCAvenuePayment = async (paymentData) => {
   try {
     const apiUrl = import.meta.env.VITE_BASE_API_URL || 'http://localhost:8080';
     
-    console.log('Initiating payment with data:', {
-      amount: paymentData.amount,
-      order_id: paymentData.order_id,
-      items_count: paymentData.cart_items?.length || 0
-    });
+   
 
     const response = await fetch(`${apiUrl}/payment/create-order`, { // Fixed endpoint path
       method: 'POST',
@@ -56,6 +52,5 @@ const submitPaymentForm = (paymentResponse) => {
 
   document.body.appendChild(form);
 
-  console.log('Submitting payment form to CCAvenue');
   form.submit();
 };

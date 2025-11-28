@@ -69,7 +69,19 @@ const addProduct = async (req, res) => {
 // };
 
 const getProduct = async (req, res) => {
-  const { filterByProduct_category = "", filterByType = "", filterByProduct_subcategory = "", search, newArrival = false, popular = false, onlyForToday = false, isAdmin = false, limitVariants = 1, id_list, vendor_filter } = req.query;
+  const { 
+    filterByProduct_category = "", 
+    filterByType = "", 
+    filterByProduct_subcategory = "", 
+    search, 
+    newArrival = false, 
+    popular = false, 
+    onlyForToday = false, 
+    isAdmin = false, 
+    limitVariants = 1, 
+    id_list, 
+    vendor_filter 
+  } = req.query;
   const { id } = req.params;
 
   try {
@@ -81,7 +93,6 @@ const getProduct = async (req, res) => {
 
     if (id_list) {
       const list = JSON.parse(id_list);
-
       where.seo_url = {
         $in: list.map((id) => id),
       };
@@ -100,14 +111,24 @@ const getProduct = async (req, res) => {
       where.label = { $in: ["only-for-today"] };
     }
 
+    // Updated search condition to include product_codeS_NO and Vendor_Code
     if (search) {
-      where.name = { $regex: search, $options: "i" };
+      where.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { product_codeS_NO: { $regex: search, $options: "i" } },
+        { Vendor_Code: { $regex: search, $options: "i" } }
+      ];
     }
+
     if (id) {
       where.seo_url = id;
     }
 
-    const result = await ProductSchema.find(where).populate("vendor_details", "vendor_name").populate("category_details", "").populate("sub_category_details", "");
+    const result = await ProductSchema.find(where)
+      .populate("vendor_details", "vendor_name")
+      .populate("category_details", "")
+      .populate("sub_category_details", "");
+    
     return successResponse(res, PRODUCT_GET_SUCCESS, result);
   } catch (error) {
     console.error("Error in getProduct:", error);

@@ -638,7 +638,6 @@ const Signup = () => {
       // Update the form state with cleaned name for UI consistency
       setForm(cleanedForm);
 
-      console.log(Form);
       
       // Dispatch with cleaned data
       dispatch({ type: "SIGNUP", data: cleanedForm });

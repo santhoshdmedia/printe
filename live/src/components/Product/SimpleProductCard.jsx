@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { IconHelper } from "../../helper/IconHelper";
 import ExitementTag from "../Nav/ExitementTag";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { DISCOUNT_HELPER,GST_DISCOUNT_HELPER } from "../../helper/form_validation";
 
 const SimpleProductCard = ({ data }) => {
   const navigate = useNavigate();
@@ -80,10 +81,52 @@ const SimpleProductCard = ({ data }) => {
     setIsHovered(false);
   };
 
-  const items = _.get(data, "variants_price", []).map((res) => Number(res.price));
-  const price =
-    _.get(data, `variants_price[0].customer_product_price`, "") ||
-   _.get(data, "customer_product_price", null);
+  // Price calculation utilities
+  const getRoleDiscountField = (role) => {
+    switch (role) {
+      case 'Dealer':
+        return 'Dealer_discount';
+      case 'Corporate':
+        return 'Corporate_discount';
+      default:
+        return 'Customer_discount';
+    }
+  };
+
+  const getBasePrice = () => {
+    return _.get(data, `variants_price[0].customer_product_price`, "") ||
+           _.get(data, "customer_product_price", "0");
+  };
+
+  const calculateDiscountedPrice = () => {
+    try {
+      const basePrice = Number(getBasePrice());
+      
+      // If no quantity discount data or user not logged in, return base price
+      if (!data.quantity_discount_splitup || !data.quantity_discount_splitup.length || !user?.role) {
+        return basePrice;
+      }
+
+      const firstQuantityTier = data.quantity_discount_splitup[0];
+      const discountField = getRoleDiscountField(user.role);
+      const discountValue = _.get(firstQuantityTier, discountField, 0);
+      
+      // Use DISCOUNT_HELPER to calculate final price
+      const finalPrice = GST_DISCOUNT_HELPER(discountValue, basePrice,18);
+      
+      return isNaN(finalPrice) ? basePrice : finalPrice;
+    } catch (error) {
+      console.error('Error calculating price:', error);
+      return Number(getBasePrice()) || 0;
+    }
+  };
+
+  const formatPrice = (price) => {
+    const numericPrice = typeof price === 'number' ? price : Number(price);
+    return `₹${Math.round(numericPrice)}`;
+  };
+
+  const displayPrice = formatPrice(calculateDiscountedPrice());
   
   return (
     <motion.div
@@ -182,7 +225,6 @@ const SimpleProductCard = ({ data }) => {
                 className="!text-xs !text-yellow-400"
                 defaultValue={4.5}
               />
-              <span className="text-xs text-gray-500 ml-2">(24)</span>
             </div>
           </div>
 
@@ -194,7 +236,7 @@ const SimpleProductCard = ({ data }) => {
               }}
               transition={{ type: "spring" }}
             >
-              <span className="text-sm lg:text-xl font-bold text-primary">Rs. {price}</span>
+              <span className="text-sm lg:text-xl font-bold text-primary">{displayPrice}</span>
             </motion.div>
             
             <motion.div

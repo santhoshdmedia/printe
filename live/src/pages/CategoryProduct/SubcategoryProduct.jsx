@@ -56,13 +56,11 @@ const SubcategoryProduct = () => {
 
     const priceA = getCustomerPrice(a);
     const priceB = getCustomerPrice(b);
-    console.log(priceA,priceB);
     
 
     return priceA - priceB; // Ascending order (lowest to highest)
   });
 
-  console.log("Sorted products by price (ascending):", sortedProducts);
 
   return (
     <div className="min-h-screen bg-gray-50">

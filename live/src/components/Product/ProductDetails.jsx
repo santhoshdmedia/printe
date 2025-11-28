@@ -45,7 +45,6 @@ import {
   addToShoppingCart,
   getVariantPrice,
   PUBLIC_URL,
-  
 } from "../../helper/api_helper";
 import Swal from "sweetalert2";
 import {
@@ -57,6 +56,7 @@ import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import {
   DISCOUNT_HELPER,
   GST_DISCOUNT_HELPER,
+  Gst_HELPER
 } from "../../helper/form_validation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -251,6 +251,26 @@ const getRoleFields = (role) => {
   }
 };
 
+// Price calculation helper functions
+const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 0) => {
+  if (userRole === "Corporate" || userRole === "Dealer") {
+    // For dealers and corporate - apply discount only (no GST)
+    return DISCOUNT_HELPER(discountPercentage, basePrice);
+  } else {
+    // For customers - apply discount and then add GST
+    return GST_DISCOUNT_HELPER(discountPercentage, basePrice, gst);
+  }
+};
+
+const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
+  if (userRole === "Corporate" || userRole === "Dealer") {
+    // For dealers and corporate - base price without GST
+    return basePrice;
+  } else {
+    // For customers - base price with GST
+    return basePrice * (1 + gst / 100);
+  }
+};
 
 const ProductDetails = ({
   data = {
@@ -286,11 +306,11 @@ const ProductDetails = ({
     }
   };
 
-  const price = getRoleBasedPrice();
+  const basePrice = getRoleBasedPrice();
   const product_type = _.get(data, "type", "Stand Alone Product");
+  const Gst = _.get(data, "GST", 0);
 
   // State declarations
-  const [totalPrice, setTotalPrice] = useState(price);
   const [quantity, setQuantity] = useState(null);
   const [discountPercentage, setDiscountPercentage] = useState({
     uuid: "",
@@ -302,9 +322,8 @@ const ProductDetails = ({
   const [error, setError] = useState("");
   const [maximum_quantity, setMaximumQuantity] = useState();
   const [freeDelivery, setFreeDelivery] = useState(false);
-  const [deliveryCharges, setDeliveryCharges] = useState(100); // Default delivery charges
+  const [deliveryCharges, setDeliveryCharges] = useState(100);
   const [noDesignUpload, setNoDesignUpload] = useState(false);
-  const [ogPrice, setOgPrice] = useState(price);
 
   const [checkOutState, setCheckOutState] = useState({
     product_image: getFirstProductImage(data),
@@ -312,7 +331,7 @@ const ProductDetails = ({
     product_name: _.get(data, "name", ""),
     category_name: _.get(data, "category_details.main_category_name", ""),
     subcategory_name: _.get(data, "sub_category_details.sub_category_name", ""),
-    product_price: ogPrice,
+    product_price: basePrice,
     product_variants: {},
     product_quantity: 0,
     product_seo_url: _.get(data, "seo_url", ""),
@@ -455,7 +474,7 @@ const ProductDetails = ({
     if (product_type === "Stand Alone Product") {
       setCheckOutState((prevState) => ({
         ...prevState,
-        product_price: price,
+        product_price: basePrice,
       }));
       setStockCount(_.get(data, "stock_count", 0));
     } else if (_.isEmpty(currentPriceSplitup)) {
@@ -492,7 +511,7 @@ const ProductDetails = ({
       }));
       setStockCount(stock_count);
     }
-  }, [product, product_type, price, data]);
+  }, [product, product_type, basePrice, data]);
 
   // Handle variant selection
   const handleOnChangeSelectOption = async (selectedValue, index) => {
@@ -534,9 +553,7 @@ const ProductDetails = ({
 
   // Handle file upload
   const handleUploadImage = (fileString) => {
-
     setCheckOutState((prev) => ({ ...prev, product_design_file: fileString }));
-
   };
 
   const goToShoppingCart = () => {
@@ -622,6 +639,107 @@ const ProductDetails = ({
     setQuantityDropdownVisible(false);
   };
 
+  // Price calculation functions
+  const formatPrice = (price) => {
+    return `₹${parseFloat(price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  // Calculate unit prices
+  const getUnitPrice = () => {
+    const basePrice = Number(_.get(checkOutState, "product_price", 0));
+    return calculateUnitPrice(basePrice, discountPercentage.percentage, user.role, Gst);
+  };
+
+  const getMRPUnitPrice = () => {
+    const basePrice = Number(_.get(checkOutState, "product_price", 0));
+    return calculateMRPUnitPrice(basePrice, user.role, Gst);
+  };
+
+  const getOriginalUnitPrice = () => {
+    const basePrice = Number(_.get(checkOutState, "product_price", 0));
+    if (user.role === "Corporate" || user.role === "Dealer") {
+      return basePrice;
+    } else {
+      return basePrice * (1 + Gst / 100);
+    }
+  };
+
+  // Calculate total prices
+  const calculateTotalPrice = () => {
+    if (!quantity) return 0;
+    const unitPrice = getUnitPrice();
+    return (unitPrice * quantity).toFixed(2);
+  };
+
+  const calculateMRPTotalPrice = () => {
+    if (!quantity) return 0;
+    const mrpPrice = Number(_.get(data, "MRP_price", 0));
+    return (mrpPrice * quantity).toFixed(2);
+  };
+
+  const calculateOriginalTotalPrice = () => {
+    if (!quantity) return 0;
+    const unitPrice = getOriginalUnitPrice();
+    return (unitPrice * quantity).toFixed(2);
+  };
+
+  // Calculate savings
+  const calculateMRPSavings = () => {
+    if (!quantity) return 0;
+    const mrpPrice = Number(_.get(data, "MRP_price", 0));
+    const currentUnitPrice = getMRPUnitPrice();
+    const savingsPerUnit = mrpPrice - currentUnitPrice;
+    return (savingsPerUnit * quantity).toFixed(2);
+  };
+
+  const calculateDiscountSavings = () => {
+    if (!quantity) return 0;
+    const originalUnitPrice = getOriginalUnitPrice();
+    const discountedUnitPrice = getUnitPrice();
+    const savingsPerUnit = originalUnitPrice - discountedUnitPrice;
+    return (savingsPerUnit * quantity).toFixed(2);
+  };
+
+  const calculateTotalSavings = () => {
+    const mrpSavings = parseFloat(calculateMRPSavings());
+    const discountSavings = parseFloat(calculateDiscountSavings());
+    return (mrpSavings + discountSavings).toFixed(2);
+  };
+
+  // Calculate percentage discount for deal price
+  const calculateDealPercentageDiscount = () => {
+    if (!quantity) return 0;
+
+    const mrpTotal = parseFloat(calculateMRPTotalPrice());
+    const dealTotal = parseFloat(calculateTotalPrice());
+
+    if (mrpTotal === 0 || dealTotal >= mrpTotal) return 0;
+
+    const percentage = ((mrpTotal - dealTotal) / mrpTotal) * 100;
+    return Math.round(percentage);
+  };
+  const calculateDealPercentageDiscountCus = () => {
+    if (!quantity) return 0;
+
+    const mrpTotal = parseFloat(calculateMRPTotalPrice());
+    const dealTotal = parseFloat(getUnitPrice());
+
+    if (mrpTotal === 0 || dealTotal >= mrpTotal) return 0;
+
+    const percentage = ((mrpTotal - dealTotal) / mrpTotal) * 100;
+    return Math.round(percentage);
+  };
+
+  // Calculate percentage savings
+  const calculateTotalSavingsPercentage = () => {
+    const totalSavings = parseFloat(calculateTotalSavings());
+    const originalTotal = parseFloat(calculateOriginalTotalPrice());
+    if (originalTotal === 0) return 0;
+    let savingAmt = (totalSavings / originalTotal) * 100
+    savingAmt = Math.round(savingAmt)
+    return savingAmt.toFixed(1);
+  };
+
   // Handle add to cart
   const handlebuy = async () => {
     try {
@@ -649,9 +767,7 @@ const ProductDetails = ({
       }
 
       setError("");
-      const Gst = _.get(data, "GST", 0);
       let token = localStorage.getItem("userData") || "guest"
-      console.log(token, "role");
 
       const getGuestId = () => {
         let guestId = localStorage.getItem('guestId');
@@ -663,17 +779,16 @@ const ProductDetails = ({
 
         return guestId;
       };
-      setOgPrice(Number(calculateTotalPrice()))
 
-      // const Role=
+
       const finalCheckoutState = {
         ...checkOutState,
-        guestId:getGuestId(),
+        guestId: getGuestId(),
         userRole: token,
         sgst: Number(Gst / 2),
         cgst: Number(Gst / 2),
         MRP_savings: calculateMRPSavings(),
-        TotalSavings: calculateSavings(),
+        TotalSavings: calculateTotalSavings(),
         FreeDelivery: freeDelivery,
         DeliveryCharges: deliveryCharges,
         noCustomtation: noDesignUpload,
@@ -687,7 +802,7 @@ const ProductDetails = ({
         sgst: Number(Gst / 2),
         cgst: Number(Gst / 2),
         MRP_savings: calculateMRPSavings(),
-        TotalSavings: calculateSavings(),
+        TotalSavings: calculateTotalSavings(),
         FreeDelivery: freeDelivery,
         DeliveryCharges: deliveryCharges,
         noCustomtation: noDesignUpload,
@@ -723,53 +838,6 @@ const ProductDetails = ({
     }
   };
 
-  // Price calculation functions
-  const formatPrice = (price) => {
-    return `₹${parseFloat(price).toFixed(2)}`;
-  };
-
-  const formatMRPPrice = (price) => {
-    return `₹${parseFloat(price).toFixed(2)}`;
-  };
-
-  const calculateTotalPrice = () => {
-    if (!quantity) return 0;
-    const unitPrice = DISCOUNT_HELPER(
-      discountPercentage.percentage,
-      Number(_.get(checkOutState, "product_price", 0))
-    );
-    const productTotal = Number(unitPrice * quantity);
-    const totalWithDelivery = productTotal + (freeDelivery ? 0 : deliveryCharges);
-    return productTotal.toFixed(2);
-  };
-
-  const calculateMRPTotalPrice = () => {
-    if (!quantity) return 0;
-    const unitPrice = Number(_.get(checkOutState, "product_price", 0));
-    return Number(unitPrice * quantity).toFixed(2);
-  };
-
-  const calculateSavings = () => {
-    if (!quantity) return 0;
-    const original = calculateMRPTotalPrice();
-    const discounted = calculateTotalPrice();
-    return (original - discounted).toFixed(2);
-  };
-
-  const calculateMRPSavings = () => {
-    const mrpPrice = Number(_.get(data, "MRP_price", 0));
-    const currentPrice = Number(_.get(checkOutState, "product_price", 0));
-    const savings = mrpPrice - currentPrice;
-    const allSavings = savings * quantity;
-    return allSavings.toFixed(2);
-  };
-
-  const calculateTotalSavings = () => {
-    const totalSavings = calculateSavings();
-    const mrpSavings = calculateMRPSavings();
-    return (Number(totalSavings) + Number(mrpSavings)).toFixed(2);
-  };
-
   // Quantity dropdown renderer
   const quantityDropdownRender = (menu) => {
     const roleFields = getRoleFields(user.role);
@@ -782,9 +850,11 @@ const ProductDetails = ({
       >
         <div className="overflow-y-auto max-h-80 space-y-3">
           {quantityOptions.map((item) => {
-            const unitPrice = DISCOUNT_HELPER(
-              quantityType === "dropdown" ? item.discount : discountPercentage.percentage,
-              Number(_.get(checkOutState, "product_price", 0))
+            const unitPrice = calculateUnitPrice(
+              Number(_.get(checkOutState, "product_price", 0)),
+              item.discount,
+              user.role,
+              Gst
             );
             const totalPrice = unitPrice * item.value;
             const isSelected = quantity === item.value;
@@ -817,7 +887,7 @@ const ProductDetails = ({
                     {quantityType === "dropdown" && item.discount > 0 && (
                       <span className="text-green-600 text-sm font-medium inline-flex items-center">
                         <CheckCircleOutlined className="mr-1" />
-                        {item.discount}%  discount
+                        {item.discount}% discount
                       </span>
                     )}
                     {quantityType === "dropdown" && item.Free_Delivery && (
@@ -868,7 +938,6 @@ const ProductDetails = ({
   };
 
   // Share functionality
-
   const shareProduct = async (platform) => {
     const productUrl = encodeURIComponent(window.location.href);
     const productName = encodeURIComponent(data.name);
@@ -883,13 +952,7 @@ const ProductDetails = ({
       email: `mailto:?subject=${productTitle}&body=Check out this product: ${productTitle} - ${productUrl}`,
     };
 
-    // For platforms that support image sharing
-    if (platform === 'facebook' && productImage) {
-      // Facebook doesn't directly support image parameter, but we can try with Open Graph tags
-      window.open(shareUrls[platform], "_blank");
-    }
-    else if (platform === 'whatsapp' && productImage) {
-      // WhatsApp - include image in the message
+    if (platform === 'whatsapp' && productImage) {
       const message = `${productTitle} - ${window.location.href}`;
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, "_blank");
     }
@@ -913,32 +976,27 @@ const ProductDetails = ({
           url: window.location.href,
         };
 
-        // Add image if available and supported
         const productImage = getFirstProductImage(data);
         if (productImage) {
           try {
-            // Convert image URL to blob for sharing
             const response = await fetch(productImage);
             const blob = await response.blob();
             const file = new File([blob], 'product-image.jpg', { type: blob.type });
 
-            // Check if files can be shared
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
               shareData.files = [file];
             }
           } catch (error) {
-            console.log('Image sharing not supported, sharing without image');
+            console.error("Error sharing image:", error);
           }
         }
 
         await navigator.share(shareData);
       } catch (err) {
         console.error("Error sharing:", err);
-        // Fallback to custom share menu
         setShowShareMenu(!showShareMenu);
       }
     } else {
-      // Fallback for browsers that don't support Web Share API
       setShowShareMenu(!showShareMenu);
     }
   };
@@ -1018,8 +1076,6 @@ const ProductDetails = ({
     </div>
   );
 
-  const Gst = _.get(data, "GST", 0);
-
   // Label generator
   const generateLabel = (label) => {
     switch (label) {
@@ -1035,8 +1091,8 @@ const ProductDetails = ({
   };
 
   const handleDesignRemove = () => {
-    setCheckOutState(checkOutState.product_design_file == "")
-  }
+    setCheckOutState(prev => ({ ...prev, product_design_file: "" }));
+  };
 
   return (
     <Spin
@@ -1080,15 +1136,11 @@ const ProductDetails = ({
               >
                 <div className="flex items-baseline gap-2">
                   <span className="text-white/70 text-xs line-through">
-                    ₹
-                    {_.get(data, "MRP_price", 0) ||
-                      Number(_.get(checkOutState, "product_price", 0))}
+                    {formatPrice(Number(_.get(data, "MRP_price", 0)))}
                   </span>
                   <h3 className="text-white text-base font-semibold">
                     {quantity
-                      ? formatPrice(
-                        Number(_.get(checkOutState, "product_price", 0))
-                      )
+                      ? formatPrice(getUnitPrice())
                       : "Select Qty"}
                   </h3>
                 </div>
@@ -1115,16 +1167,10 @@ const ProductDetails = ({
               >
                 <div className="flex items-baseline gap-2">
                   <span className="text-white/70 text-xs line-through">
-                    ₹
-                    {_.get(data, "MRP_price", 0) ||
-                      Number(_.get(checkOutState, "product_price", 0)) + 50}
+                    {formatPrice(Number(_.get(data, "MRP_price", 0)))}
                   </span>
                   <h3 className="text-white text-base font-semibold">
-                    {quantity
-                      ? formatPrice(
-                        Number(_.get(checkOutState, "product_price", 0))
-                      )
-                      : "Select Qty"}
+                    {formatPrice(getUnitPrice())}
                   </h3>
                 </div>
               </motion.div>
@@ -1204,7 +1250,7 @@ const ProductDetails = ({
               !_.isEmpty(currentPriceSplitup) && (
                 <>
                   {_.get(data, "variants", []).map((variant, index) => (
-                    <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
+                    <div key={index} className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
                       <Text strong className="block mb-2 md:mb-0 md:w-24">
                         {variant.variant_name}:
                       </Text>
@@ -1283,63 +1329,105 @@ const ProductDetails = ({
         {/* Total Price Section */}
         <Card className="bg-blue-50 rounded-lg border-0">
           <div className="space-y-3">
+            {/* Deal Price with Percentage Discount */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-              <Text strong className="text-gray-800">
-                Deal Price:
-              </Text>
+              <div className="flex-1">
+                <Text strong className="text-gray-800">
+                  Deal Price:
+                </Text>
+              </div>
               <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
+
                 <Text delete className="text-md text-gray-500 md:mr-2">
-                  {formatMRPPrice(Number(_.get(data, "MRP_price", 0)) * quantity)}
+                  {formatPrice(calculateMRPTotalPrice())}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
                     ? formatPrice(calculateTotalPrice())
-                    : formatMRPPrice(calculateTotalPrice())}
+                    : formatPrice(0)}
                 </Title>
+
               </div>
             </div>
 
+            {/* Price Breakdown */}
+            {/* {quantity && (
+              <div className="space-y-2 p-3 bg-white rounded-lg border border-gray-200">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Unit Price:</span>
+                  <span className="font-medium">{formatPrice(getOriginalUnitPrice())}</span>
+                </div>
+                
+                {discountPercentage.percentage > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Discount ({discountPercentage.percentage}%):</span>
+                    <span className="text-green-600 font-medium">
+                      -{formatPrice(getOriginalUnitPrice() - getUnitPrice())}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Final Unit Price:</span>
+                  <span className="font-medium text-blue-600">{formatPrice(getUnitPrice())}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-sm border-t pt-2">
+                  <span className="text-gray-600">Total for {quantity} {unit}:</span>
+                  <span className="font-bold text-lg text-green-600">{formatPrice(calculateTotalPrice())}</span>
+                </div>
+              </div>
+            )} */}
+
             {/* Savings Alerts */}
             <div className="space-y-2">
-              {calculateMRPSavings() > 0 && (
+              {calculateTotalSavings() > 0 && (
                 <Alert
                   message={
                     <div>
-                      <div>
-                        You saved {formatPrice(calculateMRPSavings())} <br></br>
-                        {discountPercentage.percentage == 0 ? "select more quantity to get extra discount" : ""}
-                      </div>
-                      {quantity && calculateSavings() > 0 && (
-                        <div className="mt-1">
-                          <div>
-                            Kudos! Additionally you saved{" "}
-                            {formatPrice(calculateSavings())} (
-                            {discountPercentage.percentage}%  discount)
-                          </div>
-                          <div
-                            style={{
-                              fontWeight: "bold",
-                              fontSize: "1.125rem",
-                              marginTop: "4px",
-                            }}
-                          >
-                            Total Savings:{" "}
-                            {formatPrice(calculateTotalSavings())}
-                          </div>
+                      {calculateMRPSavings() > 0 && (
+                        <div className="mt-1 text-sm">
+                          {calculateMRPSavings() > 0 && (
+                            <div className="mt-1 text-sm">
+                              You Saved: {formatPrice(calculateMRPSavings())} &nbsp;(
+                              {(user.role === "Dealer" || user.role === "Corporate")
+                                ? <>{calculateDealPercentageDiscount()}% Discount</>
+                                : <>{calculateTotalSavingsPercentage()}% Discount</>
+                              })
+                            </div>
+                          )}
+
                         </div>
                       )}
+
+                      {calculateDiscountSavings() > 0 && (
+                        <div className="text-sm mt-2">
+                          Kudos! Additionally you saved {formatPrice(calculateDiscountSavings())} ({discountPercentage.percentage}% Discount)
+                        </div>
+                      )}
+
+                      {discountPercentage.percentage === 0 && quantity && (
+                        <div className="mt-2 text-base text-amber-600">
+                          💡 Select higher quantity to get extra discounts
+                        </div>
+                      )}
+                      <div className="font-semibold text-green-700 text-lg mt-1">
+                        🎉 You saved {formatPrice(calculateTotalSavings())} ({calculateTotalSavingsPercentage()}% OFF)
+                      </div>
+
+
                     </div>
                   }
                   type="success"
                   showIcon
-                  className="!py-2"
+                  className="!py-3"
                 />
               )}
             </div>
 
-            {quantity && (
+            {(user.role == "Corporate" || user.role == "Dealer") ? (
               <div className="text-gray-600">
-                <h1 className="!text-md text-gray-600">
+                <h1 className="!text-[12px] text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
                   (
                   <Text strong>
@@ -1353,22 +1441,20 @@ const ProductDetails = ({
                   / piece)
                 </h1>
               </div>
-            )}
+            ) : ""}
             {quantity && (
-              <div className="!text-[12px] text-gray-600">
+              <div className="!text-[14px] text-gray-600">
                 <h1>
                   Inclusive of all taxes for <span strong>{quantity}</span> Qty
-                  (
                   <span className="font-bold">
-                    {formatPrice(
-                      GST_DISCOUNT_HELPER(
-                        discountPercentage.percentage,
-                        Number(_.get(checkOutState, "product_price", 0)),
-                        Gst
-                      )
-                    )}
-                  </span>
+ &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
+                    ? <>{formatPrice(Gst_HELPER(Gst, getUnitPrice()))}</>
+                    : <>{formatPrice(calculateTotalPrice())}</>
+                  }
+
+                  
                   / piece)
+                  </span>
                 </h1>
               </div>
             )}
@@ -1379,14 +1465,14 @@ const ProductDetails = ({
               <Text strong className="text-gray-700">
                 Processing Time:
               </Text>
-              <Tooltip title="Learn more about processing time">
+              {/* <Tooltip title="Learn more about processing time">
                 <Button
                   type="text"
                   icon={<IconHelper.QUESTION_MARK />}
                   size="small"
                   onClick={() => setIsModalOpen(true)}
                 />
-              </Tooltip>
+              </Tooltip> */}
               <span className="font-bold">{processing_item} days</span>
             </div>
 
@@ -1413,11 +1499,14 @@ const ProductDetails = ({
             <Text strong className="block mb-2 text-gray-700">
               Estimated Delivery
             </Text>
-            <PincodeDeliveryCalculator
-              Production={processing_item}
-              freeDelivery={freeDelivery}
-              deliveryCharges={deliveryCharges}
-            />
+            {/* PincodeDeliveryCalculator component would go here */}
+            <div className="  rounded-lg">
+              <PincodeDeliveryCalculator
+                Production={processing_item}
+                freeDelivery={freeDelivery}
+                deliveryCharges={deliveryCharges}
+              />
+            </div>
           </motion.div>
         </Card>
 
@@ -1474,11 +1563,10 @@ const ProductDetails = ({
                         </Button>
                         <Button
                           type="link"
-                          // icon={<EyeOutlined />}
                           onClick={handleDesignRemove}
                           className="md:order-1"
                         >
-                          remove
+                          Remove
                         </Button>
                       </div>
 

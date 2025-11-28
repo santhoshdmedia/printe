@@ -28,12 +28,13 @@ import { useNavigate } from "react-router-dom";
 import { IconHelper } from "../../helper/IconHelper";
 import { FacebookIcon, WhatsappIcon } from "react-share";
 import { IoShareSocial } from "react-icons/io5";
-import { addToShoppingCart } from "../../helper/api_helper";
+import { addToShoppingCart, bulkOrder, resendOtp, verifyOtp } from "../../helper/api_helper";
 import Swal from "sweetalert2";
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import {
   DISCOUNT_HELPER,
   GST_DISCOUNT_HELPER,
+  Gst_HELPER
 } from "../../helper/form_validation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -41,6 +42,8 @@ import {
   EyeOutlined,
   CheckCircleOutlined,
   CloseOutlined,
+  PlusOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import toast from "react-hot-toast";
 import { PincodeDeliveryCalculator } from "./ProductDetails.jsx";
@@ -165,13 +168,11 @@ export const CustomPopover = ({
 // Helper functions
 const getProductImages = (data) => {
   let images;
-  if (_.get(data, "variants[0].variant_type", [])=="image_variant") {
-    
+  if (_.get(data, "variants[0].variant_type", []) == "image_variant") {
     images = _.get(data, "variants[0].options[0].image_names", []);
-  }else{
-     images = _.get(data, "images", []);
+  } else {
+    images = _.get(data, "images", []);
   }
-  console.log(images,"var");
   
   if (!images || images.length === 0) return [];
 
@@ -219,6 +220,23 @@ const getRoleFields = (role) => {
   }
 };
 
+// Price calculation helper functions
+const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 0) => {
+  if (userRole === "Corporate" || userRole === "Dealer") {
+    return DISCOUNT_HELPER(discountPercentage, basePrice);
+  } else {
+    return GST_DISCOUNT_HELPER(discountPercentage, basePrice, gst);
+  }
+};
+
+const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
+  if (userRole === "Corporate" || userRole === "Dealer") {
+    return basePrice;
+  } else {
+    return basePrice * (1 + gst / 100);
+  }
+};
+
 const ProductDetailVarient = ({
   data = {
     _id: "",
@@ -233,6 +251,7 @@ const ProductDetailVarient = ({
   selectedVariants: propSelectedVariants = {},
 }) => {
   const { user } = useSelector((state) => state.authSlice);
+  const [form] = Form.useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
@@ -272,6 +291,10 @@ const ProductDetailVarient = ({
   const [noDesignUpload, setNoDesignUpload] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [instructionsVisible, setInstructionsVisible] = useState(false);
+  const [showBulkOrderForm, setShowBulkOrderForm] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   // Checkout state
   const [checkOutState, setCheckOutState] = useState({
@@ -481,7 +504,7 @@ const ProductDetailVarient = ({
       return options;
     } else {
       return quantityDiscounts
-        .filter(item => item[roleFields.quantity]) // Only show items that have quantity for this role
+        .filter(item => item[roleFields.quantity])
         .map((item) => ({
           value: Number(item[roleFields.quantity]),
           label: `${item[roleFields.quantity]}`,
@@ -491,7 +514,7 @@ const ProductDetailVarient = ({
           stats: item[roleFields.recommended] || "No comments",
           deliveryCharges: Number(item[roleFields.deliveryCharges] || 100)
         }))
-        .sort((a, b) => a.value - b.value); // Sort by quantity ascending
+        .sort((a, b) => a.value - b.value);
     }
   }, [user?.role, quantityType, quantityDiscounts, dropdownGap, maxQuantity]);
 
@@ -577,61 +600,95 @@ const ProductDetailVarient = ({
     setQuantityDropdownVisible(false);
   }, [user?.role, quantityType, quantityDiscounts]);
 
-  // Memoized calculations
-  const unitPrice = useMemo(
-    () => DISCOUNT_HELPER(discountPercentage.percentage, Number(_.get(checkOutState, "product_price", 0))),
-    [discountPercentage.percentage, checkOutState.product_price]
-  );
-
-  const totalPrice = useMemo(
-    () => quantity ? Number(unitPrice * quantity).toFixed(2) : 0,
-    [unitPrice, quantity]
-  );
-
-  const mrpTotalPrice = useMemo(
-    () => quantity ? Number(checkOutState.product_price * quantity).toFixed(2) : 0,
-    [checkOutState.product_price, quantity]
-  );
-
-  const savings = useMemo(
-    () => (quantity ? (mrpTotalPrice - totalPrice).toFixed(2) : 0),
-    [mrpTotalPrice, totalPrice, quantity]
-  );
-
-  const mrpSavings = useMemo(() => {
-    const mrpPrice = Number(_.get(currentPriceSplitup, "MRP_price", 0));
-    const currentPrice = Number(_.get(checkOutState, "product_price", 0));
-    const savingsPerUnit = mrpPrice - currentPrice;
-    const allSavings = savingsPerUnit * (quantity || 0);
-    return Math.max(0, allSavings).toFixed(2);
-  }, [currentPriceSplitup, checkOutState.product_price, quantity]);
-
-  const totalSavings = useMemo(
-    () => (Number(savings) + Number(mrpSavings)).toFixed(2),
-    [savings, mrpSavings]
-  );
-
-  const calculateTotalPrice = useCallback(() => {
-    if (!quantity) return 0;
-    const productTotal = Number(unitPrice * quantity);
-    const totalWithDelivery = productTotal + (freeDelivery ? 0 : deliveryCharges);
-    return productTotal.toFixed(2);
-  }, [unitPrice, quantity, freeDelivery, deliveryCharges]);
-
-  const calculateMRPTotalPrice = useCallback(() => {
-    if (!quantity) return 0;
-    const unitPrice = Number(_.get(checkOutState, "product_price", 0));
-    return Number(unitPrice * quantity).toFixed(2);
-  }, [checkOutState.product_price, quantity]);
-
-  // Format price functions
+  // Price calculation functions
   const formatPrice = useCallback((price) => {
-    return `₹${parseFloat(price || 0).toFixed(2)}`;
+    return `₹${parseFloat(price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }, []);
 
   const formatMRPPrice = useCallback((price) => {
     return `₹${parseFloat(price || 0).toFixed(2)}`;
   }, []);
+
+  // Calculate unit prices
+  const getUnitPrice = useMemo(() => {
+    const basePrice = Number(_.get(checkOutState, "product_price", 0));
+    return calculateUnitPrice(basePrice, discountPercentage.percentage, user?.role, gst);
+  }, [checkOutState.product_price, discountPercentage.percentage, user?.role, gst]);
+
+  const getMRPUnitPrice = useMemo(() => {
+    const basePrice = Number(_.get(checkOutState, "product_price", 0));
+    return calculateMRPUnitPrice(basePrice, user?.role, gst);
+  }, [checkOutState.product_price, user?.role, gst]);
+
+  const getOriginalUnitPrice = useMemo(() => {
+    const basePrice = Number(_.get(checkOutState, "product_price", 0));
+    if (user?.role === "Corporate" || user?.role === "Dealer") {
+      return basePrice;
+    } else {
+      return basePrice * (1 + gst / 100);
+    }
+  }, [checkOutState.product_price, user?.role, gst]);
+
+  // Calculate total prices
+  const calculateTotalPrice = useCallback(() => {
+    if (!quantity) return 0;
+    return (getUnitPrice * quantity).toFixed(2);
+  }, [getUnitPrice, quantity]);
+
+  const calculateMRPTotalPrice = useCallback(() => {
+    if (!quantity) return 0;
+    const mrpPrice = Number(_.get(currentPriceSplitup, "MRP_price", 0));
+    return (mrpPrice * quantity).toFixed(2);
+  }, [currentPriceSplitup, quantity]);
+
+  const calculateOriginalTotalPrice = useCallback(() => {
+    if (!quantity) return 0;
+    return (getOriginalUnitPrice * quantity).toFixed(2);
+  }, [getOriginalUnitPrice, quantity]);
+
+  // Calculate savings
+  const calculateMRPSavings = useCallback(() => {
+    if (!quantity) return 0;
+    const mrpPrice = Number(_.get(currentPriceSplitup, "MRP_price", 0));
+    const currentUnitPrice = getMRPUnitPrice;
+    const savingsPerUnit = mrpPrice - currentUnitPrice;
+    return (savingsPerUnit * quantity).toFixed(2);
+  }, [currentPriceSplitup, getMRPUnitPrice, quantity]);
+
+  const calculateDiscountSavings = useCallback(() => {
+    if (!quantity) return 0;
+    const originalUnitPrice = getOriginalUnitPrice;
+    const discountedUnitPrice = getUnitPrice;
+    const savingsPerUnit = originalUnitPrice - discountedUnitPrice;
+    return (savingsPerUnit * quantity).toFixed(2);
+  }, [getOriginalUnitPrice, getUnitPrice, quantity]);
+
+  const calculateTotalSavings = useCallback(() => {
+    const mrpSavings = parseFloat(calculateMRPSavings());
+    const discountSavings = parseFloat(calculateDiscountSavings());
+    return (mrpSavings + discountSavings).toFixed(2);
+  }, [calculateMRPSavings, calculateDiscountSavings]);
+
+  // Calculate percentage discount for deal price
+  const calculateDealPercentageDiscount = useCallback(() => {
+    if (!quantity) return 0;
+    
+    const mrpTotal = parseFloat(calculateMRPTotalPrice());
+    const dealTotal = parseFloat(calculateTotalPrice());
+    
+    if (mrpTotal === 0 || dealTotal >= mrpTotal) return 0;
+    
+    const percentage = ((mrpTotal - dealTotal) / mrpTotal) * 100;
+    return Math.round(percentage);
+  }, [calculateMRPTotalPrice, calculateTotalPrice, quantity]);
+
+  // Calculate percentage savings
+  const calculateTotalSavingsPercentage = useCallback(() => {
+    const totalSavings = parseFloat(calculateTotalSavings());
+    const originalTotal = parseFloat(calculateOriginalTotalPrice());
+    if (originalTotal === 0) return 0;
+    return ((totalSavings / originalTotal) * 100).toFixed(1);
+  }, [calculateTotalSavings, calculateOriginalTotalPrice]);
 
   // Render variant selector based on variant type
   const renderVariantSelector = useCallback(
@@ -658,7 +715,6 @@ const ProductDetailVarient = ({
                     }`}
                     onClick={() => handleVariantChange(variant_name, option.value)}
                   >
-                    {/* Color variant with color code */}
                     <div
                       className="w-12 h-12 rounded-md overflow-hidden border border-gray-300"
                       style={{
@@ -773,9 +829,11 @@ const ProductDetailVarient = ({
       >
         <div className="overflow-y-auto max-h-80 space-y-3">
           {quantityOptions.map((item) => {
-            const itemUnitPrice = DISCOUNT_HELPER(
+            const itemUnitPrice = calculateUnitPrice(
+              Number(_.get(checkOutState, "product_price", 0)),
               quantityType === "dropdown" ? item.discount : discountPercentage.percentage,
-              Number(_.get(checkOutState, "product_price", 0))
+              user?.role,
+              gst
             );
             const itemTotalPrice = itemUnitPrice * item.value;
             const isSelected = quantity === item.value;
@@ -843,9 +901,22 @@ const ProductDetailVarient = ({
             No quantity options available
           </div>
         )}
+
+        <div className="mt-4 pt-3 border-t border-gray-100">
+          <button
+            onClick={() => setShowBulkOrderForm(true)}
+            className="w-full py-2 px-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-semibold text-sm hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          >
+            <PlusOutlined />
+            Bulk Order Inquiry
+          </button>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Prices include all applicable taxes •
+          </p>
+        </div>
       </div>
     ),
-    [quantityOptions, checkOutState.product_price, quantity, unit, handleQuantitySelect, formatPrice, quantityType, discountPercentage.percentage]
+    [quantityOptions, checkOutState.product_price, quantity, unit, handleQuantitySelect, formatPrice, quantityType, discountPercentage.percentage, user?.role, gst]
   );
 
   // Handle buy/add to cart
@@ -893,8 +964,8 @@ const ProductDetailVarient = ({
         userRole: token,
         sgst: Number(gst / 2),
         cgst: Number(gst / 2),
-        MRP_savings: mrpSavings,
-        TotalSavings: totalSavings,
+        MRP_savings: calculateMRPSavings(),
+        TotalSavings: calculateTotalSavings(),
         FreeDelivery: freeDelivery,
         DeliveryCharges: deliveryCharges,
         noCustomtation: noDesignUpload,
@@ -963,6 +1034,51 @@ const ProductDetailVarient = ({
     } else {
       setShowShareMenu(!showShareMenu);
     }
+  };
+
+  // Bulk Order Functions
+  const handleBulkOrderSubmit = async (values) => {
+    try {
+      const result = await bulkOrder(values);
+      message.success("Bulk order inquiry submitted successfully!");
+      setShowBulkOrderForm(false);
+      form.resetFields();
+    } catch (error) {
+      message.error("Failed to submit bulk order inquiry");
+    }
+  };
+
+  const handleSendOtp = async (email) => {
+    if (emailVerified) return;
+
+    setSendingOtp(true);
+    try {
+      await resendOtp({ email: email });
+      setOtpSent(true);
+      message.success("OTP sent to your email");
+    } catch (error) {
+      message.error("Failed to send OTP");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async (otp) => {
+    try {
+      const email = form.getFieldValue("email");
+      const userData = { email: email, otp: otp };
+      const response = await verifyOtp(userData);
+      setEmailVerified(true);
+      message.success("Email verified successfully");
+    } catch (error) {
+      message.error("Invalid OTP");
+      form.setFields([{ name: "otp", errors: ["Invalid OTP"] }]);
+    }
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   const handleNoCustomization = (e) => {
@@ -1059,7 +1175,7 @@ const ProductDetailVarient = ({
                   </span>
                   <h3 className="text-white text-base font-semibold">
                     {quantity
-                      ? formatPrice(Number(_.get(checkOutState, "product_price", 0)))
+                      ? formatPrice(getUnitPrice)
                       : "Select Qty"}
                   </h3>
                 </div>
@@ -1089,9 +1205,7 @@ const ProductDetailVarient = ({
                     {formatPrice(_.get(currentPriceSplitup, "MRP_price", 0))}
                   </span>
                   <h3 className="text-white text-base font-semibold">
-                    {quantity
-                      ? formatPrice(Number(_.get(checkOutState, "product_price", 0)))
-                      : "Select Qty"}
+                    {formatPrice(getUnitPrice)}
                   </h3>
                 </div>
               </motion.div>
@@ -1149,8 +1263,7 @@ const ProductDetailVarient = ({
         </div>
 
         {/* Variants Section */}
-       
-<div className="w-full flex flex-col space-y-4">
+        <div className="w-full flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
             <Text strong className="block mb-2 md:mb-0 md:w-24">
               Quantity:
@@ -1167,18 +1280,19 @@ const ProductDetailVarient = ({
             />
           </div>
         </div>
+
         {/* Selected Variants Summary */}
         {Object.keys(selectedVariants).length > 0 && (
           <Card size="small" className="!bg-blue-50">
-             {availableVariants.length > 0 && (
-          <div className="w-full flex flex-col space-y-4">
-            {availableVariants.map((variant, index) => (
-              <div key={index}>
-                {renderVariantSelector(variant)}
+            {availableVariants.length > 0 && (
+              <div className="w-full flex flex-col space-y-4">
+                {availableVariants.map((variant, index) => (
+                  <div key={index}>
+                    {renderVariantSelector(variant)}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
             <Text strong className="text-gray-800 block mb-2">
               Selected Options:
             </Text>
@@ -1192,16 +1306,17 @@ const ProductDetailVarient = ({
           </Card>
         )}
 
-        {/* Quantity Section */}
-        
-
         {/* Total Price Section */}
         <Card className="bg-blue-50 rounded-lg border-0">
           <div className="space-y-3">
+            {/* Deal Price with Percentage Discount */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-              <Text strong className="text-gray-800">
-                Deal Price:
-              </Text>
+              <div className="flex-1">
+                <Text strong className="text-gray-800">
+                  Deal Price:
+                </Text>
+                
+              </div>
               <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
                 <Text delete className="text-md text-gray-500 md:mr-2">
                   {formatMRPPrice(calculateMRPTotalPrice())}
@@ -1209,75 +1324,108 @@ const ProductDetailVarient = ({
                 <Title level={4} className="!m-0 !text-green-600">
                   {quantity
                     ? formatPrice(calculateTotalPrice())
-                    : formatMRPPrice(calculateTotalPrice())}
+                    : formatPrice(0)}
                 </Title>
               </div>
             </div>
 
+            {/* Price Breakdown */}
+            {/* {quantity && (
+              <div className="space-y-2 p-3 bg-white rounded-lg border border-gray-200">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Unit Price:</span>
+                  <span className="font-medium">{formatPrice(getOriginalUnitPrice)}</span>
+                </div>
+                
+                {discountPercentage.percentage > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Discount ({discountPercentage.percentage}%):</span>
+                    <span className="text-green-600 font-medium">
+                      -{formatPrice(getOriginalUnitPrice - getUnitPrice)}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Final Unit Price:</span>
+                  <span className="font-medium text-blue-600">{formatPrice(getUnitPrice)}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-sm border-t pt-2">
+                  <span className="text-gray-600">Total for {quantity} {unit}:</span>
+                  <span className="font-bold text-lg text-green-600">{formatPrice(calculateTotalPrice())}</span>
+                </div>
+              </div>
+            )} */}
+
             {/* Savings Alerts */}
             <div className="space-y-2">
-              {mrpSavings > 0 && (
+              {calculateTotalSavings() > 0 && (
                 <Alert
                   message={
                     <div>
-                      <div>
-                        You saved {formatPrice(mrpSavings)} <br></br>
-                        {discountPercentage.percentage === 0 ? "select more quantity to get extra discount" : ""}
+                      <div className="font-semibold ">
+                         You Saved: {formatPrice(calculateMRPSavings())} &nbsp;(
+                              {(user.role === "Dealer" || user.role === "Corporate")
+                                ? <>{calculateDealPercentageDiscount()}% Discount</>
+                                : <>{calculateTotalSavingsPercentage()}% Discount</>
+                              })
                       </div>
-                      {quantity && savings > 0 && (
-                        <div className="mt-1">
-                          <div>
-                            Kudos! Additionally you saved{" "}
-                            {formatPrice(savings)} (
-                            {discountPercentage.percentage}% discount)
-                          </div>
-                          <div
-                            style={{
-                              fontWeight: "bold",
-                              fontSize: "1.125rem",
-                              marginTop: "4px",
-                            }}
-                          >
-                            Total Savings: {formatPrice(totalSavings)}
-                          </div>
+                      
+                      {calculateDiscountSavings() > 0 && (
+                        <div className="text-sm mt-2">
+                          Kudos! Additionally you saved {formatPrice(calculateDiscountSavings())} ({discountPercentage.percentage}% Discount)
                         </div>
                       )}
+                      
+                      {discountPercentage.percentage === 0 && quantity && (
+                        <div className="mt-2 text-base text-amber-600">
+                          💡 Select higher quantity to get extra discounts
+                        </div>
+                      )}
+                      <div className="font-semibold text-green-700 text-lg mt-1">
+                        🎉 You saved {formatPrice(calculateTotalSavings())} ({calculateTotalSavingsPercentage()}% OFF)
+                      </div>
+
                     </div>
                   }
                   type="success"
                   showIcon
-                  className="!py-2"
+                  className="!py-3"
                 />
               )}
             </div>
 
-            {quantity && (
+            {(user.role == "Corporate" || user.role == "Dealer") ? (
               <div className="text-gray-600">
-                <h1 className="!text-md text-gray-600">
+                <h1 className="!text-[12px] text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
                   (
                   <Text strong>
-                    {formatPrice(unitPrice)}
+                    {formatPrice(
+                      DISCOUNT_HELPER(
+                        discountPercentage.percentage,
+                        Number(_.get(checkOutState, "product_price", 0))
+                      )
+                    )}
                   </Text>
                   / piece)
                 </h1>
               </div>
-            )}
+            ) : ""}
             {quantity && (
-              <div className="!text-[12px] text-gray-600">
+              <div className="!text-[14px] text-gray-600">
                 <h1>
                   Inclusive of all taxes for <span strong>{quantity}</span> Qty
-                  (
                   <span className="font-bold">
-                    {formatPrice(
-                      GST_DISCOUNT_HELPER(
-                        discountPercentage.percentage,
-                        Number(_.get(checkOutState, "product_price", 0)),
-                        gst
-                      )
-                    )}
-                  </span>
+ &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
+                    ? <>{formatPrice(Gst_HELPER(18, getUnitPrice))}</>
+                    : <>{formatPrice(calculateTotalPrice())}</>
+                  }
+
+                  
                   / piece)
+                  </span>
                 </h1>
               </div>
             )}
@@ -1386,7 +1534,7 @@ const ProductDetailVarient = ({
                           onClick={handleDesignRemove}
                           className="md:order-1"
                         >
-                          remove
+                          Remove
                         </Button>
                       </div>
 
@@ -1481,6 +1629,134 @@ const ProductDetailVarient = ({
             </div>
           </CustomModal>
         </div>
+
+        {/* Bulk Order Modal */}
+        <CustomModal
+          open={showBulkOrderForm}
+          onClose={() => setShowBulkOrderForm(false)}
+          title="Bulk Order Inquiry"
+          width={600}
+        >
+          <Form form={form} layout="vertical" onFinish={handleBulkOrderSubmit}>
+            <div className="space-y-4">
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    label="Product Name"
+                    name="product_name"
+                    initialValue={_.get(data, "name", "")}
+                  >
+                    <Input disabled />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="Quantity"
+                    name="quantity"
+                    rules={[
+                      { required: true, message: "Please enter quantity" },
+                    ]}
+                  >
+                    <InputNumber min={1} className="w-full" addonAfter={unit} />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item
+                label="Email Address"
+                name="email"
+                rules={[
+                  { required: true, message: "Please enter email" },
+                  { type: "email", message: "Invalid email" },
+                ]}
+              >
+                <Input
+                  placeholder="your@email.com"
+                  suffix={
+                    emailVerified ? (
+                      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                    ) : (
+                      <LoadingOutlined spin={sendingOtp} />
+                    )
+                  }
+                  onBlur={(e) => {
+                    const email = e.target.value;
+                    if (email && validateEmail(email)) {
+                      handleSendOtp(email);
+                    }
+                  }}
+                />
+              </Form.Item>
+
+              {otpSent && !emailVerified && (
+                <Form.Item
+                  label="Enter OTP"
+                  name="otp"
+                  rules={[
+                    { required: true, message: "Please enter OTP" },
+                    { len: 6, message: "OTP must be 6 digits" },
+                  ]}
+                >
+                  <div className="flex items-center gap-3">
+                    <Input.OTP
+                      length={6}
+                      onChange={(otp) => {
+                        if (otp.length === 6) {
+                          handleVerifyOtp(otp);
+                        }
+                      }}
+                      disabled={emailVerified}
+                    />
+                    <Button
+                      type="link"
+                      onClick={() => handleSendOtp(form.getFieldValue("email"))}
+                      disabled={sendingOtp}
+                    >
+                      Resend OTP
+                    </Button>
+                  </div>
+                </Form.Item>
+              )}
+
+              <Form.Item
+                label="Mobile Number"
+                name="mobile"
+                rules={[
+                  { required: true, message: "Please enter mobile number" },
+                ]}
+              >
+                <Input placeholder="+91 12345 67890" />
+              </Form.Item>
+
+              <Form.Item
+                label="Additional Requirements"
+                name="additional_requirements"
+              >
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Any special requirements or notes..."
+                />
+              </Form.Item>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowBulkOrderForm(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="flex-1 bg-yellow-500"
+                  disabled={!emailVerified}
+                >
+                  Submit Inquiry
+                </Button>
+              </div>
+            </div>
+          </Form>
+        </CustomModal>
 
         {/* Product Meta Information */}
         <div className="space-y-2 z-0 relative">

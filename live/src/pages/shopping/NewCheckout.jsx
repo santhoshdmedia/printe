@@ -158,7 +158,6 @@ const handleApplyCoupon = async () => {
     };
 
     const result = await applyCouponCode(couponData);
-    console.log(result.data.data.coupon,"coupen");
     
 
     if (result.success) {
@@ -222,7 +221,6 @@ const handleApplyCoupon = async () => {
         gst_no: gstNo || undefined
       };
 
-      console.log('Sending payment data:', paymentData);
 
       await initiateCCAvenuePayment(paymentData);
     } catch (err) {
