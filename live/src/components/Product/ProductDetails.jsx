@@ -1442,22 +1442,21 @@ const ProductDetails = ({
                 </h1>
               </div>
             ) : ""}
-            {quantity && (
-              <div className="!text-[14px] text-gray-600">
-                <h1>
-                  Inclusive of all taxes for <span strong>{quantity}</span> Qty
-                  <span className="font-bold">
- &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
-                    ? <>{formatPrice(Gst_HELPER(Gst, getUnitPrice()))}</>
-                    : <>{formatPrice(calculateTotalPrice())}</>
-                  }
-
-                  
-                  / piece)
-                  </span>
-                </h1>
-              </div>
-            )}
+                      {quantity && (
+  <div className="!text-[14px] text-gray-600">
+    <h1>
+      {(user.role === "Dealer" || user.role === "Corporate") 
+        ? "Inclusive of all taxes for" 
+        : "Inclusive of all taxes for"
+      } <span strong>{quantity}</span> Qty
+      <span className="font-bold"> 
+        &nbsp;(
+        {formatPrice(getUnitPrice)}
+        / piece)
+      </span>
+    </h1>
+  </div>
+)}
           </div>
 
           <div className="flex flex-col w-full justify-between mt-4">
