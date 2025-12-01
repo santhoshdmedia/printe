@@ -252,7 +252,7 @@ const getRoleFields = (role) => {
 };
 
 // Price calculation helper functions
-const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 0) => {
+const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 18) => {
   if (userRole === "Corporate" || userRole === "Dealer") {
     // For dealers and corporate - apply discount only (no GST)
     return DISCOUNT_HELPER(discountPercentage, basePrice);
@@ -670,7 +670,18 @@ const ProductDetails = ({
     const unitPrice = getUnitPrice();
     return (unitPrice * quantity).toFixed(2);
   };
-
+const calculateGstPrice = () => {
+  if (!quantity) return "0.00";
+  
+  const unitPrice = getUnitPrice();
+  
+  // Ensure unitPrice is a number before calling toFixed
+  if (typeof unitPrice !== 'number' || isNaN(unitPrice)) {
+    return Number(unitPrice);
+  }
+  
+  return unitPrice.toFixed(2);
+};
   const calculateMRPTotalPrice = () => {
     if (!quantity) return 0;
     const mrpPrice = Number(_.get(data, "MRP_price", 0));
@@ -1350,34 +1361,6 @@ const ProductDetails = ({
               </div>
             </div>
 
-            {/* Price Breakdown */}
-            {/* {quantity && (
-              <div className="space-y-2 p-3 bg-white rounded-lg border border-gray-200">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Unit Price:</span>
-                  <span className="font-medium">{formatPrice(getOriginalUnitPrice())}</span>
-                </div>
-                
-                {discountPercentage.percentage > 0 && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Discount ({discountPercentage.percentage}%):</span>
-                    <span className="text-green-600 font-medium">
-                      -{formatPrice(getOriginalUnitPrice() - getUnitPrice())}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Final Unit Price:</span>
-                  <span className="font-medium text-blue-600">{formatPrice(getUnitPrice())}</span>
-                </div>
-
-                <div className="flex justify-between items-center text-sm border-t pt-2">
-                  <span className="text-gray-600">Total for {quantity} {unit}:</span>
-                  <span className="font-bold text-lg text-green-600">{formatPrice(calculateTotalPrice())}</span>
-                </div>
-              </div>
-            )} */}
 
             {/* Savings Alerts */}
             <div className="space-y-2">
@@ -1442,21 +1425,22 @@ const ProductDetails = ({
                 </h1>
               </div>
             ) : ""}
-                      {quantity && (
-  <div className="!text-[14px] text-gray-600">
-    <h1>
-      {(user.role === "Dealer" || user.role === "Corporate") 
-        ? "Inclusive of all taxes for" 
-        : "Inclusive of all taxes for"
-      } <span strong>{quantity}</span> Qty
-      <span className="font-bold"> 
-        &nbsp;(
-        {formatPrice(getUnitPrice)}
-        / piece)
-      </span>
-    </h1>
-  </div>
-)}
+            {quantity && (
+              <div className="!text-[14px] text-gray-600">
+                <h1>
+                  Inclusive of all taxes for <span strong>{quantity}</span> Qty
+                  <span className="font-bold">
+ &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
+                    ? <>{formatPrice(Gst_HELPER(Gst, getUnitPrice()))}</>
+                    : <>{formatPrice(calculateGstPrice())}</>
+                  }
+
+                  
+                  / piece)
+                  </span>
+                </h1>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col w-full justify-between mt-4">

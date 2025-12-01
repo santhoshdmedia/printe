@@ -92,10 +92,26 @@ const SimpleProductCard = ({ data }) => {
         return 'Customer_discount';
     }
   };
+  const getRolePriceField = (role) => {
+    switch (role) {
+      case 'Dealer':
+        return 'Deler_product_price';
+      case 'Corporate':
+        return 'corporate_product_price';
+      default:
+        return 'customer_product_price';
+    }
+  };
 
   const getBasePrice = () => {
-    return _.get(data, `variants_price[0].customer_product_price`, "") ||
-           _.get(data, "customer_product_price", "0");
+
+    return _.get(data, `variants_price[0].${getRolePriceField(user.role)}`, "") ||
+           _.get(data, `${getRolePriceField(user.role)}`, "0");
+  };
+  const getMrpPrice = () => {
+
+    return _.get(data, `variants_price[0].MRP_price`, "") ||
+           _.get(data, `MRP_price`, "0");
   };
 
   const calculateDiscountedPrice = () => {
@@ -103,9 +119,9 @@ const SimpleProductCard = ({ data }) => {
       const basePrice = Number(getBasePrice());
       
       // If no quantity discount data or user not logged in, return base price
-      if (!data.quantity_discount_splitup || !data.quantity_discount_splitup.length || !user?.role) {
-        return basePrice;
-      }
+      // if (!data.quantity_discount_splitup || !data.quantity_discount_splitup.length || !user?.role) {
+      //   return basePrice;
+      // }
 
       const firstQuantityTier = data.quantity_discount_splitup[0];
       const discountField = getRoleDiscountField(user.role);
@@ -114,7 +130,7 @@ const SimpleProductCard = ({ data }) => {
       // Use DISCOUNT_HELPER to calculate final price
       const finalPrice = GST_DISCOUNT_HELPER(discountValue, basePrice,18);
       
-      return isNaN(finalPrice) ? basePrice : finalPrice;
+      return finalPrice;
     } catch (error) {
       console.error('Error calculating price:', error);
       return Number(getBasePrice()) || 0;
@@ -237,6 +253,7 @@ const SimpleProductCard = ({ data }) => {
               transition={{ type: "spring" }}
             >
               <span className="text-sm lg:text-xl font-bold text-primary">{displayPrice}</span>
+              <span className="text-sm lg:text-lg font-primary line-through text-primary ml-2">{getMrpPrice()}</span>
             </motion.div>
             
             <motion.div
