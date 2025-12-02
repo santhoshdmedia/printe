@@ -253,7 +253,7 @@ const SimpleProductCard = ({ data }) => {
               transition={{ type: "spring" }}
             >
               <span className="text-sm lg:text-xl font-bold text-primary">{displayPrice}</span>
-              <span className="text-sm lg:text-lg font-primary line-through text-primary ml-2">{getMrpPrice()}</span>
+              <span className="text-sm lg:text-lg font-primary line-through text-primary ml-2">{formatPrice(getMrpPrice())}</span>
             </motion.div>
             
             <motion.div

@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import Breadcrumbs from "../../components/cards/Breadcrumbs";
 import { useEffect, useState } from "react";
-import { getAllSubCategoryProducts } from "../../helper/api_helper";
+import { getAllSubCategoryProducts,getSubcategoryBySlug } from "../../helper/api_helper";
 import _ from "lodash";
 import GridList from "../../components/Lists/GridList";
 import CarouselListLoadingSkeleton from "../../components/LoadingSkeletons/CarouselListLoadingSkeleton";
@@ -10,15 +10,27 @@ const SubcategoryProduct = () => {
   const params = useParams();
 
   const [productDatas, setProductData] = useState([]);
+  const [bannearDatas, setBannearDatas] = useState("");
+
   const [loading, setLoading] = useState(false);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const result = await getAllSubCategoryProducts(_.get(params, "id", ""));
+      const result =  _.get(params, "id", "");
+      
+      const subcategoryResult = await getSubcategoryBySlug(result);
+      console.log(subcategoryResult.data.data.sub_category_banner_image,"id");
+      setBannearDatas(subcategoryResult.data.data.sub_category_banner_image)
+
+      const newproducts=await getAllSubCategoryProducts(subcategoryResult.data.data._id)
+      console.log(newproducts,"prodic");
+      
+      
+      
       
       // Filter products where is_visible is true
-      const filteredProducts = _.get(result, "data.data", []).filter(
+      const filteredProducts = _.get(newproducts, "data.data", []).filter(
         product => product.is_visible === true
       );
       
@@ -68,11 +80,11 @@ const SubcategoryProduct = () => {
         {/* Header Section with Breadcrumbs */}
 
         {/* Banner Section - Fixed image display */}
-        {_.get(productDatas, "[0].sub_category_details.sub_category_banner_image", "") && (
+        {bannearDatas && (
           <div className="">
             <div className=" overflow-hidden shadow-lg bg-gray-200 flex items-center justify-center max-h-[600px]  max-w-[1800px] mx-auto">
               <img 
-                src={_.get(productDatas, "[0].sub_category_details.sub_category_banner_image", "")} 
+                src={bannearDatas} 
                 className="w-full h-auto  object-[100%]" 
                 alt={_.get(params, "subcategory", "")}
                 onError={(e) => {

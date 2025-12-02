@@ -9,13 +9,13 @@ const {
   getmain,
   editMain,
   deleteMain,
-  getAllCategory,
+  getAllCategory,getMainCategoryProductsBySlug
 } = require("../controller/maincategory.controller");
 const {
   addsub,
   getsub,
   deletesubcategory,
-  getAllSubProduct,
+  getAllSubProduct,editsubcategory,getSubcategoryBySlug,getSubcategoryProductsBySlug,
 } = require("../controller/subcategory.controller");
 const {
   addAdmin,
@@ -162,12 +162,16 @@ module.exports = {
   editMain,
   deleteMain,
   getAllCategory,
+  getMainCategoryProductsBySlug,
 
   // sub
   addsub,
   getsub,
   deletesubcategory,
   getAllSubProduct,
+  editsubcategory,
+  getSubcategoryBySlug,
+  getSubcategoryProductsBySlug,
 
   //admin users
   addAdmin,

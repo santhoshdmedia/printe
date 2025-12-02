@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import Breadcrumbs from "../../components/cards/Breadcrumbs";
 import { useEffect, useState } from "react";
-import { getAllCategoryProducts } from "../../helper/api_helper";
+import { getAllCategoryProducts,getSubcategoriesByMainCategorySlug } from "../../helper/api_helper";
 import _ from "lodash";
 import GridList from "../../components/Lists/GridList";
 import CarouselListLoadingSkeleton from "../../components/LoadingSkeletons/CarouselListLoadingSkeleton";
@@ -11,6 +11,8 @@ const CategoryProduct = () => {
   const params = useParams();
   const categoryId = _.get(params, "id", "");
   const categoryName = _.get(params, "category", "");
+ 
+  
 
   const [productData, setProductData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,10 @@ const CategoryProduct = () => {
         return;
       }
 
-      const result = await getAllCategoryProducts(categoryId);
+      const mainCategoreybyslug =await getSubcategoriesByMainCategorySlug(categoryId)
+        const main_id=_.get(mainCategoreybyslug,"data.data._id","")
+        
+      const result = await getAllCategoryProducts(main_id);
       const apiData = _.get(result, "data.data", []);
       
       if (!Array.isArray(apiData)) {

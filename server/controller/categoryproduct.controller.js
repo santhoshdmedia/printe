@@ -3,6 +3,13 @@ const { errorResponse, successResponse } = require("../helper/response.helper");
 const { ProductSchema, SubcategorySchema } = require("./models_import");
 const { ObjectId } = mongoose.Types;
 
+const buildQuery = (param) => {
+  if (isValidObjectId(param)) {
+    return { _id: new ObjectId(param) };
+  }
+  return { slug: param };
+};
+
 const getAllCategoryProducts = async (req, res) => {
   try {
     const { id } = req.params;

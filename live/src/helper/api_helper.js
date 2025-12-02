@@ -210,6 +210,59 @@ export const applyCouponCode = async (formdata) => {
 export const getAvailableCoupons = async (formdata) => {
   return await axios.get(`${baseURL}/whatsapp/resend_otp`, formdata);
 }
+// ========== CATEGORY APIs ==========
+export const getSubcategoryBySlug = async (slug) => {
+  try {
+    const response = await custom_axios.get(`${baseURL}/category/client/sub-category/${slug}`);
+    return response;
+  } catch (error) {
+    console.error("Error fetching subcategory by slug:", error);
+    throw error;
+  }
+};
+
+export const getSubcategoryProductsBySlug = async (slug) => {
+  try {
+    const response = await custom_axios.get(`${baseURL}/category/client/sub-category/${slug}/products`);
+    return response;
+  } catch (error) {
+    console.error("Error fetching subcategory products by slug:", error);
+    throw error;
+  }
+};
+
+export const getSubcategoriesByMainCategorySlug = async (mainCategorySlug) => {
+  try {
+    const response = await custom_axios.get(`${baseURL}/category/client/main-category/${mainCategorySlug}/products`);
+    return response;
+  } catch (error) {
+    console.error("Error fetching subcategories by main category slug:", error);
+    throw error;
+  }
+};
+
+
+
+export const getAllCategories = async () => {
+  try {
+    const response = await custom_axios.get(`${baseURL}/category/client/main-categories`);
+    return response;
+  } catch (error) {
+    console.error("Error fetching all categories:", error);
+    throw error;
+  }
+};
+
+export const getCategoryBySlug = async (slug) => {
+  try {
+    const response = await custom_axios.get(`${baseURL}/category/client/main-category/${slug}`);
+    return response;
+  } catch (error) {
+    console.error("Error fetching category by slug:", error);
+    throw error;
+  }
+};
+
 
 
 

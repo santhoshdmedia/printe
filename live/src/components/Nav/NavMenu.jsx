@@ -159,7 +159,7 @@ const NavMenu = () => {
             {/* Mega Menu Content */}
             {activeDropdown.megaMenu && (
               <div
-                className="absolute animate-fade-in w-[70vw] max-w-6xl z-50 top-16 left-0 transform bg-white rounded-xl  border border-gray-200 shadow-2xl overflow-scroll"
+                className="absolute animate-fade-in w-[70vw] max-w-7xl z-50 top-16 left-0 transform bg-white rounded-xl  border border-gray-200 shadow-2xl "
                 onMouseLeave={closeAllDropdowns}
               >
                 <div className="p-8">
@@ -199,7 +199,7 @@ const NavMenu = () => {
                     </div>
 
                     {/* Subcategories Column - Show when a category is hovered */}
-                    <div className="col-span-3">
+                    <div className="col-span-3 overflow-y-scroll">
                       {hoverStates.side_category_id ? (
                         (() => {
                           const selectedCategory = menu.find(
@@ -278,7 +278,7 @@ const NavMenu = () => {
                                                     closeAllDropdowns();
                                                   }}
                                                 >
-                                                  <div className="w-8 h-8 rounded border border-gray-200 overflow-scroll flex-shrink-0">
+                                                  <div className="w-8 h-8 rounded border border-gray-200  flex-shrink-0">
                                                     <img
                                                       src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
                                                         product,
@@ -315,7 +315,7 @@ const NavMenu = () => {
                                                 className="text-xs text-black  font-medium cursor-pointer flex items-center gap-1"
                                                 onClick={() => {
                                                   navigation(
-                                                    `/category/${selectedCategory.main_category_name}/${subcat.sub_category_name}/${selectedCategory._id}/${subcat._id}`
+                                                    `/category/${selectedCategory.slug}/${subcat.slug}`
                                                   );
                                                   closeAllDropdowns();
                                                 }}
@@ -340,7 +340,7 @@ const NavMenu = () => {
                                 <div className="mt-8 pt-6 border-t border-gray-200">
                                   <button
                                     onClick={() => {
-                                      navigation(`/category/${selectedCategory.main_category_name}/${selectedCategory._id}`);
+                                      navigation(`/category/${selectedCategory.slug}`);
                                       closeAllDropdowns();
                                     }}
                                     className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-700 text-black rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl font-semibold flex items-center gap-3 mx-auto transform hover:scale-105"
@@ -411,9 +411,7 @@ const NavMenu = () => {
                   }}
                 >
                   <Link
-                    to={`/category/${encodeURIComponent(
-                      category.main_category_name
-                    )}/${category._id}`}
+                    to={`/category/${category.slug}`}
                     className="center_div gap-x-2 font-bold"
                   >
                     {category.main_category_name}{" "}
@@ -460,11 +458,7 @@ const NavMenu = () => {
                                   onClick={() => {
                                     if (hasProducts) {
                                       navigation(
-                                        `/category/${encodeURIComponent(
-                                          category.main_category_name
-                                        )}/${encodeURIComponent(
-                                          subcat.sub_category_name
-                                        )}/${category._id}/${subcat._id}`
+                                        `/category/${category.slug}/${subcat.slug}`
                                       );
                                       closeAllDropdowns();
                                     }
@@ -538,11 +532,7 @@ const NavMenu = () => {
                                 {hasAnyProducts && (
                                   <div className="mt-2 text-center pt-4 border-t border-gray-200">
                                     <Link
-                                      to={`/category/${encodeURIComponent(
-                                        category.main_category_name
-                                      )}}/${encodeURIComponent(
-                                        subcat.sub_category_name
-                                      )}/${category._id}/${subcat._id}`}
+                                      to={`/category/${category.slug}/${subcat.slug}`}
                                       className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-yellow-200 to-yellow-500 text-black hover:!text-black rounded-lg  transition-all duration-300 shadow-md hover:shadow-lg font-medium transform hover:scale-105"
                                       onClick={closeAllDropdowns}
                                     >
@@ -592,7 +582,7 @@ const NavMenu = () => {
                               onClick={() => {
                                 if (hasProducts) {
                                   navigation(
-                                    `/category/${category.main_category_name}/${subcat.sub_category_name}/${category._id}/${subcat._id}`
+                                    `/category/${category.slug}/${subcat.slug}`
                                   );
                                   closeAllDropdowns();
                                 }
@@ -637,9 +627,7 @@ const NavMenu = () => {
                       {hasAnyProducts && (
                         <div className="mt-2 text-center pt-4 border-t border-gray-200">
                           <Link
-                            to={`/category/${encodeURIComponent(
-                              category.main_category_name
-                            )}/${category._id}`}
+                            to={`/category/${category.slug}`}
                             className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-yellow-200 to-yellow-500 text-black hover:!text-black rounded-lg  transition-all duration-300 shadow-md hover:shadow-lg font-medium transform hover:scale-105"
                             onClick={closeAllDropdowns}
                           >

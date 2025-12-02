@@ -17,6 +17,10 @@ module.exports = new model(
         type: String,
         required: true,
       },
+      slug: {
+        type: String,
+        required: true,
+      },
       position: {
         type: Number,
         default: 1,

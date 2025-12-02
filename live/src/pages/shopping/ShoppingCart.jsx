@@ -112,8 +112,8 @@ const ShoppingCart = () => {
     },
     {
       title: "Price",
-      dataIndex: "final_total",
-      key: "final_total",
+      dataIndex: `${(user.role === "Dealer" || user.role === "Corporate")?"final_total":""}`,
+      key: `final_total`,
       render: (price, record) => {
         return (
           <div className="flex flex-col items-end">
