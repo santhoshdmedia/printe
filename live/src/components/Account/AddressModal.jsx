@@ -22,7 +22,8 @@ const AddressModal = ({ editAddressIndex = null, modalType = "Add", handleCancel
     name: "",
     mobileNumber: "",
     alternateMobileNumber: "",
-    street: "",
+    addressLine1: "",
+    addressLine2: "",
     locality: "",
     city: "",
     state: "",
@@ -43,10 +44,16 @@ const AddressModal = ({ editAddressIndex = null, modalType = "Add", handleCancel
   const handleOk = () => {
     let updatedAddresses;
 
+    // Combine address lines into a single street field for backward compatibility
+    const formattedForm = {
+      ...form,
+      street: `${form.addressLine1}${form.addressLine2 ? '\n' + form.addressLine2 : ''}`
+    };
+
     if (form?._id ?? false) {
-      updatedAddresses = addresses.map((data) => (data._id === form._id ? form : data));
+      updatedAddresses = addresses.map((data) => (data._id === form._id ? formattedForm : data));
     } else if (modalType === "Add" || modalType === "Delivery") {
-      updatedAddresses = [...addresses, { ...form }];
+      updatedAddresses = [...addresses, { ...formattedForm }];
     } else {
       updatedAddresses = addresses;
     }
@@ -60,12 +67,21 @@ const AddressModal = ({ editAddressIndex = null, modalType = "Add", handleCancel
 
   //mount
   useEffect(() => {
-    if (modalType === "Add" || modalType === "Delivery") setForm(initialFormStateModel);
-    else if (modalType === "Edit") {
+    if (modalType === "Add" || modalType === "Delivery") {
+      setForm(initialFormStateModel);
+    } else if (modalType === "Edit") {
       const val = addresses[editAddressIndex];
-      setForm(val);
+      if (val) {
+        // Split existing street into two lines
+        const streetParts = val.street ? val.street.split('\n') : ['', ''];
+        setForm({
+          ...val,
+          addressLine1: streetParts[0] || '',
+          addressLine2: streetParts[1] || ''
+        });
+      }
     }
-  }, [modalType]);
+  }, [modalType, editAddressIndex, addresses]);
 
   return (
     <Modal 
@@ -110,7 +126,6 @@ const AddressModal = ({ editAddressIndex = null, modalType = "Add", handleCancel
               </label>
               <Input 
                 placeholder="10-digit mobile number" 
-                pattern="/^[0-9]{10}$/" 
                 required 
                 name="mobileNumber" 
                 value={form.mobileNumber} 
@@ -125,7 +140,6 @@ const AddressModal = ({ editAddressIndex = null, modalType = "Add", handleCancel
               </label>
               <Input 
                 placeholder="10-digit mobile number" 
-                pattern="/^[0-9]{10}$/" 
                 name="alternateMobileNumber" 
                 value={form.alternateMobileNumber} 
                 onChange={(e) => handleOnChange(e)} 
@@ -163,7 +177,6 @@ const AddressModal = ({ editAddressIndex = null, modalType = "Add", handleCancel
               </label>
               <Input 
                 placeholder="Locality" 
-                pattern="/^[0-9]{10}$/" 
                 onChange={(e) => handleOnChange(e)} 
                 value={form.locality} 
                 name="locality" 
@@ -174,15 +187,29 @@ const AddressModal = ({ editAddressIndex = null, modalType = "Add", handleCancel
           
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Street/Area <span className="text-red-500">*</span>
+              Address Line 1 <span className="text-red-500">*</span>
             </label>
-            <Input.TextArea 
-              placeholder="Street" 
+            <Input 
+              placeholder="House No., Building, Street, Area" 
               required 
-              value={form.street} 
+              value={form.addressLine1} 
               onChange={(e) => handleOnChange(e)} 
-              name="street" 
-              rows={3}
+              name="addressLine1" 
+              size="large"
+              className="w-full"
+            />
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address Line 2
+            </label>
+            <Input 
+              placeholder="Landmark, Apartment, Suite, Unit" 
+              value={form.addressLine2} 
+              onChange={(e) => handleOnChange(e)} 
+              name="addressLine2" 
+              size="large"
               className="w-full"
             />
           </div>

@@ -1,11 +1,72 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FaCreditCard, FaSpinner, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaCity, FaGlobeAsia, FaMapPin, FaReceipt, FaTag } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import _ from 'lodash';
 import { applyCouponCode } from '../../helper/api_helper';
-
 import { initiateCCAvenuePayment } from './pay/utils/payment';
+
+// Create separate input field components for different types
+const TextInputField = ({ label, name, type = 'text', placeholder, icon: Icon, value, onChange, disabled, ...props }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      {label}
+    </label>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <Icon className="h-5 w-5 text-gray-400" />
+      </div>
+      <input
+        type={type}
+        name={name}
+        value={value || ''}
+        onChange={onChange}
+        className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="on"
+        {...props}
+      />
+    </div>
+  </div>
+);
+
+const NumberInputField = ({ label, name, placeholder, icon: Icon, maxLength, value, onChange, disabled, ...props }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      {label}
+    </label>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <Icon className="h-5 w-5 text-gray-400" />
+      </div>
+      <input
+        type="text"
+        name={name}
+        value={value || ''}
+        onChange={onChange}
+        className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
+        placeholder={placeholder}
+        maxLength={maxLength}
+        disabled={disabled}
+        autoComplete="on"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        {...props}
+      />
+    </div>
+    {name === 'phone' && value && value.length !== 10 && (
+      <div className="mt-1 text-xs text-red-500">
+        Phone number must be exactly 10 digits
+      </div>
+    )}
+    {name === 'pincode' && value && value.length !== 6 && (
+      <div className="mt-1 text-xs text-red-500">
+        Pincode must be exactly 6 digits
+      </div>
+    )}
+  </div>
+);
 
 const NewCheckout = () => {
   const { user } = useSelector((state) => state.authSlice);
@@ -21,7 +82,7 @@ const NewCheckout = () => {
   const [couponError, setCouponError] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [paymentOption, setPaymentOption] = useState('full');
-  const [cardData, setCardData] = useState([]);
+  const [cartData, setCartData] = useState([]);
   const [gstNo, setGstNo] = useState(user?.gst_no || '');
   const [selectedAddress, setSelectedAddress] = useState(0);
 
@@ -29,7 +90,8 @@ const NewCheckout = () => {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    address: '',
+    addressLine1: '',
+    addressLine2: '',
     city: '',
     state: '',
     pincode: '',
@@ -47,7 +109,7 @@ const NewCheckout = () => {
   // Set cart data from selected products
   useEffect(() => {
     if (selectedProducts.length > 0) {
-      setCardData(selectedProducts);
+      setCartData(selectedProducts);
     }
   }, [selectedProducts]);
 
@@ -55,55 +117,62 @@ const NewCheckout = () => {
   useEffect(() => {
     if (addresses[selectedAddress]) {
       const address = addresses[selectedAddress];
-      setFormData({
-        name: user?.name || '',
-        email: user?.email || '',
+      // Split the street address into line1 and line2 if it contains newline
+      const streetParts = address.street ? address.street.split('\n') : ['', ''];
+      
+      setFormData(prev => ({
+        ...prev,
         phone: address.mobileNumber || user?.phone || '',
-        address: address.street || '',
+        addressLine1: streetParts[0] || '',
+        addressLine2: streetParts[1] || '',
         city: address.city || '',
         state: address.state || '',
         pincode: address.pincode || '',
-      });
+      }));
     }
   }, [selectedAddress, user, addresses]);
 
-  // Calculation functions
-  const GET_SUB_TOTAL = () => {
-    return _.sum(cardData.map((res) => Number(res.final_total) || 0));
-  };
+  // Use useCallback to memoize calculation functions
+  const GET_SUB_TOTAL = useCallback(() => {
+    return _.sum(cartData.map((res) => Number(res.final_total) || 0));
+  }, [cartData]);
 
-  const GET_TAX_TOTAL = () => {
+  const GET_TAX_TOTAL = useCallback(() => {
     const subtotal = GET_SUB_TOTAL();
-    const taxRate = 0.18; // 18% GST as per your example
+    const taxRate = 0.18;
     return subtotal * taxRate;
-  };
+  }, [GET_SUB_TOTAL]);
 
-  const get_delivery_Fee = () => {
-    const freeDelivery = cardData.every((item) => item.FreeDelivery);
-    return freeDelivery ? 0 : (cardData[0]?.DeliveryCharges || 0);
-  };
+  const get_delivery_Fee = useCallback(() => {
+    const freeDelivery = cartData.every((item) => item.FreeDelivery);
+    return freeDelivery ? 0 : (cartData[0]?.DeliveryCharges || 0);
+  }, [cartData]);
 
-  const GET_COUPON_DISCOUNT = () => {
-    return appliedCoupon ? Number(appliedCoupon.discountAmount) : 0;
-  };
+  const GET_COUPON_DISCOUNT = useCallback(() => {
+    return appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0;
+  }, [appliedCoupon]);
 
-  const GET_TOTAL_AMOUNT_BEFORE_DISCOUNT = () => {
-    return GET_SUB_TOTAL() + GET_TAX_TOTAL() + Number(get_delivery_Fee());
-  };
+  const GET_TOTAL_AMOUNT_BEFORE_DISCOUNT = useCallback(() => {
+    const subtotal = GET_SUB_TOTAL();
+    const tax = GET_TAX_TOTAL();
+    const delivery = Number(get_delivery_Fee());
+    return subtotal + tax + delivery;
+  }, [GET_SUB_TOTAL, GET_TAX_TOTAL, get_delivery_Fee]);
 
-  const GET_TOTAL_AMOUNT = () => {
+  const GET_TOTAL_AMOUNT = useCallback(() => {
     const baseTotal = GET_TOTAL_AMOUNT_BEFORE_DISCOUNT();
-    return appliedCoupon ? Math.max(0, baseTotal - GET_COUPON_DISCOUNT()) : baseTotal;
-  };
+    const discount = GET_COUPON_DISCOUNT();
+    return Math.max(0, baseTotal - discount);
+  }, [GET_TOTAL_AMOUNT_BEFORE_DISCOUNT, GET_COUPON_DISCOUNT]);
 
-  const GET_PAYABLE_AMOUNT = () => {
+  const GET_PAYABLE_AMOUNT = useCallback(() => {
     const total = GET_TOTAL_AMOUNT();
     return paymentOption === 'half' ? Math.ceil(total * 0.5) : total;
-  };
+  }, [GET_TOTAL_AMOUNT, paymentOption]);
 
   // Form validation
   const validateForm = () => {
-    if (cardData.length === 0) {
+    if (cartData.length === 0) {
       setError('No products selected');
       return false;
     }
@@ -112,7 +181,9 @@ const NewCheckout = () => {
       { field: 'name', message: 'Please enter your name' },
       { field: 'email', message: 'Please enter a valid email address', test: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) },
       { field: 'phone', message: 'Please enter a valid 10-digit phone number', test: (val) => /^\d{10}$/.test(val.replace(/\D/g, '')) },
-      { field: 'address', message: 'Please enter your address' },
+      { field: 'addressLine1', message: 'Please enter your address (Line 1)' },
+      { field: 'city', message: 'Please enter your city' },
+      { field: 'state', message: 'Please enter your state' },
       { field: 'pincode', message: 'Please enter a valid 6-digit pincode', test: (val) => /^\d{6}$/.test(val) },
     ];
 
@@ -136,45 +207,64 @@ const NewCheckout = () => {
     return true;
   };
 
-  // Coupon functions
-const handleApplyCoupon = async () => {
-  if (!couponCode.trim()) {
-    setCouponError('Please enter a coupon code');
-    return;
-  }
-
-  try {
-    setCouponLoading(true);
-    setCouponError('');
-
-    const orderAmount = GET_TOTAL_AMOUNT_BEFORE_DISCOUNT();
-    const productIds = cardData.map(item => item.product_id || item._id);
-    
-    const couponData = {
-      code: couponCode,
-      orderAmount: orderAmount,
-      productIds: productIds,
-      userId: user?._id
-    };
-
-    const result = await applyCouponCode(couponData);
-    
-
-    if (result.success) {
-      setAppliedCoupon(result.data.data.coupon.code);
-      setCouponError('');
-    } else {
-      throw new Error(result.message || 'Failed to apply coupon');
+  // Coupon functions - FIXED VERSION
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
     }
 
-  } catch (err) {
-    console.error('Coupon application error:', err);
-    setCouponError(err.message || 'Invalid coupon code');
-    setAppliedCoupon(null);
-  } finally {
-    setCouponLoading(false);
-  }
-};
+    try {
+      setCouponLoading(true);
+      setCouponError('');
+
+      const orderAmount = GET_TOTAL_AMOUNT_BEFORE_DISCOUNT();
+      const productIds = cartData.map(item => item.product_id || item._id);
+      
+      const couponData = {
+        code: couponCode,
+        orderAmount: orderAmount,
+        productIds: productIds,
+        userId: user?._id
+      };
+
+      console.log('Applying coupon with data:', couponData);
+      
+      const response = await applyCouponCode(couponData);
+      console.log('Coupon API response:', response);
+
+      // Check different response structures
+      if (response?.data?.data?.coupon) {
+        // Structure from your example: response.data.data.coupon
+        setAppliedCoupon(response.data.data.coupon);
+        setCouponError('');
+      } else if (response?.data?.coupon) {
+        // Alternative structure: response.data.coupon
+        setAppliedCoupon(response.data.coupon);
+        setCouponError('');
+      } else if (response?.coupon) {
+        // Direct structure: response.coupon
+        setAppliedCoupon(response.coupon);
+        setCouponError('');
+      } else if (response?.success && response?.data?.coupon) {
+        // Structure with success flag
+        setAppliedCoupon(response.data.coupon);
+        setCouponError('');
+      } else {
+        // If no coupon data found, check for message
+        const errorMessage = response?.message || response?.data?.message || 'Invalid coupon code';
+        throw new Error(errorMessage);
+      }
+
+    } catch (err) {
+      console.error('Coupon application error:', err);
+      setCouponError(err.message || 'Invalid coupon code. Please try again.');
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
     setCouponCode('');
@@ -192,18 +282,31 @@ const handleApplyCoupon = async () => {
       const payableAmount = GET_PAYABLE_AMOUNT();
       const orderId = `PRINTE${Date.now()}`;
 
-      // Prepare cart items - single object as per your structure
-      const cartItem = cardData[0]; // Taking first item as per your example
+      // Combine address lines into a single street field
+      const street = formData.addressLine2 
+        ? `${formData.addressLine1}\n${formData.addressLine2}`
+        : formData.addressLine1;
 
       // Prepare delivery address in exact format
       const deliveryAddress = {
         name: formData.name,
         email: formData.email,
         mobile_number: formData.phone,
-        alternateMobileNumber: '', // You can add this field to your form if needed
-        street: formData.address,
+        alternateMobileNumber: '',
+        street: street,
+        city: formData.city,
+        state: formData.state,
         pincode: formData.pincode
       };
+
+      // Prepare coupon data for backend
+      const couponData = appliedCoupon ? {
+        couponCode: appliedCoupon.code,
+        discountType: appliedCoupon.discountType,
+        discountValue: appliedCoupon.discountValue,
+        discountAmount: appliedCoupon.discountAmount,
+        finalAmount: appliedCoupon.finalAmount
+      } : null;
 
       const paymentData = {
         amount: payableAmount,
@@ -212,16 +315,22 @@ const handleApplyCoupon = async () => {
         billing_email: formData.email,
         billing_tel: formData.phone,
         currency: 'INR',
-        // Critical fields for your database
-        cart_items: cartItem, // Single object, not array
-        delivery_address: deliveryAddress, // Exact format
+        cart_items: cartData,
+        delivery_address: deliveryAddress,
         user_id: user?._id,
         delivery_charges: get_delivery_Fee(),
-        free_delivery: cardData.every(item => item.FreeDelivery),
-        gst_no: gstNo || undefined
+        free_delivery: cartData.every(item => item.FreeDelivery),
+        gst_no: gstNo || undefined,
+        coupon: couponData,
+        subtotal: GET_SUB_TOTAL(),
+        tax_amount: GET_TAX_TOTAL(),
+        discount_amount: GET_COUPON_DISCOUNT(),
+        total_amount: GET_TOTAL_AMOUNT(),
+        payment_type: paymentOption,
+        total_before_discount: GET_TOTAL_AMOUNT_BEFORE_DISCOUNT()
       };
 
-
+      console.log('Payment data:', paymentData);
       await initiateCCAvenuePayment(paymentData);
     } catch (err) {
       console.error('Payment error:', err);
@@ -230,38 +339,42 @@ const handleApplyCoupon = async () => {
     }
   };
 
-  const InputField = ({ label, name, type = 'text', placeholder, icon: Icon, maxLength, ...props }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Icon className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          type={type}
-          name={name}
-          value={formData[name] || ''}
-          onChange={handleInputChange}
-          className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          placeholder={placeholder}
-          maxLength={maxLength}
-          disabled={loading}
-          {...props}
-        />
-      </div>
-    </div>
-  );
-
-  const handleInputChange = (e) => {
+  // Text field change handler - allows any text
+  const handleTextChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError('');
-  };
+  }, []);
+
+  // Phone number change handler - only numbers
+  const handlePhoneChange = useCallback((e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setFormData(prev => ({ ...prev, phone: value }));
+    setError('');
+  }, []);
+
+  // Pincode change handler - only numbers
+  const handlePincodeChange = useCallback((e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setFormData(prev => ({ ...prev, pincode: value }));
+    setError('');
+  }, []);
+
+  // Email change handler
+  const handleEmailChange = useCallback((e) => {
+    const { value } = e.target;
+    setFormData(prev => ({ ...prev, email: value }));
+    setError('');
+  }, []);
+
+  // Handle GST input
+  const handleGstChange = useCallback((e) => {
+    const value = e.target.value.toUpperCase();
+    setGstNo(value);
+  }, []);
 
   // Show loading state
-  if (loading && cardData.length === 0) {
+  if (loading && cartData.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -273,7 +386,7 @@ const handleApplyCoupon = async () => {
   }
 
   // Show error if no products
-  if (cardData.length === 0 && !loading) {
+  if (cartData.length === 0 && !loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -313,7 +426,7 @@ const handleApplyCoupon = async () => {
                     <select 
                       value={selectedAddress} 
                       onChange={(e) => setSelectedAddress(Number(e.target.value))}
-                      className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
                       {addresses.map((addr, index) => (
                         <option key={index} value={index}>
@@ -334,59 +447,120 @@ const handleApplyCoupon = async () => {
               </h2>
 
               <div className="space-y-6">
-                <InputField
+                {/* Full Name - Text field */}
+                <TextInputField
                   label="Full Name *"
                   name="name"
+                  value={formData.name}
+                  onChange={handleTextChange}
                   placeholder="John Doe"
                   icon={FaUser}
+                  disabled={loading}
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputField
+                  {/* Email - Text field */}
+                  <TextInputField
                     label="Email Address *"
                     name="email"
                     type="email"
+                    value={formData.email}
+                    onChange={handleEmailChange}
                     placeholder="john@example.com"
                     icon={FaEnvelope}
+                    disabled={loading}
                   />
 
-                  <InputField
+                  {/* Phone Number - Number field */}
+                  <NumberInputField
                     label="Phone Number *"
                     name="phone"
-                    type="tel"
+                    value={formData.phone}
+                    onChange={handlePhoneChange}
                     placeholder="9876543210"
                     maxLength={10}
                     icon={FaPhone}
+                    disabled={loading}
                   />
                 </div>
 
+                {/* Address Line 1 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Complete Address (Street, City, State) *
+                    Address Line 1 (Street, Building) *
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-start pt-3 pointer-events-none">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <FaMapMarkerAlt className="h-5 w-5 text-gray-400" />
                     </div>
-                    <textarea
-                      name="address"
-                      value={formData.address || ''}
-                      onChange={handleInputChange}
-                      className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                      placeholder="Street, City, State"
-                      rows={3}
+                    <input
+                      name="addressLine1"
+                      value={formData.addressLine1 || ''}
+                      onChange={handleTextChange}
+                      className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
+                      placeholder="House No., Building, Street, Area"
                       disabled={loading}
+                      autoComplete="address-line1"
                     />
                   </div>
                 </div>
 
-                <InputField
-                  label="Pincode *"
-                  name="pincode"
-                  placeholder="400001"
-                  maxLength={6}
-                  icon={FaMapPin}
-                />
+                {/* Address Line 2 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address Line 2 (Optional)
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaMapMarkerAlt className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      name="addressLine2"
+                      value={formData.addressLine2 || ''}
+                      onChange={handleTextChange}
+                      className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
+                      placeholder="Landmark, Apartment, Suite, Unit"
+                      disabled={loading}
+                      autoComplete="address-line2"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* City */}
+                  <TextInputField
+                    label="City *"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleTextChange}
+                    placeholder="Mumbai"
+                    icon={FaCity}
+                    disabled={loading}
+                  />
+
+                  {/* State */}
+                  <TextInputField
+                    label="State *"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleTextChange}
+                    placeholder="Maharashtra"
+                    icon={FaGlobeAsia}
+                    disabled={loading}
+                  />
+
+                  {/* Pincode - Number field */}
+                  <NumberInputField
+                    label="Pincode *"
+                    name="pincode"
+                    value={formData.pincode}
+                    onChange={handlePincodeChange}
+                    placeholder="400001"
+                    maxLength={6}
+                    icon={FaMapPin}
+                    disabled={loading}
+                  />
+                </div>
               </div>
             </div>
 
@@ -408,7 +582,8 @@ const handleApplyCoupon = async () => {
                     }}
                     placeholder="Enter coupon code"
                     disabled={!!appliedCoupon || couponLoading}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 focus:outline-none"
+                    autoComplete="off"
                   />
                 </div>
                 {!appliedCoupon ? (
@@ -446,7 +621,7 @@ const handleApplyCoupon = async () => {
                       </div>
                     </div>
                     <div className="text-green-700 font-bold">
-                      -₹{Number(appliedCoupon.discountAmount).toFixed(2)}
+                      -₹{Number(appliedCoupon.discountAmount || 0).toFixed(2)}
                     </div>
                   </div>
                 </div>
@@ -465,10 +640,10 @@ const handleApplyCoupon = async () => {
                   <input
                     type="text"
                     value={gstNo}
-                    onChange={(e) => setGstNo(e.target.value)}
+                    onChange={handleGstChange}
                     placeholder="Enter GSTIN number"
                     maxLength={15}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -496,7 +671,7 @@ const handleApplyCoupon = async () => {
 
               {/* Order Items */}
               <div className="space-y-4 mb-6">
-                {cardData.map((item) => (
+                {cartData.map((item) => (
                   <div key={item._id} className="flex items-center gap-4 py-3 border-b border-gray-200">
                     <img 
                       src={item.product_image} 
@@ -520,7 +695,7 @@ const handleApplyCoupon = async () => {
               {/* Price Breakdown */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Subtotal ({cardData.length} items):</span>
+                  <span className="text-gray-600">Subtotal ({cartData.length} items):</span>
                   <span className="font-semibold">₹{GET_SUB_TOTAL().toFixed(2)}</span>
                 </div>
                 
@@ -546,6 +721,11 @@ const handleApplyCoupon = async () => {
                     <span>Order Total:</span>
                     <span className="text-blue-600">₹{GET_TOTAL_AMOUNT().toFixed(2)}</span>
                   </div>
+                  {appliedCoupon && (
+                    <div className="text-sm text-gray-500 mt-1">
+                      Original: <span className="line-through">₹{GET_TOTAL_AMOUNT_BEFORE_DISCOUNT().toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -613,7 +793,7 @@ const handleApplyCoupon = async () => {
               {/* Payment Button */}
               <button
                 onClick={handlePayment}
-                disabled={loading || !acceptTerms || cardData.length === 0}
+                disabled={loading || !acceptTerms || cartData.length === 0}
                 className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-white py-4 px-6 rounded-xl hover:from-yellow-500 hover:to-yellow-700 transition-all duration-300 font-bold flex items-center justify-center gap-3 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:scale-100 shadow-lg hover:shadow-xl"
               >
                 {loading ? (
