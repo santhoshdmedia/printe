@@ -6,7 +6,7 @@ import { Button, Divider, Modal, Spin, Table } from "antd";
 import { IconHelper } from "../../helper/IconHelper";
 import { ERROR_NOTIFICATION, SUCCESS_NOTIFICATION } from "../../helper/notification_helper";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch,useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { SET_CART_ITEMS } from "../../redux/slices/cart.slice"; // Changed import
 import { ImageHelper } from "../../helper/ImageHelper";
 
@@ -16,29 +16,29 @@ const ShoppingCart = () => {
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(null); // Separate loading for delete
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [designModalVisible, setDesignModalVisible] = useState(false);  
+  const [designModalVisible, setDesignModalVisible] = useState(false);
 
   const dispatch = useDispatch();
   const navigation = useNavigate();
-  const storeGuestId=()=>{
-    
+  const storeGuestId = () => {
+
   }
 
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchData();
   }, []);
-  
+
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const result = await getMyShoppingCart();
-      if(user.name==""&&result.data.data[0]._id){
-        localStorage.setItem("guest",result.data.data[0]._id)
+      if (user.name == "" && result.data.data[0]._id) {
+        localStorage.setItem("guest", result.data.data[0]._id)
       }
 
-     
+
       let data = _.get(result, "data.data", []);
       setCardData(data);
       // Corrected dispatch - use SET_CART_ITEMS instead of ADD_TO_CART
@@ -97,9 +97,9 @@ const ShoppingCart = () => {
               <span className="font-medium">{record.product_quantity}</span>
             </div>
             {record.product_design_file && (
-              <Button 
-                type="link" 
-                size="small" 
+              <Button
+                type="link"
+                size="small"
                 onClick={() => handleViewDesign(record)}
                 className="!p-0 !text-blue-600 !h-auto"
               >
@@ -112,14 +112,14 @@ const ShoppingCart = () => {
     },
     {
       title: "Price",
-      dataIndex: `${(user.role === "Dealer" || user.role === "Corporate")?"final_total":""}`,
-      key: `final_total`,
+      dataIndex: "final_total",
+      key: "final_total",
       render: (price, record) => {
         return (
           <div className="flex flex-col items-end">
             <span className="font-medium text-base">₹{Number(price).toFixed(2)}</span>
             <div className="flex gap-2 mt-2">
-              <Button 
+              <Button
                 type="primary"
                 size="small"
                 onClick={() => handleProceedToBuy(record)}
@@ -127,9 +127,9 @@ const ShoppingCart = () => {
               >
                 Buy Now
               </Button>
-              <Button 
-                type="text" 
-                size="small" 
+              <Button
+                type="text"
+                size="small"
                 onClick={() => handleDelete(record._id)}
                 loading={deleteLoading === record._id}
                 disabled={deleteLoading === record._id}
@@ -172,15 +172,15 @@ const ShoppingCart = () => {
         <div className="w-full min-h-screen bg-gray-50 py-4">
           <div className="max-w-6xl mx-auto px-4">
             <Breadcrumbs title={"Shopping cart"} />
-            
+
             <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
               <h1 className="text-2xl font-bold mb-4">Shopping Cart ({cardData.length} items)</h1>
               <Divider className="my-2" />
-              
-              <Table 
-                dataSource={cardData} 
-                loading={loading} 
-                columns={columns} 
+
+              <Table
+                dataSource={cardData}
+                loading={loading}
+                columns={columns}
                 bordered={false}
                 pagination={false}
                 rowKey="_id"
@@ -195,8 +195,8 @@ const ShoppingCart = () => {
                     Subtotal ({cardData.length} items): <span className="text-orange-600">₹{Number(GET_TOTAL_AMOUNT()).toFixed(2)}</span>
                   </div>
                 </div>
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   size="large"
                   onClick={() => handleProceedToBuy(null)}
                   className="bg-yellow-400 hover:bg-yellow-500 border-none text-black font-bold"
@@ -219,9 +219,9 @@ const ShoppingCart = () => {
       >
         {selectedProduct && (
           <div className="flex flex-col items-center">
-            <img 
-              src={selectedProduct.product_design_file} 
-              alt="Design Preview" 
+            <img
+              src={selectedProduct.product_design_file}
+              alt="Design Preview"
               className="max-w-full max-h-[70vh] object-contain"
             />
             <div className="mt-4">
