@@ -174,9 +174,9 @@ const Navbar = () => {
     setShowUserDropdown(false);
   };
 
-  const handleCategoryClick = (mainCategory, subCategory, mainId, subId) => {
+  const handleCategoryClick = (mainId, subId) => {
     handleDestination(
-      `/category/${mainCategory}/${subCategory}/${mainId}/${subId}`
+      `/category/${mainId}/${subId}`
     );
   };
 
@@ -573,10 +573,8 @@ const Navbar = () => {
                   key={j}
                   onClick={() =>
                     handleCategoryClick(
-                      res.main_category_name,
-                      sub.sub_category_name,
-                      res._id,
-                      sub._id
+                      res.slug,
+                      sub.slug
                     )
                   }
                   className="px-3 py-2.5 text-sm text-gray-600 rounded-lg hover:bg-yellow-50 cursor-pointer transition-colors duration-200 ml-2"
@@ -612,7 +610,7 @@ const Navbar = () => {
   );
   // Bottom Navigation Component - Only for Mobile
   const BottomNavigation = () => ( 
-   <div className={`sticky bottom-0  left-0 right-0 z-[9998] w-screen block lg:hidden`}>
+   <div className={`fixed bottom-0  left-0 right-0 z-[9998] w-screen block lg:hidden`}>
       <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
         <div className="flex items-center justify-around">
           {/* Home */}
