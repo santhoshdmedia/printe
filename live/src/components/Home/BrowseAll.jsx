@@ -24,6 +24,8 @@ const BrowseAll = () => {
     fetchData();
   }, []);
 
+  console.log(data,"categorey");
+  
   return (
     <section className="py-10 sm:py-12 md:py-16 px-3 sm:px-6 md:px-16 bg-white text-black">
       {/* ---------- Heading ---------- */}
@@ -61,12 +63,9 @@ const BrowseAll = () => {
               <div
                 onClick={() =>
                   navigation(
-                    `/category/${category.main_category_details[0].main_category_name}/${_.get(
+                    `/category/${category.main_category_details[0].slug}/${_.get(
                       category,
-                      "sub_category_name"
-                    )}/${_.get(category, "select_main_category")}/${_.get(
-                      category,
-                      "_id"
+                      "slug"
                     )}`
                   )
                 }
