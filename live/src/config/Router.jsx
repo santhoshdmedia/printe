@@ -42,6 +42,7 @@ import PaymentFailed from "../pages/shopping/pay/PaymentFailled.jsx";
 import PaymentSuccess from "../pages/shopping/pay/PaymentSuccess.jsx";
 import PaymentMethod from "../components/CheckOut/PaymentMethod.jsx";
 import PaymentError from "../pages/shopping/pay/PaymentError.jsx";
+import WarrantyActivation from "../pages/warrenty/Warrenty.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -139,6 +140,10 @@ export const router = createBrowserRouter([
   {
     path: "/reset-password/:id",
     element: <ResetPassword />,
+  },
+  {
+    path: "/Warranty",
+    element: <WarrantyActivation />,
   },
   {
     path: "/not-found",

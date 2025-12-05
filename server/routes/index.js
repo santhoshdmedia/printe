@@ -5,7 +5,7 @@ const { upload } = require("../helper/multer.helper");
 const { VerfiyToken } = require("../helper/shared.helper");
 
 
-const { auth_routes,OtpRoutes,whatsappRoutes, category_routes, admin_routers, user_routers, product_routers, order_routers, dashboard_routers, banner_routes, review_routes, blog_routes, vendor_routes, vendorProductRoutes,mail_routes, enquires_routes, section_routes, shopping_cart,teamRoutes,banner_Text_routes,BulkOrderRoutes,coupenRoutes,paymentRoutes } = require("../routes/routes_import");
+const { auth_routes,OtpRoutes,whatsappRoutes, category_routes, admin_routers, user_routers, product_routers, order_routers, dashboard_routers, banner_routes, review_routes, blog_routes, vendor_routes, vendorProductRoutes,mail_routes, enquires_routes, section_routes, shopping_cart,teamRoutes,banner_Text_routes,BulkOrderRoutes,coupenRoutes,paymentRoutes,warentyRoutes } = require("../routes/routes_import");
 const { route } = require("./mail.routes");
 
 //Admin EndPoints
@@ -64,4 +64,5 @@ router.use('/coupen',coupenRoutes)
 
 // payment ccavenue
 router.use("/payment",paymentRoutes)
+router.use("/warenty",warentyRoutes)
 module.exports = router;

@@ -31,7 +31,7 @@ const addsub = async (req, res) => {
     successResponse(res, ADD_SUB_CATEGORY, result);
   } catch (err) {
     console.log(err);
-    return errorResponse(res, FAILED_SUB_CATEGORY);
+    return errorResponse(res, "err");
   }
 };
 

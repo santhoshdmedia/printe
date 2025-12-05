@@ -193,6 +193,158 @@ const CollectMyOrders = async (req, res) => {
 };
 
 
+// In your backend API routes file
+const acceptOrderByVendor = async (req, res) => {
+  try {
+    const { order_id, vendor_id, deadline_date, deadline_time, notes } = req.body;
+    
+    if (!order_id || !vendor_id || !deadline_date || !deadline_time) {
+      return errorResponse(res, "Missing required fields", 400);
+    }
+
+    if (!isValidObjectId(order_id) || !isValidObjectId(vendor_id)) {
+      return errorResponse(res, "Invalid ID format", 400);
+    }
+
+    const order = await OrderDetailsSchema.findById(order_id);
+    if (!order) {
+      return errorResponse(res, "Order not found", 404);
+    }
+
+    if (order.vender_id !== vendor_id && order.vendor_id !== vendor_id) {
+      return errorResponse(res, "You are not assigned to this order", 403);
+    }
+
+    const combinedDeadline = new Date(`${deadline_date}T${deadline_time}`);
+    
+    if (combinedDeadline <= new Date()) {
+      return errorResponse(res, "Deadline must be in the future", 400);
+    }
+
+    const vendor = await VendorSchemas.findById(vendor_id);
+    if (!vendor) {
+      return errorResponse(res, "Vendor not found", 404);
+    }
+
+    const updatedOrder = await OrderDetailsSchema.findByIdAndUpdate(
+      order_id,
+      {
+        order_status: 'vendor accepted',
+        vendor_deadline: combinedDeadline,
+        vendor_accepted_at: new Date(),
+        vendor_notes: notes || '',
+        vender_id: vendor_id,
+        vendor_id: vendor_id
+      },
+      { new: true }
+    );
+
+    await orderdeliverytimelineSchema.create({
+      order_id,
+      order_status: 'vendor accepted',
+      changed_by: vendor_id,
+      changed_by_name: vendor.name,
+      changed_by_role: 'vendor',
+      notes: `Order accepted by vendor ${vendor.name}. Deadline: ${combinedDeadline.toLocaleString()}. ${notes ? `Notes: ${notes}` : ''}`,
+      team_participation: {
+        vendor: {
+          user_id: vendor_id,
+          name: vendor.name,
+          role: 'vendor',
+          action: "accepted",
+          timestamp: new Date(),
+        },
+      },
+    });
+
+    try {
+      await orderStatusMail({ 
+        ...updatedOrder._doc,
+        vendor_name: vendor.name 
+      });
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+    }
+
+    return successResponse(res, "Order accepted successfully", updatedOrder);
+  } catch (err) {
+    console.error("Error accepting order:", err);
+    return errorResponse(res, "Internal server error", 500);
+  }
+};
+
+const completeOrderByVendor = async (req, res) => {
+  try {
+    const { order_id, vendor_id } = req.body;
+    
+    if (!order_id || !vendor_id) {
+      return errorResponse(res, "Missing required fields", 400);
+    }
+
+    if (!isValidObjectId(order_id) || !isValidObjectId(vendor_id)) {
+      return errorResponse(res, "Invalid ID format", 400);
+    }
+
+    const order = await OrderDetailsSchema.findById(order_id);
+    if (!order) {
+      return errorResponse(res, "Order not found", 404);
+    }
+
+    if (order.vender_id !== vendor_id && order.vendor_id !== vendor_id) {
+      return errorResponse(res, "You are not assigned to this order", 403);
+    }
+
+    if (order.order_status !== 'vendor accepted') {
+      return errorResponse(res, "Order must be accepted first", 400);
+    }
+
+    const vendor = await VendorSchemas.findById(vendor_id);
+    if (!vendor) {
+      return errorResponse(res, "Vendor not found", 404);
+    }
+
+    const updatedOrder = await OrderDetailsSchema.findByIdAndUpdate(
+      order_id,
+      {
+        order_status: 'vendor completed',
+        completed_at: new Date(),
+      },
+      { new: true }
+    );
+
+    await orderdeliverytimelineSchema.create({
+      order_id,
+      order_status: 'vendor completed',
+      changed_by: vendor_id,
+      changed_by_name: vendor.name,
+      changed_by_role: 'vendor',
+      notes: `Order completed by vendor ${vendor.name}`,
+      team_participation: {
+        vendor: {
+          user_id: vendor_id,
+          name: vendor.name,
+          role: 'vendor',
+          action: "completed",
+          timestamp: new Date(),
+        },
+      },
+    });
+
+    try {
+      await orderStatusMail({ 
+        ...updatedOrder._doc,
+        vendor_name: vendor.name 
+      });
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+    }
+
+    return successResponse(res, "Order completed successfully", updatedOrder);
+  } catch (err) {
+    console.error("Error completing order:", err);
+    return errorResponse(res, "Internal server error", 500);
+  }
+};
 
 
 const UpdateOrderStatus = async (req, res) => {
@@ -462,5 +614,7 @@ module.exports = {
   UpdateOrderStatus,
   getOrderStates,
   UpdateOrderDesign,
-  UpdateOrderVendor
+  UpdateOrderVendor,
+  acceptOrderByVendor,
+  completeOrderByVendor
 };

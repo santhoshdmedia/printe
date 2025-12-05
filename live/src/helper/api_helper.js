@@ -97,12 +97,12 @@ export const generateGuestId = () => {
 
 export const getGuestId = () => {
   let guestId = localStorage.getItem('guestId');
-  
+
   if (!guestId) {
     guestId = generateGuestId();
     localStorage.setItem('guestId', guestId);
   }
-  
+
   return guestId;
 };
 
@@ -117,7 +117,7 @@ export const addToShoppingCart = async (cartData) => {
     ...cartData,
     guestId: guestId
   };
-  
+
   return await custom_axios.post(`${baseURL}/shopping/add_to_cart`, payload);
 };
 
@@ -134,14 +134,14 @@ export const mergeCart = async (cartData) => {
     ...cartData,
     guestId: guestId
   };
-  
+
   return await custom_axios.post(`${baseURL}/shopping/merge_cart`, payload);
 };
 
 export const removeMyShoppingCart = async (data) => {
   const guestId = getGuestId();
   const requestData = typeof data === 'string' ? { ids: [data] } : data;
-  
+
   return await custom_axios.post(`${baseURL}/shopping/remove_my_cart`, {
     ...requestData,
     guestId: guestId
@@ -264,7 +264,21 @@ export const getCategoryBySlug = async (slug) => {
 };
 
 
-
+// warrenty
+export const verifywarrnty = async (verificationCode) => {
+  try {
+    const response = await axios.get(`${baseURL}/warenty/verify/${verificationCode}`);
+    return response;
+  } catch (error) {
+    console.error("Error fetching warrenty:", error);
+    throw error;
+  }
+}
+export const activatewarrnty = async (verificationCode,formdata) => {
+    return await axios.post(`${baseURL}/warenty/activate/${verificationCode}`,formdata);
+    
+  
+}
 
 
 

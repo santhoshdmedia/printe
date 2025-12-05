@@ -63,6 +63,7 @@ const {
   getOrderStates,
   UpdateOrderDesign,
   UpdateOrderVendor,
+  acceptOrderByVendor,completeOrderByVendor
 } = require("../controller/order.controller");
 const { getAllDashbardCounts } = require("../controller/dashboard.controller");
 const {
@@ -215,6 +216,8 @@ module.exports = {
   getOrderStates,
   UpdateOrderDesign,
   UpdateOrderVendor,
+  acceptOrderByVendor,
+  completeOrderByVendor,
 
   // Dashboard
   getAllDashbardCounts,

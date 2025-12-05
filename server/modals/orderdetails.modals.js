@@ -84,6 +84,15 @@ const Order = model(
       gst_no: {
         type: String,
       },
+         vendor_deadline: {
+        type: Date,
+      },
+      vendor_accepted_at: {
+        type: Date,
+      },
+      vendor_notes: {
+        type: String,
+      },
     },
     {
       collection: "order_details",
@@ -131,6 +140,7 @@ const order_delivery_timeline = model(
             type: Schema.Types.ObjectId,
             ref: "admin_users",
           },
+          
         }),
       },
     },
