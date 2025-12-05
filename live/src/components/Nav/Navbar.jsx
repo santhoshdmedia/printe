@@ -34,8 +34,6 @@ const Navbar = () => {
   const { isSearchingProducts, searchingProducts, menu } = useSelector(
     (state) => state.publicSlice
   );
-
-
   
   const { isAuth, user } = useSelector((state) => state.authSlice);
   const cartCount = useSelector((state) => state.cartSlice.count);
@@ -54,10 +52,13 @@ const Navbar = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [activeNav, setActiveNav] = useState("home");
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [bottomNavVisible, setBottomNavVisible] = useState(false);
+  const [bottomNavVisible, setBottomNavVisible] = useState(true);
 
   // Refs
   const scrollTimeoutRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const searchResultsRef = useRef(null);
+  const isSearchingRef = useRef(false);
 
   // Set active nav based on current route
   useEffect(() => {
@@ -70,33 +71,14 @@ const Navbar = () => {
   }, [location]);
 
   // Scroll effect
- useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
       // For top navbar shadow
       setIsScrolled(currentScrollY > 10);
 
-      // For bottom navigation hide/show
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down - hide bottom nav
-        setBottomNavVisible(true);
-      } else if (currentScrollY < lastScrollY) {
-        // Scrolling up - show bottom nav
-        setBottomNavVisible(true);
-      }
-
       setLastScrollY(currentScrollY);
-
-      // Clear existing timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      // Auto show bottom nav when scrolling stops
-      scrollTimeoutRef.current = setTimeout(() => {
-        setBottomNavVisible(true);
-      }, 1500);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -123,15 +105,20 @@ const Navbar = () => {
     dispatch({ type: "MENU" });
   }, [dispatch]);
 
+  // Search debounce effect
   useEffect(() => {
     if (searchProduct) {
+      isSearchingRef.current = true;
       const debounceTimer = setTimeout(() => {
         dispatch({
           type: "GET_PRODUCT",
           data: { type: "search_products", search: searchProduct },
         });
+        isSearchingRef.current = false;
       }, 300);
       return () => clearTimeout(debounceTimer);
+    } else {
+      isSearchingRef.current = false;
     }
   }, [searchProduct, dispatch]);
 
@@ -141,122 +128,153 @@ const Navbar = () => {
     return () => clearInterval(interval);
   }, [fetchCartData]);
 
+  // Handle click outside search results for desktop
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // For desktop search
+      if (
+        searchResultsRef.current && 
+        !searchResultsRef.current.contains(event.target) &&
+        searchInputRef.current && 
+        !searchInputRef.current.contains(event.target)
+      ) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Handlers
-  const handleSearchFocus = () => {
+  const handleSearchFocus = useCallback(() => {
     setIsExpanded(true);
-  };
+  }, []);
 
-  const handleSearchBlur = () => {
-    setTimeout(() => {
-      if (!searchProduct) setIsExpanded(false);
-    }, 200);
-  };
+  const handleSearchChange = useCallback((e) => {
+    const value = e.target.value;
+    setSearchProduct(value);
+    if (value.trim()) {
+      setIsExpanded(true);
+    }
+  }, []);
 
-  const handleSearchChange = (e) => setSearchProduct(e.target.value);
-
-  const closeSearchBar = () => {
+  const closeSearchBar = useCallback(() => {
     setShowSearchBar(false);
     setIsExpanded(false);
     setSearchProduct("");
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     dispatch({ type: "LOGOUT" });
     navigate("/");
     setMenuStatus(false);
     setShowUserDropdown(false);
-  };
+  }, [dispatch, navigate]);
 
-  const handleDestination = (url) => {
+  const handleDestination = useCallback((url) => {
     navigate(url);
     setMenuStatus(false);
     closeSearchBar();
     setShowUserDropdown(false);
-  };
+  }, [navigate, closeSearchBar]);
 
-  const handleCategoryClick = (mainId, subId) => {
-    handleDestination(
-      `/category/${mainId}/${subId}`
-    );
-  };
+  const handleCategoryClick = useCallback((mainId, subId) => {
+    handleDestination(`/category/${mainId}/${subId}`);
+  }, [handleDestination]);
 
-  // Search Input Component - FIXED for mobile
-  const SearchInput = ({ isMobile = false }) => (
-    <div
-      className={`relative ${isMobile ? "w-full" : "w-full  md:w-[35vw] lg:w-[25vw]"}`}
-    >
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="What are you looking for?"
-          value={searchProduct}
-          onChange={handleSearchChange}
-          onFocus={handleSearchFocus}
-          onBlur={handleSearchBlur}
-          className={`w-full px-5 py-4 rounded-2xl border-0 focus:outline-none focus:ring-4 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 ${
-            isMobile ? "pr-12 text-base" : "pr-12"
-          }`}
-        />
-        <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-          <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg">
-            <BsSearch className="text-white text-lg" />
+  // Search Input Component - FIXED for desktop accessibility
+  const SearchInput = ({ isMobile = false }) => {
+    const localInputRef = useRef(null);
+    
+    // Focus input when expanded
+    useEffect(() => {
+      if (!isMobile && isExpanded && searchProduct && localInputRef.current) {
+        localInputRef.current.focus();
+      }
+    }, [isExpanded, searchProduct, isMobile]);
+
+    return (
+      <div
+        className={`relative ${isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[25vw]"}`}
+        ref={searchInputRef}
+      >
+        <div className="relative">
+          <input
+            ref={localInputRef}
+            type="text"
+            placeholder="What are you looking for?"
+            value={searchProduct}
+            onChange={handleSearchChange}
+            onFocus={handleSearchFocus}
+            className={`w-full px-5 py-4 rounded-2xl border-2 border-transparent focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 transition-all duration-300 ${
+              isMobile ? "pr-12 text-base" : "pr-12"
+            }`}
+            autoComplete="off"
+            style={{ zIndex: 10011 }}
+          />
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2" style={{ zIndex: 10012 }}>
+            <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:from-yellow-500 hover:to-yellow-600 transition-all duration-300">
+              <BsSearch className="text-white text-lg" />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Search Results - FIXED for mobile visibility */}
-      <div
-        className={`absolute top-full left-0 z-[10010] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-out mt-3 ${
-          isExpanded && searchProduct
-            ? "opacity-100 max-h-[60vh] w-full visible border border-yellow-100"
-            : "opacity-0 max-h-0 invisible"
-        }`}
-        style={{
-          // Ensure search results are always visible and not clipped
-          position: isMobile ? 'fixed' : 'absolute',
-          top: isMobile ? '100%' : '100%',
-          left: isMobile ? '1rem' : '0',
-          right: isMobile ? '1rem' : 'auto',
-          width: isMobile ? 'calc(100% - 2rem)' : '100%'
-        }}
-      >
-        <div className="overflow-y-auto max-h-[60vh]">
-          {isSearchingProducts ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mb-3"></div>
-              <p className="text-gray-600 text-sm">Searching products...</p>
-            </div>
-          ) : searchingProducts.length === 0 && searchProduct ? (
-            <div className="flex flex-col items-center justify-center py-10 text-gray-500">
-              <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
-                <BsSearch className="text-2xl text-yellow-600" />
-              </div>
-              <p className="font-medium text-gray-700 mb-1">No products found</p>
-              <p className="text-sm text-gray-500">Try different keywords</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {searchingProducts.map((data) => (
-                <div
-                  key={data._id}
-                  onClick={() => {
-                    handleDestination(`/product/${data.seo_url}`);
-                    closeSearchBar();
-                  }}
-                  className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
-                >
-                  <SearchProductCard
-                    data={data}
-                    className="py-4 px-4"
-                  />
+        {/* Search Results */}
+        {(isExpanded && searchProduct) && (
+          <div
+            ref={searchResultsRef}
+            className={`absolute top-full left-0 bg-white backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden mt-3 border border-yellow-100 transition-all duration-200 ${
+              isExpanded && searchProduct
+                ? "opacity-100 visible max-h-[60vh]"
+                : "opacity-0 invisible max-h-0"
+            } ${isMobile ? "fixed left-4 right-4 w-auto" : "w-full"}`}
+            style={{ 
+              zIndex: 10010,
+              maxHeight: '60vh'
+            }}
+          >
+            <div className="overflow-y-auto max-h-[60vh]">
+              {isSearchingProducts ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mb-3"></div>
+                  <p className="text-gray-600 text-sm">Searching products...</p>
                 </div>
-              ))}
+              ) : searchingProducts.length === 0 && searchProduct ? (
+                <div className="flex flex-col items-center justify-center py-10 text-gray-500">
+                  <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
+                    <BsSearch className="text-2xl text-yellow-600" />
+                  </div>
+                  <p className="font-medium text-gray-700 mb-1">No products found</p>
+                  <p className="text-sm text-gray-500">Try different keywords</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {searchingProducts.map((data) => (
+                    <div
+                      key={data._id}
+                      onClick={() => {
+                        handleDestination(`/product/${data.seo_url}`);
+                        closeSearchBar();
+                      }}
+                      className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
+                    >
+                      <SearchProductCard
+                        data={data}
+                        className="py-4 px-4"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Desktop Auth Buttons Component
   const AuthButtons = () => (
@@ -367,7 +385,7 @@ const Navbar = () => {
 
   // Support Section Component
   const SupportSection = () => (
-    <div className="text-sm  items-center gap-x-2 hidden lg:flex">
+    <div className="text-sm items-center gap-x-2 hidden lg:flex">
       <div>
         <IconHelper.SUPPORT_ICON className="text-3xl text-[#121621]" />
       </div>
@@ -410,7 +428,6 @@ const Navbar = () => {
     </Link>
   );
 
- 
   // Custom Drawer (Mobile Menu)
   const CustomDrawer = ({ isOpen, onClose, children }) => (
     <div
@@ -420,7 +437,7 @@ const Navbar = () => {
     >
       {/* Overlay */}
       <div
-        className={`absolute inset- transition-opacity duration-500 ${
+        className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
@@ -572,10 +589,7 @@ const Navbar = () => {
                 <div
                   key={j}
                   onClick={() =>
-                    handleCategoryClick(
-                      res.slug,
-                      sub.slug
-                    )
+                    handleCategoryClick(res.slug, sub.slug)
                   }
                   className="px-3 py-2.5 text-sm text-gray-600 rounded-lg hover:bg-yellow-50 cursor-pointer transition-colors duration-200 ml-2"
                 >
@@ -608,9 +622,10 @@ const Navbar = () => {
       </div>
     </div>
   );
+
   // Bottom Navigation Component - Only for Mobile
   const BottomNavigation = () => ( 
-   <div className={`fixed bottom-0  left-0 right-0 z-[9998] w-screen block lg:hidden`}>
+    <div className="fixed bottom-0 left-0 right-0 z-[9998] w-screen block lg:hidden">
       <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
         <div className="flex items-center justify-around">
           {/* Home */}
@@ -739,7 +754,8 @@ const Navbar = () => {
           </div>
         </div>
       )}
-    </div>)
+    </div>
+  );
 
   return (
     <div className="w-full m-0">
@@ -803,15 +819,11 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Expandable Search Bar - FIXED for search results visibility */}
+        {/* Expandable Search Bar */}
         <div
-          
-          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${
-            showSearchBar ? "max-h-28 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
+          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-300  ${
+            showSearchBar ? "max-h-32 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
           }`}
-          style={{
-            overflow: showSearchBar ? 'visible' : 'hidden'
-          }}
         >
           <div className="px-4 relative">
             <SearchInput isMobile />
@@ -821,28 +833,20 @@ const Navbar = () => {
 
       {/* Bottom Navigation - Only on Mobile */}
       <div className="fixed top-[85vh] left-0 right-0 z-[9998] w-screen block lg:hidden transition-all duration-500">
-      <BottomNavigation />
-          </div>
+        <BottomNavigation />
+      </div>
+
       {/* Mobile Menu Drawer */}
       <CustomDrawer isOpen={menuStatus} onClose={() => setMenuStatus(false)}>
         <MobileMenuContent />
       </CustomDrawer>
 
       {/* Spacer for mobile navbar */}
-      {/* <div
-        className={`block lg:hidden transition-all duration-500 ${
-          showSearchBar ? "h-28" : "h-16"
-        }`}
-      /> */}
-      
-      {/* Bottom navigation spacer */}
-      {/* <div className="block lg:hidden h-20" /> */}
+      <div className={`block lg:hidden transition-all duration-300 ${
+        showSearchBar ? "h-32" : "h-16"
+      }`} />
     </div>
   );
 };
 
 export default Navbar;
-
-
- 
-  
