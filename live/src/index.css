@@ -458,3 +458,47 @@ span.swiper-pagination-bullet.swiper-pagination-bullet-active {
 }
 
 
+/* my account */
+
+.my-account-bg {
+  background: linear-gradient(to bottom, #fffcf670, rgb(255 252 246)),
+    url("./assets/bg_acc.jpg");
+  background-size: contain;
+  background-position-y: top;
+  background-position-x: right;
+  background-repeat: repeat-x;
+}
+
+.ant-statistic-title {
+  font-weight: 500 !important;
+  font-size: 1rem !important;
+  color: #4b4b4b !important;
+}
+
+:where(.css-dev-only-do-not-override-qwtgpy).ant-card .ant-card-body {
+  padding: 0.8rem 0.5rem !important;
+}
+
+.ant-statistic-content-value {
+  font-weight: 600 !important;
+  font-size: 1.125rem !important;
+}
+
+:where(.css-dev-only-do-not-override-qwtgpy).ant-table-wrapper .ant-table-cell,
+:where(.css-dev-only-do-not-override-qwtgpy).ant-table-wrapper
+  .ant-table-thead
+  > tr
+  > th,
+:where(.css-dev-only-do-not-override-qwtgpy).ant-table-wrapper
+  .ant-table-tbody
+  > tr
+  > th,
+:where(.css-dev-only-do-not-override-qwtgpy).ant-table-wrapper
+  .ant-table-tbody
+  > tr
+  > td,
+:where(.css-dev-only-do-not-override-qwtgpy).ant-table-wrapper tfoot > tr > th,
+:where(.css-dev-only-do-not-override-qwtgpy).ant-table-wrapper tfoot > tr > td {
+  padding: 0.5rem !important;
+  border: none !important;
+}

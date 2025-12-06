@@ -104,12 +104,12 @@
 import { Input, Modal } from "antd";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { 
-  LockOutlined, 
-  ExclamationCircleOutlined, 
+import {
+  LockOutlined,
+  ExclamationCircleOutlined,
   DeleteOutlined,
-  SafetyCertificateOutlined 
-} from '@ant-design/icons';
+  SafetyCertificateOutlined,
+} from "@ant-design/icons";
 
 const Settings = () => {
   const [confirmationPassword, setConfirmationPassword] = useState("");
@@ -136,75 +136,97 @@ const Settings = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto h-auto flex flex-col gap-6 px-4 sm:px-6 md:px-8 py-6">
+    <div className="w-full max-w-4xl  h-auto flex flex-col gap-6">
       {/* Header */}
-      <div className="mb-2">
-        <h1 className="text-2xl font-bold text-gray-800">Account Settings</h1>
-        <p className="text-gray-500">Manage your account settings and preferences</p>
-      </div>
 
       {/* Change Password Section */}
       <div className="px-6 py-5 border border-gray-200 shadow-sm rounded-lg bg-white">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 bg-red-100 flex items-center justify-center rounded-full">
-            <LockOutlined className="text-blue-600 text-lg" />
-          </div>
+        <div className="mb-3 border-b border-gray-300">
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Settings</h2>
+        </div>
+        <div className="flex items-center justify-between mb-4 ">
           <div>
-            <h1 className="text-xl font-semibold text-gray-800">Change Password</h1>
+            <h1 className="text-xl font-semibold text-gray-800">
+              Change Password
+            </h1>
             <p className="text-sm text-gray-600 mt-1">
-              Secure your account with a new password or add email authentication
+              Secure your account with a new password or add email
+              authentication
             </p>
           </div>
+          <button className="flex items-center justify-center gap-2 w-full sm:w-auto mt-5 bg-[#fdecba]  text-black font-medium px-2 py-2 rounded-lg transition-all duration-200 hover:shadow-md">
+            <svg
+              viewBox="64 64 896 896"
+              focusable="false"
+              data-icon="lock"
+              width="1.1em"
+              height="1.1em"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M832 464h-68V240c0-70.7-57.3-128-128-128H388c-70.7 0-128 57.3-128 128v224h-68c-17.7 0-32 14.3-32 32v384c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V496c0-17.7-14.3-32-32-32zM332 240c0-30.9 25.1-56 56-56h248c30.9 0 56 25.1 56 56v224H332V240zm460 600H232V536h560v304zM484 701v53c0 4.4 3.6 8 8 8h40c4.4 0 8-3.6 8-8v-53a48.01 48.01 0 10-56 0z"></path>
+            </svg>
+            Reset Your Password
+          </button>
         </div>
-        
-        <div className="bg-gray-50 p-4 rounded-lg mt-3">
-          <p className="text-sm text-gray-600 text-justify">
-            If your account was created using social account authentication, you may prefer to add an email log in.
-            If you signed up with a social media account, please reset the password for your primary email address (pradeepkrish24rk@gmail.com)
-            in order to enable this. Please note that email login is in addition to social login rather than a replacement for it,
-            so your authenticated social account will continue to be linked to your account.
-          </p>
+                <div className="flex items-center justify-between mb-4 ">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-800">
+              Delete Account
+            </h1>
+            <p className="text-sm text-gray-600 mt-1">
+               Irreversible and destructive actions
+            </p>
+          </div>
+                 <button
+          className="mt-5 flex items-center justify-center gap-2 bg-[#ff8687] hover:bg-red-500 text-white font-medium py-2 px-2 rounded-md transition-colors w-full sm:w-auto"
+          onClick={showDeleteConfirm}
+        >
+          <DeleteOutlined />
+          Delete Account
+        </button> 
         </div>
-        
-        <button className="button w-full sm:w-auto mt-5 bg-blue-600 hover:bg-blue-700 text-white">
-          Send Password Reset Link
-        </button>
+
       </div>
 
       {/* Danger Zone Section */}
-      <div className="px-6 py-5 border border-red-100 shadow-sm rounded-lg bg-white">
-  <div className="flex items-start gap-3 mb-4">
-    <div className="w-10 h-10 bg-red-100 flex items-center justify-center rounded-full">
-      <ExclamationCircleOutlined className="text-red-600 text-lg" />
-    </div>
-    <div>
-      <h1 className="text-xl font-semibold text-red-700">Danger Zone</h1>
-      <p className="text-sm text-gray-600 mt-1">
-        Irreversible and destructive actions
-      </p>
-    </div>
-  </div>
+      {/* <div className="px-6 py-5 border border-red-100 shadow-sm rounded-lg bg-white">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 bg-red-100 flex items-center justify-center rounded-full">
+            <ExclamationCircleOutlined className="text-red-600 text-lg" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-red-700">Danger Zone</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Irreversible and destructive actions
+            </p>
+          </div>
+        </div>
 
-  <div className="bg-red-50 p-4 rounded-lg mt-3">
-    <p className="text-sm text-red-800 font-medium mb-2">
-      Deleting your account will:
-    </p>
-    <ul className="list-disc pl-5 text-sm text-red-700 space-y-1">
-      <li>Delete your profile, along with your authentication associations</li>
-      <li>Permanently remove all your content including articles, comments, and reading lists</li>
-      <li>Make your username available to anyone else</li>
-    </ul>
-  </div>
+        <div className="bg-red-50 p-4 rounded-lg mt-3">
+          <p className="text-sm text-red-800 font-medium mb-2">
+            Deleting your account will:
+          </p>
+          <ul className="list-disc pl-5 text-sm text-red-700 space-y-1">
+            <li>
+              Delete your profile, along with your authentication associations
+            </li>
+            <li>
+              Permanently remove all your content including articles, comments,
+              and reading lists
+            </li>
+            <li>Make your username available to anyone else</li>
+          </ul>
+        </div>
 
-  <button
-    className="mt-5 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-medium py-2.5 px-4 rounded-md transition-colors w-full sm:w-auto"
-    onClick={showDeleteConfirm}
-  >
-    <DeleteOutlined />
-    Delete Account
-  </button>
-</div>
-
+        <button
+          className="mt-5 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-medium py-2.5 px-4 rounded-md transition-colors w-full sm:w-auto"
+          onClick={showDeleteConfirm}
+        >
+          <DeleteOutlined />
+          Delete Account
+        </button>
+      </div> */}
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -227,11 +249,12 @@ const Settings = () => {
           <div className="flex items-start gap-3 mb-4">
             <SafetyCertificateOutlined className="text-red-600 mt-1" />
             <p className="text-gray-700">
-              If you delete your account, all the details associated with it will
-              be permanently deleted. Please type your password for confirmation.
+              If you delete your account, all the details associated with it
+              will be permanently deleted. Please type your password for
+              confirmation.
             </p>
           </div>
-          
+
           <div className="bg-red-50 border border-red-100 rounded-md p-3 mt-4">
             <label className="block text-sm font-medium text-red-800 mb-2">
               Confirm Password

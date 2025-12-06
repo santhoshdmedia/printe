@@ -77,7 +77,7 @@ const UserOrders = () => {
       align: "center",
       render: (_, record) => (
         <Tag 
-          className="!text-sm !bg-orange-500 !text-white !cursor-pointer !border-transparent !flex !items-center !justify-center !px-3 !py-1"
+          className="!text-sm bg-[#fdecba] !text-black !cursor-pointer !border-transparent !flex !items-center !justify-center !px-3 !py-1"
           onClick={() => handleView(record._id)}
           icon={<EyeOutlined />}
         >
@@ -94,9 +94,9 @@ const UserOrders = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">My Orders</h1>
+     
       
-      {/* Statistics Cards */}
+      {/* Statistics Cards
       <Row gutter={16} className="mb-6">
         <Col span={8}>
           <Card className="shadow-md rounded-lg border-0">
@@ -129,14 +129,57 @@ const UserOrders = () => {
             />
           </Card>
         </Col>
-      </Row>
+      </Row> */}
 
       {/* Orders Table */}
       <Card 
         className="border-0 shadow-md rounded-lg"
         bodyStyle={{ padding: 0 }}
       >
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-2 ">
+          <div className="mb-6 border-b border-gray-300">
+            <h1 className="text-xl font-bold text-gray-800 mb-1">My Orders</h1>
+          </div>
+           
+
+          {/* Statistics Cards */}
+          <Row gutter={16} className="mb-6">
+            <Col span={8}>
+              <Card className="shadow-md rounded-lg border-0 bg-[#fff8e5]">
+                <Statistic
+                  title="Total Orders"
+                  value={totalOrders}
+                  prefix={<ShoppingOutlined className="text-blue-500" />}
+                  valueStyle={{ color: '#000' }}
+                   titleStyle={{ fontWeight: 'bold' }}
+                />
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card className="shadow-md rounded-lg border-0 bg-[#fff8e5]" >
+                <Statistic
+                  title="Total Amount Spent"
+                  value={totalSpent}
+                  precision={2}
+                  prefix={<RupeeCircleOutlined className="text-green-500" />}
+                  valueStyle={{ color: '#3f8600' }}
+                   titleStyle={{ fontWeight: 'bold' }}
+                />
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card className="shadow-md rounded-lg border-0 bg-[#fff8e5] ">
+                <Statistic
+                  title="Last Order"
+                  value={recentOrder}
+                  prefix={<CalendarOutlined className="text-orange-500" />}
+                  valueStyle={{ color: '#000' }}
+                   titleStyle={{ fontWeight: 'bold' }}
+                />
+              </Card>
+            </Col>
+          </Row>
+
           <h2 className="text-lg font-semibold text-gray-700">Order History</h2>
           <p className="text-gray-500">View and manage all your orders</p>
         </div>

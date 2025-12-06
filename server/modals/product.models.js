@@ -60,7 +60,7 @@ module.exports = mongoose.model(
       },
       product_card_color: {
         type: String,
-      },
+      },    
       type: {
         type: String,
         enum: ["Stand Alone Product", "Variable Product"],

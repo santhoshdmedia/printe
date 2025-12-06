@@ -108,14 +108,14 @@ const WishList = () => {
         }
       `}</style>
       
-      <div className="px-5 md:px-10 py-5 border shadow-md rounded-lg flex flex-col gap-6 bg-white">
-        <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-          <div className="p-2 bg-red-50 rounded-full">
+      <div className="px-4 md:px-4 py-4 border shadow-md rounded-lg flex flex-col gap-6 bg-white">
+        <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+          {/* <div className="p-2 bg-red-50 rounded-full">
             <MdFavorite className="text-red-500 text-2xl" />
-          </div>
+          </div> */}
           <div>
             <h1 className="text-2xl font-bold text-gray-800">My Wishlist</h1>
-            <p className="text-gray-500 text-sm">Your favorite items all in one place</p>
+            
           </div>
         </div>
         
@@ -182,7 +182,7 @@ const WishList = () => {
                       />
                     </div>
                     
-                    <div className="flex-1 p-4 flex flex-col">
+                    <div className="flex-1 p-4 flex flex-col bg-[#fff8e5]">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 pr-4">
                           {productName}

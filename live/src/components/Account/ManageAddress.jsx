@@ -59,17 +59,17 @@ const ManageAddress = () => {
 
   return (
     <div className="w-full h-auto">
-      <div className="px-5 md:px-10 py-5 border shadow-md rounded-lg flex flex-col gap-2 bg-white">
-        <div className="flex flex-col md:flex-row justify-start md:justify-between gap-3 items-center mb-6">
+      <div className="px-5 md:px-3 py-5 border shadow-md rounded-lg flex flex-col gap-2 bg-white">
+<div className="flex flex-col md:flex-row justify-start md:justify-between gap-3 items-center mb-6 border-b border-gray-300 pb-3">
           <h1 className="text-2xl font-bold text-gray-800">Manage Addresses</h1>
 
-          <button
-            className="text-primary hover:text-yellow-500 flex items-center gap-2 py-2 px-4 rounded-md bg-purple-50 hover:bg-purple-100 transition-colors duration-200"
-            onClick={showModal}
-          >
-            <IoIosAddCircle size={24} /> 
-            <span className="font-medium">Add New Address</span>
-          </button>
+<button
+  className="flex items-center gap-2 py-2 px-4 rounded-[0.8rem] bg-[#f2c41a] text-white hover:bg-[#e0b018] transition-colors duration-200"
+  onClick={showModal}
+>
+  <IoIosAddCircle size={24} /> 
+  <span className="font-medium">Add New Address</span>
+</button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-3">
@@ -81,9 +81,9 @@ const ManageAddress = () => {
             </div>
           ) : (
             addresses.map((data, index) => (
-              <div key={index} className="bg-gray-50 p-5 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="bg-primary/10 text-primary text-xs font-medium px-2.5 py-1 rounded-full">
+              <div key={index} className="bg-[#FFFCF6] p-3 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                <div className="flex justify-between items-center mb-1 ">
+                  <span className="bg-primary/10 text-primary text-sm font-medium rounded-full">
                     {data.type || "Address"} {index === 0 && "(Default)"}
                   </span>
                   <Dropdown

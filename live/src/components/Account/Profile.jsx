@@ -2,6 +2,7 @@ import { Avatar, Input } from "antd";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IconHelper } from "../../helper/IconHelper";
+import { Button } from "antd";
 
 const Profile = () => {
   const { user } = useSelector((state) => state.authSlice);
@@ -45,11 +46,14 @@ const Profile = () => {
 
   const nameValidation = (value) => {
     const pattern = /^[a-zA-Z]+([ ][a-zA-Z]+)*$/;
-    const isValid = pattern.test(value) && value.length >= 3 && value.length <= 50;
+    const isValid =
+      pattern.test(value) && value.length >= 3 && value.length <= 50;
 
     setErrorMessage((prevError) => ({
       ...prevError,
-      name: isValid ? "" : "Name must be at least 3 characters long and contain only alphabets.",
+      name: isValid
+        ? ""
+        : "Name must be at least 3 characters long and contain only alphabets.",
     }));
 
     return isValid;
@@ -68,101 +72,78 @@ const Profile = () => {
   };
 
   const handleUploadImage = (image) => {
-
     setForm((prev) => ({ ...prev, picture: image }));
   };
 
   const profileImageName = user?.name[0] || "";
 
   return (
-     <div className="w-full max-w-3xl">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-          {/* Header Section with Yellow Background */}
-          <div className="bg-[#f2c41a] py-6 px-8 text-center">
-            <h1 className="text-2xl font-bold text-black">Profile Information</h1>
-            <p className="text-black opacity-80 mt-1">Manage your personal details</p>
+    <div className="w-full max-w-6xl bg-white">
+      <form className="px-8 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex">
+            <h2 className="text-2xl font-bold text-gray-800">
+              Profile Details
+            </h2>
           </div>
-          
-          <form onSubmit={(e) => handleOnSubmit(e)} className="px-8 py-8">
-            {/* Avatar Section */}
-            <div className="flex flex-col items-center mb-8">
-              <div className="relative group w-32 h-32 mb-4">
-                <Avatar
-                  src={form.picture}
-                  style={{
-                    width: "128px",
-                    height: "128px",
-                    objectFit: "cover",
-                    textTransform: "capitalize",
-                    borderRadius: "50%",
-                    border: "4px solid #FFD700",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  }}
-                  className="text-black capitalize text-5xl bg-yellow-100 font-semibold"
-                >
-                  {profileImageName}
-                </Avatar>
-                {!isEditDisabled && (
-                  <>
-                    <input
-                      type="file"
-                      name="image"
-                      id="image"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          dispatch({
-                            type: "UPLOAD_IMAGE",
-                            data: { file, handleUploadImage },
-                          });
-                        }
-                      }}
-                      style={{ display: "none" }}
-                    />
 
-                    <label htmlFor="image" className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-70 text-white flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
-                      <IconHelper.EDIT_ICON className="text-xl" />
-                    </label>
-                  </>
-                )}
-              </div>
-              
-              <div className="flex space-x-3">
-                {/* <button 
-                  type="button" 
-                  className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-600 transition-colors"
-                  onClick={() => setIsEditDisabled(!isEditDisabled)}
-                >
-                  {isEditDisabled ? "Edit Profile" : "Cancel Editing"}
-                </button>
-                
-                <button 
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${isEditDisabled ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-black text-white hover:bg-gray-800"}`} 
-                  type="submit" 
-                  disabled={isEditDisabled}
-                >
-                  Save Changes
-                </button> */}
-              </div>
-            </div>
 
-            {/* Form Fields */}
+
+          <div className="flex gap-4 items-center">
+            {/* Edit/Cancel Button */}
+            <Button
+              type={isEditDisabled ? "primary" : "default"}
+              danger={!isEditDisabled}
+              className={`font-medium rounded-lg h-auto px-4 py-2 ${isEditDisabled
+                  ? 'bg-yellow-500 text-black border-yellow-500 hover:!bg-yellow-600 hover:border-yellow-600'
+                  : ''
+                }`}
+              onClick={() => setIsEditDisabled(!isEditDisabled)}
+            >
+              {isEditDisabled ? "Edit Profile" : "Cancel Editing"}
+            </Button>
+
+            {/* Save Changes Button */}
+            {!isEditDisabled && (
+              <Button
+                type="primary"
+                className="font-medium rounded-lg h-auto px-4 py-2 bg-black text-white border-black hover:!bg-gray-800 hover:border-gray-800 shadow-md "
+                onClick={(e) => handleOnSubmit(e)}
+              >
+                Save Changes
+              </Button>
+            )}
+          </div>
+        </div>
+
+
+        {/* Main Content - Two Column Layout */}
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Left Column - Form Fields */}
+          <div className="flex-1">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Full Name Field */}
               <div className="md:col-span-2">
                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Name <span className="text-red-500">*</span>
+                  Full Name <span className="text-red-500">*</span>
                 </label>
-                <Input 
-                  name="name" 
-                  onChange={(e) => handleOnChange(e)} 
-                  value={form.name} 
-                  placeholder="Enter your name" 
-                  style={{ fontSize: "16px", padding: "12px", borderRadius: "8px", border: "2px solid #e5e7eb" }} 
-                  disabled={isEditDisabled} 
-                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors" 
+                <Input
+                  name="name"
+                  onChange={(e) => handleOnChange(e)}
+                  value={form.name}
+                  placeholder="Enter your name"
+                  style={{
+                    fontSize: "16px",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "2px solid #e5e7eb",
+                  }}
+                  disabled={isEditDisabled}
+                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors"
                 />
-                {errorMessage.name && <p className="text-red-500 text-xs mt-2">{errorMessage.name}</p>}
+                {errorMessage.name && (
+                  <p className="text-red-500 text-xs mt-2">{errorMessage.name}</p>
+                )}
               </div>
 
               {/* Email Field */}
@@ -170,74 +151,166 @@ const Profile = () => {
                 <label className="block text-gray-700 text-sm font-bold mb-2">
                   Email <span className="text-red-500">*</span>
                 </label>
-                <Input 
-                  name="email" 
-                  onChange={(e) => handleOnChange(e)} 
-                  value={form.email} 
-                  placeholder="Enter your email" 
-                  style={{ fontSize: "16px", padding: "12px", borderRadius: "8px", border: "2px solid #e5e7eb" }} 
-                  disabled={isEditDisabled} 
-                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors" 
+                <Input
+                  name="email"
+                  onChange={(e) => handleOnChange(e)}
+                  value={form.email}
+                  placeholder="Enter your email"
+                  style={{
+                    fontSize: "16px",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "2px solid #e5e7eb",
+                  }}
+                  disabled={isEditDisabled}
+                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors"
                 />
-                {errorMessage.email && <p className="text-red-500 text-xs mt-2">{errorMessage.email}</p>}
+                {errorMessage.email && (
+                  <p className="text-red-500 text-xs mt-2">
+                    {errorMessage.email}
+                  </p>
+                )}
               </div>
 
               {/* Mobile Number Field */}
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">Mobile Number</label>
-                <Input 
-                  name="phone" 
-                  onChange={(e) => handleOnChange(e)} 
-                  value={form.phone} 
-                  placeholder="Enter your mobile number" 
-                  style={{ fontSize: "16px", padding: "12px", borderRadius: "8px", border: "2px solid #e5e7eb" }} 
-                  disabled={isEditDisabled} 
-                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors" 
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Mobile Number
+                </label>
+                <Input
+                  name="phone"
+                  onChange={(e) => handleOnChange(e)}
+                  value={form.phone}
+                  placeholder="Enter your mobile number"
+                  style={{
+                    fontSize: "16px",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "2px solid #e5e7eb",
+                  }}
+                  disabled={isEditDisabled}
+                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors"
                 />
-                {errorMessage.phone && <p className="text-red-500 text-xs mt-2">{errorMessage.phone}</p>}
+                {errorMessage.phone && (
+                  <p className="text-red-500 text-xs mt-2">
+                    {errorMessage.phone}
+                  </p>
+                )}
               </div>
 
               {/* GST Field */}
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">GST NO</label>
-                <Input 
-                  name="gst_no" 
-                  onChange={(e) => handleOnChange(e)} 
-                  value={form.gst_no} 
-                  placeholder="Enter your GST" 
-                  style={{ fontSize: "16px", padding: "12px", borderRadius: "8px", border: "2px solid #e5e7eb" }} 
-                  disabled={isEditDisabled} 
-                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors" 
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  GST NO
+                </label>
+                <Input
+                  name="gst_no"
+                  onChange={(e) => handleOnChange(e)}
+                  value={form.gst_no}
+                  placeholder="Enter your GST"
+                  style={{
+                    fontSize: "16px",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "2px solid #e5e7eb",
+                  }}
+                  disabled={isEditDisabled}
+                  className="w-full hover:border-yellow-400 focus:border-yellow-500 transition-colors"
                 />
               </div>
             </div>
 
-            {/* Bottom Action Buttons */}
-            <div className="flex justify-between items-center mt-10 pt-6 border-t border-gray-200">
-              <div className="text-sm text-gray-500">
-                Last updated: {new Date().toLocaleDateString()}
+            {/* Bottom Action Buttons - Only show when NOT in edit-disabled mode */}
+            {!isEditDisabled && (
+              <div className="flex justify-between items-center mt-10 pt-6 border-t border-gray-200">
+                <div className="text-sm text-gray-500">
+                  Last updated: {new Date().toLocaleDateString()}
+                </div>
               </div>
-              <div className="flex gap-5">
-  <button 
-    type="button" 
-    className="px-4 py-2 bg-[#f2c41a] text-black font-medium rounded-l-lg hover:bg-[#f2c41a] transition-colors"
-    onClick={() => setIsEditDisabled(!isEditDisabled)}
-  >
-    {isEditDisabled ? "Edit Profile" : "Cancel Editing"}
-  </button>
-  <button 
-    className={`px-4 py-2 font-medium transition-all rounded-r-lg ${isEditDisabled ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-black text-white hover:bg-gray-800"}`} 
-    type="submit" 
-    disabled={isEditDisabled}
-  >
-    Save Changes
-  </button>
-</div>
+            )}
+          </div>
 
-            </div>
-          </form>
+          {/* Right Column - Profile Image */}
+          <div className={`md:w-1/3 flex flex-col items-center ${isEditDisabled ? "hidden" : ""} `}>
+            {!isEditDisabled ? (
+              // Edit Mode - Full upload functionality
+              <div className="flex flex-col items-center">
+                <div className="relative group w-40 h-40 mb-4">
+                  <Avatar
+                    src={form.picture}
+                    style={{
+                      width: "160px",
+                      height: "160px",
+                      objectFit: "cover",
+                      textTransform: "capitalize",
+                      borderRadius: "50%",
+                      border: "4px solid #FFD700",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    }}
+                    className="text-black capitalize text-5xl bg-yellow-100 font-semibold"
+                  >
+                    {profileImageName}
+                  </Avatar>
+
+                  <input
+                    type="file"
+                    name="image"
+                    id="image"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        dispatch({
+                          type: "UPLOAD_IMAGE",
+                          data: { file, handleUploadImage },
+                        });
+                      }
+                    }}
+                    style={{ display: "none" }}
+                  />
+
+                  <label
+                    htmlFor="image"
+                    className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-70 text-white flex flex-col items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+                  >
+                    <IconHelper.EDIT_ICON className="text-2xl mb-1" />
+                    <span className="text-sm">Change Photo</span>
+                  </label>
+                </div>
+                <p className="text-gray-600 text-sm text-center mt-2">
+                  Click the avatar to upload a new photo
+                </p>
+              </div>
+            ) : (
+              // View Mode - Just display the avatar
+              <div className="flex flex-col items-center">
+                <Avatar
+                  src={form.picture}
+                  style={{
+                    width: "160px",
+                    height: "160px",
+                    objectFit: "cover",
+                    textTransform: "capitalize",
+                    borderRadius: "50%",
+                    border: "4px solid #f0f0f0",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  }}
+                  className="text-black capitalize text-5xl bg-gray-100 font-semibold"
+                >
+                  {profileImageName}
+                </Avatar>
+                <p className="text-gray-500 text-sm text-center mt-4">
+                  Profile photo
+                </p>
+              </div>
+            )}
+
+            {/* Optional: Add some vertical spacing on mobile */}
+            <div className="mt-6 md:mt-0"></div>
+          </div>
         </div>
-      </div>
+      </form>
+    </div>
   );
 };
 

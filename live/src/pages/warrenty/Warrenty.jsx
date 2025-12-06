@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import {
@@ -16,7 +17,8 @@ import {
   Result,
   Steps,
   Alert,
-  Typography
+  Typography,
+  Modal
 } from 'antd';
 import {
   QrcodeOutlined,
@@ -30,7 +32,8 @@ import {
   LoadingOutlined,
   SafetyOutlined,
   GiftOutlined,
-  IdcardOutlined
+  IdcardOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons';
 import {
   FaQrcode,
@@ -41,7 +44,11 @@ import {
   FaShieldAlt
 } from 'react-icons/fa';
 import { HiShieldCheck } from 'react-icons/hi';
-import { verifywarrnty,activatewarrnty } from '../../helper/api_helper';
+import { verifywarrnty, activatewarrnty } from '../../helper/api_helper';
+import Login from '../Login/Login';
+import { useNavigate } from 'react-router-dom';
+import Logo from "../../assets/logo/without_bg.png";
+import { Link } from 'react-router-dom';
 
 const { Step } = Steps;
 const { Option } = Select;
@@ -56,13 +63,27 @@ const YELLOW_THEME = {
   bg: '#fffdf5'
 };
 
-const WarrantyActivation = () => {
+const WarrantyActivation =  () => {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [warrantyData, setWarrantyData] = useState(null);
   const [verificationCode, setVerificationCode] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
   const [form] = Form.useForm();
+  const navigate = useNavigate();
+  
+  // Get auth state from Redux
+  const { isAuth, user } = useSelector((state) => state.authSlice || {});
+
+  // Check authentication when component mounts
+  useEffect(() => {
+    // If user tries to activate without login, show login modal
+    if (step === 1 && !isAuth) {
+      setShowLoginModal(true);
+    }
+  }, [step, isAuth]);
 
   // Step 1: Verify Code
   const verifyWarrantyCode = async () => {
@@ -80,7 +101,15 @@ const WarrantyActivation = () => {
       if (response.data.success) {
         setWarrantyData(response.data);
         toast.success('Warranty verified successfully!');
-        setStep(1); // Move to activation step
+        
+        // Check if user is logged in before proceeding to activation
+        if (isAuth) {
+          setStep(1); // Move to activation step
+        } else {
+          // Show login modal if not authenticated
+          setShowLoginModal(true);
+          toast.info('Please login to activate your warranty');
+        }
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Invalid warranty code';
@@ -90,15 +119,21 @@ const WarrantyActivation = () => {
     }
   };
 
-  // Step 2: Activate Warranty
+  // Step 2: Activate Warranty (Only for logged-in users)
   const activateWarranty = async (values) => {
-    if (!warrantyData) return;
+    if (!warrantyData || !isAuth) {
+      toast.error('Please login to activate warranty');
+      setShowLoginModal(true);
+      return;
+    }
 
     setLoading(true);
     
     try {
-      const response = await activateWarranty(verificationCode, {
+      const response = await activatewarrnty(verificationCode, {
         code: verificationCode,
+        userId: user._id, // Pass user ID from Redux state
+        userEmail: user.email,
         ...values,
         purchaseDate: values.purchaseDate.format('YYYY-MM-DD')
       });
@@ -109,9 +144,35 @@ const WarrantyActivation = () => {
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Activation failed';
-      toast.error(errorMessage);
+      
+      // Handle authentication errors
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        setShowLoginModal(true);
+        setStep(0); // Go back to verification
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle login success
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    if (warrantyData) {
+      setStep(1); // Proceed to activation after login
+      toast.success('Welcome back! You can now activate your warranty.');
+    }
+  };
+
+  // Handle signup success
+  const handleSignupSuccess = () => {
+    setShowSignupModal(false);
+    if (warrantyData) {
+      setStep(1); // Proceed to activation after signup
+      toast.success('Account created! You can now activate your warranty.');
     }
   };
 
@@ -135,6 +196,26 @@ const WarrantyActivation = () => {
     form.resetFields();
   };
 
+  // Navigate to login page
+  const goToLogin = () => {
+    navigate('/login', { 
+      state: { 
+        returnUrl: '/warranty-activation',
+        verificationCode: verificationCode 
+      } 
+    });
+  };
+
+  // Navigate to signup page
+  const goToSignup = () => {
+    navigate('/sign-up', { 
+      state: { 
+        returnUrl: '/warranty-activation',
+        verificationCode: verificationCode 
+      } 
+    });
+  };
+
   // Get status badge
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -149,6 +230,18 @@ const WarrantyActivation = () => {
   };
 
   return (
+    <>
+         <div
+          className={`w-full  flex h-20 gap-x-10 bg-[#f2c41a] justify-center items-center px-4 lg:px-8 xl:px-20 sticky top-0 z-40 `}
+        >
+          {/* Left: Logo + Search */}
+            <Link to="/">
+              <img src={Logo} alt="logo" className="h-16" />
+            </Link>
+
+          {/* Right: User Section */}
+
+        </div>
     <div className="max-w-5xl mx-auto px-4" style={{ backgroundColor: YELLOW_THEME.bg, minHeight: '100vh', padding: '20px 0' }}>
       {/* Header */}
       <div className="text-center mb-10 fade-in">
@@ -169,6 +262,15 @@ const WarrantyActivation = () => {
         <Text style={{ color: '#4a5568', fontSize: '16px' }}>
           Activate your product warranty and enjoy 6 months of protection
         </Text>
+        
+        {/* Authentication Status */}
+        {isAuth && (
+          <div className="mt-4">
+            <Tag color="green" style={{ fontSize: '14px', padding: '4px 12px' }}>
+              <UserOutlined /> Logged in as: {user?.email || user?.name}
+            </Tag>
+          </div>
+        )}
       </div>
 
       {/* Progress Bar */}
@@ -213,6 +315,11 @@ const WarrantyActivation = () => {
               <CheckCircleOutlined style={{ fontSize: '20px' }} />
             </div>
             <Text strong>Activate</Text>
+            {!isAuth && step >= 1 && (
+              <div className="mt-1">
+                <Tag color="orange" style={{ fontSize: '10px' }}>Login Required</Tag>
+              </div>
+            )}
           </div>
           <div className={`text-center ${step >= 2 ? 'text-gray-800' : 'text-gray-400'}`}>
             <div 
@@ -364,8 +471,24 @@ const WarrantyActivation = () => {
 
               {warrantyData.warranty?.status === 'not-activated' && (
                 <Alert
-                  message="Ready for Activation"
-                  description="Your product is verified and ready for warranty activation. Please complete the form below."
+                  message={
+                    <div className="flex items-center justify-between">
+                      <span>Ready for Activation</span>
+                      {!isAuth && (
+                        <Tag color="orange">Login Required</Tag>
+                      )}
+                    </div>
+                  }
+                  description={
+                    <div>
+                      <p>Your product is verified and ready for warranty activation.</p>
+                      {!isAuth && (
+                        <p className="mt-2 font-semibold">
+                          Please login or signup to complete the activation process.
+                        </p>
+                      )}
+                    </div>
+                  }
                   type="info"
                   showIcon
                   style={{ 
@@ -379,8 +502,8 @@ const WarrantyActivation = () => {
           </div>
         )}
 
-        {/* Step 2: Activation Form */}
-        {step === 1 && warrantyData && (
+        {/* Step 2: Activation Form (Only show if logged in) */}
+        {step === 1 && warrantyData && isAuth && (
           <div className="slide-in">
             <Card 
               className="shadow-xl border-0"
@@ -397,9 +520,14 @@ const WarrantyActivation = () => {
                   >
                     <IdcardOutlined style={{ color: YELLOW_THEME.primary, fontSize: '20px' }} />
                   </div>
-                  <Title level={4} style={{ margin: 0 }}>
-                    Complete Your Warranty Registration
-                  </Title>
+                  <div>
+                    <Title level={4} style={{ margin: 0 }}>
+                      Complete Your Warranty Registration
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: '14px' }}>
+                      Logged in as: {user?.email}
+                    </Text>
+                  </div>
                 </div>
               }
             >
@@ -429,6 +557,7 @@ const WarrantyActivation = () => {
                       name="customerName"
                       label={<Text strong>Full Name</Text>}
                       rules={[{ required: true, message: 'Please enter your full name' }]}
+                      initialValue={user?.name || ''}
                     >
                       <Input 
                         size="large" 
@@ -445,12 +574,14 @@ const WarrantyActivation = () => {
                         { required: true, message: 'Please enter your email' },
                         { type: 'email', message: 'Please enter a valid email' }
                       ]}
+                      initialValue={user?.email || ''}
                     >
                       <Input 
                         size="large" 
                         placeholder="john@example.com" 
                         prefix={<MailOutlined style={{ color: YELLOW_THEME.primary }} />}
                         style={{ borderRadius: '8px', padding: '12px' }}
+                        readOnly={!!user?.email}
                       />
                     </Form.Item>
 
@@ -609,6 +740,101 @@ const WarrantyActivation = () => {
           </div>
         )}
 
+        {/* Step 2: Login Required (if not logged in) */}
+        {step === 1 && warrantyData && !isAuth && (
+          <div className="slide-in">
+            <Card 
+              className="shadow-xl border-0 text-center"
+              style={{ 
+                borderRadius: '16px',
+                borderTop: `6px solid ${YELLOW_THEME.primary}`,
+                backgroundColor: YELLOW_THEME.light
+              }}
+            >
+              <div className="mb-8">
+                <div 
+                  className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
+                  style={{ 
+                    backgroundColor: YELLOW_THEME.primary,
+                    boxShadow: `0 8px 24px rgba(242, 196, 26, 0.3)`
+                  }}
+                >
+                  <ExclamationCircleOutlined style={{ fontSize: '48px', color: 'white' }} />
+                </div>
+                <Title level={2} style={{ color: '#1a202c', marginBottom: '12px' }}>
+                  Login Required
+                </Title>
+                <Text style={{ color: '#4a5568', fontSize: '18px', marginBottom: '24px' }}>
+                  You need to login or create an account to activate this warranty
+                </Text>
+                
+                <div className="max-w-md mx-auto bg-white p-6 rounded-lg mb-6">
+                  <div className="text-left mb-4">
+                    <Text strong>Product Details:</Text>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex justify-between">
+                        <Text type="secondary">Product:</Text>
+                        <Text>{warrantyData.product?.name}</Text>
+                      </div>
+                      <div className="flex justify-between">
+                        <Text type="secondary">Code:</Text>
+                        <code className="font-mono">{verificationCode}</code>
+                      </div>
+                      <div className="flex justify-between">
+                        <Text type="secondary">Status:</Text>
+                        {getStatusBadge(warrantyData.warranty?.status || 'not-activated')}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Divider>Choose an option</Divider>
+                  
+                  <div className="space-y-4">
+                    <Button
+                      type="primary"
+                      size="large"
+                      block
+                      onClick={goToLogin}
+                      icon={<UserOutlined />}
+                      style={{
+                        backgroundColor: YELLOW_THEME.primary,
+                        borderColor: YELLOW_THEME.primary,
+                        borderRadius: '8px',
+                        height: '52px',
+                        fontSize: '16px',
+                        fontWeight: 600
+                      }}
+                    >
+                      Login to Existing Account
+                    </Button>
+                    
+                    <Button
+                      size="large"
+                      block
+                      onClick={goToSignup}
+                      icon={<CheckCircleOutlined />}
+                      style={{
+                        borderRadius: '8px',
+                        height: '52px',
+                        fontSize: '16px',
+                        fontWeight: 600,
+                        borderColor: YELLOW_THEME.primary,
+                        color: YELLOW_THEME.primary
+                      }}
+                    >
+                      Create New Account
+                    </Button>
+                  </div>
+                </div>
+                
+                <Text type="secondary">
+                  Your verified product information will be saved. You can continue activation after login.
+                </Text>
+              </div>
+            </Card>
+          </div>
+        )}
+
         {/* Step 3: Success */}
         {step === 2 && (
           <div className="fade-in">
@@ -701,7 +927,7 @@ const WarrantyActivation = () => {
                   </div>
                   <div className="flex justify-between">
                     <Text type="secondary">Customer</Text>
-                    <Text strong>{form.getFieldValue('customerName')}</Text>
+                    <Text strong>{form.getFieldValue('customerName') || user?.name}</Text>
                   </div>
                   <div className="flex justify-between">
                     <Text type="secondary">Warranty Code</Text>
@@ -711,6 +937,10 @@ const WarrantyActivation = () => {
                     >
                       {verificationCode}
                     </code>
+                  </div>
+                  <div className="flex justify-between">
+                    <Text type="secondary">Activated by</Text>
+                    <Text strong>{user?.email}</Text>
                   </div>
                 </div>
               </div>
@@ -805,7 +1035,84 @@ const WarrantyActivation = () => {
           </div>
         )}
       </div>
+
+      {/* Login Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-3">
+            <UserOutlined style={{ color: YELLOW_THEME.primary }} />
+            <span>Login Required</span>
+          </div>
+        }
+        open={showLoginModal}
+        onCancel={() => setShowLoginModal(false)}
+        footer={null}
+        width={500}
+        centered
+      >
+        <div className="text-center p-6">
+          <div 
+            className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center"
+            style={{ backgroundColor: YELLOW_THEME.light }}
+          >
+            <ExclamationCircleOutlined style={{ fontSize: '32px', color: YELLOW_THEME.primary }} />
+          </div>
+          
+          <Title level={4} style={{ marginBottom: '16px' }}>
+            Login to Activate Warranty
+          </Title>
+          
+          <Text style={{ marginBottom: '24px', display: 'block' }}>
+            You need to login to activate the warranty for product: <br />
+            <strong>{warrantyData?.product?.name}</strong>
+          </Text>
+          
+          <div className="space-y-4">
+            <Button
+              type="primary"
+              size="large"
+              block
+              onClick={() => {
+                setShowLoginModal(false);
+                goToLogin();
+              }}
+              style={{
+                backgroundColor: YELLOW_THEME.primary,
+                borderColor: YELLOW_THEME.primary,
+                borderRadius: '8px',
+                height: '48px',
+                fontSize: '16px'
+              }}
+            >
+              Go to Login Page
+            </Button>
+            
+            <Button
+              size="large"
+              block
+              onClick={() => {
+                setShowLoginModal(false);
+                goToSignup();
+              }}
+              style={{
+                borderRadius: '8px',
+                height: '48px',
+                fontSize: '16px'
+              }}
+            >
+              Create New Account
+            </Button>
+          </div>
+          
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <Text type="secondary">
+              Your verified product information will be saved for later activation.
+            </Text>
+          </div>
+        </div>
+      </Modal>
     </div>
+    </>
   );
 };
 
