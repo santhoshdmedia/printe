@@ -798,7 +798,7 @@ const WarrantyActivation = () => {
                     textDecoration: 'underline'
                   }}
                 >
-                  support@example.com
+                  support@printe.in
                 </a>
               </Text>
             </div>
