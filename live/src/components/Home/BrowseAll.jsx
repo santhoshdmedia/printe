@@ -24,7 +24,10 @@ const BrowseAll = () => {
     fetchData();
   }, []);
 
-  console.log(data,"categorey");
+  console.log(data,"categorey browse");
+  const filterCat=data.filter((cat)=>cat.show==true)
+  console.log(filterCat,"cato");
+  
   
   return (
     <section className="py-10 sm:py-12 md:py-16 px-3 sm:px-6 md:px-16 bg-white text-black">
@@ -57,7 +60,7 @@ const BrowseAll = () => {
         }}
         className="w-full !overflow-visible"
       >
-        {data.map((category) => (
+        {filterCat.map((category) => (
           <SwiperSlide key={category._id} className="flex justify-center !overflow-visible">
             <div className="flex flex-col items-center text-center group cursor-pointer">
               <div

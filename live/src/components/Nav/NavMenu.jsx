@@ -25,6 +25,8 @@ const NavMenu = () => {
   const { menu } = useSelector((state) => state.publicSlice);
   const navigation = useNavigate();
   const dropdownRefs = useRef({});
+  console.log(menu,"categorey");
+  
 
   // State management
   const [activeDropdown, setActiveDropdown] = useState({
@@ -141,6 +143,10 @@ const NavMenu = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const filterMenu=menu.filter((menu)=>menu.category_active_status==true)
+  console.log(filterMenu);
+  
+
   return (
     <div className="hidden lg:block xl:block 2xl:block bg-primary h-full capitalize text-base lg:px-10 2xl:px-40 w-full p-4">
       <div className="flex gap-x-2 h-full justify-center items-center w-full relative">
@@ -170,7 +176,7 @@ const NavMenu = () => {
                         All Categories
                       </h3>
                       <div className="space-y-2">
-                        {menu.map((category) => (
+                        {filterMenu.map((category) => (
                           <div
                             key={category._id}
                             onMouseEnter={() =>
