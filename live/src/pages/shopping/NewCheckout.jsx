@@ -228,10 +228,8 @@ const NewCheckout = () => {
         userId: user?._id
       };
 
-      console.log('Applying coupon with data:', couponData);
       
       const response = await applyCouponCode(couponData);
-      console.log('Coupon API response:', response);
 
       // Check different response structures
       if (response?.data?.data?.coupon) {

@@ -4,16 +4,15 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import _ from "lodash";
 
 // Icons
-import { 
-  BsCart3, 
-  BsSearch, 
-  BsXLg, 
+import {
+  BsCart3,
+  BsSearch,
+  BsXLg,
   BsPerson,
   BsHeart,
   BsHouse,
   BsGrid,
-  BsChevronRight,
-  BsTelephone
+  BsTelephone,
 } from "react-icons/bs";
 import { IoMenu, IoClose, IoHeartOutline } from "react-icons/io5";
 import { IconHelper } from "../../helper/IconHelper";
@@ -34,7 +33,7 @@ const Navbar = () => {
   const { isSearchingProducts, searchingProducts, menu } = useSelector(
     (state) => state.publicSlice
   );
-  
+
   const { isAuth, user } = useSelector((state) => state.authSlice);
   const cartCount = useSelector((state) => state.cartSlice.count);
 
@@ -47,18 +46,18 @@ const Navbar = () => {
   const [searchProduct, setSearchProduct] = useState("");
   const [menuStatus, setMenuStatus] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
-  const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [activeNav, setActiveNav] = useState("home");
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [bottomNavVisible, setBottomNavVisible] = useState(true);
 
   // Refs
   const scrollTimeoutRef = useRef(null);
   const searchInputRef = useRef(null);
   const searchResultsRef = useRef(null);
-  const isSearchingRef = useRef(false);
+  const isClickFromResultRef = useRef(false);
+  const userDropdownRef = useRef(null);
+  const mobileUserDropdownRef = useRef(null);
 
   // Set active nav based on current route
   useEffect(() => {
@@ -74,10 +73,7 @@ const Navbar = () => {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
-      // For top navbar shadow
       setIsScrolled(currentScrollY > 10);
-
       setLastScrollY(currentScrollY);
     };
 
@@ -108,17 +104,13 @@ const Navbar = () => {
   // Search debounce effect
   useEffect(() => {
     if (searchProduct) {
-      isSearchingRef.current = true;
       const debounceTimer = setTimeout(() => {
         dispatch({
           type: "GET_PRODUCT",
           data: { type: "search_products", search: searchProduct },
         });
-        isSearchingRef.current = false;
       }, 300);
       return () => clearTimeout(debounceTimer);
-    } else {
-      isSearchingRef.current = false;
     }
   }, [searchProduct, dispatch]);
 
@@ -128,25 +120,49 @@ const Navbar = () => {
     return () => clearInterval(interval);
   }, [fetchCartData]);
 
-  // Handle click outside search results for desktop
+  // Handle click outside search results
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // For desktop search
+      // If click came from search result, don't close
+      if (isClickFromResultRef.current) {
+        isClickFromResultRef.current = false;
+        return;
+      }
+
+      // Check if click is outside search input and results
       if (
-        searchResultsRef.current && 
+        searchResultsRef.current &&
         !searchResultsRef.current.contains(event.target) &&
-        searchInputRef.current && 
+        searchInputRef.current &&
         !searchInputRef.current.contains(event.target)
       ) {
         setIsExpanded(false);
       }
+
+      // Check if click is outside user dropdown (desktop)
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(event.target) &&
+        showUserDropdown
+      ) {
+        setShowUserDropdown(false);
+      }
+
+      // Check if click is outside mobile user dropdown
+      if (
+        mobileUserDropdownRef.current &&
+        !mobileUserDropdownRef.current.contains(event.target) &&
+        showUserDropdown
+      ) {
+        setShowUserDropdown(false);
+      }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [showUserDropdown]);
 
   // Handlers
   const handleSearchFocus = useCallback(() => {
@@ -174,21 +190,51 @@ const Navbar = () => {
     setShowUserDropdown(false);
   }, [dispatch, navigate]);
 
-  const handleDestination = useCallback((url) => {
-    navigate(url);
-    setMenuStatus(false);
-    closeSearchBar();
-    setShowUserDropdown(false);
-  }, [navigate, closeSearchBar]);
+  const handleDestination = useCallback(
+    (url) => {
+      navigate(url);
+      setMenuStatus(false);
+      closeSearchBar();
+      setShowUserDropdown(false);
+      setIsExpanded(false);
+    },
+    [navigate, closeSearchBar]
+  );
 
-  const handleCategoryClick = useCallback((mainId, subId) => {
-    handleDestination(`/category/${mainId}/${subId}`);
-  }, [handleDestination]);
+  const handleSearchResultClick = useCallback(
+    (seoUrl) => {
+      // Mark that click came from search result
+      isClickFromResultRef.current = true;
 
-  // Search Input Component - FIXED for desktop accessibility
+      // Navigate to product
+      handleDestination(`/product/${seoUrl}`);
+
+      // Clear search
+      setSearchProduct("");
+    },
+    [handleDestination]
+  );
+
+  const handleCategoryClick = useCallback(
+    (mainId, subId) => {
+      handleDestination(`/category/${mainId}/${subId}`);
+    },
+    [handleDestination]
+  );
+
+  // Handle dropdown item click
+  const handleDropdownItemClick = useCallback(
+    (url) => {
+      handleDestination(url);
+      setShowUserDropdown(false);
+    },
+    [handleDestination]
+  );
+
+  // Search Input Component
   const SearchInput = ({ isMobile = false }) => {
     const localInputRef = useRef(null);
-    
+
     // Focus input when expanded
     useEffect(() => {
       if (!isMobile && isExpanded && searchProduct && localInputRef.current) {
@@ -196,34 +242,55 @@ const Navbar = () => {
       }
     }, [isExpanded, searchProduct, isMobile]);
 
+    const handleSearchSubmit = useCallback(
+      (e) => {
+        e.preventDefault();
+        if (searchProduct.trim()) {
+          navigate(`/search?q=${encodeURIComponent(searchProduct)}`);
+          setIsExpanded(false);
+          if (isMobile) {
+            closeSearchBar();
+          }
+        }
+      },
+      [searchProduct, navigate, isMobile, closeSearchBar]
+    );
+
     return (
       <div
-        className={`relative ${isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[25vw]"}`}
+        className={`relative ${
+          isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[25vw]"
+        }`}
         ref={searchInputRef}
       >
-        <div className="relative">
-          <input
-            ref={localInputRef}
-            type="text"
-            placeholder="What are you looking for?"
-            value={searchProduct}
-            onChange={handleSearchChange}
-            onFocus={handleSearchFocus}
-            className={`w-full px-5 py-4 rounded-2xl border-2 border-transparent focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 transition-all duration-300 ${
-              isMobile ? "pr-12 text-base" : "pr-12"
-            }`}
-            autoComplete="off"
-            style={{ zIndex: 10011 }}
-          />
-          <div className="absolute right-4 top-1/2 transform -translate-y-1/2" style={{ zIndex: 10012 }}>
-            <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:from-yellow-500 hover:to-yellow-600 transition-all duration-300">
-              <BsSearch className="text-white text-lg" />
-            </div>
+        <form onSubmit={handleSearchSubmit}>
+          <div className="relative">
+            <input
+              ref={localInputRef}
+              type="text"
+              placeholder="What are you looking for?"
+              value={searchProduct}
+              onChange={handleSearchChange}
+              onFocus={handleSearchFocus}
+              className={`w-full px-5 py-4 rounded-2xl border-2 border-transparent focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 transition-all duration-300 ${
+                isMobile ? "pr-12 text-base" : "pr-12"
+              }`}
+              autoComplete="off"
+            />
+            <button
+              type="submit"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2"
+              style={{ zIndex: 10012 }}
+            >
+              <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:from-yellow-500 hover:to-yellow-600 transition-all duration-300">
+                <BsSearch className="text-white text-lg" />
+              </div>
+            </button>
           </div>
-        </div>
+        </form>
 
         {/* Search Results */}
-        {(isExpanded && searchProduct) && (
+        {isExpanded && searchProduct && (
           <div
             ref={searchResultsRef}
             className={`absolute top-full left-0 bg-white backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden mt-3 border border-yellow-100 transition-all duration-200 ${
@@ -231,9 +298,9 @@ const Navbar = () => {
                 ? "opacity-100 visible max-h-[60vh]"
                 : "opacity-0 invisible max-h-0"
             } ${isMobile ? "fixed left-4 right-4 w-auto" : "w-full"}`}
-            style={{ 
+            style={{
               zIndex: 10010,
-              maxHeight: '60vh'
+              maxHeight: "60vh",
             }}
           >
             <div className="overflow-y-auto max-h-[60vh]">
@@ -247,24 +314,43 @@ const Navbar = () => {
                   <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
                     <BsSearch className="text-2xl text-yellow-600" />
                   </div>
-                  <p className="font-medium text-gray-700 mb-1">No products found</p>
-                  <p className="text-sm text-gray-500">Try different keywords</p>
+                  <p className="font-medium text-gray-700 mb-1">
+                    No products found
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Try different keywords
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
                   {searchingProducts.map((data) => (
                     <div
                       key={data._id}
-                      onClick={() => {
-                        handleDestination(`/product/${data.seo_url}`);
-                        closeSearchBar();
-                      }}
                       className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
+                      onMouseDown={(e) => {
+                        // Prevent default and stop propagation
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Mark that click came from search result
+                        isClickFromResultRef.current = true;
+
+                        // Navigate to product
+                        navigate(`/product/${data.seo_url || data._id}`);
+
+                        // Clear and close search
+                        setSearchProduct("");
+                        setIsExpanded(false);
+
+                        // Close mobile search bar if open
+                        if (isMobile) {
+                          closeSearchBar();
+                        }
+                      }}
                     >
-                      <SearchProductCard
-                        data={data}
-                        className="py-4 px-4"
-                      />
+                      <div className="py-4 px-4">
+                        <SearchProductCard data={data} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -348,7 +434,7 @@ const Navbar = () => {
         </div>
       </Link>
 
-      <div className="relative">
+      <div className="relative" ref={userDropdownRef}>
         <button
           onClick={() => setShowUserDropdown(!showUserDropdown)}
           className="focus:outline-none"
@@ -361,14 +447,13 @@ const Navbar = () => {
         {showUserDropdown && (
           <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
             <div className="py-2">
-              <Link
-                to="/account"
-                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-yellow-50 transition-colors duration-200"
-                onClick={() => setShowUserDropdown(false)}
+              <button
+                onClick={() => handleDropdownItemClick("/account")}
+                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-yellow-50 transition-colors duration-200 w-full text-left"
               >
                 <BsPerson className="text-lg" />
                 My Account
-              </Link>
+              </button>
               <button
                 onClick={logout}
                 className="flex items-center gap-3 w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
@@ -457,14 +542,14 @@ const Navbar = () => {
               <img src={Logo} alt="Logo" className="h-8" />
               <span className="text-white font-bold text-lg">Menu</span>
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95"
             >
               <IoClose className="text-white text-xl" />
             </button>
           </div>
-          
+
           {/* User Welcome */}
           {isAuth && (
             <div className="mt-4 flex items-center gap-3">
@@ -505,7 +590,7 @@ const Navbar = () => {
             </div>
             <span className="text-sm font-semibold text-gray-700">Home</span>
           </div>
-          
+
           {isAuth ? (
             <div
               onClick={() => handleDestination("/account")}
@@ -514,7 +599,9 @@ const Navbar = () => {
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300">
                 <BsPerson className="text-white text-xl" />
               </div>
-              <span className="text-sm font-semibold text-gray-700">Profile</span>
+              <span className="text-sm font-semibold text-gray-700">
+                Profile
+              </span>
             </div>
           ) : (
             <div
@@ -588,9 +675,7 @@ const Navbar = () => {
               {_.get(res, "sub_categories_details", []).map((sub, j) => (
                 <div
                   key={j}
-                  onClick={() =>
-                    handleCategoryClick(res.slug, sub.slug)
-                  }
+                  onClick={() => handleCategoryClick(res.slug, sub.slug)}
                   className="px-3 py-2.5 text-sm text-gray-600 rounded-lg hover:bg-yellow-50 cursor-pointer transition-colors duration-200 ml-2"
                 >
                   {sub.sub_category_name}
@@ -624,7 +709,7 @@ const Navbar = () => {
   );
 
   // Bottom Navigation Component - Only for Mobile
-  const BottomNavigation = () => ( 
+  const BottomNavigation = () => (
     <div className="fixed bottom-0 left-0 right-0 z-[9998] w-screen block lg:hidden">
       <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
         <div className="flex items-center justify-around">
@@ -632,12 +717,14 @@ const Navbar = () => {
           <button
             onClick={() => handleDestination("/")}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
-              activeNav === "home" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+              activeNav === "home"
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
                 : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
             }`}
           >
-            <BsHouse className={`text-xl ${activeNav === "home" ? "scale-110" : ""}`} />
+            <BsHouse
+              className={`text-xl ${activeNav === "home" ? "scale-110" : ""}`}
+            />
             <span className="text-xs mt-1 font-medium">Home</span>
           </button>
 
@@ -645,12 +732,16 @@ const Navbar = () => {
           <button
             onClick={() => setMenuStatus(true)}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
-              activeNav === "categories" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+              activeNav === "categories"
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
                 : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
             }`}
           >
-            <BsGrid className={`text-xl ${activeNav === "categories" ? "scale-110" : ""}`} />
+            <BsGrid
+              className={`text-xl ${
+                activeNav === "categories" ? "scale-110" : ""
+              }`}
+            />
             <span className="text-xs mt-1 font-medium">Menu</span>
           </button>
 
@@ -672,13 +763,15 @@ const Navbar = () => {
               handleDestination("/shopping-cart");
             }}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 relative ${
-              activeNav === "cart" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+              activeNav === "cart"
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
                 : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
             }`}
           >
             <div className="relative">
-              <BsCart3 className={`text-xl ${activeNav === "cart" ? "scale-110" : ""}`} />
+              <BsCart3
+                className={`text-xl ${activeNav === "cart" ? "scale-110" : ""}`}
+              />
               {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg animate-pulse">
                   {cartCount}
@@ -690,14 +783,24 @@ const Navbar = () => {
 
           {/* Account */}
           <button
-            onClick={() => isAuth ? setShowUserDropdown(!showUserDropdown) : handleDestination("/login")}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
-              activeNav === "account" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+            onClick={() => {
+              if (isAuth) {
+                setShowUserDropdown(!showUserDropdown);
+              } else {
+                handleDestination("/login");
+              }
+            }}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 relative ${
+              activeNav === "account"
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
                 : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
             }`}
           >
-            <BsPerson className={`text-xl ${activeNav === "account" ? "scale-110" : ""}`} />
+            <BsPerson
+              className={`text-xl ${
+                activeNav === "account" ? "scale-110" : ""
+              }`}
+            />
             <span className="text-xs mt-1 font-medium">Me</span>
           </button>
         </div>
@@ -705,7 +808,10 @@ const Navbar = () => {
 
       {/* User Dropdown for Mobile */}
       {showUserDropdown && isAuth && (
-        <div className="absolute bottom-full right-2 mb-4 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+        <div
+          ref={mobileUserDropdownRef}
+          className="absolute bottom-full right-2 mb-4 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden"
+        >
           {/* User Info */}
           <div className="p-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white">
             <div className="flex items-center gap-3">
@@ -721,18 +827,16 @@ const Navbar = () => {
 
           {/* Menu Items */}
           <div className="p-2">
-            <Link
-              to="/account"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200"
-              onClick={() => setShowUserDropdown(false)}
+            <button
+              onClick={() => handleDropdownItemClick("/account")}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200 w-full text-left"
             >
               <BsPerson className="text-yellow-600 text-lg" />
               <span>My Account</span>
-            </Link>
-            <Link
-              to="/account/wishlist"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200"
-              onClick={() => setShowUserDropdown(false)}
+            </button>
+            <button
+              onClick={() => handleDropdownItemClick("/account/wishlist")}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-yellow-50 text-gray-700 transition-colors duration-200 w-full text-left"
             >
               <div className="relative">
                 <BsHeart className="text-yellow-600 text-lg" />
@@ -743,7 +847,7 @@ const Navbar = () => {
                 )}
               </div>
               <span>My Wishlist</span>
-            </Link>
+            </button>
             <button
               onClick={logout}
               className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 w-full text-left transition-colors duration-200"
@@ -796,13 +900,15 @@ const Navbar = () => {
             >
               <IoMenu className="text-white text-xl" />
             </button>
-            <Link 
-              to="/" 
-              onClick={closeSearchBar} 
+            <Link
+              to="/"
+              onClick={closeSearchBar}
               className="flex items-center gap-2"
             >
               <img src={Logo} alt="Logo" className="h-7 object-contain" />
-              <span className="text-white font-bold text-sm hidden sm:block">Store</span>
+              <span className="text-white font-bold text-sm hidden sm:block">
+                Store
+              </span>
             </Link>
           </div>
 
@@ -821,8 +927,10 @@ const Navbar = () => {
 
         {/* Expandable Search Bar */}
         <div
-          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-300  ${
-            showSearchBar ? "max-h-32 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
+          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-300 overflow-hidden ${
+            showSearchBar
+              ? "max-h-32 py-4 border-t border-yellow-300/30"
+              : "max-h-0 py-0"
           }`}
         >
           <div className="px-4 relative">
@@ -832,9 +940,7 @@ const Navbar = () => {
       </div>
 
       {/* Bottom Navigation - Only on Mobile */}
-      <div className="fixed top-[85vh] left-0 right-0 z-[9998] w-screen block lg:hidden transition-all duration-500">
-        <BottomNavigation />
-      </div>
+      <BottomNavigation />
 
       {/* Mobile Menu Drawer */}
       <CustomDrawer isOpen={menuStatus} onClose={() => setMenuStatus(false)}>
@@ -842,9 +948,11 @@ const Navbar = () => {
       </CustomDrawer>
 
       {/* Spacer for mobile navbar */}
-      <div className={`block lg:hidden transition-all duration-300 ${
-        showSearchBar ? "h-32" : "h-16"
-      }`} />
+      <div
+        className={`block lg:hidden transition-all duration-300 ${
+          showSearchBar ? "h-32" : "h-16"
+        }`}
+      />
     </div>
   );
 };

@@ -24,9 +24,7 @@ const BrowseAll = () => {
     fetchData();
   }, []);
 
-  console.log(data,"categorey browse");
   const filterCat=data.filter((cat)=>cat.show==true)
-  console.log(filterCat,"cato");
   
   
   return (

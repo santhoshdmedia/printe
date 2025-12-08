@@ -169,8 +169,8 @@ const Product = () => {
 
   // Product data for breadcrumbs
   const categoryId = getProductValue("category_details._id");
-  const mainCategoryName = getProductValue("category_details.main_category_name");
-  const subCategoryName = getProductValue("sub_category_details.sub_category_name");
+  const mainCategoryName = getProductValue("category_details.slug");
+  const subCategoryName = getProductValue("sub_category_details.slug");
   const subCategoryId = getProductValue("sub_category_details._id");
   const productName = getProductValue("name", "Product");
 
@@ -183,9 +183,9 @@ const Product = () => {
         <Breadcrumbs
           title3={productName}
           title={mainCategoryName}
-          titleto={`/category/${mainCategoryName}/${categoryId}`}
+          titleto={`/category/${mainCategoryName}/`}
           title2={subCategoryName}
-          title2to={`/category/${mainCategoryName}/${subCategoryName}/${categoryId}/${subCategoryId}`}
+          title2to={`/category/${mainCategoryName}/${subCategoryName}`}
         />
       </div>
 

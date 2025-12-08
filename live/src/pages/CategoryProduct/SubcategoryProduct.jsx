@@ -20,11 +20,9 @@ const SubcategoryProduct = () => {
       const result =  _.get(params, "id", "");
       
       const subcategoryResult = await getSubcategoryBySlug(result);
-      console.log(subcategoryResult.data.data.sub_category_banner_image,"id");
       setBannearDatas(subcategoryResult.data.data.sub_category_banner_image)
 
       const newproducts=await getAllSubCategoryProducts(subcategoryResult.data.data._id)
-      console.log(newproducts,"prodic");
       
       
       

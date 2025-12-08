@@ -25,7 +25,6 @@ const NavMenu = () => {
   const { menu } = useSelector((state) => state.publicSlice);
   const navigation = useNavigate();
   const dropdownRefs = useRef({});
-  console.log(menu,"categorey");
   
 
   // State management
@@ -144,7 +143,6 @@ const NavMenu = () => {
   }, []);
 
   const filterMenu=menu.filter((menu)=>menu.category_active_status==true)
-  console.log(filterMenu);
   
 
   return (

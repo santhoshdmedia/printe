@@ -4,7 +4,7 @@ import { IconHelper } from "../../helper/IconHelper";
 import { Link } from "react-router-dom";
 import _ from "lodash";
 
-const SearchProductCard = ({ data, className = "" }) => {
+const SearchProductCard = ({ data, className = "", onClick }) => {
   const { images = [], name, _id, seo_url, MRP_price, customer_product_price, product_description_tittle, Point_one } = data;
   
   // Use seo_url if available, otherwise fall back to _id
@@ -19,6 +19,7 @@ const SearchProductCard = ({ data, className = "" }) => {
   return (
     <Link 
       to={`/product/${productUrl}`}
+      onClick={onClick}
       className={`block group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-yellow-200 overflow-hidden ${className}`}
     >
       <div className="flex items-start gap-4 p-4">
