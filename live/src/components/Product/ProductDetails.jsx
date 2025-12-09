@@ -216,7 +216,7 @@ const AnimatedWaxSealBadge = () => (
   >
     <div className="w-24 h-8 bg-gradient-to-r from-red-600 to-red-700 clip-ribbon">
       <div className="text-white font-bold text-xs tracking-widest flex items-center justify-center h-full">
-        Sold Out
+        SOLD OUT
       </div>
     </div>
     {/* Ribbon tail */}

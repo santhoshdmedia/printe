@@ -310,7 +310,7 @@ const SimpleProductCard = ({ data }) => {
         {isSoldOut && (
           <div className="absolute top-4 left-4 z-20">
             <Badge 
-              count="SOLDOUT" 
+              count="SOLD OUT" 
               className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold"
             />
           </div>
