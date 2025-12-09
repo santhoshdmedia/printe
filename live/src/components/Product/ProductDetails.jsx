@@ -173,6 +173,8 @@ export const CustomModal = ({
 const { Title, Text, Paragraph } = Typography;
 
 import { FaTruckFast } from "react-icons/fa6";
+import { RiRocket2Fill } from "react-icons/ri";
+import { GiWaxSeal } from "react-icons/gi";
 
 // Custom Popover Component
 export const CustomPopover = ({
@@ -205,6 +207,119 @@ export const CustomPopover = ({
     </div>
   );
 };
+
+// Animated Wax Seal Badge Component
+const AnimatedWaxSealBadge = () => (
+  <motion.div
+    whileHover={{ scale: 1.05 }}
+    className="relative"
+  >
+    <div className="w-24 h-8 bg-gradient-to-r from-red-600 to-red-700 clip-ribbon">
+      <div className="text-white font-bold text-xs tracking-widest flex items-center justify-center h-full">
+        Sold Out
+      </div>
+    </div>
+    {/* Ribbon tail */}
+    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-red-700" />
+  </motion.div>
+);
+// Enhanced Sold Out Overlay Component
+// const SoldOutOverlay = () => {
+//   return (
+//     <div className="absolute inset-0 z-50 pointer-events-none">
+//       {/* Background Overlay */}
+//       <motion.div
+//         initial={{ opacity: 0 }}
+//         animate={{ opacity: 1 }}
+//         className="absolute inset-0 bg-white/80 backdrop-blur-[2px]"
+//       />
+      
+//       {/* Main Badge Container */}
+//       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+//         <motion.div
+//           initial={{ scale: 0, y: 20 }}
+//           animate={{ scale: 1, y: 0 }}
+//           transition={{
+//             type: "spring",
+//             stiffness: 200,
+//             damping: 15
+//           }}
+//           className="relative"
+//         >
+//           {/* Animated Wax Seal */}
+//           <AnimatedWaxSealBadge />
+          
+//           {/* Text Message */}
+//           <motion.div
+//             initial={{ opacity: 0, y: 10 }}
+//             animate={{ opacity: 1, y: 0 }}
+//             transition={{ delay: 0.3 }}
+//             className="mt-6 text-center"
+//           >
+//             <h3 className="text-2xl font-bold text-gray-800 mb-2">
+//               Currently Unavailable
+//             </h3>
+//             <p className="text-gray-600 max-w-md">
+//               This product is temporarily out of stock. <br />
+//               We're working hard to restock it soon!
+//             </p>
+//           </motion.div>
+          
+//           {/* Floating Elements */}
+//           <motion.div
+//             animate={{
+//               rotate: 360
+//             }}
+//             transition={{
+//               duration: 20,
+//               repeat: Infinity,
+//               ease: "linear"
+//             }}
+//             className="absolute -top-8 -left-8 w-16 h-16 border-2 border-red-300/30 rounded-full"
+//           />
+//           <motion.div
+//             animate={{
+//               rotate: -360
+//             }}
+//             transition={{
+//               duration: 25,
+//               repeat: Infinity,
+//               ease: "linear"
+//             }}
+//             className="absolute -bottom-8 -right-8 w-20 h-20 border-2 border-red-400/20 rounded-full"
+//           />
+//         </motion.div>
+//       </div>
+      
+//       {/* Corner Indicators */}
+//       <motion.div
+//         animate={{
+//           scale: [1, 1.1, 1],
+//           opacity: [0.5, 0.8, 0.5]
+//         }}
+//         transition={{
+//           duration: 2,
+//           repeat: Infinity,
+//           repeatType: "reverse"
+//         }}
+//         className="absolute top-4 left-4 w-8 h-8 bg-red-500/20 rounded-full"
+//       />
+//       <motion.div
+//         animate={{
+//           scale: [1, 1.1, 1],
+//           opacity: [0.5, 0.8, 0.5]
+//         }}
+//         transition={{
+//           duration: 2,
+//           repeat: Infinity,
+//           repeatType: "reverse",
+//           delay: 0.5
+//         }}
+//         className="absolute top-4 right-4 w-8 h-8 bg-red-500/20 rounded-full"
+//       />
+//     </div>
+//   );
+// };
 
 // Helper functions
 const getProductImages = (data) => {
@@ -314,6 +429,7 @@ const ProductDetails = ({
   const basePrice = getRoleBasedPrice();
   const product_type = _.get(data, "type", "Stand Alone Product");
   const Gst = _.get(data, "GST", 0);
+  const isSoldOut = _.get(data, "is_soldout", false);
 
   // State declarations
   const [quantity, setQuantity] = useState(null);
@@ -677,6 +793,7 @@ const ProductDetails = ({
     const unitPrice = getUnitPrice();
     return (unitPrice * quantity).toFixed(2);
   };
+  
   const calculateGstPrice = () => {
     if (!quantity) return "0.00";
 
@@ -689,6 +806,7 @@ const ProductDetails = ({
 
     return unitPrice.toFixed(2);
   };
+  
   const calculateMRPTotalPrice = () => {
     if (!quantity) return 0;
     const mrpPrice = Number(_.get(data, "MRP_price", 0));
@@ -724,7 +842,7 @@ const ProductDetails = ({
     return (mrpSavings + discountSavings).toFixed(2);
   };
 
-  // Calculate percentage discount for deal price
+  // Calculate percentage discount for deal price - FIXED CALCULATION
   const calculateDealPercentageDiscount = () => {
     if (!quantity) return 0;
 
@@ -736,26 +854,16 @@ const ProductDetails = ({
     const percentage = ((mrpTotal - dealTotal) / mrpTotal) * 100;
     return Math.round(percentage);
   };
-  const calculateDealPercentageDiscountCus = () => {
-    if (!quantity) return 0;
 
-    const mrpTotal = parseFloat(calculateMRPTotalPrice());
-    const dealTotal = parseFloat(getUnitPrice());
-
-    if (mrpTotal === 0 || dealTotal >= mrpTotal) return 0;
-
-    const percentage = ((mrpTotal - dealTotal) / mrpTotal) * 100;
-    return Math.round(percentage);
-  };
-
-  // Calculate percentage savings
+  // Calculate percentage savings - FIXED CALCULATION
   const calculateTotalSavingsPercentage = () => {
     const totalSavings = parseFloat(calculateTotalSavings());
-    const originalTotal = parseFloat(calculateOriginalTotalPrice());
-    if (originalTotal === 0) return 0;
-    let savingAmt = (totalSavings / originalTotal) * 100
-    savingAmt = Math.round(savingAmt)
-    return savingAmt.toFixed(1);
+    const mrpTotal = parseFloat(calculateMRPTotalPrice());
+    
+    if (mrpTotal === 0 || totalSavings <= 0) return 0;
+    
+    const percentage = (totalSavings / mrpTotal) * 100;
+    return Math.min(100, Math.round(percentage)); // Cap at 100%
   };
 
   // Handle add to cart
@@ -859,18 +967,10 @@ const ProductDetails = ({
   // Handle Notify When Available
   const handleNotify = () => {
     // Check if user is logged in
-    if (user && user.email) {
-      // User is logged in, send notification immediately
-      sendNotification({
-        email: user.email,
-        phone: user.phone || "",
-        name: user.name || ""
-      });
-    } else {
+  
       // User is not logged in, show popup
       setShowNotifyModal(true);
       notifyForm.resetFields();
-    }
   };
 
   const sendNotification = async (userData) => {
@@ -905,7 +1005,11 @@ const ProductDetails = ({
   };
 
   const handleNotifySubmit = async (values) => {
+    console.log(values);
+    
     await sendNotification(values);
+    setShowNotifyModal(false)
+    form.resetFields()
   };
 
   // Quantity dropdown renderer
@@ -1172,12 +1276,18 @@ const ProductDetails = ({
       }
     >
       <div className="font-primary w-full space-y-2 relative">
-        {/* Product Header */}
+        {/* Sold Out Overlay */}
+        {/* {isSoldOut && <SoldOutOverlay />} */}
+        
+        {/* Product Header with Animated Wax Seal */}
         <div className="space-y-1 flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="flex-1 w-full md:w-auto">
-            <h1 className="text-gray-900 font-bold mb-2 text-xl md:text-2xl lg:text-2xl leading-tight w-full md:w-[80%]">
-              {data.name}
-            </h1>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-2xl leading-tight w-full md:w-[80%]">
+                {data.name}
+              </h1>
+           
+            </div>
             <div className="flex flex-wrap gap-2">
               {data.label?.map((label, index) => (
                 <span key={index}>{generateLabel(label)}</span>
@@ -1217,13 +1327,18 @@ const ProductDetails = ({
               </motion.div>
             </div>
 
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-3 flex-col-reverse">
               <button
                 onClick={handleNativeShare}
                 className="bg-[#f2c41a] hover:bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300 hidden"
               >
                 <IoShareSocial />
               </button>
+                 {isSoldOut && (
+                <div className="relative">
+                  <AnimatedWaxSealBadge />
+                </div>
+              )}
 
               <motion.div
                 animate={{ scale: [1, 1.15, 1] }}
@@ -1235,6 +1350,7 @@ const ProductDetails = ({
                 }}
                 className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
               >
+                
                 <div className="flex items-baseline gap-2">
                   <span className="text-white/70 text-xs line-through">
                     {formatPrice(Number(_.get(data, "MRP_price", 0)))}
@@ -1297,6 +1413,36 @@ const ProductDetails = ({
           </ul>
         </div>
 
+        {/* Sold Out Message Section */}
+        {/* {isSoldOut && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm"
+          >
+            <div className="flex items-start gap-3">
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                className="text-2xl text-red-500"
+              >
+                ⚠️
+              </motion.div>
+              <div>
+                <h3 className="font-bold text-red-700 text-lg mb-1">
+                  Item Temporarily Unavailable
+                </h3>
+                <p className="text-gray-600">
+                  This product is currently out of stock. We expect to have it back in 
+                  <span className="font-semibold text-red-600"> 3-5 business days</span>. 
+                  You can join the waitlist to be notified immediately when it's back!
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )} */}
+
         {/* Quantity and Variants Section */}
         <div className="w-full flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
@@ -1312,6 +1458,7 @@ const ProductDetails = ({
               dropdownRender={quantityDropdownRender}
               open={quantityDropdownVisible}
               onDropdownVisibleChange={setQuantityDropdownVisible}
+              // disabled={isSoldOut}
             />
           </div>
 
@@ -1340,6 +1487,7 @@ const ProductDetails = ({
                           }
                           placeholder={`Select ${variant.variant_name}`}
                           className="w-full"
+                          // disabled={isSoldOut}
                         />
                       ) : (
                         <div className="flex flex-wrap gap-2">
@@ -1388,6 +1536,7 @@ const ProductDetails = ({
                 <Checkbox
                   checked={individualBox}
                   onChange={(e) => setIndividualBox(e.target.checked)}
+                  disabled={isSoldOut}
                 >
                   Individual Box for 100 Cards
                 </Checkbox>
@@ -1397,7 +1546,7 @@ const ProductDetails = ({
         </div>
 
         {/* Total Price Section */}
-        <Card className="bg-blue-50 rounded-lg border-0">
+        <Card className={`rounded-lg border-0 bg-blue-50`}>
           <div className="space-y-3">
             {/* Deal Price with Percentage Discount */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
@@ -1407,44 +1556,33 @@ const ProductDetails = ({
                 </Text>
               </div>
               <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
-
                 <Text delete className="text-md text-gray-500 md:mr-2">
                   {formatPrice(calculateMRPTotalPrice())}
                 </Text>
-                <Title level={4} className="!m-0 !text-green-600">
+                <Title level={4} className={`!m-0 !text-green-600`}>
                   {quantity
                     ? formatPrice(calculateTotalPrice())
                     : formatPrice(0)}
                 </Title>
-
               </div>
             </div>
 
-
-            {/* Savings Alerts */}
-            <div className="space-y-2">
-              {calculateTotalSavings() > 0 && (
+            {/* Savings Alerts - FIXED PERCENTAGE CALCULATION */}
+            { calculateTotalSavings() > 0 && (
+              <div className="space-y-2">
                 <Alert
                   message={
                     <div>
                       {calculateMRPSavings() > 0 && (
                         <div className="mt-1 text-sm">
-                          {calculateMRPSavings() > 0 && (
-                            <div className="mt-1 text-sm">
-                              You Saved: {formatPrice(calculateMRPSavings())} &nbsp;(
-                              {(user.role === "Dealer" || user.role === "Corporate")
-                                ? <>{calculateDealPercentageDiscount()}% Discount</>
-                                : <>{calculateTotalSavingsPercentage()}% Discount</>
-                              })
-                            </div>
-                          )}
-
+                          You Saved: {formatPrice(calculateMRPSavings())} &nbsp;(
+                          {calculateDealPercentageDiscount()}% OFF MRP)
                         </div>
                       )}
 
                       {calculateDiscountSavings() > 0 && (
                         <div className="text-sm mt-2">
-                          Kudos! Additionally you saved {formatPrice(calculateDiscountSavings())} ({discountPercentage.percentage}% Discount)
+                          Additional Savings: {formatPrice(calculateDiscountSavings())} ({discountPercentage.percentage}% Quantity Discount)
                         </div>
                       )}
 
@@ -1453,19 +1591,19 @@ const ProductDetails = ({
                           💡 Select higher quantity to get extra discounts
                         </div>
                       )}
+                      
                       <div className="font-semibold text-green-700 text-lg mt-1">
-                        🎉 You saved {formatPrice(calculateTotalSavings())} ({calculateTotalSavingsPercentage()}% OFF)
+                        🎉 Total Savings: {formatPrice(calculateTotalSavings())} ({calculateTotalSavingsPercentage()}% OFF)
                       </div>
-
-
                     </div>
                   }
                   type="success"
                   showIcon
                   className="!py-3"
                 />
-              )}
-            </div>
+              </div>
+            )}
+
 
             {(user.role == "Corporate" || user.role == "Dealer") ? (
               <div className="text-gray-600">
@@ -1493,8 +1631,6 @@ const ProductDetails = ({
                       ? <>{formatPrice(Gst_HELPER(Gst, getUnitPrice()))}</>
                       : <>{formatPrice(calculateGstPrice())}</>
                     }
-
-
                     / piece)
                   </span>
                 </h1>
@@ -1507,14 +1643,6 @@ const ProductDetails = ({
               <Text strong className="text-gray-700">
                 Processing Time:
               </Text>
-              {/* <Tooltip title="Learn more about processing time">
-                <Button
-                  type="text"
-                  icon={<IconHelper.QUESTION_MARK />}
-                  size="small"
-                  onClick={() => setIsModalOpen(true)}
-                />
-              </Tooltip> */}
               <span className="font-bold">{processing_item} days</span>
             </div>
 
@@ -1542,7 +1670,7 @@ const ProductDetails = ({
               Estimated Delivery
             </Text>
             {/* PincodeDeliveryCalculator component would go here */}
-            <div className="  rounded-lg">
+            <div className="rounded-lg">
               <PincodeDeliveryCalculator
                 Production={processing_item}
                 freeDelivery={freeDelivery}
@@ -1553,11 +1681,13 @@ const ProductDetails = ({
         </Card>
 
         {/* File Upload Section */}
+        {isSoldOut?<></>:<>
         <div className="space-y-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
             <Checkbox
               checked={noDesignUpload}
               onChange={handleNoCustomization}
+              disabled={isSoldOut}
             >
               Proceed without Design
             </Checkbox>
@@ -1577,6 +1707,7 @@ const ProductDetails = ({
                       setChecked(false);
                     }
                   }}
+                  disabled={isSoldOut}
                 />
               </div>
             )}
@@ -1590,6 +1721,7 @@ const ProductDetails = ({
                     handleUploadImage={handleUploadImage}
                     buttonText="Drag & Drop Files Here or Browse Files"
                     className="w-full border-dotted rounded-lg flex flex-col items-center justify-center transition-colors"
+                    disabled={isSoldOut}
                   />
 
                   {checkOutState.product_design_file && (
@@ -1600,6 +1732,7 @@ const ProductDetails = ({
                           icon={<EyeOutlined />}
                           onClick={() => setDesignPreviewVisible(true)}
                           className="md:order-1"
+                          disabled={isSoldOut}
                         >
                           View Design
                         </Button>
@@ -1607,6 +1740,7 @@ const ProductDetails = ({
                           type="link"
                           onClick={handleDesignRemove}
                           className="md:order-1"
+                          disabled={isSoldOut}
                         >
                           Remove
                         </Button>
@@ -1616,6 +1750,7 @@ const ProductDetails = ({
                         checked={checked}
                         onChange={(e) => setChecked(e.target.checked)}
                         className="md:order-2"
+                        disabled={isSoldOut}
                       >
                         I confirm this design
                       </Checkbox>
@@ -1639,6 +1774,7 @@ const ProductDetails = ({
               <Switch
                 checked={instructionsVisible}
                 onChange={setInstructionsVisible}
+                disabled={isSoldOut}
               />
             </div>
             {instructionsVisible && (
@@ -1652,10 +1788,16 @@ const ProductDetails = ({
                     instructions: e.target.value,
                   }))
                 }
+                disabled={isSoldOut}
               />
             )}
           </div>
 
+        </div>
+        </>}
+
+            <div className="">
+              
           {/* Add to Cart / Notify Button */}
           <div className="w-full">
             {isGettingVariantPrice ? (
@@ -1663,25 +1805,50 @@ const ProductDetails = ({
                 <Spin size="large" />
               </div>
             ) : (
-              <>{_.get(data, "is_soldout", false) ? <Button
-                type="primary"
-                size="large"
-                icon={<MailOutlined />}
-                className="!h-12 !bg-gray-600 text-white hover:!bg-gray-700 hover:!text-white font-semibold w-full"
-                onClick={handleNotify}
-                loading={sendingNotification}
-              >
-                Notify When Available
-              </Button> : <Button
-                type="primary"
-                size="large"
-                icon={<ShoppingCartOutlined />}
-                className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
-                onClick={handlebuy}
-                loading={loading}
-              >
-                Add To Cart
-              </Button>}
+              <>
+                {isSoldOut ? (
+                  // ENHANCED NOTIFY BUTTON SECTION - UPDATED TO MATCH IMAGE
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className=""
+                  >
+                    
+                    
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="mb-4"
+                    >
+                      <Button
+                        type="default"
+                        size="large"
+                        className="!h-12 !border-gray-300 !text-gray-700 hover:!border-gray-400 hover:!text-gray-800 font-medium w-full"
+                        onClick={handleNotify}
+                        loading={sendingNotification}
+                        icon={<MailOutlined />}
+                      >
+                        Notify Me
+                      </Button>
+                    </motion.div>
+                    
+                    
+                    
+
+                  </motion.div>
+                ) : (
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<ShoppingCartOutlined />}
+                    className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                    onClick={handlebuy}
+                    loading={loading}
+                  >
+                    Add To Cart
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -1712,8 +1879,7 @@ const ProductDetails = ({
               />
             </div>
           </CustomModal>
-        </div>
-
+            </div>
         {/* Notify Modal (for non-logged in users) */}
         <CustomModal
           open={showNotifyModal}
@@ -1724,70 +1890,110 @@ const ProductDetails = ({
           title="Notify When Available"
           width={500}
         >
-          <Form
-            form={notifyForm}
-            layout="vertical"
-            onFinish={handleNotifySubmit}
-          >
+          <Form form={form} layout="vertical" onFinish={handleNotifySubmit}>
             <div className="space-y-4">
-              <div className="mb-4">
-                <Text className="text-gray-600">
-                  We'll notify you when <strong>{data.name}</strong> is back in stock.
-                </Text>
-              </div>
-
-              <Form.Item
-                label="Name"
-                name="name"
-                rules={[
-                  { required: true, message: "Please enter your name" },
-                  { min: 2, message: "Name must be at least 2 characters" },
-                ]}
-              >
-                <Input
-                  prefix={<UserOutlined className="text-gray-400" />}
-                  placeholder="Your full name"
-                />
-              </Form.Item>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    label="Product Name"
+                    name="product_name"
+                    initialValue={_.get(data, "name", "")}
+                  >
+                    <Input disabled />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="Quantity"
+                    name="quantity"
+                    rules={[
+                      { required: true, message: "Please enter quantity" },
+                    ]}
+                  >
+                    <InputNumber min={1} className="w-full" addonAfter={unit} />
+                  </Form.Item>
+                </Col>
+              </Row>
 
               <Form.Item
                 label="Email Address"
                 name="email"
                 rules={[
-                  { required: true, message: "Please enter your email" },
-                  { type: "email", message: "Please enter a valid email" },
+                  { required: true, message: "Please enter email" },
+                  { type: "email", message: "Invalid email" },
                 ]}
               >
                 <Input
-                  prefix={<MailOutlined className="text-gray-400" />}
                   placeholder="your@email.com"
+                  suffix={
+                    emailVerified ? (
+                      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                    ) : (
+                      <LoadingOutlined spin={sendingOtp} />
+                    )
+                  }
+                  onBlur={(e) => {
+                    const email = e.target.value;
+                    if (email && validateEmail(email)) {
+                      handleSendOtp(email);
+                    }
+                  }}
                 />
               </Form.Item>
 
+              {otpSent && !emailVerified && (
+                <Form.Item
+                  label="Enter OTP"
+                  name="otp"
+                  rules={[
+                    { required: true, message: "Please enter OTP" },
+                    { len: 6, message: "OTP must be 6 digits" },
+                  ]}
+                >
+                  <div className="flex items-center gap-3">
+                    <Input.OTP
+                      length={6}
+                      onChange={(otp) => {
+                        if (otp.length === 6) {
+                          handleVerifyOtp(otp);
+                        }
+                      }}
+                      disabled={emailVerified}
+                    />
+                    <Button
+                      type="link"
+                      onClick={() => handleSendOtp(form.getFieldValue("email"))}
+                      disabled={sendingOtp}
+                    >
+                      Resend OTP
+                    </Button>
+                  </div>
+                </Form.Item>
+              )}
+
               <Form.Item
-                label="Phone Number"
-                name="phone"
+                label="Mobile Number"
+                name="mobile"
                 rules={[
-                  { required: true, message: "Please enter your phone number" },
-                  {
-                    pattern: /^[0-9]{10}$/,
-                    message: "Please enter a valid 10-digit phone number",
-                  },
+                  { required: true, message: "Please enter mobile number" },
                 ]}
               >
-                <Input
-                  prefix={<PhoneOutlined className="text-gray-400" />}
-                  placeholder="9876543210"
-                  maxLength={10}
+                <Input placeholder="+91 12345 67890" />
+              </Form.Item>
+
+              <Form.Item
+                label="Additional Requirements"
+                name="additional_requirements"
+              >
+                <TextArea
+                  rows={3}
+                  placeholder="Any special requirements or notes..."
                 />
               </Form.Item>
 
               <div className="flex gap-3">
                 <Button
-                  onClick={() => {
-                    setShowNotifyModal(false);
-                    notifyForm.resetFields();
-                  }}
+                  onClick={() => setShowNotifyModal(false)}
                   className="flex-1"
                 >
                   Cancel
@@ -1795,10 +2001,10 @@ const ProductDetails = ({
                 <Button
                   type="primary"
                   htmlType="submit"
-                  className="flex-1 bg-blue-500"
-                  loading={sendingNotification}
+                  className="flex-1 bg-yellow-500"
+                  disabled={!emailVerified}
                 >
-                  Notify Me
+                  Submit Inquiry
                 </Button>
               </div>
             </div>

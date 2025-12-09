@@ -117,9 +117,7 @@ if (distPath) {
 
 // Function to get product image URL
 function getProductImageUrl(product) {
-  if (!product?.images || product.images.length === 0) {
-    return 'https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533';
-  }
+  
 
   const firstImage = product.seo_img;
   let imagePath = '';
