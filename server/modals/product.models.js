@@ -98,6 +98,10 @@ module.exports = mongoose.model(
       is_visible: {
         type: Boolean,
       },
+      is_soldout: {
+        type: Boolean,
+      },
+
       is_customer: {
         type: Boolean,
       },
@@ -125,6 +129,7 @@ module.exports = mongoose.model(
       seo_url: { type: String, require: true },
       seo_description: { type: String, require: true },
       seo_keywords: { type: String, require: true },
+      seo_img: { type: String, require: true },
       variants: [variantSchema],
       variants_price: { type: Array },
       description_tabs: { type: Array },

@@ -121,7 +121,7 @@ function getProductImageUrl(product) {
     return 'https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg?v=1763973202533';
   }
 
-  const firstImage = product.images[0];
+  const firstImage = product.seo_img;
   let imagePath = '';
 
   if (typeof firstImage === 'string') {
@@ -172,8 +172,7 @@ app.get("/product/:id", async (req, res) => {
 
     // Prepare OG data
     const ogTitle = product.seo_title || `${product.name} | PRINTE`;
-    let ogDescription = product.short_description || 
-                       product.product_description_tittle || 
+    let ogDescription = product.product_description_tittle || 
                        'Check out this amazing product on Printe';
     
     // Truncate description for SEO

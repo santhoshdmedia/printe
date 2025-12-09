@@ -1004,6 +1004,23 @@ const ProductDetailVarient = ({
       setLoading(false);
     }
   };
+   const handleNotify = async () => {
+    const notfyData = {
+      productName:_.get(data, "name", ""),
+      productId:_.get(data, "Vendor_Code", ""),
+      productUrl:_.get(data, "seo_url", ""),
+      userEmail:user.email,
+      userPhone:user.phone,
+      userName:user.name,
+    }
+    try {
+      const result=await NotifyOtp(notfyData);
+      toast.success("your request accepted")
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
 
   // Share functionality
   const shareProduct = useCallback(
@@ -1593,16 +1610,26 @@ const ProductDetailVarient = ({
                 <Spin size="large" />
               </div>
             ) : (
-              <Button
-                type="primary"
-                size="large"
-                icon={<ShoppingCartOutlined />}
-                className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
-                onClick={handleBuy}
-                loading={loading}
-              >
-                Add To Cart
-              </Button>
+              <>{_.get(data, "is_soldout", false) ? <Button
+                              type="primary"
+                              size="large"
+                              icon={<ShoppingCartOutlined />}
+                              className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                              onClick={handleNotify}
+                              loading={loading}
+                            >
+                              Notify
+                            </Button> : <Button
+                              type="primary"
+                              size="large"
+                              icon={<ShoppingCartOutlined />}
+                              className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                              onClick={handleBuy}
+                              loading={loading}
+                            >
+                              Add To Cart
+                            </Button>}
+                            </>
             )}
           </div>
 

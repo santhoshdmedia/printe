@@ -184,6 +184,9 @@ export const getsubcat = async () => {
 export const sendOtp = async (formdata) => {
   return await axios.post(`${baseURL}/otp/send_otp`, formdata);
 };
+export const NotifyOtp = async (formdata) => {
+  return await axios.post(`${baseURL}/otp/Notify`, formdata);
+};
 
 export const verifyOtp = async (formdata) => {
   return await axios.post(`${baseURL}/otp/verify_otp`, formdata);

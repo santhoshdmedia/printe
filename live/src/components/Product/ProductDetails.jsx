@@ -83,7 +83,7 @@ import {
   resendOtp,
   sendWhatsAppOtp,
   verifyWhatsAppOtp,
-  resendWhatsAppOtp,
+  resendWhatsAppOtp,NotifyOtp
 } from "../../helper/api_helper";
 
 export const CustomModal = ({
@@ -670,18 +670,18 @@ const ProductDetails = ({
     const unitPrice = getUnitPrice();
     return (unitPrice * quantity).toFixed(2);
   };
-const calculateGstPrice = () => {
-  if (!quantity) return "0.00";
-  
-  const unitPrice = getUnitPrice();
-  
-  // Ensure unitPrice is a number before calling toFixed
-  if (typeof unitPrice !== 'number' || isNaN(unitPrice)) {
-    return Number(unitPrice);
-  }
-  
-  return unitPrice.toFixed(2);
-};
+  const calculateGstPrice = () => {
+    if (!quantity) return "0.00";
+
+    const unitPrice = getUnitPrice();
+
+    // Ensure unitPrice is a number before calling toFixed
+    if (typeof unitPrice !== 'number' || isNaN(unitPrice)) {
+      return Number(unitPrice);
+    }
+
+    return unitPrice.toFixed(2);
+  };
   const calculateMRPTotalPrice = () => {
     if (!quantity) return 0;
     const mrpPrice = Number(_.get(data, "MRP_price", 0));
@@ -848,6 +848,26 @@ const calculateGstPrice = () => {
       setLoading(false);
     }
   };
+  console.log(user,"user");
+  
+
+  const handleNotify = async () => {
+    const notfyData = {
+      productName:_.get(data, "name", ""),
+      productId:_.get(data, "Vendor_Code", ""),
+      productUrl:_.get(data, "seo_url", ""),
+      userEmail:user.email,
+      userPhone:user.phone,
+      userName:user.name,
+    }
+    try {
+      const result=await NotifyOtp(notfyData);
+      toast.success("your request accepted")
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
 
   // Quantity dropdown renderer
   const quantityDropdownRender = (menu) => {
@@ -912,7 +932,7 @@ const calculateGstPrice = () => {
 
                 <div className="text-right">
                   <p
-                    className={`font-semibold ${isSelected ? "text-blue-700" : "text-gray-900"
+                    className={`font-semibold ${isSelected ? "text-yellow-700" : "text-gray-900"
                       }`}
                   >
                     {formatPrice(totalPrice)}
@@ -1430,13 +1450,13 @@ const calculateGstPrice = () => {
                 <h1>
                   Inclusive of all taxes for <span strong>{quantity}</span> Qty
                   <span className="font-bold">
- &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
-                    ? <>{formatPrice(Gst_HELPER(Gst, getUnitPrice()))}</>
-                    : <>{formatPrice(calculateGstPrice())}</>
-                  }
+                    &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
+                      ? <>{formatPrice(Gst_HELPER(Gst, getUnitPrice()))}</>
+                      : <>{formatPrice(calculateGstPrice())}</>
+                    }
 
-                  
-                  / piece)
+
+                    / piece)
                   </span>
                 </h1>
               </div>
@@ -1604,7 +1624,16 @@ const calculateGstPrice = () => {
                 <Spin size="large" />
               </div>
             ) : (
-              <Button
+              <>{_.get(data, "is_soldout", false) ? <Button
+                type="primary"
+                size="large"
+                icon={<ShoppingCartOutlined />}
+                className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                onClick={handleNotify}
+                loading={loading}
+              >
+                Notify
+              </Button> : <Button
                 type="primary"
                 size="large"
                 icon={<ShoppingCartOutlined />}
@@ -1613,7 +1642,8 @@ const calculateGstPrice = () => {
                 loading={loading}
               >
                 Add To Cart
-              </Button>
+              </Button>}
+              </>
             )}
           </div>
 

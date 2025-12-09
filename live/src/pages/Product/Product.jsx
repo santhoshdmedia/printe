@@ -36,6 +36,8 @@ const Product = () => {
   // Use SSR data if available, otherwise use Redux
   const productData = window.__INITIAL_STATE__?.product || product;
 
+  
+
   // Safe value getter with better error handling
   const getProductValue = useCallback((path, defaultValue = "") => {
     return _.get(productData, path, defaultValue);
@@ -174,6 +176,9 @@ const Product = () => {
   const subCategoryId = getProductValue("sub_category_details._id");
   const productName = getProductValue("name", "Product");
 
+
+  console.log(productData,"pro");
+  
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
       {/* NO HELMET - SSR handles all OG tags */}

@@ -1,4 +1,5 @@
 const {otpMail} = require("../mail/sendMail");
+const {notifyMail}=require("../mail/sendMail")
 
 // In-memory storage for OTPs (use Redis in production)
 const otpStorage = new Map();
@@ -175,8 +176,43 @@ const resendOtpHandler = async (req, res) => {
   }
 };
 
+const Notify=async (req, res) => {
+  try {
+    const { productName,email, productId, productUrl, userEmail, userPhone, userName } = req.body;
+    
+    // Send notification emails
+    const mailSent = await notifyMail({
+      productName,
+      productId,
+      productUrl,
+      userEmail,
+      userPhone,
+      userName,
+    });
+    
+    if (mailSent) {
+      res.json({
+        success: true,
+        message: 'Notification request submitted successfully',
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send notification emails',
+      });
+    }
+  } catch (error) {
+    console.error('Error in notify-when-available:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
+
 module.exports = {
   sendOtpHandler,
   verifyOtpHandler,
-  resendOtpHandler
+  resendOtpHandler,Notify
 };
