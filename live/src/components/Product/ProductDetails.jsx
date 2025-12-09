@@ -45,6 +45,7 @@ import {
   addToShoppingCart,
   getVariantPrice,
   PUBLIC_URL,
+  notifyWhenAvailable
 } from "../../helper/api_helper";
 import Swal from "sweetalert2";
 import {
@@ -66,6 +67,9 @@ import {
   ShoppingCartOutlined,
   EyeOutlined,
   CloseOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { CiFaceSmile } from "react-icons/ci";
 import { CgSmileSad } from "react-icons/cg";
@@ -83,7 +87,7 @@ import {
   resendOtp,
   sendWhatsAppOtp,
   verifyWhatsAppOtp,
-  resendWhatsAppOtp,NotifyOtp
+  resendWhatsAppOtp,
 } from "../../helper/api_helper";
 
 export const CustomModal = ({
@@ -284,6 +288,7 @@ const ProductDetails = ({
 }) => {
   const { user } = useSelector((state) => state.authSlice);
   const [form] = Form.useForm();
+  const [notifyForm] = Form.useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -324,6 +329,8 @@ const ProductDetails = ({
   const [freeDelivery, setFreeDelivery] = useState(false);
   const [deliveryCharges, setDeliveryCharges] = useState(100);
   const [noDesignUpload, setNoDesignUpload] = useState(false);
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [sendingNotification, setSendingNotification] = useState(false);
 
   const [checkOutState, setCheckOutState] = useState({
     product_image: getFirstProductImage(data),
@@ -848,26 +855,58 @@ const ProductDetails = ({
       setLoading(false);
     }
   };
-  console.log(user,"user");
-  
 
-  const handleNotify = async () => {
-    const notfyData = {
-      productName:_.get(data, "name", ""),
-      productId:_.get(data, "Vendor_Code", ""),
-      productUrl:_.get(data, "seo_url", ""),
-      userEmail:user.email,
-      userPhone:user.phone,
-      userName:user.name,
+  // Handle Notify When Available
+  const handleNotify = () => {
+    // Check if user is logged in
+    if (user && user.email) {
+      // User is logged in, send notification immediately
+      sendNotification({
+        email: user.email,
+        phone: user.phone || "",
+        name: user.name || ""
+      });
+    } else {
+      // User is not logged in, show popup
+      setShowNotifyModal(true);
+      notifyForm.resetFields();
     }
+  };
+
+  const sendNotification = async (userData) => {
     try {
-      const result=await NotifyOtp(notfyData);
-      toast.success("your request accepted")
-    } catch (error) {
-      console.log(error);
+      setSendingNotification(true);
       
+      const notificationData = {
+        productName: _.get(data, "name", ""),
+        productId: _.get(data, "Vendor_Code", data._id),
+        productUrl: window.location.href,
+        userEmail: userData.email,
+        userPhone: userData.phone,
+        userName: userData.name,
+        timestamp: new Date().toISOString(),
+      };
+      
+      const result = await notifyWhenAvailable(notificationData);
+      
+      if (result.data.success) {
+        toast.success("We'll notify you when this product is available!");
+        setShowNotifyModal(false);
+        notifyForm.resetFields();
+      } else {
+        toast.error("Failed to submit notification request");
+      }
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      toast.error("Failed to submit notification request");
+    } finally {
+      setSendingNotification(false);
     }
-  }
+  };
+
+  const handleNotifySubmit = async (values) => {
+    await sendNotification(values);
+  };
 
   // Quantity dropdown renderer
   const quantityDropdownRender = (menu) => {
@@ -1617,7 +1656,7 @@ const ProductDetails = ({
             )}
           </div>
 
-          {/* Add to Cart Button */}
+          {/* Add to Cart / Notify Button */}
           <div className="w-full">
             {isGettingVariantPrice ? (
               <div className="center_div py-6">
@@ -1627,12 +1666,12 @@ const ProductDetails = ({
               <>{_.get(data, "is_soldout", false) ? <Button
                 type="primary"
                 size="large"
-                icon={<ShoppingCartOutlined />}
-                className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                icon={<MailOutlined />}
+                className="!h-12 !bg-gray-600 text-white hover:!bg-gray-700 hover:!text-white font-semibold w-full"
                 onClick={handleNotify}
-                loading={loading}
+                loading={sendingNotification}
               >
-                Notify
+                Notify When Available
               </Button> : <Button
                 type="primary"
                 size="large"
@@ -1674,6 +1713,97 @@ const ProductDetails = ({
             </div>
           </CustomModal>
         </div>
+
+        {/* Notify Modal (for non-logged in users) */}
+        <CustomModal
+          open={showNotifyModal}
+          onClose={() => {
+            setShowNotifyModal(false);
+            notifyForm.resetFields();
+          }}
+          title="Notify When Available"
+          width={500}
+        >
+          <Form
+            form={notifyForm}
+            layout="vertical"
+            onFinish={handleNotifySubmit}
+          >
+            <div className="space-y-4">
+              <div className="mb-4">
+                <Text className="text-gray-600">
+                  We'll notify you when <strong>{data.name}</strong> is back in stock.
+                </Text>
+              </div>
+
+              <Form.Item
+                label="Name"
+                name="name"
+                rules={[
+                  { required: true, message: "Please enter your name" },
+                  { min: 2, message: "Name must be at least 2 characters" },
+                ]}
+              >
+                <Input
+                  prefix={<UserOutlined className="text-gray-400" />}
+                  placeholder="Your full name"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Email Address"
+                name="email"
+                rules={[
+                  { required: true, message: "Please enter your email" },
+                  { type: "email", message: "Please enter a valid email" },
+                ]}
+              >
+                <Input
+                  prefix={<MailOutlined className="text-gray-400" />}
+                  placeholder="your@email.com"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Phone Number"
+                name="phone"
+                rules={[
+                  { required: true, message: "Please enter your phone number" },
+                  {
+                    pattern: /^[0-9]{10}$/,
+                    message: "Please enter a valid 10-digit phone number",
+                  },
+                ]}
+              >
+                <Input
+                  prefix={<PhoneOutlined className="text-gray-400" />}
+                  placeholder="9876543210"
+                  maxLength={10}
+                />
+              </Form.Item>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setShowNotifyModal(false);
+                    notifyForm.resetFields();
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="flex-1 bg-blue-500"
+                  loading={sendingNotification}
+                >
+                  Notify Me
+                </Button>
+              </div>
+            </div>
+          </Form>
+        </CustomModal>
 
         {/* Bulk Order Modal */}
         <CustomModal
