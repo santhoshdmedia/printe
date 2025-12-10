@@ -183,43 +183,75 @@ const Navbar = () => {
   }, [handleDestination]);
 
   // Search Input Component - Optimized with memo
-  const SearchInput = React.memo(({ isMobile = false }) => {
+   const SearchInput = ({ isMobile = false }) => {
+    const localInputRef = useRef(null);
+
+    // Focus input when expanded
+    useEffect(() => {
+      if (!isMobile && isExpanded && searchProduct && localInputRef.current) {
+        localInputRef.current.focus();
+      }
+    }, [isExpanded, searchProduct, isMobile]);
+
+    const handleSearchSubmit = useCallback(
+      (e) => {
+        e.preventDefault();
+        if (searchProduct.trim()) {
+          navigate(`/search?q=${encodeURIComponent(searchProduct)}`);
+          setIsExpanded(false);
+          if (isMobile) {
+            closeSearchBar();
+          }
+        }
+      },
+      [searchProduct, navigate, isMobile, closeSearchBar]
+    );
+
     return (
       <div
-        className={`relative ${isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[25vw]"}`}
+        className={`relative ${
+          isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[25vw]"
+        }`}
+        ref={searchInputRef}
       >
-        <div className="relative">
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="What are you looking for?"
-            value={searchProduct}
-            onChange={handleSearchChange}
-            onFocus={handleSearchFocus}
-            onBlur={handleSearchBlur}
-            className={`w-full px-5 py-4 rounded-2xl border-0 focus:outline-none focus:ring-4 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 ${
-              isMobile ? "pr-12 text-base" : "pr-12"
-            }`}
-          />
-          <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-            <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg">
-              <BsSearch className="text-white text-lg" />
-            </div>
+        <form onSubmit={handleSearchSubmit}>
+          <div className="relative">
+            <input
+              ref={localInputRef}
+              type="text"
+              placeholder="What are you looking for?"
+              value={searchProduct}
+              onChange={handleSearchChange}
+              onFocus={handleSearchFocus}
+              className={`w-full px-5 py-4 rounded-2xl border-2 border-transparent focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 transition-all duration-300 ${
+                isMobile ? "pr-12 text-base" : "pr-12"
+              }`}
+              autoComplete="off"
+            />
+            <button
+              type="submit"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2"
+              style={{ zIndex: 10012 }}
+            >
+              <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:from-yellow-500 hover:to-yellow-600 transition-all duration-300">
+                <BsSearch className="text-white text-lg" />
+              </div>
+            </button>
           </div>
-        </div>
+        </form>
 
         {/* Search Results */}
         {isExpanded && searchProduct && (
           <div
             ref={searchResultsRef}
-            className="absolute top-full left-0 z-[10010] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden mt-3 border border-yellow-100"
+            className={`absolute top-full left-0 bg-white backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden mt-3 border border-yellow-100 transition-all duration-200 ${
+              isExpanded && searchProduct
+                ? "opacity-100 visible max-h-[60vh]"
+                : "opacity-0 invisible max-h-0"
+            } ${isMobile ? "fixed left-4 right-4 w-auto" : "w-full"}`}
             style={{
-              position: isMobile ? 'fixed' : 'absolute',
-              top: isMobile ? '100%' : '100%',
-              left: isMobile ? '1rem' : '0',
-              right: isMobile ? '1rem' : 'auto',
-              width: isMobile ? 'calc(100% - 2rem)' : '100%',
-              maxHeight: '60vh'
+              zIndex: 10010,
+              maxHeight: "60vh",
             }}
           >
             <div className="overflow-y-auto max-h-[60vh]">
@@ -233,24 +265,43 @@ const Navbar = () => {
                   <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
                     <BsSearch className="text-2xl text-yellow-600" />
                   </div>
-                  <p className="font-medium text-gray-700 mb-1">No products found</p>
-                  <p className="text-sm text-gray-500">Try different keywords</p>
+                  <p className="font-medium text-gray-700 mb-1">
+                    No products found
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Try different keywords
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
                   {searchingProducts.map((data) => (
                     <div
                       key={data._id}
-                      onClick={() => {
-                        handleDestination(`/product/${data.seo_url}`);
-                        closeSearchBar();
-                      }}
                       className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
+                      onMouseDown={(e) => {
+                        // Prevent default and stop propagation
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Mark that click came from search result
+                        isClickFromResultRef.current = true;
+
+                        // Navigate to product
+                        navigate(`/product/${data.seo_url || data._id}`);
+
+                        // Clear and close search
+                        setSearchProduct("");
+                        setIsExpanded(false);
+
+                        // Close mobile search bar if open
+                        if (isMobile) {
+                          closeSearchBar();
+                        }
+                      }}
                     >
-                      <SearchProductCard
-                        data={data}
-                        className="py-4 px-4"
-                      />
+                      <div className="py-4 px-4">
+                        <SearchProductCard data={data} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -260,7 +311,8 @@ const Navbar = () => {
         )}
       </div>
     );
-  });
+  };
+
 
   // Desktop Auth Buttons Component - Memoized
   const AuthButtons = React.memo(() => (
