@@ -1027,7 +1027,7 @@ const Signup = () => {
               <form onSubmit={handleVerifyOtp} className="bg-white rounded-lg">
                 <div className="mb-6 text-center">
                   <p className="text-gray-600 mb-2">
-                    Enter the 6-digit OTP sent to:
+                    Enter the 6-digit OTP sent to
                   </p>
                   <p className="font-medium text-gray-800">{form.email}</p>
                 </div>
@@ -1112,7 +1112,7 @@ const Signup = () => {
                 className="bg-white rounded-lg"
               >
                 <div className="mb-6">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <div className="bg-[#facc152c] border border-[#facc15] rounded-lg p-4 mb-4">
                     <div className="flex items-center">
                       <div className="bg-green-100 p-2 rounded-full mr-3">
                         <svg
@@ -1128,10 +1128,10 @@ const Signup = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium text-green-800">
+                        <p className="font-medium text-black">
                           Email Verified
                         </p>
-                        <p className="text-green-600 text-sm">{form.email}</p>
+                        <p className="text-black text-sm">{form.email}</p>
                       </div>
                     </div>
                   </div>
