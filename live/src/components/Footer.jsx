@@ -4,7 +4,7 @@ import { footerItems } from "../../data";
 import { IoCallOutline } from "react-icons/io5";
 import { CiMail } from "react-icons/ci";
 import { Link, useNavigate } from "react-router-dom";
-import { FaFacebook, FaInstagram, FaLinkedin, FaTwitterSquare, FaArrowRight } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaLinkedin, FaTwitterSquare, FaArrowRight,FaYoutube } from "react-icons/fa";
 import moment from "moment";
 import Logo from "../assets/logo/without_bg.png";
 import Gpay from "../assets/payment/gpay.svg";
@@ -92,7 +92,7 @@ const Footer = () => {
                     target="_blank"
                     className="flex items-center justify-center p-2 bg-gray-800 rounded-lg hover:bg-[#f2c41a] transition-all duration-300 group"
                   >
-                    <FaFacebook size={18} className="text-[#f2c41a] group-hover:text-gray-900 transition-colors duration-300" />
+                    <FaFacebook size={18} className="text-[#0861f2] group-hover:text-gray-900 transition-colors duration-300" />
                   </Link>
                 </li>
                 <li>
@@ -101,25 +101,25 @@ const Footer = () => {
                     target="_blank"
                     className="flex items-center justify-center p-2 bg-gray-800 rounded-lg hover:bg-[#f2c41a] transition-all duration-300 group"
                   >
-                    <FaInstagram size={18} className="text-[#f2c41a] group-hover:text-gray-900 transition-colors duration-300" />
+                    <FaInstagram size={18} className="text-[#fe0090] group-hover:text-gray-900 transition-colors duration-300" />
                   </Link>
                 </li>
                 <li>
                   <Link 
-                    to={'#'} 
+                    to={'https://www.youtube.com/@PrintEOfficial'} 
                     target="_blank"
                     className="flex items-center justify-center p-2 bg-gray-800 rounded-lg hover:bg-[#f2c41a] transition-all duration-300 group"
                   >
-                    <FaTwitterSquare size={18} className="text-[#f2c41a] group-hover:text-gray-900 transition-colors duration-300" />
+                    <FaYoutube size={18} className="text-[#ff0033] group-hover:text-gray-900 transition-colors duration-300" />
                   </Link>
                 </li>
                 <li>
                   <Link 
-                    to={'#'} 
+                    to={'https://www.linkedin.com/company/theprinte'} 
                     target="_blank"
                     className="flex items-center justify-center p-2 bg-gray-800 rounded-lg hover:bg-[#f2c41a] transition-all duration-300 group"
                   >
-                    <FaLinkedin size={18} className="text-[#f2c41a] group-hover:text-gray-900 transition-colors duration-300" />
+                    <FaLinkedin size={18} className="text-[#0a66c2] group-hover:text-gray-900 transition-colors duration-300" />
                   </Link>
                 </li>
               </ul>
@@ -171,7 +171,7 @@ const Footer = () => {
       {/* Bottom section */}
       <div className="relative z-10 border-t border-gray-800 bg-gray-900 font-primary flex flex-col md:flex-row justify-between items-center py-6 px-[6vw] md:px-[8vw] xl:px-[10vw]">
         <span className="text-sm text-center text-gray-400 order-2 md:order-1">
-          © {moment().format("YYYY")}  Pazhanam Designs and Constructions Private Limited. All Rights Reserved.
+          © {moment().format("YYYY")}  Dmedia. All Rights Reserved.
         </span>
         {/* <div className="flex gap-6 mb-4 md:mb-0 order-1 md:order-2">
           <Link to="#" className="text-gray-400 hover:text-[#f2c41a] text-sm transition-colors">Privacy Policy</Link>

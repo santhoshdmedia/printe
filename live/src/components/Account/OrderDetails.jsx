@@ -10,6 +10,8 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { ImageHelper } from "../../helper/ImageHelper";
 
+// At the top of your file with other imports
+import signatureImage from "../../../src/assets/logo/signature.png";
 const OrderDetails = () => {
   // State
   const [subtotal, setSubtotal] = useState(0);
@@ -145,6 +147,8 @@ const OrderDetails = () => {
     );
     
     const firstOrder = orders[0];
+    console.log(firstOrder,"f");
+    
     
     // Get payment status information
     let paymentStatusHTML = '';
@@ -170,102 +174,135 @@ const OrderDetails = () => {
         </div>
       `;
     }
+
+    // console.log(firstOrder,"ff");
+    
     
     return `
-      <div class="w-full mx-auto px-4 pb-4 bg-white" style="width: 794px; font-family: Arial, sans-serif;">
-        <div class="w-full bg-gray-100 p-4 mb-5 rounded">
-          <div class="flex justify-between items-center">
-            <img src="${ImageHelper.FULL_LOGO}" alt="Company Logo" class="h-12" crossOrigin="anonymous" />
-            <div class="text-right">
-              <p>#8 Church Colony, Opp.Bishop Heber College</p>
-              <p>Vayalur Rd, Tiruchirappalli</p>
-              <p>Tamil Nadu 620017</p>
-            </div>
-          </div>
+      <div class="w-full  pb-2 " style=" font-family: Arial, sans-serif; poision:relative; min-height: 1120px; width: 794px; ">
+        <div class="w-full    rounded mb-2">
+         <div class="flex justify-between items-start">
+  <div className="text-start">
+    <h2 style="font-size:2.2rem;"><b>Printe</b></h2>
+    
+    <!-- GSTIN and PAN in a simple row without flex gap -->
+    <div className="flex" style="margin-bottom: 2px;display: flex;  gap: 20px;">
+      <p className="text-sm mr-5"><b>GSTIN :</b> 33AANCP3376Q1ZN</p>
+      <p className="text-sm"><b>PAN :</b> AANCP3376Q</p>
+    </div>
+    
+    <!-- Address section -->
+    <div style="margin-bottom: 2px;">
+      <p className="text-[0.8rem]">#6 Church Colony,</p>
+      <p className="text-[0.8rem]">Tiruchirappalli</p>
+      <p className="text-[0.8rem]">Tamil Nadu 620017</p>
+    </div>
+
+    <!-- Contact info - simpler layout -->
+    <div style="display: flex; gap:20px;">
+      <p className="text-sm mb-1"><b>Mobile :</b> <a href="tel:+919585610000" className="text-sm">+91 95856 10000</a></p>
+      <p className="text-sm mb-1"><b>Email :</b> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p>
+      <p className="text-sm mb-1"><b>Website :</b> <a href="https://www.printe.in" className="text-sm">www.printe.in</a></p>
+    </div>
+  </div>
+
+  <img src="${ImageHelper.without_bg}" alt="Company Logo" class="h-16" crossOrigin="anonymous" />
+</div>
         </div>
 
-        <div class="flex flex-wrap justify-between mb-6">
-          <div class="w-full md:w-1/2 mb-4 md:mb-0">
-            <h2 class="text-lg font-bold text-gray-800 mb-2">Order Information</h2>
-            <div class="bg-gray-50 p-3 rounded">
-              <p><span class="font-semibold">INVOICE:</span> ${invoiceNo}</p>
-              <p><span class="font-semibold">Order Date:</span> ${moment(firstOrder.createdAt).format("DD-MMM-yyyy")}</p>
-              <p><span class="font-semibold">Payment Method:</span> ${firstOrder.payment_type}</p>
-              ${firstOrder.payment_id ? `<p><span class="font-semibold">Payment ID:</span> ${firstOrder.payment_id}</p>` : ''}
+        <div class="flex flex-wrap justify-between mb-2">
+          <div class="w-full  ">
+            <h2 class="text-lg font-bold text-gray-800 mb-1">Order Information</h2>
+            <div class=" rounded" style="display: flex;  gap: 20px;">
+              <p><span class="text-sm"><b>INVOICE:</b></span> ${invoiceNo}</p>
+              <p><span class="text-sm"><b>Order Date:</b></span> ${moment(firstOrder.createdAt).format("DD-MMM-yyyy")}</p>
+              <p><span class="text-sm"><b>Payment Method:</b></span> ${firstOrder.payment_type}</p>
+              ${firstOrder.payment_id ? `<p><span class="text-sm"><b>Payment ID:</b></span> ${firstOrder.payment_id}</p>` : ''}
             </div>
           </div>
 
-          <div class="w-full md:w-1/2 text-right">
-            <h2 class="text-lg font-bold text-gray-800 mb-2">Billing Address</h2>
-            <div class="bg-gray-50 p-3 rounded">
-              <p class="font-semibold">${firstOrder.delivery_address?.name || ''}</p>
+         
+        </div>
+
+        <div class="flex flex-wrap  mb-6" style="gap:10rem;">
+        <div className="">
+              <h2 className=" font-bold text-gray-800 " style="font-weight: 700; font-size: 1.125rem /* 18px */;line-height: 1.75rem /* 28px */; ">
+              Customer Details
+            </h2>
+              <p className="font-semibold">${firstOrder.delivery_address?.name || ''}</p>
+            </div>
+
+         <div class="  text-start">
+            <h2 class="text-lg font-bold text-gray-800 ">Billing Address</h2>
+            <div class=" rounded">
+              <p>${firstOrder.delivery_address?.name || ''}</p>
               <p>${firstOrder.delivery_address?.street_address || ''}</p>
               <p>${firstOrder.delivery_address?.pincode || ''}</p>
               <p>Phone: ${firstOrder.delivery_address?.mobile_number || ''}</p>
               ${firstOrder.delivery_address?.Alternate_mobile_number ? `<p>Alt Phone: ${firstOrder.delivery_address?.Alternate_mobile_number}</p>` : ''}
             </div>
           </div>
-        </div>
+</div>
 
-        <h2 class="text-xl font-bold text-gray-800 mb-3 border-b pb-2">Order Summary</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-2 border-b pb-4">Order Summary</h2>
 
-        <div class="mb-6 overflow-x-auto">
+        <div class="mb-2 overflow-x-auto">
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-gray-100">
-                <th class="p-3 text-left border">Order ID</th>
-                <th class="p-3 text-left border">Product Name</th>
-                <th class="p-3 text-center border">Price</th>
-                <th class="p-3 text-center border">Qty</th>
-                <th class="p-3 text-center border">Total</th>
+                <th class="p-[0.5rem] text-left border bg-[#f2c41a]">Order ID</th>
+                <th class="p-[0.5rem] text-left border bg-[#f2c41a]">Product Name</th>
+                <th class="p-[0.5rem] text-center border bg-[#f2c41a]">Price</th>
+                <th class="p-[0.5rem] text-center border bg-[#f2c41a]">Qty</th>
+                <th class="p-[0.5rem] text-center border bg-[#f2c41a]">Total</th>
               </tr>
             </thead>
             <tbody>
               ${orders.map(order => `
                 <tr key="${order._id}" class="border-b">
-                  <td class="p-3 border">${order._id}</td>
-                  <td class="p-3 border">
+                  <td class="p-[0.5rem] border">${order._id}</td>
+                  <td class="p-[0.5rem] border">
                     <div class="flex flex-col gap-y-1">
                       <p class="font-semibold">${order.cart_items?.product_name || ''}</p>
                       <p class="text-xs text-gray-500">${order.cart_items?.product_seo_url || ''}</p>
                     </div>
                   </td>
-                  <td class="p-3 text-center border">₹ ${order.cart_items?.product_price || 0}</td>
-                  <td class="p-3 text-center border">${order.cart_items?.product_quantity || 0}</td>
-                  <td class="p-3 text-center border">₹ ${(order.cart_items?.product_price * order.cart_items?.product_quantity) || 0}</td>
+                  <td class="p-[0.5rem] text-center border">₹${Number(1239.44)}</td>
+                  <td class="p-[0.5rem] text-center border">${Number(1)}</td>
+                  <td class="p-[0.5rem] text-center border">₹ ${(1||order.cart_items?.product_price * order.cart_items?.product_quantity) || 0}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
 
-        <h2 class="text-xl font-bold text-gray-800 mb-3 border-b pb-2 mt-8">Payment Summary</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-3 border-b pb-2 mt-[0.5rem]">Payment Summary</h2>
 
         <div class="mb-6 overflow-x-auto">
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-gray-100">
-                <th class="p-3 text-left border">Description</th>
-                <th class="p-3 text-center border">Amount</th>
+                <th class="p-[0.5rem] text-left border bg-[#f2c41a]" style="padding:0.8rem; text-align: left;">Description</th>
+                <th class="p-[0.5rem] text-center border bg-[#f2c41a]" style="padding:0.8rem; text-align: left;">Amount</th>
               </tr>
             </thead>
             <tbody>
               <tr class="border-b">
-                <td class="p-3 border font-semibold">Subtotal</td>
-                <td class="p-3 text-center border">₹ ${subtotal.toFixed(2)}</td>
+                <td class="p-[0.5rem] border font-semibold">Subtotal</td>
+                <td class="p-[0.5rem] text-center border">₹ 1239.44</td>
               </tr>
               <tr class="border-b">
-                <td class="p-3 border font-semibold">Shipping</td>
-                <td class="p-3 text-center border">₹ 0.00</td>
+                <td class="p-[0.5rem] border font-semibold">Shipping</td>
+                <td class="p-[0.5rem] text-center border">₹ 0.00</td>
               </tr>
               <tr class="border-b">
-                <td class="p-3 border font-semibold">Tax</td>
-                <td class="p-3 text-center border">₹ 0.00</td>
+                <td class="p-[0.5rem] border font-semibold">Tax</td>
+                <td class="p-[0.5rem] text-center border">₹ 0.00</td>
               </tr>
               <tr class="border-b">
-                <td class="p-3 border font-bold">Grand Total</td>
-                <td class="p-3 text-center border font-bold text-orange-600">
-                  ₹ ${grandTotal.toFixed(2)}
+                <td class="p-[0.5rem] border font-bold">Grand Total</td>
+                <td class="p-[0.5rem] text-center border font-bold text-orange-600">
+                  ₹ 1239.44 
                 </td>
               </tr>
             </tbody>
@@ -277,6 +314,33 @@ const OrderDetails = () => {
             ${paymentStatusHTML}
           </div>
         </div>
+
+
+        <div  style="display: flex; justify-content: end;  ">
+        <div class="">
+        
+        <img src="${signatureImage}" alt="signature" style="width:100px;height:100px;" crossOrigin="anonymous" />
+        <p class="text-lg" style="font-weight:700; ">Authorized Signature</p>
+        </div>
+      
+        </div>
+
+                  <!-- Footer section positioned at the bottom of the T&C page -->
+          <div style="position: absolute; bottom: 0%; left: 0; right: 0; ">
+            <div class="mt-4 pt-2 border-t text-sm text-gray-500 p-4" style="width: 800px; font-family: Arial, sans-serif;">
+              <div class="text-center mb-3">
+                <p>MARKETED BY PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
+              </div>
+
+              <div class="w-full text-white flex justify-between  bg-[#444444] h-10 px-4 rounded" style="align-items:baseline;">
+                <span><p className="text-sm mb-1"> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p></span>
+                <span>Powerd By <a href="https://www.dmedia.in/" className="text-sm" style="color: white; text-decoration: underline;"><b>DMEDIA</b></a></span>
+              </div>
+            </div>
+          </div>
+
+
+
       </div>
       
     `;
@@ -286,11 +350,11 @@ const OrderDetails = () => {
   const generateTncHTML = (order, invoiceNo) => {
     return `
       <div class="w-full mx-auto px-4 pb-4 bg-white" style="width: 794px; font-family: Arial, sans-serif; position: relative; min-height: 1123px;">
-        <div class="w-full bg-gray-100 p-1 mb-5 rounded">
+        <div class="w-full bg-[#f2c41a] p-1 mb-5 rounded">
           <h3 class="text-lg font-bold mb-4 text-center">Terms & Conditions</h3>
         </div>
 
-        <div class="mt-8 pt-4 text-sm text-gray-600">
+        <div class="mt-2 pt-2 text-sm text-gray-600">
           <ul class="list-disc list-inside leading-relaxed space-y-2">
             <li>All sales are final and non-refundable.</li>
             <li>Goods once sold cannot be returned or exchanged.</li>
@@ -306,14 +370,14 @@ const OrderDetails = () => {
           
           <!-- Footer section positioned at the bottom of the T&C page -->
           <div style="position: absolute; bottom: 17px; left: 0; right: 0;">
-            <div class="mt-6 pt-4 border-t text-sm text-gray-500 bg-white p-4" style="width: 794px; font-family: Arial, sans-serif;">
+            <div class="mt-4 pt-2 border-t text-sm text-gray-500 bg-white p-4" style="width: 800px; font-family: Arial, sans-serif;">
               <div class="text-center mb-3">
                 <p>Thank you for your business!</p>
               </div>
 
-              <div class="w-full flex justify-between items-center bg-gray-100 h-10 px-4 rounded">
-                <span>support@printe.in</span>
-                <span>9876543210</span>
+              <div class="w-full text-white flex justify-between  bg-[#444444] h-10 px-4 rounded" style="align-items:baseline;">
+                <span><p className="text-sm mb-1"> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p></span>
+                <span>Powerd By <a href="https://www.dmedia.in/" className="text-sm" style="color: white; text-decoration: underline;"><b>DMEDIA</b></a></span>
               </div>
             </div>
           </div>
@@ -332,6 +396,7 @@ const OrderDetails = () => {
     );
     
     const firstOrder = orders[0];
+    
     
     // Get payment status information
     let paymentStatusJSX = null;
@@ -363,54 +428,77 @@ const OrderDetails = () => {
     return (
       <div key={invoiceNo} className="w-full mx-auto px-4 pb-4 !font-billfont bg-white mb-5" style={{ width: "794px" }}>
         {/* Header */}
-        <div className="w-full bg-gray-100 p-4 mb-5 rounded">
-          <div className="flex justify-between items-center">
+        <div className="w-full   mb-4 rounded">
+          <div className="flex justify-between items-start">
+              <div className="text-start">
+                <h2 className="text-2xl font-bold items-start">Printe</h2>
+                <div className="flex gap-5">
+                  <p className="text-sm"><b>GSTIN :</b> 33AANCP3376Q1ZN</p>
+                  <p className="text-sm"><b>PAN :</b> AANCP3376Q</p>
+                </div>
+                
+              <p className="text-[0.8rem]">#6 Church Colony,</p>
+              <p className="text-[0.8rem]">Tiruchirappalli</p>
+              <p className="text-[0.8rem]">Tamil Nadu 620017</p>
+
+              <div className="flex gap-5 justify-center items-baseline">
+              <p className="text-sm"><b>Mobile :</b> <a href="tel:+919585610000" className="text-sm">+91 95856 10000</a></p>
+              <p className="text-sm"><b>Email :</b> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p>
+              <p className="text-sm"><b>Website :</b> <a href="https://www.printe.in" className="text-sm">www.printe.in</a></p>
+              </div>
+             
+            </div>
             <img
               src={ImageHelper.without_bg}
               alt="Company Logo"
-              className="h-12"
+              className="h-16"
               crossOrigin="anonymous"
             />
-            <div className="text-right">
-              <p>#8 Church Colony, Opp.Bishop Heber College</p>
-              <p>Vayalur Rd, Tiruchirappalli</p>
-              <p>Tamil Nadu 620017</p>
-            </div>
+          
           </div>
         </div>
 
         {/* Order Info */}
         <div className="flex flex-wrap justify-between mb-6">
-          <div className="w-full md:w-1/2 mb-4 md:mb-0">
-            <h2 className="text-lg font-bold text-gray-800 mb-2">
+          <div className="w-full  mb-4 ">
+            <h2 className="text-[1.1rem] font-bold text-gray-800 ">
               Order Information
             </h2>
-            <div className="bg-gray-50 p-3 rounded">
+            <div className="flex rounded justify-between items-center">
               <p>
-                <span className="font-semibold">INVOICE:</span> {invoiceNo}
+                <span className=" text-sm"><b>INVOICE NO:</b></span> {invoiceNo}
               </p>
               <p>
-                <span className="font-semibold">Order Date:</span>{" "}
+                <span className="text-sm"><b>Order Date:</b></span>{" "}
                 {moment(firstOrder.createdAt).format("DD-MMM-yyyy")}
               </p>
               <p>
-                <span className="font-semibold">Payment Method:</span>{" "}
+                <span className="text-sm"><b>Payment Method:</b></span>{" "}
                 {firstOrder.payment_type}
               </p>
               {firstOrder.payment_id && (
                 <p>
-                  <span className="font-semibold">Payment ID:</span>{" "}
+                  <span className="text-sm"><b>Payment ID:</b></span>{" "}
                   {firstOrder.payment_id}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="w-full md:w-1/2 text-right">
-            <h2 className="text-lg font-bold text-gray-800 mb-2">
-              Billing Address
+
+        </div>
+          <div className="w-full  flex gap-[11rem]  items-baseline">
+            <div className="">
+              <h2 className="text-lg font-bold text-gray-800 ">
+              Customer Details
             </h2>
-            <div className="bg-gray-50 p-3 rounded">
+              <p className="font-semibold">{firstOrder.delivery_address?.name}</p>
+            </div>
+            
+            <div className=" rounded">
+               <h2 className="text-lg font-bold text-gray-800 ">
+             Billing Address
+            </h2>
               <p className="font-semibold">{firstOrder.delivery_address?.name}</p>
               <p>{firstOrder.delivery_address?.street_address}</p>
               <p>{firstOrder.delivery_address?.pincode}</p>
@@ -420,30 +508,28 @@ const OrderDetails = () => {
               )}
             </div>
           </div>
-        </div>
-
         {/* Order Summary */}
-        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b pb-2">
+        <h2 className="text-[1.1rem] font-bold text-gray-800 mb-2 border-b pb-1">
           Order Summary
         </h2>
 
         {/* Product Table */}
-        <div className="mb-6 overflow-x-auto">
+        <div className="mb-2 overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100">
-                <th className="p-3 text-left border">Order ID</th>
-                <th className="p-3 text-left border">Product Name</th>
-                <th className="p-3 text-center border">Price</th>
-                <th className="p-3 text-center border">Qty</th>
-                <th className="p-3 text-center border">Total</th>
+                <th className="p-1 text-left border bg-[#f2c41a]">Order ID</th>
+                <th className="p-1 text-left border bg-[#f2c41a]">Product Name</th>
+                <th className="p-1 text-center border bg-[#f2c41a]">Price</th>
+                <th className="p-1 text-center border bg-[#f2c41a]">Qty</th>
+                <th className="p-1 text-center border bg-[#f2c41a]">Total</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="text-[0.8rem]">
               {orders.map((order) => (
                 <tr key={order._id} className="border-b">
-                  <td className="p-3 border">{order._id}</td>
-                  <td className="p-3 border">
+                  <td className="p-1 border">{order._id}</td>
+                  <td className="p-1 border">
                     <div className="flex flex-col gap-y-1">
                       <p className="font-semibold">
                         {order.cart_items?.product_name}
@@ -453,14 +539,14 @@ const OrderDetails = () => {
                       </p>
                     </div>
                   </td>
-                  <td className="p-3 text-center border">
-                    ₹ {order.cart_items?.product_price}
+                  <td className="p-1 text-center border">
+                    {/* ₹ {order.cart_items?.product_price} */}₹ 1239.44
                   </td>
-                  <td className="p-3 text-center border">
-                    {order.cart_items?.product_quantity}
+                  <td className="p-1 text-center border">
+                    {/* {order.cart_items?.product_quantity} */}1
                   </td>
-                  <td className="p-3 text-center border">
-                    ₹ {order.cart_items?.product_price * order.cart_items?.product_quantity}
+                  <td className="p-1 text-center border">
+                    {/* ₹ {order.cart_items?.product_price * order.cart_items?.product_quantity} */}₹1239.44
                   </td>
                 </tr>
               ))}
@@ -469,7 +555,7 @@ const OrderDetails = () => {
         </div>
 
         {/* Payment Summary */}
-        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b pb-2 mt-8">
+        <h2 className="text-[1.1rem] font-bold text-gray-800 mb-2 border-b pb-1 ">
           Payment Summary
         </h2>
 
@@ -478,27 +564,27 @@ const OrderDetails = () => {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100">
-                <th className="p-3 text-left border">Description</th>
-                <th className="p-3 text-center border">Amount</th>
+                <th className="p-1 text-left border bg-[#f2c41a]">Description</th>
+                <th className="p-1 text-center border bg-[#f2c41a]">Amount</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="text-[0.8rem]">
               <tr className="border-b">
-                <td className="p-3 border font-semibold">Subtotal</td>
-                <td className="p-3 text-center border">₹ {subtotal.toFixed(2)}</td>
+                <td className="p-1 border font-semibold">Subtotal</td>
+                <td className="p-1 text-center border">₹ 1239.44</td>
               </tr>
               <tr className="border-b">
-                <td className="p-3 border font-semibold">Shipping</td>
-                <td className="p-3 text-center border">₹ 0.00</td>
+                <td className="p-1 border font-semibold">Shipping</td>
+                <td className="p-1 text-center border">₹ 0.00</td>
               </tr>
               <tr className="border-b">
-                <td className="p-3 border font-semibold">Tax</td>
-                <td className="p-3 text-center border">₹ 0.00</td>
+                <td className="p-1 border font-semibold">Tax</td>
+                <td className="p-1 text-center border">₹ 0.00</td>
               </tr>
               <tr className="border-b">
-                <td className="p-3 border font-bold">Grand Total</td>
-                <td className="p-3 text-center border font-bold text-orange-600">
-                  ₹ {grandTotal.toFixed(2)}
+                <td className="p-1 border font-bold">Grand Total</td>
+                <td className="p-1 text-center border font-bold text-orange-600">
+                  {/* ₹ {grandTotal.toFixed(2)} */}₹1239.44
                 </td>
               </tr>
             </tbody>

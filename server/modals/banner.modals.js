@@ -20,6 +20,10 @@ module.exports = model(
         type: String,
         required: true,
       },
+      is_reward: {
+        type: Boolean,
+        default:false
+      },
       banner_products: [
         {
           type: Schema.Types.ObjectId,

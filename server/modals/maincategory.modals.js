@@ -23,6 +23,14 @@ module.exports = new model(
         type: Boolean,
         required: false,
       },
+      Add_to_nav: {
+        type: Boolean,
+        required: false,
+      },
+        cat_imgs: {
+        type: String,
+        required: true,
+      },
     },
 
     {

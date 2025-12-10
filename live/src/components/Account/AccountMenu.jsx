@@ -1,7 +1,7 @@
 import React from "react";
 import { FaBoxOpen, FaRegAddressCard } from "react-icons/fa";
 import { FaUserLarge } from "react-icons/fa6";
-import { IoHeartSharp, IoSettingsSharp, IoLogOutOutline,IoShieldCheckmark } from "react-icons/io5";
+import { IoHeartSharp, IoSettingsSharp, IoLogOutOutline,IoShieldCheckmark,IoPricetagSharp } from "react-icons/io5";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 
@@ -24,6 +24,11 @@ const AccountMenu = () => {
       icon: <IoShieldCheckmark />,
       link: "/Warranty",
       name: "Warrenty",
+    },
+     {
+      icon: <IoPricetagSharp />,
+      link: "/account/reward",
+      name: "Reward",
     },
     {
       icon: <FaRegAddressCard />,

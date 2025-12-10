@@ -16,9 +16,12 @@ import color3 from "../assets/logo/color/dynamic/9f1239.png";
 import color4 from "../assets/logo/color/dynamic/3f6212.png";
 import color5 from "../assets/logo/color/dynamic/9a3412.png";
 import color6 from "../assets/logo/color/dynamic/292524.png";
+
 import without_bg from "../assets/logo/without_bg.png";
 import bottomimage from "../assets/About_Us/bottom_image.avif";
 import { VscArrowCircleUp } from "react-icons/vsc";
+// At the top of your file with other imports
+
 
 export const ImageHelper = {
   logo: logo,
@@ -40,5 +43,7 @@ export const ImageHelper = {
   WHATSAPP_IMG: whatsapp_img,
   EmptyCard: EmptyCard,
   BOTTOM_IMAGE: bottomimage,
+  without_bg: without_bg, // Use the imported image directly
+
   UP_arrow:VscArrowCircleUp
 };

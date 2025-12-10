@@ -27,7 +27,6 @@ const CarouselBanner = () => {
 
   useEffect(() => {
     dispatch({ type: "GET_BANNERS" });
-    
   }, [dispatch]);
 
   if (isGettingBanners) {
@@ -87,7 +86,7 @@ const CarouselBanner = () => {
             delay: 5000,
             disableOnInteraction: false,
             pauseOnMouseEnter: true,
-            pauseOnHover: true
+            pauseOnHover: true,
           }}
           speed={2000}
           className="w-full  relative"
@@ -145,7 +144,10 @@ const CarouselBanner = () => {
                       className="block h-full w-full group"
                     >
                       <motion.img
-                        src={banner.banner_image || slideImages[index % slideImages.length]}
+                        src={
+                          banner.banner_image ||
+                          slideImages[index % slideImages.length]
+                        }
                         alt={banner.banner_name || "Banner image"}
                         className="w-[100%] h-[100%] object-contain"
                         loading="lazy"
@@ -320,7 +322,7 @@ const CarouselBanner = () => {
                             animate={{ opacity: 1 }}
                             transition={{ delay: 1.9 }}
                           >
-                            <motion.svg
+                            {/* <motion.svg
                               className="w-5 h-5 text-gray-700"
                               fill="currentColor"
                               viewBox="0 0 20 20"
@@ -340,13 +342,13 @@ const CarouselBanner = () => {
                             </motion.svg>
                             <span className="text-sm font-medium text-gray-700">
                               24/7 Support
-                            </span>
+                            </span> */}
                           </motion.div>
                         </motion.div>
 
                         {/* Buttons with enhanced animations */}
                         <motion.div
-                          className="flex flex-col sm:flex-row gap-2"
+                          className="flex flex-col sm:flex-row gap-8"
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 2.1 }}
@@ -382,7 +384,7 @@ const CarouselBanner = () => {
                                   transition: { delay: 2.2 },
                                 }}
                               >
-                                Shop Now
+                               {banner.tag=="exclusive offer for Launch"?"claim now":"Shop Now"} 
                               </motion.span>
 
                               <motion.span
@@ -402,22 +404,11 @@ const CarouselBanner = () => {
 
                           {/* Happy customer with animation */}
                           <motion.div
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-10"
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 2.5 }}
                           >
-                            <motion.img
-                              src={Test}
-                              alt="testimonial"
-                              className="w-auto h-15 rounded-full"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{
-                                type: "spring",
-                                delay: 2.5,
-                              }}
-                            />
                             <motion.span
                               className="text-black"
                               animate={{
@@ -429,7 +420,7 @@ const CarouselBanner = () => {
                                 },
                               }}
                             >
-                              10K+ Happy Customer
+                              Join Our Family!
                             </motion.span>
                           </motion.div>
                         </motion.div>
@@ -439,9 +430,9 @@ const CarouselBanner = () => {
                 </div>
               </div>
             </SwiperSlide>
-          ))}          
+          ))}
         </Swiper>
-       
+
         {/* Navigation Buttons */}
         {!isBeginning && (
           <button
@@ -464,7 +455,7 @@ const CarouselBanner = () => {
             </svg>
           </button>
         )}
-        
+
         {!isEnd && (
           <button
             className="banner-next hidden lg:block absolute right-4 top-1/2 z-10 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors"
@@ -492,19 +483,3 @@ const CarouselBanner = () => {
 };
 
 export default CarouselBanner;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

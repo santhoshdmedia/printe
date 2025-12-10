@@ -131,7 +131,7 @@ const Login = () => {
               onClick={() => handleNavigation("/sign-up")}
               className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200 mb-4 md:mb-6 text-sm md:text-base"
             >
-              <FaArrowLeft className="mr-2" /> Register Here
+              <FaArrowLeft className="mr-2" /> Sign up
             </button>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Login to Your Account</h1>
             <p className="text-gray-600 text-sm md:text-base">Enter your credentials to access your account</p>
@@ -212,13 +212,13 @@ const Login = () => {
                   Don't have an account?{" "}
                   <Link 
                     to="/sign-up" 
-                    className="text-blue-600 hover:text-blue-800 font-medium"
+                    className="text-blue-600 text-lg hover:text-blue-800 font-medium"
                     onClick={(e) => {
                       e.preventDefault();
                       handleNavigation("/sign-up");
                     }}
                   >
-                    Register here
+                    Sign up
                   </Link>
                 </p>
               </div>

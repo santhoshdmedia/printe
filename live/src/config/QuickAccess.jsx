@@ -212,11 +212,11 @@ export const WGDesigns = () => {
             <div className="flex  items-center mb-4">
               <FaHeadset className="text-3xl text-purple-600 mr-4" />
               <h2 className="text-lg lg:text-2xl font-semibold text-[#f2c41a]">
-                24/7 Support
+                Customer Support
               </h2>
             </div>
             <div className="mb-3">
-              <span className="font-bold text-[#987c34] lg:text-md text-sm">ALWAYS AVAILABLE</span>
+              <span className="font-bold text-[#987c34] lg:text-md text-sm">WE ARE AVAILABLE</span>
             </div>
             <p className="text-gray-600 lg:text-md text-sm">
               Our customer service team is available round the clock to assist

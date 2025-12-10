@@ -36,6 +36,8 @@ import SectionExplore from "../pages/Home/SectionExplore.jsx";
 import HistoryExplore from "../pages/Product/HistoryExplore.jsx";
 import AboutUs from "../pages/Information/AboutUs.jsx";
 
+import Reward from "../components/Account/Reward.jsx";
+
 // payment
 import PaymentCancelled from "../pages/shopping/pay/PaymentCancelled.jsx";
 import PaymentFailed from "../pages/shopping/pay/PaymentFailled.jsx";
@@ -115,6 +117,10 @@ export const router = createBrowserRouter([
           {
             path: "my-orders",
             element: <UserOrders />,
+          },
+          {
+            path: "reward",
+            element: <Reward />,
           },
           { path: "wishlist", element: <WishList /> },
           {

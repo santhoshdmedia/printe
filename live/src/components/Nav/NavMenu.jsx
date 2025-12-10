@@ -214,6 +214,11 @@ const NavMenu = () => {
 
                           if (!selectedCategory) return null;
 
+                          // Calculate how many placeholder columns we need
+                          const totalItems = allSubcategories.length;
+                          const remainder = totalItems % 3;
+                          const placeholdersNeeded = remainder > 0 ? 3 - remainder : 0;
+
                           return (
                             <div className="animate-fade-in">
                               <div className="flex items-center justify-between mb-6 pb-3 border-b border-gray-200">
@@ -305,7 +310,7 @@ const NavMenu = () => {
                                         ) : (
                                           <div className="text-center py-4">
                                             <p className="text-gray-400 text-sm italic">
-                                              Guess what’s coming? Stay tuned!
+                                              Guess what's coming? Stay tuned!
                                             </p>
                                           </div>
                                         )}
@@ -332,6 +337,56 @@ const NavMenu = () => {
                                       </div>
                                     );
                                   })}
+                                  
+                                  {/* Add image placeholders for remaining columns */}
+                                  {placeholdersNeeded > 0 && (
+                                    <>
+                                      {/* If 2 columns empty (remainder = 1), show cat_ban */}
+                                      {placeholdersNeeded === 2 && (
+                                        <div
+                                          key="placeholder-cat-ban"
+                                          className="p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center"
+                                        >
+                                          <img
+                                            src={selectedCategory.cat_ban || "/placeholder-category.jpg"}
+                                            alt={`${selectedCategory.main_category_name} Banner`}
+                                            className="w-full h-64 object-cover rounded-lg border border-gray-300"
+                                            onError={(e) => {
+                                              e.target.src = "/placeholder-category.jpg";
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                      
+                                      {/* If 1 column empty (remainder = 2), show cat_img */}
+                                      {/* Or if 2 columns empty, show cat_img in second empty column */}
+                                      {placeholdersNeeded >= 1 && (
+                                        <div
+                                          key="placeholder-cat-img"
+                                          className={`p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center ${placeholdersNeeded === 2 ? '' : 'col-span-1'}`}
+                                        >
+                                          <img
+                                            src={selectedCategory.cat_img || "/placeholder-category.jpg"}
+                                            alt={`${selectedCategory.main_category_name}`}
+                                            className="w-full h-64 object-cover rounded-lg border border-gray-300"
+                                            onError={(e) => {
+                                              e.target.src = "/placeholder-category.jpg";
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                      
+                                      {/* If 2 columns empty and we need second image placeholder */}
+                                      {placeholdersNeeded === 2 && (
+                                        <div
+                                          key="placeholder-second"
+                                          className="hidden lg:block"
+                                        >
+                                          {/* This is just an empty div to maintain grid structure */}
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="text-center py-12">
@@ -381,7 +436,7 @@ const NavMenu = () => {
 
         {/* Individual Category Dropdowns */}
         {menu
-          .filter((cat) => cat.category_active_status)
+          .filter((cat) => cat.Add_to_nav)
           .map((category) => {
             const visibleSubCategories = getVisibleSubcategories(category);
             const allSubCategories = getAllSubcategories(category);
@@ -529,7 +584,7 @@ const NavMenu = () => {
                                 ) : (
                                   <div className="text-center py-4">
                                     <p className="text-gray-400 text-sm italic">
-                                      Guess what’s coming? Stay tuned!
+                                      Guess what's coming? Stay tuned!
                                     </p>
                                   </div>
                                 )}
@@ -549,24 +604,6 @@ const NavMenu = () => {
                             );
                           })}
                         </div>
-
-                        {/* View All Button - Only show if category has visible products */}
-                        {/* {hasAnyProducts && (
-                          <div className="mt-8 text-center">
-                            <button
-                              onClick={() => {
-                                navigation(
-                                  `/category/${category.main_category_name}`
-                                );
-                                closeAllDropdowns();
-                              }}
-                              className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-700 text-white rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl font-semibold flex items-center gap-3 mx-auto transform hover:scale-105 group"
-                            >
-                              <span>Explore All {category.main_category_name}</span>
-                              <IconHelper.RIGHT_ARROW_ICON className="text-sm transform group-hover:translate-x-1 transition-transform" />
-                            </button>
-                          </div>
-                        )} */}
                       </div>
                     </div>
                   )
@@ -673,4 +710,4 @@ const NavMenu = () => {
   );
 };
 
-export default NavMenu; 
+export default NavMenu;

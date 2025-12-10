@@ -54,6 +54,10 @@ import {
   ERROR_NOTIFICATION,
 } from "../../helper/notification_helper";
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
+import Soldout from "../../assets/logo/soldOut.png";
+
+
+
 import {
   DISCOUNT_HELPER,
   GST_DISCOUNT_HELPER,
@@ -212,15 +216,10 @@ export const CustomPopover = ({
 const AnimatedWaxSealBadge = () => (
   <motion.div
     whileHover={{ scale: 1.05 }}
-    className="relative"
+    className="relative -top-20 h-0 overflow-visible"
   >
-    <div className="w-24 h-8 bg-gradient-to-r from-red-600 to-red-700 clip-ribbon">
-      <div className="text-white font-bold text-xs tracking-widest flex items-center justify-center h-full">
-        SOLD OUT
-      </div>
-    </div>
+   <SimpleHangingSoldBoard/>
     {/* Ribbon tail */}
-    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-red-700" />
   </motion.div>
 );
 // Enhanced Sold Out Overlay Component
@@ -1335,7 +1334,7 @@ const ProductDetails = ({
                 <IoShareSocial />
               </button>
                  {isSoldOut && (
-                <div className="relative">
+                <div className="relative top-0">
                   <AnimatedWaxSealBadge />
                 </div>
               )}
@@ -2442,3 +2441,63 @@ export const PincodeDeliveryCalculator = ({ Production, freeDelivery, deliveryCh
     </div>
   );
 };
+
+
+export const SimpleHangingSoldBoard = () => {
+  const swingAnimation = {
+    animate: {
+      rotate: [0, 8, -8, 6, -6, 3, -3, 0],
+      transition: {
+        duration: 5,
+        repeat: Infinity,
+        repeatType: "reverse",
+        ease: "easeInOut"
+      }
+    }
+  };
+
+  return (
+    <div className=" z-50 pointer-events-none flex justify-center">
+      {/* Top hook */}
+      <div className="relative">
+        {/* Hook */}
+        {/* <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-gradient-to-r from-gray-700 to-gray-800 rounded-b-lg shadow-lg">
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-2 bg-gray-800 rounded-t-sm"></div>
+        </div> */}
+        
+        {/* Chain */}
+        {/* <div className="absolute top-6 left-1/2 -translate-x-1/2 w-1 h-12 bg-gradient-to-b from-gray-600 to-gray-700">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gray-800"></div>
+          <div className="absolute top-4 left-0 w-full h-1 bg-gray-800"></div>
+          <div className="absolute top-8 left-0 w-full h-1 bg-gray-800"></div>
+        </div> */}
+        
+        {/* Board */}
+        <motion.div
+          className="relative mt-20 w-40 h-14 bg-red-600 rounded-md border-3 shadow-xl"
+          variants={swingAnimation}
+          animate="animate"
+          style={{ originY: 0 }}
+        >
+          {/* Wood texture */}
+          {/* <div className="absolute inset-0 opacity-30">
+          </div> */}
+          
+          {/* SOLD text */}
+          <div className="relative w-full h-full flex items-center justify-center">
+            <div className="text-xl font-black tracking-wider">
+              <span className="bg-gradient-to-b from-white to-white bg-clip-text text-transparent">
+                SOLD OUT
+              </span>
+            </div>
+          </div>
+          
+          {/* Chain connections */}
+          {/* <div className="absolute -top-4 left-6 w-3 h-4 bg-gradient-to-b from-gray-600 to-gray-700 rounded-t-sm"></div> */}
+          {/* <div className="absolute -top-4 right-6 w-3 h-4 bg-gradient-to-b from-gray-600 to-gray-700 rounded-t-sm"></div> */}
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+

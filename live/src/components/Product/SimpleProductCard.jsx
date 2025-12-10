@@ -8,6 +8,7 @@ import { IconHelper } from "../../helper/IconHelper";
 import ExitementTag from "../Nav/ExitementTag";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { DISCOUNT_HELPER,GST_DISCOUNT_HELPER } from "../../helper/form_validation";
+import Soldout from "../../assets/logo/soldOut.png"
 
 const SimpleProductCard = ({ data }) => {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ const SimpleProductCard = ({ data }) => {
   };
 
   const handleCardClick = () => {
-    navigate(`/product/${_.get(data, "seo_url", "")}`);
+      navigate(`/product/${_.get(data, "seo_url", "")}`);
   };
 
   const handleMouseMove = (e) => {
@@ -104,12 +105,11 @@ const SimpleProductCard = ({ data }) => {
   };
 
   const getBasePrice = () => {
-
     return _.get(data, `variants_price[0].${getRolePriceField(user.role)}`, "") ||
            _.get(data, `${getRolePriceField(user.role)}`, "0");
   };
+  
   const getMrpPrice = () => {
-
     return _.get(data, `variants_price[0].MRP_price`, "") ||
            _.get(data, `MRP_price`, "0");
   };
@@ -118,17 +118,16 @@ const SimpleProductCard = ({ data }) => {
     try {
       const basePrice = Number(getBasePrice());
       
-      // If no quantity discount data or user not logged in, return base price
-      // if (!data.quantity_discount_splitup || !data.quantity_discount_splitup.length || !user?.role) {
-      //   return basePrice;
-      // }
+      if (!data.quantity_discount_splitup || !data.quantity_discount_splitup.length || !user?.role) {
+        return basePrice;
+      }
 
       const firstQuantityTier = data.quantity_discount_splitup[0];
       const discountField = getRoleDiscountField(user.role);
       const discountValue = _.get(firstQuantityTier, discountField, 0);
       
       // Use DISCOUNT_HELPER to calculate final price
-      const finalPrice = GST_DISCOUNT_HELPER(discountValue, basePrice,18);
+      const finalPrice = GST_DISCOUNT_HELPER(discountValue, basePrice, 18);
       
       return finalPrice;
     } catch (error) {
@@ -147,7 +146,7 @@ const SimpleProductCard = ({ data }) => {
   return (
     <motion.div
       ref={cardRef}
-      className="relative w-full overflow-hidden cursor-pointer rounded-2xl shadow-md"
+      className={`relative w-full overflow-hidden rounded-2xl shadow-md cursor-pointer`}
       onClick={handleCardClick}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
@@ -170,7 +169,7 @@ const SimpleProductCard = ({ data }) => {
       />
       
       {/* Main card container */}
-      <div className="relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl overflow-hidden">
+      <div className="relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl ">
         {/* Image container with floating effect */}
         <motion.div 
           className="relative lg:h-3/4 w-full overflow-hidden"
@@ -183,18 +182,32 @@ const SimpleProductCard = ({ data }) => {
             damping: 10,
           }}
         >
+          {/* Sold Out Overlay */}
+          {data.is_soldout && (
+            <motion.div 
+              className="absolute inset-0  bg-black/70 z-20 flex items-start justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+                  <img src={Soldout} alt="" className="w-3/4 object-cover absolute top-0 h-20 overflow-visible" />
+            </motion.div>
+          )}
+          
           <motion.img
-            className="w-full h-full object-cover"
-            src={_.get(data.images, "[0].path", "")||_.get(data.variants, "[0].options[0].image_names[0].path", "")}
+            className={`w-full h-full object-cover ${
+              data.is_soldout ? 'filter grayscale contrast-75' : ''
+            }`}
+            src={_.get(data.images, "[0].path", "") || _.get(data.variants, "[0].options[0].image_names[0].path", "")}
             alt={data.name}
             animate={{
-              scale: isHovered ? 1.1 : 1,
+              scale: isHovered && !data.is_soldout ? 1.1 : 1,
             }}
             transition={{ duration: 0.5 }}
           />
           
-          {/* Floating bubbles effect */}
-          {[1, 2, 3].map((i) => (
+          {/* Floating bubbles effect - only show if not sold out */}
+          {!data.is_soldout && [1, 2, 3].map((i) => (
             <motion.div
               key={i}
               className="absolute bg-white/30 rounded-full"
@@ -218,13 +231,15 @@ const SimpleProductCard = ({ data }) => {
         </motion.div>
 
         {/* Content area */}
-        <div className="relative h-1/4 p-4 flex flex-col justify-between bg-white z-10">
+        <div className={`relative h-1/4 p-4 flex flex-col justify-between bg-white z-10 ${
+          data.is_soldout ? 'opacity-80' : ''
+        }`}>
           {/* Product info */}
           <div className="overflow-hidden">
             <motion.h3 
-              className="text-sm lg:text-lg font-bold text-gray-900 truncate"
+              className={`text-sm lg:text-lg font-bold truncate text-gray-900`}
               animate={{
-                x: isHovered ? [0, 5, 0] : 0,
+                x: isHovered && !data.is_soldout ? [0, 5, 0] : 0,
               }}
               transition={{
                 duration: 1,
@@ -238,7 +253,7 @@ const SimpleProductCard = ({ data }) => {
               <Rate
                 disabled
                 allowHalf
-                className="!text-xs !text-yellow-400"
+                className={`!text-xs !text-yellow-400`}
                 defaultValue={4.5}
               />
             </div>
@@ -248,60 +263,73 @@ const SimpleProductCard = ({ data }) => {
           <div className="flex items-center justify-between mt-2">
             <motion.div
               animate={{
-                scale: isHovered ? 1.1 : 1,
+                scale: isHovered && !data.is_soldout ? 1.1 : 1,
               }}
               transition={{ type: "spring" }}
             >
-              <span className="text-sm lg:text-xl font-bold text-primary">{displayPrice}</span>
-              <span className="text-sm lg:text-lg font-primary line-through text-primary ml-2">{formatPrice(getMrpPrice())}</span>
+              <span className={`text-sm lg:text-xl font-bold text-primary`}>
+                {displayPrice}
+              </span>
+              <span className={`text-sm lg:text-lg font-primary line-through ml-2 text-primary`}>
+                {formatPrice(getMrpPrice())}
+              </span>
             </motion.div>
             
             <motion.div
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: data.is_soldout ? 1 : 0.9 }}
+              whileHover={{ scale: data.is_soldout ? 1 : 1.1 }}
             >
               <button 
-                className="p-2 rounded-full bg-primary text-white shadow-md text-xs lg:text-xl"
+                className={`p-2 rounded-full shadow-md text-xs lg:text-xl ${
+                  data.is_soldout 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    : 'bg-primary text-white'
+                }`}
                 onClick={handleAddWishList}
+                disabled={data.is_soldout}
               >
                 {isFav ? (
-                  <IconHelper.HEART_ICON_FILLED className="text-white"  />
+                  <IconHelper.HEART_ICON_FILLED className={data.is_soldout ? "text-gray-500" : "text-white"} />
                 ) : (
-                  <IconHelper.HEART_ICON className="text-white"  />
+                  <IconHelper.HEART_ICON className={data.is_soldout ? "text-gray-500" : "text-white"} />
                 )}
               </button>
             </motion.div>
           </div>
         </div>
 
-        {/* Excitement tag with special animation */}
-        <motion.div
-          className="absolute top-4 left-4 z-20"
-          animate={{
-            y: isHovered ? [0, -5, 0] : 0,
-            rotate: isHovered ? [0, 10, -10, 0] : 0,
-          }}
-          transition={{
-            duration: 1,
-            repeat: Infinity,
-            repeatType: "reverse",
-          }}
-        >
-          <ExitementTag product={data} />
-        </motion.div>
+        {/* Excitement tag with special animation - only show if not sold out */}
+        {!data.is_soldout && (
+          <motion.div
+            className="absolute top-4 left-4 z-30"
+            animate={{
+              y: isHovered ? [0, -5, 0] : 0,
+              rotate: isHovered ? [0, 10, -10, 0] : 0,
+            }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+          >
+            <ExitementTag product={data} />
+          </motion.div>
+        )}
 
-        {/* Hover overlay effect */}
-        <motion.div 
-          className="absolute inset-0 bg-black/10 pointer-events-none"
-          animate={{
-            opacity: isHovered ? 1 : 0,
-          }}
-          transition={{ duration: 0.3 }}
-        />
+        {/* Hover overlay effect - only show if not sold out */}
+        {!data.is_soldout && (
+          <motion.div 
+            className="absolute inset-0 bg-black/10 pointer-events-none"
+            animate={{
+              opacity: isHovered ? 1 : 0,
+            }}
+            transition={{ duration: 0.3 }}
+          />
+        )}
       </div>
 
-      {/* Floating particles on hover */}
-      {isHovered && (
+      {/* Floating particles on hover - only show if not sold out */}
+      {isHovered && !data.is_soldout && (
         <>
           {[...Array(8)].map((_, i) => (
             <motion.div

@@ -107,7 +107,7 @@ const prefixSelector = (
               description: "Speak directly with our support team",
               contact: "+91 95856 10000",
               href: "tel:+919585610000",
-              details: "Mon - Sat: 10:00 AM - 8:00 PM"
+              details: "Mon - Sat: 10:00 AM - 5:00 PM"
             },
             {
               icon: <MailOutlined className="text-xl text-green-600" />,
@@ -120,7 +120,7 @@ const prefixSelector = (
               icon: <EnvironmentOutlined className="text-xl text-purple-600" />,
               title: "Visit Us",
               description: "Our office location",
-              contact: "Printe #8, Church Colony, Opp. Bishop Heber College, Vayalur Road, Trichy-17."
+              contact: "Printe #6, Church Colony, Vayalur Road, Trichy-17."
             }
           ].map((card, index) => (
             <Card key={index} className="text-center border-0 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl">

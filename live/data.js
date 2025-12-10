@@ -391,39 +391,39 @@ export const blogItems = [
 export const termsAndConditions = [
   {
     title: "Terms and Conditions",
-    desc: `Welcome to Printe! By accessing and using our website and services, you agree to comply with the following terms and conditions. Please read them carefully before placing an order or using our website. These terms govern your use of Printe’s services and products.`,
+    desc: `Welcome to Printe. By accessing or using www.printe.in, you agree to comply with and be bound by these Terms & Conditions. If you do not agree, please do not use our Website.or using our website. These terms govern your use of Printe’s services and products.`,
     children: [
       {
-        title: "Acceptance of Terms",
-        desc: `By using Printe’s website or services, you agree to these Terms and Conditions. If you do not agree with any part of these terms, please refrain from using our services.`,
+        title: "Use of the Website",
+        desc: `You must be at least 18 years old to use our services.You agree not to misuse the Website or engage in unlawful activities. You are responsible for maintaining the confidentiality of your account information`,
       },
       {
-        title: "Services Provided",
-        desc: "Printe offers custom designing and printing services, which include but are not limited to business cards, brochures, invitations, custom gifts, banners, vinyl stickers, and more. Our products are made to order, based on the specifications and designs provided by you, the customer.",
+        title: "Products & Services",
+        desc: "We offer personalized printing and related services. Product images are for representation purposes only; actual products may vary slightly. All orders are subject to availability.",
       },
       {
-        title: "Account Registration",
-        desc: `To place an order, you may be required to register for an account with us. You agree to provide accurate and complete information during registration and to keep your account details secure. You are responsible for all activities under your account.`,
+        title: "Pricing & Payments",
+        desc: `Prices listed on the Website are final and inclusive of applicable taxes unless specified. We reserve the right to update prices at any time. Payments must be made online via our supported payment methods`,
       },
       {
         title: "Order Confirmation",
-        desc: `After placing an order, you will receive an order confirmation via email. This confirmation is an acknowledgment of your order but does not constitute acceptance of your order. Printe reserves the right to cancel any order for reasons such as product unavailability or errors in pricing or product information.`,
+        desc: `· After placing an order, you will receive a confirmation email. We reserve the right to accept or decline orders at our discretion.If an order is cancelled due to technical or stock issues, you will be notified and refunded.`,
       },
       {
-        title: "Pricing and Payment",
-        desc: "All prices listed on our website are in [INR] and are subject to change without notice. Payment for orders is due at the time of placing the order. We accept various payment methods, which may include credit cards, debit cards, and online payment options.",
+        title: "Intellectual Property",
+        desc: "All content on the Website (logos, text, graphics, images, etc.) is owned by Printe. You may not copy, reproduce, or distribute any material without prior written permission.",
       },
       {
-        title: "Customization and Design",
-        desc: "You are responsible for providing accurate and final design files or specifications for customized products. Printe is not liable for errors in the final product resulting from incorrect or unclear instructions provided by you. Any changes or corrections to the design after order confirmation may incur additional charges.",
+        title: "User Content (Custom Prints)",
+        desc: "You are responsible for content uploaded for printing (images, text, graphics, etc.). You must ensure you have rights/permissions to use the uploaded content. We reserve the right to reject content that is offensive, illegal, or violates copyrights.",
       },
       {
-        title: "Production and Delivery",
-        desc: "Once an order is placed, production will begin as per the agreed timeline. Delivery times are estimates and may vary based on factors such as order complexity, customization, and location. We offer delivery services to various locations, and delivery charges will be added to your total order cost. Delivery times may also depend on third-party carriers.",
+        title: "Limitation of Liability",
+        desc: "We are not liable for indirect, incidental, or consequential damages. We are not responsible for delays caused by courier partners or unforeseen events.",
       },
       {
-        title: "Cancellations and Modifications",
-        desc: "Orders can be canceled only if they have not yet entered the production phase. Requests for cancellations should be made within 24 hours of placing the order.Changes to orders are allowed before the production phase begins. Once production starts, changes may not be possible.",
+        title: "Governing Law",
+        desc: "These Terms shall be governed by the laws of India. Any disputes will fall under the jurisdiction of courts in [Your City/State – you can tell me to fill this].",
       },
       {
         title: "Returns and Refunds",
