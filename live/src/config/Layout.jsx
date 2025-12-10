@@ -63,8 +63,7 @@ const Layout = () => {
       <div className="sticky top-0 z-[999] w-full overflow-hidden bg-[#f5f5f5] p-2">
         <div className="scrolling-text-container">
           <div className="scrolling-text !font-[300] whitespace-nowrap">
-            ✨ Special Launch Offer – Flat 25% OFF on all items. Shop now and be
-            part of our grand beginning!
+            Shop your 1st item and get a free gift!
           </div>
         </div>
       </div>
