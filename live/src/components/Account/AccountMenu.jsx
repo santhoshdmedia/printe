@@ -43,12 +43,8 @@ const AccountMenu = () => {
      {
       icon: <IoShieldCheckmark />,
       link: "/Warranty",
-      name: "Warrenty",
-    },
-  
-   
-  
-   
+      name: "warranty",
+    }, 
     {
       icon: <IoSettingsSharp />,
       link: "/account/settings",

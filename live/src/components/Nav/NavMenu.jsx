@@ -223,7 +223,7 @@ const NavMenu = () => {
                             <div className="animate-fade-in">
                               <div className="flex items-center justify-between mb-6 pb-3 border-b border-gray-200">
                                 <h3 className="font-bold text-gray-800 text-lg">
-                                  {selectedCategory.main_category_name} - Subcategories
+                                  {selectedCategory.main_category_name} 
                                 </h3>
                                 {hasAnyProducts && (
                                   <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
