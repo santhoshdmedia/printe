@@ -207,7 +207,7 @@ exports.claimReward = async (req, res) => {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({ 
-        message: 'You can only claim this reward once per day',
+        message: 'You can only claim this reward once per person',
         nextAvailable: new Date(new Date(recentClaim.redeemedAt).getTime() + 24 * 60 * 60 * 1000)
       });
     }
