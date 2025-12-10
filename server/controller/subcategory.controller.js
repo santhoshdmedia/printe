@@ -262,7 +262,7 @@ const deletesubcategory = async (req, res) => {
     return successResponse(res, DELETE_SUB_CATEGOYR_SUCCESS, result);
   } catch (err) {
     console.log(err);
-    return errorResponse(res, DELETE_SUB_CATEGOYR_FAILED);
+    return errorResponse(res, "error while delete by sub");
   }
 };
 
@@ -272,7 +272,7 @@ const editsubcategory = async (req, res) => {
     return successResponse(res, EDIT_SUB_CATEGORY_SUCCESS, result);
   } catch (err) {
     console.log(err);
-    return errorResponse(res, EDIT_SUB_CATEGORY_FAILED);
+    return errorResponse(res, "err");
   }
 };
 
