@@ -24,6 +24,7 @@ const warentyRoutes=require("./warrenty.route")
 
 const paymentRoutes=require('./Payment.route')
 const RewardRoutes=require('./reward.router')
+const IntroRoutes=require('./intro.routes')
 
 
 
@@ -52,5 +53,6 @@ module.exports = {
   coupenRoutes,
   paymentRoutes,
   warentyRoutes,
-  RewardRoutes
+  RewardRoutes,
+  IntroRoutes
 };

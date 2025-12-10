@@ -289,6 +289,9 @@ export const getReward = async () => {
 export const redeemReward = async (id,data) => {
   return await axios.post(`${baseURL}/Reward/${id}/claim`,data);
 };
+export const addintro = async (data) => {
+  return await axios.post(`${baseURL}/intro`,data);
+};
 
 
 
