@@ -28,7 +28,7 @@ const buildQuery = (param) => {
 const addsub = async (req, res) => {
   try {
     const result = await SubcategorySchema.create(req.body);
-    successResponse(res, ADD_SUB_CATEGORY, result);
+    successResponse(res, "added Sub", result);
   } catch (err) {
     console.log(err);
     return errorResponse(res, "err");
@@ -259,7 +259,7 @@ const getSubcategoryProductsBySlug = async (req, res) => {
 const deletesubcategory = async (req, res) => {
   try {
     const result = await SubcategorySchema.findByIdAndDelete({ _id: req.params.id });
-    return successResponse(res, DELETE_SUB_CATEGOYR_SUCCESS, result);
+    return successResponse(res, "deleted", result);
   } catch (err) {
     console.log(err);
     return errorResponse(res, "error while delete by sub");
@@ -269,7 +269,7 @@ const deletesubcategory = async (req, res) => {
 const editsubcategory = async (req, res) => {
   try {
     const result = await SubcategorySchema.findByIdAndUpdate({ _id: req.params.id }, req.body);
-    return successResponse(res, EDIT_SUB_CATEGORY_SUCCESS, result);
+    return successResponse(res, "error", result);
   } catch (err) {
     console.log(err);
     return errorResponse(res, "err");

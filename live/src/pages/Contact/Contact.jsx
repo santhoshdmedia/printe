@@ -97,7 +97,7 @@ const Contact = () => {
     {
       icon: <IoLocationOutline className="text-white" size={36} />,
       title: "Visit our Office",
-      description: "Come see us in person",
+      description: "PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED",
       details: "SUBHAM ILLAM",
       address: "35, Annamalai Nagar, Woraiyur, Tiruchirappalli, Tamil Nadu 620018",
       highlight: "text-gray-700"
