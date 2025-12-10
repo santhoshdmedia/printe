@@ -45,6 +45,7 @@ export const getAllCategoryProducts = async (id) => {
   return await axios.get(`${baseURL}/category/get_all_product_category/${id}`);
 };
 
+
 export const getAllSubCategoryProducts = async (id) => {
   return await axios.get(`${baseURL}/category/get_all_sub_category_product/${id}`);
 };
@@ -279,10 +280,15 @@ export const verifywarrnty = async (verificationCode) => {
 }
 export const activatewarrnty = async (verificationCode,formdata) => {
     return await axios.post(`${baseURL}/warenty/activate/${verificationCode}`,formdata);
-    
-  
 }
 
+
+export const getReward = async () => {
+  return await axios.get(`${baseURL}/Reward/`);
+};
+export const redeemReward = async (id,data) => {
+  return await axios.post(`${baseURL}/Reward/${id}/claim`,data);
+};
 
 
 

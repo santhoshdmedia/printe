@@ -18,10 +18,12 @@ const product_description = require("../modals/productdescription.models");
 const VendorProduct = require("../modals/vendorProduct.model");
 const BulkOrder =require('../modals/bulkOrder.model');
 const Coupen = require("../modals/coupen.modals");
+const Reward = require("../modals/reward.moda");
 
 
 module.exports = {
   UserSchema: User,
+  Reward:Reward,
   MainCategorySchema: MainCategory,
   SubcategorySchema: SubCategory,
   AdminUsersSchema: AdminUsers,

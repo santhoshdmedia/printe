@@ -23,6 +23,8 @@ const CarouselBanner = () => {
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
   const swiperRef = useRef(null);
+  const { user } = useSelector((state) => state.authSlice);
+  
   const slideImages = [slideOne, slideTwo, slideThree, slideFour];
 
   useEffect(() => {
@@ -140,7 +142,7 @@ const CarouselBanner = () => {
                     className="absolute top-[-10px] left-[-10px] h-full z-10"
                   >
                     <Link
-                      to={`/banner-product/${banner._id}`}
+                       to={banner.is_reward && (!user || !user.name) ? "/login" : `/${banner.banner_slug}`}
                       className="block h-full w-full group"
                     >
                       <motion.img
@@ -312,7 +314,7 @@ const CarouselBanner = () => {
                               animate={{ opacity: 1 }}
                               transition={{ delay: 1.8 }}
                             >
-                              4.9/5
+                              {banner.rating}
                             </motion.span>
                           </motion.div>
 
@@ -358,7 +360,7 @@ const CarouselBanner = () => {
                             whileTap={{ scale: 0.98 }}
                           >
                             <Link
-                              to={`/banner-product/${banner._id}`}
+                             to={banner.is_reward && (!user || !user.name) ? "/login" : `/${banner.banner_slug}`}
                               className="relative flex items-center gap-1 px-5 py-3 text-[#f2c41a] font-semibold text-base rounded-full bg-transparent border-4 border-transparent shadow-[0_0_0_2px_#f2c41a] cursor-pointer overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group hover:shadow-[0_0_0_12px_transparent] hover:text-black hover:rounded-3xl active:scale-95 active:shadow-[0_0_0_4px_#f2c41a] w-fit ml-2"
                             >
                               <motion.svg

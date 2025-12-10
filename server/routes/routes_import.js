@@ -23,6 +23,7 @@ const coupenRoutes= require("./coupen.route");
 const warentyRoutes=require("./warrenty.route")
 
 const paymentRoutes=require('./Payment.route')
+const RewardRoutes=require('./reward.router')
 
 
 
@@ -50,5 +51,6 @@ module.exports = {
   whatsappRoutes,
   coupenRoutes,
   paymentRoutes,
-  warentyRoutes
+  warentyRoutes,
+  RewardRoutes
 };

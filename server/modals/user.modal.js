@@ -9,7 +9,7 @@ const addressSchema = new mongoose.Schema({
   locality: { type: String, required: true },
   city: { type: String, required: true },
   state: { type: String, required: true },
-  addressType: { type: String, enum: ["home", "office"], required: true },
+  addressType: { type: String, required: true },
   pincode: { type: String, required: true },
 });
 
@@ -67,7 +67,22 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "Corporate", "Dealer"],
     },
     phone: { type: String },
-
+  redeemedRewards: [{
+    rewardId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Reward'
+    },
+    redeemedAt: {
+      type: Date,
+      default: Date.now
+    },
+    pointsSpent: Number,
+    status: {
+      type: String,
+      enum: ['pending', 'shipped', 'delivered', 'cancelled'],
+      default: 'pending'
+    }
+  }],
     wish_list: [],
     history_data: [
       {

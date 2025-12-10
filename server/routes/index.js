@@ -5,7 +5,7 @@ const { upload } = require("../helper/multer.helper");
 const { VerfiyToken } = require("../helper/shared.helper");
 
 
-const { auth_routes,OtpRoutes,whatsappRoutes, category_routes, admin_routers, user_routers, product_routers, order_routers, dashboard_routers, banner_routes, review_routes, blog_routes, vendor_routes, vendorProductRoutes,mail_routes, enquires_routes, section_routes, shopping_cart,teamRoutes,banner_Text_routes,BulkOrderRoutes,coupenRoutes,paymentRoutes,warentyRoutes } = require("../routes/routes_import");
+const { auth_routes,OtpRoutes,whatsappRoutes,RewardRoutes, category_routes, admin_routers, user_routers, product_routers, order_routers, dashboard_routers, banner_routes, review_routes, blog_routes, vendor_routes, vendorProductRoutes,mail_routes, enquires_routes, section_routes, shopping_cart,teamRoutes,banner_Text_routes,BulkOrderRoutes,coupenRoutes,paymentRoutes,warentyRoutes } = require("../routes/routes_import");
 const { route } = require("./mail.routes");
 
 //Admin EndPoints
@@ -14,6 +14,7 @@ router.use("/category", category_routes);
 router.use("/admin", admin_routers);
 router.use("/product", product_routers);
 router.use("/dashboard", dashboard_routers);
+router.use("/Reward", RewardRoutes);
 router.use("/order", VerfiyToken, order_routers);
 router.use("/banner", VerfiyToken, banner_routes);
 router.use("/banner_text", banner_Text_routes);

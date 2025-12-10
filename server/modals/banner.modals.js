@@ -8,6 +8,12 @@ module.exports = model(
         type: String,
         required: true,
       },
+      banner_slug: {
+        type: String,
+      },
+        rating: {
+        type: String,
+      },
       tag: {
         type: String,
         required: true,

@@ -21,30 +21,34 @@ const AccountMenu = () => {
       name: "Profile",
     },
      {
-      icon: <IoShieldCheckmark />,
-      link: "/Warranty",
-      name: "Warrenty",
-    },
-     {
-      icon: <IoPricetagSharp />,
-      link: "/account/reward",
-      name: "Reward",
-    },
-    {
-      icon: <FaRegAddressCard />,
-      link: "/account/manage-addresses",
-      name: "Manage Addresses",
-    },
-    {
-      icon: <FaBoxOpen />,
-      link: "/account/my-orders",
-      name: "My Orders",
-    },
-    {
       icon: <IoHeartSharp />,
       link: "/account/wishlist",
       name: "My Wishlist",
     },
+      {
+      icon: <FaBoxOpen />,
+      link: "/account/my-orders",
+      name: "My Orders",
+    },
+     {
+      icon: <FaRegAddressCard />,
+      link: "/account/manage-addresses",
+      name: "Manage Addresses",
+    },
+       {
+      icon: <IoPricetagSharp />,
+      link: "/account/reward",
+      name: "Reward",
+    },
+     {
+      icon: <IoShieldCheckmark />,
+      link: "/Warranty",
+      name: "Warrenty",
+    },
+  
+   
+  
+   
     {
       icon: <IoSettingsSharp />,
       link: "/account/settings",

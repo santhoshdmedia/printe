@@ -9,13 +9,13 @@ const {
   getmain,
   editMain,
   deleteMain,
-  getAllCategory,getMainCategoryProductsBySlug
+  getAllCategory, getMainCategoryProductsBySlug
 } = require("../controller/maincategory.controller");
 const {
   addsub,
   getsub,
   deletesubcategory,
-  getAllSubProduct,editsubcategory,getSubcategoryBySlug,getSubcategoryProductsBySlug,
+  getAllSubProduct, editsubcategory, getSubcategoryBySlug, getSubcategoryProductsBySlug,
 } = require("../controller/subcategory.controller");
 const {
   addAdmin,
@@ -63,7 +63,7 @@ const {
   getOrderStates,
   UpdateOrderDesign,
   UpdateOrderVendor,
-  acceptOrderByVendor,completeOrderByVendor
+  acceptOrderByVendor, completeOrderByVendor
 } = require("../controller/order.controller");
 const { getAllDashbardCounts } = require("../controller/dashboard.controller");
 const {
@@ -108,7 +108,7 @@ const {
   resetPassword,
   verfiyLink,
   craeteOrderId,
-  } = require("../controller/mail.controller");
+} = require("../controller/mail.controller");
 const {
   getAllCategoryProducts,
   getAllSubCategoryProducts,
@@ -147,10 +147,17 @@ const {
 const {
   resendOtpHandler,
   sendOtpHandler,
-  verifyOtpHandler,Notify
+  verifyOtpHandler, Notify
 } = require("../controller/mailotp.controller");
 
 const { applyCoupon, createCoupon, getAllCoupons, getCouponById, updateCoupon, deleteCoupon } = require("../controller/coupen.controller");
+
+const { redeemReward, getMyRewards, getAvailableRewards,
+  getRewardDetails,
+  getAdminSideRewards,
+  deleteReward,
+  updateReward,
+  createReward } = require('../controller/reward.controller')
 
 module.exports = {
   login,
@@ -273,7 +280,7 @@ module.exports = {
   craeteOrderId,
   verfiyLink,
   resetPassword,
-  
+
 
   // category products
   getAllCategoryProducts,
@@ -320,5 +327,13 @@ module.exports = {
   getAllCoupons,
   getCouponById,
   updateCoupon,
-  deleteCoupon
+  deleteCoupon,
+
+  // reward
+  redeemReward, getMyRewards, getAvailableRewards,
+  getRewardDetails,
+  getAdminSideRewards,
+  deleteReward,
+  updateReward,
+  createReward
 };
