@@ -312,7 +312,7 @@ const Reward = () => {
             
             {/* Stock status badge */}
             <div className="absolute -top-4 left-4 bg-gradient-to-r from-blue-500 to-purple-400 text-white px-4 py-2 rounded-lg font-bold shadow-lg">
-              {selectedReward.stock > 0 ? `${selectedReward.stock} Available` : 'Out of Stock'}
+              Welcome Gift
             </div>
           </motion.div>
         </div>
