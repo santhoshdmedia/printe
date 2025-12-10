@@ -384,7 +384,7 @@ const CarouselBanner = () => {
                                   transition: { delay: 2.2 },
                                 }}
                               >
-                               {banner.tag=="exclusive offer for Launch"?"claim now":"Shop Now"} 
+                               {banner.tag=="exclusive offer for Launch"?"Claim Now":"Shop Now"} 
                               </motion.span>
 
                               <motion.span
