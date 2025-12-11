@@ -1,59 +1,58 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Divider, Spin } from "antd";
+import _ from "lodash";
 import StepProcess from "../../components/Home/StepProcess";
 import CarouselBanner from "../../components/Home/CarouselBanner";
-import { useEffect, useState } from "react";
-import { getCustomHomeSections, mergeCart } from "../../helper/api_helper";
-import { Divider, Spin } from "antd";
+import { getCustomHomeSections } from "../../helper/api_helper";
 import { IconHelper } from "../../helper/IconHelper";
-import _ from "lodash";
 import SwiperList from "../../components/Lists/SwiperList";
 import HistoryProducts from "../Product/HistoryProducts";
-import { useSelector } from "react-redux";
 import BrowseAll from "../../components/Home/BrowseAll";
-import { useNavigate } from "react-router-dom";
 import { WGDesigns } from "../../config/QuickAccess";
-import ThreeDSlider from "../../components/Home/ThreeDSlider";
 import BeforeAfterSlider from "../../components/Home/BeforeAfter";
 
 const Home = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [sectionData, setSectionData] = useState([]);
   const { user } = useSelector((state) => state.authSlice);
-  const [hasRefreshed, setHasRefreshed] = useState(false);
+  const hasRefreshedRef = useRef(false);
+  const navigate = useNavigate();
 
-  const mergeCartItems = async () => {
-    const result = await mergeCart();
-  };
-
-  // Token-based refresh (runs only once)
+  // Token-based refresh (runs only once per session)
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     const refreshFlag = sessionStorage.getItem("hasRefreshed");
-    
-    if (token && token !== "" && !refreshFlag && !hasRefreshed) {
+
+    if (token && token.trim() !== "" && !refreshFlag && !hasRefreshedRef.current) {
       sessionStorage.setItem("hasRefreshed", "true");
-      setHasRefreshed(true);
+      hasRefreshedRef.current = true;
       window.location.reload();
     }
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
+      setLoading(true);
       const result = await getCustomHomeSections();
       setSectionData(_.get(result, "data.data", []));
     } catch (err) {
-      console.log(err);
+      console.error("Error fetching home sections:", err);
+      setSectionData([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, [_.get(user, "_id", "")]);
+  }, [fetchData, _.get(user, "_id", "")]);
 
-  const GETGRID_COUNT = (value) => {
-    switch (_.get(value, "banner_count", 2)) {
+  const getGridCount = useCallback((value) => {
+    const bannerCount = _.get(value, "banner_count", 2);
+    switch (bannerCount) {
       case 1:
         return "lg:grid-cols-1";
       case 2:
@@ -65,7 +64,44 @@ const Home = () => {
       default:
         return "lg:grid-cols-2";
     }
-  };
+  }, []);
+
+  const renderContent = () => (
+    <>
+      <CarouselBanner />
+      <div className="pb-10 mx-auto">
+        <BrowseAll />
+        {/* <StepProcess /> */}
+      </div>
+      
+      <div className="flex flex-col">
+        {sectionData.map((section, index) => (
+          <div key={`${section._id || index}`}>
+            <SwiperList
+              product_type={_.get(section, "product_display", "1")}
+              title={_.get(section, "section_name", "")}
+              data={_.get(section, "productDetails", [])}
+              subtitle={_.get(section, "sub_title", "")}
+              type="Product"
+              to={`/see-more/${encodeURIComponent(_.get(section, "section_name", ""))}/${_.get(section, "_id", "")}`}
+              productCardType="Simple"
+            />
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-8">
+        <BeforeAfterSlider />
+      </div>
+      
+      <div className="mt-8">
+        {/* {_.get(user, "_id", "") && (
+          <HistoryProducts />
+        )} */}
+        <WGDesigns />
+      </div>
+    </>
+  );
 
   return (
     <Spin
@@ -73,46 +109,9 @@ const Home = () => {
       indicator={
         <IconHelper.CIRCLELOADING_ICON className="!animate-spin !text-yellow-500" />
       }
-      className="lg:!px-20 font-sans "
+      className="lg:!px-20 font-sans"
     >
-      <CarouselBanner />
-      <div className=" pb-10 mx-auto">
-        <BrowseAll />
-        {/* <StepProcess /> */}
-      </div>
-      <div className="flex flex-col">
-        {sectionData.map((res, index) => {
-          return (
-            <div key={index}>
-              <SwiperList
-                product_type={_.get(res, "product_display", "1")}
-                title={_.get(res, "section_name", "")}
-                data={_.get(res, "productDetails", [])}
-                subtitle={_.get(res, "sub_title", "")}
-                type="Product"
-                to={`/see-more/${_.get(res, "section_name", "")}/${_.get(
-                  res,
-                  "_id",
-                  ""
-                )}`}
-                productCardType="Simple"
-              />
-            </div>
-          );
-        })}
-      </div>
-      <div className="">
-        <BeforeAfterSlider />
-      </div>
-
-      <div className="">
-        {/* {_.get(user, "_id", "") && (
-          <>
-            <HistoryProducts />
-          </>
-        )} */}
-        <WGDesigns />
-      </div>
+      {renderContent()}
     </Spin>
   );
 };
