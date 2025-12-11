@@ -169,6 +169,7 @@ const Navbar = () => {
     navigate("/");
     setMenuStatus(false);
     setShowUserDropdown(false);
+    sessionStorage.removeItem("hasRefreshed")
   }, [dispatch, navigate]);
 
   const handleDestination = useCallback((url) => {
