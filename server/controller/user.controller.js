@@ -231,7 +231,7 @@ const customSignup = async (req, res) => {
 const clientSignup = async (req, res) => {
   console.log(req.body);
 
-  const { email, password, name, gst_no } = req.body;
+  const { email, password, name,phone, gst_no } = req.body;
   try {
     const result = await UserSchema.findOne({ email });
     if (result) {
@@ -241,6 +241,7 @@ const clientSignup = async (req, res) => {
       email,
       password: await EncryptPassword(password),
       name,
+      phone,
       gst_no,
     });
     const user = await newUser.save();
@@ -248,6 +249,7 @@ const clientSignup = async (req, res) => {
       id: _.get(user, "_id", ""),
       email: _.get(user, "email", ""),
       role: _.get(user, "role", ""),
+      phone:_.get(user, "phone", "")
     };
     const token = await GenerateToken(payload);
     return successResponse(res, SIGNUP_SUCCESS, {

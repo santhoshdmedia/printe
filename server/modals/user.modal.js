@@ -23,11 +23,11 @@ const userSchema = new mongoose.Schema(
       maxlength: 50,
       trim: true,
     },
-   googleId: {
-    type: String,
-    unique: true,
-    sparse: true // Allows null values while maintaining uniqueness for non-null values
-  },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true // Allows null values while maintaining uniqueness for non-null values
+    },
     picture: { type: String },
     email: {
       type: String,
@@ -43,7 +43,7 @@ const userSchema = new mongoose.Schema(
     gst_no: {
       type: String,
     },
-     business_name: {
+    business_name: {
       type: String,
     },
     business_phone: {
@@ -66,23 +66,25 @@ const userSchema = new mongoose.Schema(
       default: "user",
       enum: ["user", "Corporate", "Dealer"],
     },
-    phone: { type: String },
-  redeemedRewards: [{
-    rewardId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Reward'
-    },
-    redeemedAt: {
-      type: Date,
-      default: Date.now
-    },
-    pointsSpent: Number,
-    status: {
-      type: String,
-      enum: ['pending', 'shipped', 'delivered', 'cancelled'],
-      default: 'pending'
-    }
-  }],
+    phone: { 
+      type: Number
+     },
+    redeemedRewards: [{
+      rewardId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Reward'
+      },
+      redeemedAt: {
+        type: Date,
+        default: Date.now
+      },
+      pointsSpent: Number,
+      status: {
+        type: String,
+        enum: ['pending', 'shipped', 'delivered', 'cancelled'],
+        default: 'pending'
+      }
+    }],
     wish_list: [],
     history_data: [
       {
