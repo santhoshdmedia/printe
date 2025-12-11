@@ -11,9 +11,45 @@ const SearchProductCard = ({ data, className = "", onClick }) => {
   const productUrl = seo_url || _id;
   
   const product_name = name || "Unnamed Product";
-  const product_image = images[0]?.url || "";
+  
+  // Improved image URL extraction logic
+  const getProductImage = () => {
+    // 1. Check if there are direct product images
+    if (images.length > 0 && images[0].url) {
+      return images[0].url;
+    }
+    
+    // 2. Check if there are variants with images
+    if (data.variants && data.variants.length > 0) {
+      const firstVariant = data.variants[0];
+      
+      // Check if variant has direct images
+      if (firstVariant.images && firstVariant.images.length > 0 && firstVariant.images[0].url) {
+        return firstVariant.images[0].url;
+      }
+      
+      // Check if variant has options with images
+      if (firstVariant.options && firstVariant.options.length > 0) {
+        const firstOption = firstVariant.options[0];
+        
+        // Check for image_names array in option
+        if (firstOption.image_names && firstOption.image_names.length > 0 && firstOption.image_names[0].url) {
+          return firstOption.image_names[0].url;
+        }
+        
+        // Check for images array in option
+        if (firstOption.images && firstOption.images.length > 0 && firstOption.images[0].url) {
+          return firstOption.images[0].url;
+        }
+      }
+    }
+    
+    return "";
+  };
+  
+  const product_image = getProductImage();
   const discount = MRP_price && customer_product_price 
-    ? Math.round(((MRP_price - customer_product_price) / MRP_price) * 100)
+    ? Math.round(((parseFloat(MRP_price) - parseFloat(customer_product_price)) / parseFloat(MRP_price)) * 100)
     : 0;
 
   return (
@@ -31,6 +67,15 @@ const SearchProductCard = ({ data, className = "", onClick }) => {
                 src={product_image} 
                 alt={product_name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                onError={(e) => {
+                  // Fallback if image fails to load
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = `
+                    <div class="w-full h-full bg-gradient-to-br from-yellow-100 to-yellow-200 flex items-center justify-center">
+                      <span class="text-yellow-600 text-xs font-medium">No Image</span>
+                    </div>
+                  `;
+                }}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-yellow-100 to-yellow-200 flex items-center justify-center">
@@ -68,7 +113,7 @@ const SearchProductCard = ({ data, className = "", onClick }) => {
                 <span className="text-lg font-bold text-gray-900">
                   ₹{customer_product_price}
                 </span>
-                {MRP_price && MRP_price > customer_product_price && (
+                {MRP_price && parseFloat(MRP_price) > parseFloat(customer_product_price) && (
                   <span className="text-sm text-gray-500 line-through">
                     ₹{MRP_price}
                   </span>

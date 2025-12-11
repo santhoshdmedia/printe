@@ -12,6 +12,7 @@ import { ImageHelper } from "../../helper/ImageHelper";
 
 // At the top of your file with other imports
 import signatureImage from "../../../src/assets/logo/signature.png";
+
 const OrderDetails = () => {
   // State
   const [subtotal, setSubtotal] = useState(0);
@@ -46,14 +47,16 @@ const OrderDetails = () => {
     if (!filterOrderData) {
       filterOrderData = order_details.data;
     }
-    if (filterOrderData && filterOrderData.products) {
-      setSubtotal(
-        filterOrderData.products.product_price /
-          filterOrderData.products.product_quantity
-      );
+    if (filterOrderData && filterOrderData.cart_items) {
+      // Fixed: Access cart_items instead of products
+      const price = parseFloat(filterOrderData.cart_items.product_price) || 0;
+      const quantity = parseFloat(filterOrderData.cart_items.product_quantity) || 1;
+      setSubtotal(price * quantity);
     } else {
       setSubtotal(0);
     }
+    console.log(filterOrderData,"forder");
+    
   }, [my_orders.data, order_id, order_details.data]);
 
   // Render data
@@ -136,19 +139,29 @@ const OrderDetails = () => {
     }
   };
 
-  // Helper function to generate invoice HTML
+  // Helper function to generate invoice HTML with correct data
   const generateInvoiceHTML = (orders, invoiceNo) => {
-    const subtotal = _.sumBy(orders, order => 
-      order.cart_items?.product_price * order.cart_items?.product_quantity || 0
-    );
+    // Calculate subtotal and grand total from actual data
+    const subtotal = _.sumBy(orders, order => {
+      const price = parseFloat(order.cart_items?.product_price) || 0;
+      const quantity = parseFloat(order.cart_items?.product_quantity) || 1;
+      return price * quantity;
+    });
     
     const grandTotal = _.sumBy(orders, order => 
-      order.cart_items?.final_total || 0
+      parseFloat(order.cart_items?.final_total) || 0
     );
     
     const firstOrder = orders[0];
-    console.log(firstOrder,"f");
     
+    // Calculate tax if needed (from your data: sgst: "9", cgst: "9")
+    const taxAmount = _.sumBy(orders, order => {
+      const price = parseFloat(order.cart_items?.product_price) || 0;
+      const quantity = parseFloat(order.cart_items?.product_quantity) || 1;
+      const sgst = parseFloat(order.cart_items?.sgst) || 0;
+      const cgst = parseFloat(order.cart_items?.cgst) || 0;
+      return (price * quantity * (sgst + cgst)) / 100;
+    });
     
     // Get payment status information
     let paymentStatusHTML = '';
@@ -175,66 +188,66 @@ const OrderDetails = () => {
       `;
     }
 
-    // console.log(firstOrder,"ff");
-    
+    // Get variant information
+    const variant = firstOrder.cart_items?.product_variants?.[0] || {};
+    const mrpPrice = parseFloat(variant.MRP_price) || parseFloat(firstOrder.cart_items?.product_price) || 0;
+    const customerPrice = parseFloat(variant.customer_product_price) || parseFloat(firstOrder.cart_items?.product_price) || 0;
     
     return `
-      <div class="w-full  pb-2 " style=" font-family: Arial, sans-serif; poision:relative; min-height: 1120px; width: 794px; ">
-        <div class="w-full    rounded mb-2">
-         <div class="flex justify-between items-start">
-  <div className="text-start">
-    <h2 style="font-size:2.2rem;"><b>Printe</b></h2>
-    
-    <!-- GSTIN and PAN in a simple row without flex gap -->
-    <div className="flex" style="margin-bottom: 2px;display: flex;  gap: 20px;">
-      <p className="text-sm mr-5"><b>GSTIN :</b> 33AANCP3376Q1ZN</p>
-      <p className="text-sm"><b>PAN :</b> AANCP3376Q</p>
-    </div>
-    
-    <!-- Address section -->
-    <div style="margin-bottom: 2px;">
-      <p className="text-[0.8rem]">#6 Church Colony,</p>
-      <p className="text-[0.8rem]">Tiruchirappalli</p>
-      <p className="text-[0.8rem]">Tamil Nadu 620017</p>
-    </div>
+      <div class="w-full pb-2" style="font-family: Arial, sans-serif; position: relative; min-height: 1120px; width: 794px;">
+        <div class="w-full rounded mb-2">
+          <div class="flex justify-between items-start">
+            <div className="text-start">
+              <h2 style="font-size:2.2rem;"><b>Printe</b></h2>
+              
+              <!-- GSTIN and PAN in a simple row without flex gap -->
+              <div className="flex" style="margin-bottom: 2px;display: flex; gap: 20px;">
+                <p className="text-sm mr-5"><b>GSTIN :</b> 33AANCP3376Q1ZN</p>
+                <p className="text-sm"><b>PAN :</b> AANCP3376Q</p>
+              </div>
+              
+              <!-- Address section -->
+              <div style="margin-bottom: 2px;">
+                <p className="text-[0.8rem]">#6 Church Colony,</p>
+                <p className="text-[0.8rem]">Tiruchirappalli</p>
+                <p className="text-[0.8rem]">Tamil Nadu 620017</p>
+              </div>
 
-    <!-- Contact info - simpler layout -->
-    <div style="display: flex; gap:20px;">
-      <p className="text-sm mb-1"><b>Mobile :</b> <a href="tel:+919585610000" className="text-sm">+91 95856 10000</a></p>
-      <p className="text-sm mb-1"><b>Email :</b> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p>
-      <p className="text-sm mb-1"><b>Website :</b> <a href="https://www.printe.in" className="text-sm">www.printe.in</a></p>
-    </div>
-  </div>
+              <!-- Contact info - simpler layout -->
+              <div style="display: flex; gap:20px;">
+                <p className="text-sm mb-1"><b>Mobile :</b> <a href="tel:+919585610000" className="text-sm">+91 95856 10000</a></p>
+                <p className="text-sm mb-1"><b>Email :</b> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p>
+                <p className="text-sm mb-1"><b>Website :</b> <a href="https://www.printe.in" className="text-sm">www.printe.in</a></p>
+              </div>
+            </div>
 
-  <img src="${ImageHelper.without_bg}" alt="Company Logo" class="h-16" crossOrigin="anonymous" />
-</div>
+            <img src="${ImageHelper.without_bg}" alt="Company Logo" class="h-16" crossOrigin="anonymous" />
+          </div>
         </div>
 
         <div class="flex flex-wrap justify-between mb-2">
-          <div class="w-full  ">
+          <div class="w-full">
             <h2 class="text-lg font-bold text-gray-800 mb-1">Order Information</h2>
-            <div class=" rounded" style="display: flex;  gap: 20px;">
+            <div class="rounded" style="display: flex; gap: 20px;">
               <p><span class="text-sm"><b>INVOICE:</b></span> ${invoiceNo}</p>
               <p><span class="text-sm"><b>Order Date:</b></span> ${moment(firstOrder.createdAt).format("DD-MMM-yyyy")}</p>
               <p><span class="text-sm"><b>Payment Method:</b></span> ${firstOrder.payment_type}</p>
               ${firstOrder.payment_id ? `<p><span class="text-sm"><b>Payment ID:</b></span> ${firstOrder.payment_id}</p>` : ''}
             </div>
           </div>
-
-         
         </div>
 
-        <div class="flex flex-wrap  mb-6" style="gap:10rem;">
-        <div className="">
-              <h2 className=" font-bold text-gray-800 " style="font-weight: 700; font-size: 1.125rem /* 18px */;line-height: 1.75rem /* 28px */; ">
+        <div class="flex flex-wrap mb-6" style="gap:10rem;">
+          <div className="">
+            <h2 className="font-bold text-gray-800" style="font-weight: 700; font-size: 1.125rem; line-height: 1.75rem;">
               Customer Details
             </h2>
-              <p className="font-semibold">${firstOrder.delivery_address?.name || ''}</p>
-            </div>
+            <p className="font-semibold">${firstOrder.delivery_address?.name || ''}</p>
+          </div>
 
-         <div class="  text-start">
-            <h2 class="text-lg font-bold text-gray-800 ">Billing Address</h2>
-            <div class=" rounded">
+          <div class="text-start">
+            <h2 class="text-lg font-bold text-gray-800">Billing Address</h2>
+            <div class="rounded">
               <p>${firstOrder.delivery_address?.name || ''}</p>
               <p>${firstOrder.delivery_address?.street_address || ''}</p>
               <p>${firstOrder.delivery_address?.pincode || ''}</p>
@@ -242,7 +255,7 @@ const OrderDetails = () => {
               ${firstOrder.delivery_address?.Alternate_mobile_number ? `<p>Alt Phone: ${firstOrder.delivery_address?.Alternate_mobile_number}</p>` : ''}
             </div>
           </div>
-</div>
+        </div>
 
         <h2 class="text-xl font-bold text-gray-800 mb-2 border-b pb-4">Order Summary</h2>
 
@@ -258,20 +271,27 @@ const OrderDetails = () => {
               </tr>
             </thead>
             <tbody>
-              ${orders.map(order => `
-                <tr key="${order._id}" class="border-b">
-                  <td class="p-[0.5rem] border">${order._id}</td>
-                  <td class="p-[0.5rem] border">
-                    <div class="flex flex-col gap-y-1">
-                      <p class="font-semibold">${order.cart_items?.product_name || ''}</p>
-                      <p class="text-xs text-gray-500">${order.cart_items?.product_seo_url || ''}</p>
-                    </div>
-                  </td>
-                  <td class="p-[0.5rem] text-center border">₹${Number(1239.44)}</td>
-                  <td class="p-[0.5rem] text-center border">${Number(1)}</td>
-                  <td class="p-[0.5rem] text-center border">₹ ${(1||order.cart_items?.product_price * order.cart_items?.product_quantity) || 0}</td>
-                </tr>
-              `).join('')}
+              ${orders.map(order => {
+                const price = parseFloat(order.cart_items?.product_price) || 0;
+                const quantity = parseFloat(order.cart_items?.product_quantity) || 1;
+                const total = price * quantity;
+                
+                return `
+                  <tr key="${order._id}" class="border-b">
+                    <td class="p-[0.5rem] border">${order._id}</td>
+                    <td class="p-[0.5rem] border">
+                      <div class="flex flex-col gap-y-1">
+                        <p class="font-semibold">${order.cart_items?.product_name || ''}</p>
+                        <p class="text-xs text-gray-500">${order.cart_items?.category_name || ''} - ${order.cart_items?.subcategory_name || ''}</p>
+                        ${variant.Colour ? `<p class="text-xs text-gray-500">Color: ${variant.Colour}</p>` : ''}
+                      </div>
+                    </td>
+                    <td class="p-[0.5rem] text-center border">₹${price.toFixed(2)}</td>
+                    <td class="p-[0.5rem] text-center border">${quantity}</td>
+                    <td class="p-[0.5rem] text-center border">₹ ${total.toFixed(2)}</td>
+                  </tr>
+                `;
+              }).join('')}
             </tbody>
           </table>
         </div>
@@ -289,20 +309,26 @@ const OrderDetails = () => {
             <tbody>
               <tr class="border-b">
                 <td class="p-[0.5rem] border font-semibold">Subtotal</td>
-                <td class="p-[0.5rem] text-center border">₹ 1239.44</td>
+                <td class="p-[0.5rem] text-center border">₹ ${subtotal.toFixed(2)}</td>
               </tr>
               <tr class="border-b">
                 <td class="p-[0.5rem] border font-semibold">Shipping</td>
-                <td class="p-[0.5rem] text-center border">₹ 0.00</td>
+                <td class="p-[0.5rem] text-center border">₹ ${firstOrder.cart_items?.FreeDelivery ? '0.00' : (parseFloat(firstOrder.cart_items?.DeliveryCharges) || 0).toFixed(2)}</td>
               </tr>
               <tr class="border-b">
-                <td class="p-[0.5rem] border font-semibold">Tax</td>
-                <td class="p-[0.5rem] text-center border">₹ 0.00</td>
+                <td class="p-[0.5rem] border font-semibold">Tax (GST)</td>
+                <td class="p-[0.5rem] text-center border">₹ ${taxAmount.toFixed(2)}</td>
               </tr>
+              ${mrpPrice > customerPrice ? `
+                <tr class="border-b">
+                  <td class="p-[0.5rem] border font-semibold">Discount</td>
+                  <td class="p-[0.5rem] text-center border text-green-600">-₹ ${(mrpPrice - customerPrice).toFixed(2)}</td>
+                </tr>
+              ` : ''}
               <tr class="border-b">
                 <td class="p-[0.5rem] border font-bold">Grand Total</td>
                 <td class="p-[0.5rem] text-center border font-bold text-orange-600">
-                  ₹ 1239.44 
+                  ₹ ${grandTotal.toFixed(2)}
                 </td>
               </tr>
             </tbody>
@@ -315,34 +341,27 @@ const OrderDetails = () => {
           </div>
         </div>
 
-
-        <div  style="display: flex; justify-content: end;  ">
-        <div class="">
-        
-        <img src="${signatureImage}" alt="signature" style="width:100px;height:100px;" crossOrigin="anonymous" />
-        <p class="text-lg" style="font-weight:700; ">Authorized Signature</p>
-        </div>
-      
+        <div style="display: flex; justify-content: end;">
+          <div class="">
+            <img src="${signatureImage}" alt="signature" style="width:100px;height:100px;" crossOrigin="anonymous" />
+            <p class="text-lg" style="font-weight:700;">Authorized Signature</p>
+          </div>
         </div>
 
-                  <!-- Footer section positioned at the bottom of the T&C page -->
-          <div style="position: absolute; bottom: 0%; left: 0; right: 0; ">
-            <div class="mt-4 pt-2 border-t text-sm text-gray-500 p-4" style="width: 800px; font-family: Arial, sans-serif;">
-              <div class="text-center mb-3">
-                <p>MARKETED BY PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
-              </div>
+        <!-- Footer section positioned at the bottom of the T&C page -->
+        <div style="position: absolute; bottom: 0%; left: 0; right: 0;">
+          <div class="mt-4 pt-2 border-t text-sm text-gray-500 p-4" style="width: 800px; font-family: Arial, sans-serif;">
+            <div class="text-center mb-3">
+              <p>MARKETED BY PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
+            </div>
 
-              <div class="w-full text-white flex justify-between  bg-[#444444] h-10 px-4 rounded" style="align-items:baseline;">
-                <span><p className="text-sm mb-1"> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p></span>
-                <span>Powerd By <a href="https://www.dmedia.in/" className="text-sm" style="color: white; text-decoration: underline;"><b>DMEDIA</b></a></span>
-              </div>
+            <div class="w-full text-white flex justify-between bg-[#444444] h-10 px-4 rounded" style="align-items:baseline;">
+              <span><p className="text-sm mb-1"> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p></span>
+              <span>Powerd By <a href="https://www.dmedia.in/" className="text-sm" style="color: white; text-decoration: underline;"><b>DMEDIA</b></a></span>
             </div>
           </div>
-
-
-
+        </div>
       </div>
-      
     `;
   };
 
@@ -375,7 +394,7 @@ const OrderDetails = () => {
                 <p>Thank you for your business!</p>
               </div>
 
-              <div class="w-full text-white flex justify-between  bg-[#444444] h-10 px-4 rounded" style="align-items:baseline;">
+              <div class="w-full text-white flex justify-between bg-[#444444] h-10 px-4 rounded" style="align-items:baseline;">
                 <span><p className="text-sm mb-1"> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p></span>
                 <span>Powerd By <a href="https://www.dmedia.in/" className="text-sm" style="color: white; text-decoration: underline;"><b>DMEDIA</b></a></span>
               </div>
@@ -387,16 +406,27 @@ const OrderDetails = () => {
   };
 
   const renderInvoice = (orders, invoiceNo) => {
-    const subtotal = _.sumBy(orders, order => 
-      order.cart_items?.product_price * order.cart_items?.product_quantity || 0
-    );
+    const subtotal = _.sumBy(orders, order => {
+      const price = parseFloat(order.cart_items?.product_price) || 0;
+      const quantity = parseFloat(order.cart_items?.product_quantity) || 1;
+      return price * quantity;
+    });
     
     const grandTotal = _.sumBy(orders, order => 
-      order.cart_items?.final_total || 0
+      parseFloat(order.cart_items?.final_total) || 0
     );
     
     const firstOrder = orders[0];
+    const variant = firstOrder.cart_items?.product_variants?.[0] || {};
     
+    // Calculate tax
+    const taxAmount = _.sumBy(orders, order => {
+      const price = parseFloat(order.cart_items?.product_price) || 0;
+      const quantity = parseFloat(order.cart_items?.product_quantity) || 1;
+      const sgst = parseFloat(order.cart_items?.sgst) || 0;
+      const cgst = parseFloat(order.cart_items?.cgst) || 0;
+      return (price * quantity * (sgst + cgst)) / 100;
+    });
     
     // Get payment status information
     let paymentStatusJSX = null;
@@ -428,25 +458,24 @@ const OrderDetails = () => {
     return (
       <div key={invoiceNo} className="w-full mx-auto px-4 pb-4 !font-billfont bg-white mb-5" style={{ width: "794px" }}>
         {/* Header */}
-        <div className="w-full   mb-4 rounded">
+        <div className="w-full mb-4 rounded">
           <div className="flex justify-between items-start">
-              <div className="text-start">
-                <h2 className="text-2xl font-bold items-start">Printe</h2>
-                <div className="flex gap-5">
-                  <p className="text-sm"><b>GSTIN :</b> 33AANCP3376Q1ZN</p>
-                  <p className="text-sm"><b>PAN :</b> AANCP3376Q</p>
-                </div>
-                
+            <div className="text-start">
+              <h2 className="text-2xl font-bold items-start">Printe</h2>
+              <div className="flex gap-5">
+                <p className="text-sm"><b>GSTIN :</b> 33AANCP3376Q1ZN</p>
+                <p className="text-sm"><b>PAN :</b> AANCP3376Q</p>
+              </div>
+              
               <p className="text-[0.8rem]">#6 Church Colony,</p>
               <p className="text-[0.8rem]">Tiruchirappalli</p>
               <p className="text-[0.8rem]">Tamil Nadu 620017</p>
 
               <div className="flex gap-5 justify-center items-baseline">
-              <p className="text-sm"><b>Mobile :</b> <a href="tel:+919585610000" className="text-sm">+91 95856 10000</a></p>
-              <p className="text-sm"><b>Email :</b> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p>
-              <p className="text-sm"><b>Website :</b> <a href="https://www.printe.in" className="text-sm">www.printe.in</a></p>
+                <p className="text-sm"><b>Mobile :</b> <a href="tel:+919585610000" className="text-sm">+91 95856 10000</a></p>
+                <p className="text-sm"><b>Email :</b> <a href="mailto:info@printe.in" className="text-sm">info@printe.in</a></p>
+                <p className="text-sm"><b>Website :</b> <a href="https://www.printe.in" className="text-sm">www.printe.in</a></p>
               </div>
-             
             </div>
             <img
               src={ImageHelper.without_bg}
@@ -454,19 +483,18 @@ const OrderDetails = () => {
               className="h-16"
               crossOrigin="anonymous"
             />
-          
           </div>
         </div>
 
         {/* Order Info */}
         <div className="flex flex-wrap justify-between mb-6">
-          <div className="w-full  mb-4 ">
+          <div className="w-full mb-4 ">
             <h2 className="text-[1.1rem] font-bold text-gray-800 ">
               Order Information
             </h2>
             <div className="flex rounded justify-between items-center">
               <p>
-                <span className=" text-sm"><b>INVOICE NO:</b></span> {invoiceNo}
+                <span className="text-sm"><b>INVOICE NO:</b></span> {invoiceNo}
               </p>
               <p>
                 <span className="text-sm"><b>Order Date:</b></span>{" "}
@@ -484,30 +512,30 @@ const OrderDetails = () => {
               )}
             </div>
           </div>
-
-
         </div>
-          <div className="w-full  flex gap-[11rem]  items-baseline">
-            <div className="">
-              <h2 className="text-lg font-bold text-gray-800 ">
+        
+        <div className="w-full flex gap-[11rem] items-baseline">
+          <div className="">
+            <h2 className="text-lg font-bold text-gray-800">
               Customer Details
             </h2>
-              <p className="font-semibold">{firstOrder.delivery_address?.name}</p>
-            </div>
-            
-            <div className=" rounded">
-               <h2 className="text-lg font-bold text-gray-800 ">
-             Billing Address
-            </h2>
-              <p className="font-semibold">{firstOrder.delivery_address?.name}</p>
-              <p>{firstOrder.delivery_address?.street_address}</p>
-              <p>{firstOrder.delivery_address?.pincode}</p>
-              <p>Phone: {firstOrder.delivery_address?.mobile_number}</p>
-              {firstOrder.delivery_address?.Alternate_mobile_number && (
-                <p>Alt Phone: {firstOrder.delivery_address?.Alternate_mobile_number}</p>
-              )}
-            </div>
+            <p className="font-semibold">{firstOrder.delivery_address?.name}</p>
           </div>
+          
+          <div className="rounded">
+            <h2 className="text-lg font-bold text-gray-800">
+              Billing Address
+            </h2>
+            <p className="font-semibold">{firstOrder.delivery_address?.name}</p>
+            <p>{firstOrder.delivery_address?.street_address}</p>
+            <p>{firstOrder.delivery_address?.pincode}</p>
+            <p>Phone: {firstOrder.delivery_address?.mobile_number}</p>
+            {firstOrder.delivery_address?.Alternate_mobile_number && (
+              <p>Alt Phone: {firstOrder.delivery_address?.Alternate_mobile_number}</p>
+            )}
+          </div>
+        </div>
+        
         {/* Order Summary */}
         <h2 className="text-[1.1rem] font-bold text-gray-800 mb-2 border-b pb-1">
           Order Summary
@@ -526,36 +554,45 @@ const OrderDetails = () => {
               </tr>
             </thead>
             <tbody className="text-[0.8rem]">
-              {orders.map((order) => (
-                <tr key={order._id} className="border-b">
-                  <td className="p-1 border">{order._id}</td>
-                  <td className="p-1 border">
-                    <div className="flex flex-col gap-y-1">
-                      <p className="font-semibold">
-                        {order.cart_items?.product_name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {order.cart_items?.product_seo_url}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="p-1 text-center border">
-                    {/* ₹ {order.cart_items?.product_price} */}₹ 1239.44
-                  </td>
-                  <td className="p-1 text-center border">
-                    {/* {order.cart_items?.product_quantity} */}1
-                  </td>
-                  <td className="p-1 text-center border">
-                    {/* ₹ {order.cart_items?.product_price * order.cart_items?.product_quantity} */}₹1239.44
-                  </td>
-                </tr>
-              ))}
+              {orders.map((order) => {
+                const price = parseFloat(order.cart_items?.product_price) || 0;
+                const quantity = parseFloat(order.cart_items?.product_quantity) || 1;
+                const total = price * quantity;
+                
+                return (
+                  <tr key={order._id} className="border-b">
+                    <td className="p-1 border">{order._id}</td>
+                    <td className="p-1 border">
+                      <div className="flex flex-col gap-y-1">
+                        <p className="font-semibold">
+                          {order.cart_items?.product_name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {order.cart_items?.category_name} - {order.cart_items?.subcategory_name}
+                        </p>
+                        {variant.Colour && (
+                          <p className="text-xs text-gray-500">Color: {variant.Colour}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-1 text-center border">
+                      ₹ {price.toFixed(2)}
+                    </td>
+                    <td className="p-1 text-center border">
+                      {quantity}
+                    </td>
+                    <td className="p-1 text-center border">
+                      ₹ {total.toFixed(2)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         {/* Payment Summary */}
-        <h2 className="text-[1.1rem] font-bold text-gray-800 mb-2 border-b pb-1 ">
+        <h2 className="text-[1.1rem] font-bold text-gray-800 mb-2 border-b pb-1">
           Payment Summary
         </h2>
 
@@ -571,20 +608,30 @@ const OrderDetails = () => {
             <tbody className="text-[0.8rem]">
               <tr className="border-b">
                 <td className="p-1 border font-semibold">Subtotal</td>
-                <td className="p-1 text-center border">₹ 1239.44</td>
+                <td className="p-1 text-center border">₹ {subtotal.toFixed(2)}</td>
               </tr>
               <tr className="border-b">
                 <td className="p-1 border font-semibold">Shipping</td>
-                <td className="p-1 text-center border">₹ 0.00</td>
+                <td className="p-1 text-center border">
+                  ₹ {firstOrder.cart_items?.FreeDelivery ? '0.00' : (parseFloat(firstOrder.cart_items?.DeliveryCharges) || 0).toFixed(2)}
+                </td>
               </tr>
               <tr className="border-b">
-                <td className="p-1 border font-semibold">Tax</td>
-                <td className="p-1 text-center border">₹ 0.00</td>
+                <td className="p-1 border font-semibold">Tax (GST)</td>
+                <td className="p-1 text-center border">₹ {taxAmount.toFixed(2)}</td>
               </tr>
+              {parseFloat(variant.MRP_price) > parseFloat(variant.customer_product_price) && (
+                <tr className="border-b">
+                  <td className="p-1 border font-semibold">Discount</td>
+                  <td className="p-1 text-center border text-green-600">
+                    -₹ {(parseFloat(variant.MRP_price) - parseFloat(variant.customer_product_price)).toFixed(2)}
+                  </td>
+                </tr>
+              )}
               <tr className="border-b">
                 <td className="p-1 border font-bold">Grand Total</td>
                 <td className="p-1 text-center border font-bold text-orange-600">
-                  {/* ₹ {grandTotal.toFixed(2)} */}₹1239.44
+                  ₹ {grandTotal.toFixed(2)}
                 </td>
               </tr>
             </tbody>
@@ -601,7 +648,7 @@ const OrderDetails = () => {
     );
   };
 
-  // Track order status functionality
+  // Track order status functionality (unchanged)
   const items = [
     { key: "1", label: "placed" },
     { key: "2", label: "design" },
@@ -612,7 +659,6 @@ const OrderDetails = () => {
     { key: "7", label: "completed" },
   ];
   
-  // Create a mapping between UI labels and database status names
   const statusMapping = {
     "placed": "placed",
     "design": "designing team",
@@ -635,7 +681,6 @@ const OrderDetails = () => {
     return res.order_status;
   });
 
-  // Make sure "placed" is included if it's not already in the timeline
   if (!completed_timelines.includes("placed")) {
     completed_timelines.push("placed");
   }

@@ -57,8 +57,10 @@ const Navbar = () => {
 
   // Refs
   const scrollTimeoutRef = useRef(null);
+  const searchContainerRef = useRef(null);
   const searchInputRef = useRef(null);
   const searchResultsRef = useRef(null);
+  const isClickFromResultRef = useRef(false);
 
   // Set active nav based on current route
   useEffect(() => {
@@ -143,20 +145,66 @@ const Navbar = () => {
     return () => clearInterval(interval);
   }, [fetchCartData]);
 
-  // Handlers - memoized to prevent unnecessary re-renders
+  // Handle click outside search results
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        searchResultsRef.current &&
+        !searchResultsRef.current.contains(event.target) &&
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target)
+      ) {
+        // Reset the flag
+        isClickFromResultRef.current = false;
+        
+        // Only collapse if click didn't come from result
+        if (!isClickFromResultRef.current) {
+          setTimeout(() => {
+            if (!searchProduct) {
+              setIsExpanded(false);
+            }
+          }, 200);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [searchProduct]);
+
+  // Handlers
   const handleSearchFocus = useCallback(() => {
     setIsExpanded(true);
   }, []);
 
   const handleSearchBlur = useCallback(() => {
-    setTimeout(() => {
-      if (!searchProduct) setIsExpanded(false);
-    }, 200);
+    // Only collapse if click didn't come from result
+    if (!isClickFromResultRef.current) {
+      setTimeout(() => {
+        if (!searchProduct) {
+          setIsExpanded(false);
+        }
+      }, 200);
+    }
+    // Reset the flag
+    isClickFromResultRef.current = false;
   }, [searchProduct]);
 
   const handleSearchChange = useCallback((e) => {
     setSearchProduct(e.target.value);
   }, []);
+
+  const handleSearchSubmit = useCallback((e) => {
+    e.preventDefault();
+    if (searchProduct.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchProduct)}`);
+      setSearchProduct("");
+      setIsExpanded(false);
+      setShowSearchBar(false);
+    }
+  }, [searchProduct, navigate]);
 
   const closeSearchBar = useCallback(() => {
     setShowSearchBar(false);
@@ -169,7 +217,7 @@ const Navbar = () => {
     navigate("/");
     setMenuStatus(false);
     setShowUserDropdown(false);
-    sessionStorage.removeItem("hasRefreshed")
+    sessionStorage.removeItem("hasRefreshed");
   }, [dispatch, navigate]);
 
   const handleDestination = useCallback((url) => {
@@ -183,37 +231,49 @@ const Navbar = () => {
     handleDestination(`/category/${mainId}/${subId}`);
   }, [handleDestination]);
 
-  // Search Input Component - Optimized with memo
-   const SearchInput = ({ isMobile = false }) => {
+  const handleSearchResultClick = useCallback((data) => {
+    // Set flag to indicate click came from result
+    isClickFromResultRef.current = true;
+    
+    // Clear search input
+    setSearchProduct("");
+    setIsExpanded(false);
+    
+    // Navigate to product
+    navigate(`/product/${data.seo_url || data._id}`);
+    
+    // Close mobile search bar if open
+    if (showSearchBar) {
+      closeSearchBar();
+    }
+  }, [navigate, showSearchBar, closeSearchBar]);
+
+  // Search Input Component
+  const SearchInput = React.memo(({ isMobile = false }) => {
     const localInputRef = useRef(null);
 
     // Focus input when expanded
     useEffect(() => {
-      if (!isMobile && isExpanded && searchProduct && localInputRef.current) {
+      if (isExpanded && localInputRef.current) {
         localInputRef.current.focus();
       }
-    }, [isExpanded, searchProduct, isMobile]);
+    }, [isExpanded, isMobile]);
 
-    const handleSearchSubmit = useCallback(
-      (e) => {
-        e.preventDefault();
-        if (searchProduct.trim()) {
-          navigate(`/search?q=${encodeURIComponent(searchProduct)}`);
-          setIsExpanded(false);
-          if (isMobile) {
-            closeSearchBar();
-          }
-        }
-      },
-      [searchProduct, navigate, isMobile, closeSearchBar]
-    );
+    // Focus input when mobile search bar opens
+    useEffect(() => {
+      if (isMobile && showSearchBar && localInputRef.current) {
+        setTimeout(() => {
+          localInputRef.current?.focus();
+        }, 100);
+      }
+    }, [isMobile, showSearchBar]);
 
     return (
       <div
+        ref={searchContainerRef}
         className={`relative ${
           isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[25vw]"
         }`}
-        ref={searchInputRef}
       >
         <form onSubmit={handleSearchSubmit}>
           <div className="relative">
@@ -224,6 +284,7 @@ const Navbar = () => {
               value={searchProduct}
               onChange={handleSearchChange}
               onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
               className={`w-full px-5 py-4 rounded-2xl border-2 border-transparent focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 transition-all duration-300 ${
                 isMobile ? "pr-12 text-base" : "pr-12"
               }`}
@@ -279,26 +340,8 @@ const Navbar = () => {
                     <div
                       key={data._id}
                       className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
-                      onMouseDown={(e) => {
-                        // Prevent default and stop propagation
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        // Mark that click came from search result
-                        isClickFromResultRef.current = true;
-
-                        // Navigate to product
-                        navigate(`/product/${data.seo_url || data._id}`);
-
-                        // Clear and close search
-                        setSearchProduct("");
-                        setIsExpanded(false);
-
-                        // Close mobile search bar if open
-                        if (isMobile) {
-                          closeSearchBar();
-                        }
-                      }}
+                      onClick={() => handleSearchResultClick(data)}
+                      onMouseDown={(e) => e.preventDefault()} // Prevent blur
                     >
                       <div className="py-4 px-4">
                         <SearchProductCard data={data} />
@@ -312,10 +355,9 @@ const Navbar = () => {
         )}
       </div>
     );
-  };
+  });
 
-
-  // Desktop Auth Buttons Component - Memoized
+  // Desktop Auth Buttons Component
   const AuthButtons = React.memo(() => (
     <div className="flex items-center space-x-4">
       <Link
@@ -351,7 +393,7 @@ const Navbar = () => {
     </div>
   ));
 
-  // Desktop User Menu Component - Memoized
+  // Desktop User Menu Component
   const UserMenu = React.memo(() => (
     <div className="flex items-center justify-end gap-4">
       <Link
@@ -391,6 +433,9 @@ const Navbar = () => {
         <button
           onClick={() => setShowUserDropdown(!showUserDropdown)}
           className="focus:outline-none"
+          onBlur={() => {
+            setTimeout(() => setShowUserDropdown(false), 200);
+          }}
         >
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f2c41a] to-[#e6b800] text-white flex items-center justify-center border-2 border-white shadow-md capitalize text-lg font-semibold transition-all duration-300 cursor-pointer hover:shadow-lg hover:scale-105">
             {profileImageName}
@@ -422,7 +467,7 @@ const Navbar = () => {
     </div>
   ));
 
-  // Support Section Component - Memoized
+  // Support Section Component
   const SupportSection = React.memo(() => (
     <div className="text-sm items-center gap-x-2 hidden lg:flex">
       <div>
@@ -453,7 +498,7 @@ const Navbar = () => {
     </div>
   ));
 
-  // Help Center Link Component - Memoized
+  // Help Center Link Component
   const HelpCenterLink = React.memo(() => (
     <Link
       to="/help"
@@ -467,7 +512,7 @@ const Navbar = () => {
     </Link>
   ));
 
-  // Custom Drawer (Mobile Menu) - Memoized
+  // Custom Drawer (Mobile Menu)
   const CustomDrawer = React.memo(({ isOpen, onClose, children }) => (
     <div
       className={`fixed inset-0 z-[10000] transition-all duration-500 ${
@@ -476,7 +521,7 @@ const Navbar = () => {
     >
       {/* Overlay */}
       <div
-        className={`absolute inset-0 transition-opacity duration-500 ${
+        className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
@@ -526,7 +571,7 @@ const Navbar = () => {
     </div>
   ));
 
-  // Mobile Menu Content - Memoized
+  // Mobile Menu Content
   const MobileMenuContent = React.memo(() => (
     <div className="flex flex-col gap-3">
       {/* Quick Actions */}
@@ -662,7 +707,7 @@ const Navbar = () => {
     </div>
   ));
 
-  // Bottom Navigation Component - Memoized
+  // Bottom Navigation Component
   const BottomNavigation = React.memo(() => (
     <div className={`fixed bottom-0 left-0 right-0 z-[9998] w-screen block lg:hidden transition-transform duration-500 ${
       bottomNavVisible ? 'translate-y-0' : 'translate-y-full'
@@ -862,7 +907,7 @@ const Navbar = () => {
 
         {/* Expandable Search Bar */}
         <div
-          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 overflow-hidden ${
+          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 overflow-visible ${
             showSearchBar ? "max-h-28 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
           }`}
         >
