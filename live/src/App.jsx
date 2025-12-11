@@ -29,7 +29,7 @@ const App = () => {
   const confettiIntervalRef = useRef(null);
 
   // Fixed target date: 9th December 2025 at 1:45 AM
-  const FIXED_TARGET_DATE = new Date(2025, 11, 11, 11, 12, 0); // Month is 0-indexed (11 = December)
+  const FIXED_TARGET_DATE = new Date(2025, 11, 11, 10, 12, 0); // Month is 0-indexed (11 = December)
 
   // Function to check and clear localStorage if current date has passed fixed target
   const checkAndClearExpiredCountdown = () => {

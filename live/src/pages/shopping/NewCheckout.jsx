@@ -732,7 +732,7 @@ const NewCheckout = () => {
             <div className="bg-white rounded-2xl shadow-xl p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Options</h2>
               
-              <div className="space-y-3 mb-6">
+              {/* <div className="space-y-3 mb-6">
                 <label className="flex items-start gap-3 p-4 border border-yellow-500 rounded-lg bg-yellow-50 cursor-pointer">
                   <input
                     type="radio"
@@ -768,7 +768,7 @@ const NewCheckout = () => {
                     <p className="text-sm text-gray-600 mt-1">Pay half now, rest before production</p>
                   </div>
                 </label>
-              </div>
+              </div> */}
 
               {/* Terms and Conditions */}
               <div className="mb-6">
