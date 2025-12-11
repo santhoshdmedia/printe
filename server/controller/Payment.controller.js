@@ -39,7 +39,7 @@ const createPaymentOrder = async (req, res) => {
 
     const finalOrderId = order_id || `PRINTE${Date.now()}`;
 
-    const baseUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const baseUrl = process.env.CUSTOMER_SIDE_URL || 'http://localhost:8080';
 
     // Create order in database according to your exact schema format
     try {
