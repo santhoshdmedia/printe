@@ -51,7 +51,7 @@ function calculateTieredQuantityDiscount(coupon, cartItems) {
       const discountPerItem = applicableTier.discountValue;
       
       // Calculate total discount for this item
-      totalDiscount += discountPerItem * quantity;
+      totalDiscount = discountPerItem ;
     }
   }
   
