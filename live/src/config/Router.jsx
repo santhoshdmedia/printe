@@ -164,7 +164,7 @@ export const router = createBrowserRouter([
     element: <PaymentSuccess />,
   },
   {
-    path: "/payment/Failed",
+    path: "/payment/failed",
     element: <PaymentFailed />,
   },
   {

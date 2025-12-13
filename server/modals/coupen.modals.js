@@ -1,4 +1,18 @@
+
 const mongoose = require('mongoose');
+
+const discountTierSchema = new mongoose.Schema({
+  minimumQuantity: {
+    type: Number,
+    required: true,
+    min: 1
+  },
+  discountValue: {
+    type: Number,
+    required: true,
+    min: 0
+  }
+}, { _id: false });
 
 const couponSchema = new mongoose.Schema({
   code: {
@@ -10,14 +24,17 @@ const couponSchema = new mongoose.Schema({
   },
   discountType: {
     type: String,
-    enum: ['percentage', 'fixed', 'shipping'],
+    enum: ['percentage', 'fixed', 'shipping', 'tiered_quantity'],
     required: true
   },
   discountValue: {
     type: Number,
-    required: true,
+    required: function() {
+      return this.discountType !== 'tiered_quantity';
+    },
     min: 0
   },
+  discountTiers: [discountTierSchema],
   minimumOrderAmount: {
     type: Number,
     default: 0
@@ -60,13 +77,22 @@ const couponSchema = new mongoose.Schema({
   userIdsUsed: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }]
+  }],
+  applicableProducts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product'
+  }],
+  isPerProductDiscount: {
+    type: Boolean,
+    default: false
+  }
 }, {
   timestamps: true
 });
 
-// Index for efficient queries
+// Indexes
 couponSchema.index({ code: 1, isActive: 1 });
 couponSchema.index({ endDate: 1 });
+couponSchema.index({ discountType: 1 });
 
 module.exports = mongoose.model('Coupon', couponSchema);

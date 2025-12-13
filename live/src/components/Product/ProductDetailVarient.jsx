@@ -28,7 +28,7 @@ import { useNavigate } from "react-router-dom";
 import { IconHelper } from "../../helper/IconHelper";
 import { FacebookIcon, WhatsappIcon } from "react-share";
 import { IoShareSocial } from "react-icons/io5";
-import { addToShoppingCart, bulkOrder, resendOtp, verifyOtp,notifyWhenAvailable } from "../../helper/api_helper";
+import { addToShoppingCart, bulkOrder, resendOtp, verifyOtp, notifyWhenAvailable } from "../../helper/api_helper";
 import Swal from "sweetalert2";
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import {
@@ -44,7 +44,7 @@ import {
   CloseOutlined,
   PlusOutlined,
   LoadingOutlined,
-   MailOutlined,
+  MailOutlined,
   PhoneOutlined,
   UserOutlined
 } from "@ant-design/icons";
@@ -82,9 +82,8 @@ export const CustomModal = ({
 
   return (
     <div
-      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${
-        isMobile ? "items-end" : "items-center"
-      }`}
+      className={`fixed inset-0 !z-50 flex items-start justify-center p-2 ${topPosition} ${isMobile ? "items-end" : "items-center"
+        }`}
     >
       {/* Backdrop */}
       <motion.div
@@ -100,9 +99,8 @@ export const CustomModal = ({
         initial={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: isMobile ? 100 : 20 }}
-        className={`relative bg-white rounded-lg shadow-xl ${
-          isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
-        } overflow-hidden flex flex-col ${className}`}
+        className={`relative bg-white rounded-lg shadow-xl ${isMobile ? "w-full h-full rounded-b-none" : "max-h-[90vh]"
+          } overflow-hidden flex flex-col ${className}`}
         style={isMobile ? {} : { width }}
       >
         {/* Header */}
@@ -176,7 +174,7 @@ const getProductImages = (data) => {
   } else {
     images = _.get(data, "images", []);
   }
-  
+
   if (!images || images.length === 0) return [];
 
   return images.map(image => {
@@ -231,6 +229,11 @@ const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 0) =>
     return GST_DISCOUNT_HELPER(discountPercentage, basePrice, gst);
   }
 };
+const calculateUnitPriceWithoutGst = (basePrice, discountPercentage, userRole, gst = 18) => {
+    // For dealers and corporate - apply discount only (no GST)
+    return DISCOUNT_HELPER(discountPercentage, basePrice);
+  
+};
 
 const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
   if (userRole === "Corporate" || userRole === "Dealer") {
@@ -258,7 +261,7 @@ const ProductDetailVarient = ({
   const [notifyForm] = Form.useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+
   // Product data constants
   const stockCount = _.get(data, "stock_count", 0);
   const productionTime = _.get(data, "Production_time", "2");
@@ -293,7 +296,7 @@ const ProductDetailVarient = ({
   const [quantityDropdownVisible, setQuantityDropdownVisible] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [noDesignUpload, setNoDesignUpload] = useState(false);
-    const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [sendingNotification, setSendingNotification] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [instructionsVisible, setInstructionsVisible] = useState(false);
@@ -427,7 +430,7 @@ const ProductDetailVarient = ({
 
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
       // Get the first available quantity for the current user role
-      const firstAvailableItem = quantityDiscounts.find((item) => 
+      const firstAvailableItem = quantityDiscounts.find((item) =>
         item[roleFields.quantity] && Number(item[roleFields.quantity]) > 0
       ) || quantityDiscounts[0];
 
@@ -529,12 +532,12 @@ const ProductDetailVarient = ({
   // Handle quantity selection
   const handleQuantitySelect = useCallback((selectedQuantity) => {
     const roleFields = getRoleFields(user?.role);
-    
+
     if (quantityType === "textbox") {
       const availableDiscounts = quantityDiscounts
         .filter(item => item[roleFields.quantity] && Number(item[roleFields.quantity]) <= selectedQuantity)
         .sort((a, b) => Number(b[roleFields.quantity]) - Number(a[roleFields.quantity]));
-        
+
       const selectedDiscount = availableDiscounts[0];
 
       setQuantity(selectedQuantity);
@@ -551,7 +554,7 @@ const ProductDetailVarient = ({
         setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
         const charges = selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
         setDeliveryCharges(charges);
-        
+
         setCheckOutState(prev => ({
           ...prev,
           DeliveryCharges: charges,
@@ -586,7 +589,7 @@ const ProductDetailVarient = ({
         setFreeDelivery(selectedDiscount[roleFields.freeDelivery] || false);
         const charges = selectedDiscount[roleFields.freeDelivery] ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
         setDeliveryCharges(charges);
-        
+
         setCheckOutState(prev => ({
           ...prev,
           DeliveryCharges: charges,
@@ -620,6 +623,10 @@ const ProductDetailVarient = ({
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
     return calculateUnitPrice(basePrice, discountPercentage.percentage, user?.role, gst);
   }, [checkOutState.product_price, discountPercentage.percentage, user?.role, gst]);
+  const getUnitPricewithoutGst = useMemo(() => {
+    const basePrice = Number(_.get(checkOutState, "product_price", 0));
+    return calculateUnitPriceWithoutGst(basePrice, discountPercentage.percentage, user?.role, gst);
+  }, [checkOutState.product_price, discountPercentage.percentage, user?.role, gst]);
 
   const getMRPUnitPrice = useMemo(() => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
@@ -640,6 +647,13 @@ const ProductDetailVarient = ({
     if (!quantity) return 0;
     return (getUnitPrice * quantity).toFixed(2);
   }, [getUnitPrice, quantity]);
+
+    const calculateTotalPricewithoutGst = () => {
+    if (!quantity) return 0;
+    const unitPrice = getUnitPricewithoutGst();
+    return (unitPrice * quantity).toFixed(2);
+  };
+  
   const calculateGstPrice = useCallback(() => {
     if (!quantity) return 0;
     return Number(getUnitPrice).toFixed(2);
@@ -682,12 +696,12 @@ const ProductDetailVarient = ({
   // Calculate percentage discount for deal price
   const calculateDealPercentageDiscount = useCallback(() => {
     if (!quantity) return 0;
-    
+
     const mrpTotal = parseFloat(calculateMRPTotalPrice());
     const dealTotal = parseFloat(calculateTotalPrice());
-    
+
     if (mrpTotal === 0 || dealTotal >= mrpTotal) return 0;
-    
+
     const percentage = ((mrpTotal - dealTotal) / mrpTotal) * 100;
     return Math.round(percentage);
   }, [calculateMRPTotalPrice, calculateTotalPrice, quantity]);
@@ -718,11 +732,10 @@ const ProductDetailVarient = ({
               {options.map((option, index) => (
                 <Tooltip key={index} title={option.value}>
                   <div
-                    className={`flex flex-col items-center cursor-pointer transition-all duration-200 p-1 ${
-                      selectedVariants[variant_name] === option.value
+                    className={`flex flex-col items-center cursor-pointer transition-all duration-200 p-1 ${selectedVariants[variant_name] === option.value
                         ? "ring-2 ring-blue-500 rounded-lg"
                         : "border border-gray-200 rounded-lg hover:border-blue-300"
-                    }`}
+                      }`}
                     onClick={() => handleVariantChange(variant_name, option.value)}
                   >
                     <div
@@ -762,11 +775,10 @@ const ProductDetailVarient = ({
                 <div key={optionIndex} className="flex flex-col items-center">
                   <div
                     onClick={() => handleVariantChange(variant_name, option.value)}
-                    className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
-                      selectedVariants[variant_name] === option.value
+                    className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${selectedVariants[variant_name] === option.value
                         ? "border-blue-500 shadow-md"
                         : "border-gray-300 hover:border-blue-400"
-                    }`}
+                      }`}
                     style={{ width: "60px", height: "60px" }}
                   >
                     <img
@@ -851,19 +863,17 @@ const ProductDetailVarient = ({
             return (
               <div
                 key={item.value}
-                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                  isSelected
+                className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${isSelected
                     ? "border-blue-500 bg-blue-50 shadow-sm"
                     : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
-                }`}
+                  }`}
                 onClick={() => handleQuantitySelect(item.value)}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span
-                      className={`text-base font-medium ${
-                        isSelected ? "text-blue-700" : "text-gray-800"
-                      }`}
+                      className={`text-base font-medium ${isSelected ? "text-blue-700" : "text-gray-800"
+                        }`}
                     >
                       {item.value} {unit}
                     </span>
@@ -891,9 +901,8 @@ const ProductDetailVarient = ({
 
                 <div className="text-right">
                   <p
-                    className={`font-semibold ${
-                      isSelected ? "text-blue-700" : "text-gray-900"
-                    }`}
+                    className={`font-semibold ${isSelected ? "text-blue-700" : "text-gray-900"
+                      }`}
                   >
                     {formatPrice(itemTotalPrice)}
                   </p>
@@ -980,6 +989,8 @@ const ProductDetailVarient = ({
         DeliveryCharges: deliveryCharges,
         noCustomtation: noDesignUpload,
         final_total: Number(calculateTotalPrice()),
+        final_total_withoutGst: Number(calculateTotalPricewithoutGst()),
+
       };
 
       const result = await addToShoppingCart(updatedCheckoutState);
@@ -1010,7 +1021,7 @@ const ProductDetailVarient = ({
       setLoading(false);
     }
   };
- // Handle Notify When Available
+  // Handle Notify When Available
   const handleNotify = () => {
     // Check if user is logged in
     if (user && user.email) {
@@ -1030,7 +1041,7 @@ const ProductDetailVarient = ({
   const sendNotification = async (userData) => {
     try {
       setSendingNotification(true);
-      
+
       const notificationData = {
         productName: _.get(data, "name", ""),
         productId: _.get(data, "Vendor_Code", data._id),
@@ -1040,9 +1051,9 @@ const ProductDetailVarient = ({
         userName: userData.name,
         timestamp: new Date().toISOString(),
       };
-      
+
       const result = await notifyWhenAvailable(notificationData);
-      
+
       if (result.data.success) {
         toast.success("We'll notify you when this product is available!");
         setShowNotifyModal(false);
@@ -1376,7 +1387,7 @@ const ProductDetailVarient = ({
                 <Text strong className="text-gray-800">
                   Deal Price:
                 </Text>
-                
+
               </div>
               <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
                 <Text delete className="text-md text-gray-500 md:mr-2">
@@ -1426,19 +1437,19 @@ const ProductDetailVarient = ({
                   message={
                     <div>
                       <div className="font-semibold ">
-                         You Saved: {formatPrice(calculateMRPSavings())} &nbsp;(
-                              {(user.role === "Dealer" || user.role === "Corporate")
-                                ? <>{calculateDealPercentageDiscount()}% Discount</>
-                                : <>{calculateTotalSavingsPercentage()}% Discount</>
-                              })
+                        You Saved: {formatPrice(calculateMRPSavings())} &nbsp;(
+                        {(user.role === "Dealer" || user.role === "Corporate")
+                          ? <>{calculateDealPercentageDiscount()}% Discount</>
+                          : <>{calculateTotalSavingsPercentage()}% Discount</>
+                        })
                       </div>
-                      
+
                       {calculateDiscountSavings() > 0 && (
                         <div className="text-sm mt-2">
                           Kudos! Additionally you saved {formatPrice(calculateDiscountSavings())} ({discountPercentage.percentage}% Discount)
                         </div>
                       )}
-                      
+
                       {discountPercentage.percentage === 0 && quantity && (
                         <div className="mt-2 text-base text-amber-600">
                           💡 Select higher quantity to get extra discounts
@@ -1479,13 +1490,13 @@ const ProductDetailVarient = ({
                 <h1>
                   Inclusive of all taxes for <span strong>{quantity}</span> Qty
                   <span className="font-bold">
- &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
-                    ? <>{formatPrice(Gst_HELPER(18, getUnitPrice))}</>
-                    : <>{formatPrice(calculateGstPrice())}</>
-                  }
+                    &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
+                      ? <>{formatPrice(Gst_HELPER(18, getUnitPrice))}</>
+                      : <>{formatPrice(calculateGstPrice())}</>
+                    }
 
-                  
-                  / piece)
+
+                    / piece)
                   </span>
                 </h1>
               </div>
@@ -1644,34 +1655,34 @@ const ProductDetailVarient = ({
           </div>
 
           {/* Add to Cart Button */}
-         <div className="w-full">
-                     {isGettingVariantPrice ? (
-                       <div className="center_div py-6">
-                         <Spin size="large" />
-                       </div>
-                     ) : (
-                       <>{_.get(data, "is_soldout", false) ? <Button
-                         type="primary"
-                         size="large"
-                         icon={<MailOutlined />}
-                         className="!h-12 !bg-gray-600 text-white hover:!bg-gray-700 hover:!text-white font-semibold w-full"
-                         onClick={handleNotify}
-                         loading={sendingNotification}
-                       >
-                         Notify When Available
-                       </Button> : <Button
-                         type="primary"
-                         size="large"
-                         icon={<ShoppingCartOutlined />}
-                         className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
-                         onClick={handleBuy}
-                         loading={loading}
-                       >
-                         Add To Cart
-                       </Button>}
-                       </>
-                     )}
-                   </div>
+          <div className="w-full">
+            {isGettingVariantPrice ? (
+              <div className="center_div py-6">
+                <Spin size="large" />
+              </div>
+            ) : (
+              <>{_.get(data, "is_soldout", false) ? <Button
+                type="primary"
+                size="large"
+                icon={<MailOutlined />}
+                className="!h-12 !bg-gray-600 text-white hover:!bg-gray-700 hover:!text-white font-semibold w-full"
+                onClick={handleNotify}
+                loading={sendingNotification}
+              >
+                Notify When Available
+              </Button> : <Button
+                type="primary"
+                size="large"
+                icon={<ShoppingCartOutlined />}
+                className="!h-12 !bg-yellow-400 text-black hover:!bg-yellow-500 hover:!text-black font-semibold w-full"
+                onClick={handleBuy}
+                loading={loading}
+              >
+                Add To Cart
+              </Button>}
+              </>
+            )}
+          </div>
           <Divider className="!my-4" />
 
           {/* Design Preview Modal */}
@@ -1699,96 +1710,96 @@ const ProductDetailVarient = ({
             </div>
           </CustomModal>
         </div>
-         {/* Notify Modal (for non-logged in users) */}
-                <CustomModal
-                  open={showNotifyModal}
-                  onClose={() => {
+        {/* Notify Modal (for non-logged in users) */}
+        <CustomModal
+          open={showNotifyModal}
+          onClose={() => {
+            setShowNotifyModal(false);
+            notifyForm.resetFields();
+          }}
+          title="Notify When Available"
+          width={500}
+        >
+          <Form
+            form={notifyForm}
+            layout="vertical"
+            onFinish={handleNotifySubmit}
+          >
+            <div className="space-y-4">
+              <div className="mb-4">
+                <Text className="text-gray-600">
+                  We'll notify you when <strong>{data.name}</strong> is back in stock.
+                </Text>
+              </div>
+
+              <Form.Item
+                label="Name"
+                name="name"
+                rules={[
+                  { required: true, message: "Please enter your name" },
+                  { min: 2, message: "Name must be at least 2 characters" },
+                ]}
+              >
+                <Input
+                  prefix={<UserOutlined className="text-gray-400" />}
+                  placeholder="Your full name"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Email Address"
+                name="email"
+                rules={[
+                  { required: true, message: "Please enter your email" },
+                  { type: "email", message: "Please enter a valid email" },
+                ]}
+              >
+                <Input
+                  prefix={<MailOutlined className="text-gray-400" />}
+                  placeholder="your@email.com"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Phone Number"
+                name="phone"
+                rules={[
+                  { required: true, message: "Please enter your phone number" },
+                  {
+                    pattern: /^[0-9]{10}$/,
+                    message: "Please enter a valid 10-digit phone number",
+                  },
+                ]}
+              >
+                <Input
+                  prefix={<PhoneOutlined className="text-gray-400" />}
+                  placeholder="9876543210"
+                  maxLength={10}
+                />
+              </Form.Item>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
                     setShowNotifyModal(false);
                     notifyForm.resetFields();
                   }}
-                  title="Notify When Available"
-                  width={500}
+                  className="flex-1"
                 >
-                  <Form
-                    form={notifyForm}
-                    layout="vertical"
-                    onFinish={handleNotifySubmit}
-                  >
-                    <div className="space-y-4">
-                      <div className="mb-4">
-                        <Text className="text-gray-600">
-                          We'll notify you when <strong>{data.name}</strong> is back in stock.
-                        </Text>
-                      </div>
-        
-                      <Form.Item
-                        label="Name"
-                        name="name"
-                        rules={[
-                          { required: true, message: "Please enter your name" },
-                          { min: 2, message: "Name must be at least 2 characters" },
-                        ]}
-                      >
-                        <Input
-                          prefix={<UserOutlined className="text-gray-400" />}
-                          placeholder="Your full name"
-                        />
-                      </Form.Item>
-        
-                      <Form.Item
-                        label="Email Address"
-                        name="email"
-                        rules={[
-                          { required: true, message: "Please enter your email" },
-                          { type: "email", message: "Please enter a valid email" },
-                        ]}
-                      >
-                        <Input
-                          prefix={<MailOutlined className="text-gray-400" />}
-                          placeholder="your@email.com"
-                        />
-                      </Form.Item>
-        
-                      <Form.Item
-                        label="Phone Number"
-                        name="phone"
-                        rules={[
-                          { required: true, message: "Please enter your phone number" },
-                          {
-                            pattern: /^[0-9]{10}$/,
-                            message: "Please enter a valid 10-digit phone number",
-                          },
-                        ]}
-                      >
-                        <Input
-                          prefix={<PhoneOutlined className="text-gray-400" />}
-                          placeholder="9876543210"
-                          maxLength={10}
-                        />
-                      </Form.Item>
-        
-                      <div className="flex gap-3">
-                        <Button
-                          onClick={() => {
-                            setShowNotifyModal(false);
-                            notifyForm.resetFields();
-                          }}
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="primary"
-                          htmlType="submit"
-                          className="flex-1 bg-blue-500"
-                          loading={sendingNotification}
-                        >
-                          Notify Me
-                        </Button>
-                      </div>
-                    </div>
-                  </Form>
-                </CustomModal>
+                  Cancel
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="flex-1 bg-blue-500"
+                  loading={sendingNotification}
+                >
+                  Notify Me
+                </Button>
+              </div>
+            </div>
+          </Form>
+        </CustomModal>
 
         {/* Bulk Order Modal */}
         <CustomModal

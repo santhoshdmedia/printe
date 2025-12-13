@@ -379,6 +379,11 @@ const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 18) =
     return GST_DISCOUNT_HELPER(discountPercentage, basePrice, gst);
   }
 };
+const calculateUnitPriceWithoutGst = (basePrice, discountPercentage, userRole, gst = 18) => {
+    // For dealers and corporate - apply discount only (no GST)
+    return DISCOUNT_HELPER(discountPercentage, basePrice);
+  
+};
 
 const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
   if (userRole === "Corporate" || userRole === "Dealer") {
@@ -454,6 +459,7 @@ const ProductDetails = ({
     category_name: _.get(data, "category_details.main_category_name", ""),
     subcategory_name: _.get(data, "sub_category_details.sub_category_name", ""),
     product_price: basePrice,
+    // withGst:,
     product_variants: {},
     product_quantity: 0,
     product_seo_url: _.get(data, "seo_url", ""),
@@ -771,6 +777,10 @@ const ProductDetails = ({
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
     return calculateUnitPrice(basePrice, discountPercentage.percentage, user.role, Gst);
   };
+  const getUnitPricewithoutGst = () => {
+    const basePrice = Number(_.get(checkOutState, "product_price", 0));
+    return calculateUnitPriceWithoutGst(basePrice, discountPercentage.percentage, user.role, Gst);
+  };
 
   const getMRPUnitPrice = () => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
@@ -790,6 +800,12 @@ const ProductDetails = ({
   const calculateTotalPrice = () => {
     if (!quantity) return 0;
     const unitPrice = getUnitPrice();
+    return (unitPrice * quantity).toFixed(2);
+  };
+  
+  const calculateTotalPricewithoutGst = () => {
+    if (!quantity) return 0;
+    const unitPrice = getUnitPricewithoutGst();
     return (unitPrice * quantity).toFixed(2);
   };
   
@@ -918,6 +934,7 @@ const ProductDetails = ({
         DeliveryCharges: deliveryCharges,
         noCustomtation: noDesignUpload,
         final_total: Number(calculateTotalPrice()),
+        final_total_withoutGst: Number(calculateTotalPricewithoutGst()),
       };
 
       const GuestCheckoutState = {
@@ -932,6 +949,7 @@ const ProductDetails = ({
         DeliveryCharges: deliveryCharges,
         noCustomtation: noDesignUpload,
         final_total: Number(calculateTotalPrice()),
+        final_total_withoutGst: Number(calculateTotalPricewithoutGst()),
       };
 
       const result = await addToShoppingCart(token == "user" ? finalCheckoutState : GuestCheckoutState);
@@ -1604,7 +1622,7 @@ const ProductDetails = ({
             )}
 
 
-            {(user.role == "Corporate" || user.role == "Dealer") ? (
+            {(user.role == "Corporate" || user.role == "Dealer"||user.role == "user") ? (
               <div className="text-gray-600">
                 <h1 className="!text-[12px] text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty

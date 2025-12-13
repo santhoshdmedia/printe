@@ -83,6 +83,9 @@ module.exports = model(
         type: Number,
         required: true,
       },
+      final_total_withoutGst: {
+        type: Number,
+      },
     },
     {
       timestamps: true,

@@ -12,13 +12,14 @@ const _ = require("lodash");
 const moment = require("moment");
 const { orderMail, orderStatusMail } = require("../mail/sendMail");
 const { isValidObjectId } = require('mongoose');
+const {markCouponAsUsed}=require("../controller/coupen.controller")
 
 const users=AdminUsersSchema;
 
 const CreateOrder = async (req, res) => {
   try {
     const { id } = req.userData;
-    const { delivery_address, cart_items, payment_id, transaction_id } =
+    const { delivery_address, cart_items, payment_id, transaction_id,coupenCode } =
       req.body;
 
     // Validate required fields

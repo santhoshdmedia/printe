@@ -12,11 +12,14 @@ class CCAvenue {
     try {
       const m = crypto.createHash('md5');
       m.update(this.workingKey);
-      const key = m.digest();
+      const key = Buffer.from(m.digest('hex'), 'hex');
 
-      const iv = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f';
+      const iv = Buffer.from([
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+      ]);
+
       const cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
-
       let encoded = cipher.update(plainText, 'utf8', 'hex');
       encoded += cipher.final('hex');
 
@@ -31,11 +34,14 @@ class CCAvenue {
     try {
       const m = crypto.createHash('md5');
       m.update(this.workingKey);
-      const key = m.digest();
+      const key = Buffer.from(m.digest('hex'), 'hex');
 
-      const iv = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f';
+      const iv = Buffer.from([
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+      ]);
+
       const decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);
-
       let decoded = decipher.update(encText, 'hex', 'utf8');
       decoded += decipher.final('utf8');
 
@@ -49,7 +55,7 @@ class CCAvenue {
   encryptData(params) {
     const queryString = Object.keys(params)
       .filter(key => params[key] !== undefined && params[key] !== null)
-      .map(key => `${key}=${params[key]}`)
+      .map(key => `${key}=${encodeURIComponent(params[key])}`)
       .join('&');
 
     return this.encrypt(queryString);
@@ -62,7 +68,7 @@ class CCAvenue {
     decrypted.split('&').forEach(param => {
       const [key, value] = param.split('=');
       if (key) {
-        params[key] = value;
+        params[key] = decodeURIComponent(value || '');
       }
     });
 

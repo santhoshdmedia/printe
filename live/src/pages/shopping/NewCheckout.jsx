@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FaCreditCard, FaSpinner, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaCity, FaGlobeAsia, FaMapPin, FaReceipt, FaTag } from 'react-icons/fa';
+import { FaCreditCard, FaSpinner, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaCity, FaGlobeAsia, FaMapPin, FaReceipt, FaTag, FaPercent, FaShoppingCart } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import _ from 'lodash';
@@ -85,6 +85,15 @@ const NewCheckout = () => {
   const [cartData, setCartData] = useState([]);
   const [gstNo, setGstNo] = useState(user?.gst_no || '');
   const [selectedAddress, setSelectedAddress] = useState(0);
+  const [calculations, setCalculations] = useState({
+    subtotal: 0,
+    tax: 0,
+    delivery: 0,
+    discount: 0,
+    total: 0,
+    totalBeforeDiscount: 0,
+    payable: 0
+  });
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -111,6 +120,10 @@ const NewCheckout = () => {
     if (selectedProducts.length > 0) {
       setCartData(selectedProducts);
     }
+    console.log(selectedProducts,"ser");
+    
+
+    
   }, [selectedProducts]);
 
   // Set form values when address changes
@@ -132,43 +145,42 @@ const NewCheckout = () => {
     }
   }, [selectedAddress, user, addresses]);
 
-  // Use useCallback to memoize calculation functions
-  const GET_SUB_TOTAL = useCallback(() => {
-    return _.sum(cartData.map((res) => Number(res.final_total) || 0));
-  }, [cartData]);
+  // Calculate all values when cart or coupon changes
+  useEffect(() => {
+    const calculateAll = () => {
+      // Calculate subtotal
+      const subtotal = _.sum(cartData.map(item => Number(item.final_total_withoutGst)||item.final_total || 0));
+      console.log(cartData,"card");
+      
+      
+      // Calculate tax (18% GST)
+      const tax = subtotal * 0.18;
+      
+      // Calculate delivery fee
+      const freeDelivery = cartData.every(item => item.FreeDelivery);
+      const delivery = freeDelivery ? 0 : (cartData[0]?.DeliveryCharges || 0);
+      
+      // Calculate discount from applied coupon
+      const discount = appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0;
+      
+      // Calculate totals
+      const totalBeforeDiscount = subtotal + tax + delivery;
+      const total = Math.max(0, totalBeforeDiscount - discount);
+      const payable = paymentOption === 'half' ? Math.ceil(total * 0.5) : total;
 
-  const GET_TAX_TOTAL = useCallback(() => {
-    const subtotal = GET_SUB_TOTAL();
-    const taxRate = 0.18;
-    return subtotal * taxRate;
-  }, [GET_SUB_TOTAL]);
+      setCalculations({
+        subtotal,
+        tax,
+        delivery,
+        discount,
+        total,
+        totalBeforeDiscount,
+        payable
+      });
+    };
 
-  const get_delivery_Fee = useCallback(() => {
-    const freeDelivery = cartData.every((item) => item.FreeDelivery);
-    return freeDelivery ? 0 : (cartData[0]?.DeliveryCharges || 0);
-  }, [cartData]);
-
-  const GET_COUPON_DISCOUNT = useCallback(() => {
-    return appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0;
-  }, [appliedCoupon]);
-
-  const GET_TOTAL_AMOUNT_BEFORE_DISCOUNT = useCallback(() => {
-    const subtotal = GET_SUB_TOTAL();
-    const tax = GET_TAX_TOTAL();
-    const delivery = Number(get_delivery_Fee());
-    return subtotal + tax + delivery;
-  }, [GET_SUB_TOTAL, GET_TAX_TOTAL, get_delivery_Fee]);
-
-  const GET_TOTAL_AMOUNT = useCallback(() => {
-    const baseTotal = GET_TOTAL_AMOUNT_BEFORE_DISCOUNT();
-    const discount = GET_COUPON_DISCOUNT();
-    return Math.max(0, baseTotal - discount);
-  }, [GET_TOTAL_AMOUNT_BEFORE_DISCOUNT, GET_COUPON_DISCOUNT]);
-
-  const GET_PAYABLE_AMOUNT = useCallback(() => {
-    const total = GET_TOTAL_AMOUNT();
-    return paymentOption === 'half' ? Math.ceil(total * 0.5) : total;
-  }, [GET_TOTAL_AMOUNT, paymentOption]);
+    calculateAll();
+  }, [cartData, appliedCoupon, paymentOption]);
 
   // Form validation
   const validateForm = () => {
@@ -207,61 +219,129 @@ const NewCheckout = () => {
     return true;
   };
 
-  // Coupon functions - FIXED VERSION
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) {
-      setCouponError('Please enter a coupon code');
-      return;
-    }
+  // Coupon function - FIXED for tiered quantity discounts
+ const handleApplyCoupon = async () => {
+  if (!couponCode.trim()) {
+    setCouponError('Please enter a coupon code');
+    return;
+  }
 
-    try {
-      setCouponLoading(true);
-      setCouponError('');
+  try {
+    setCouponLoading(true);
+    setCouponError('');
 
-      const orderAmount = GET_TOTAL_AMOUNT_BEFORE_DISCOUNT();
-      const productIds = cartData.map(item => item.product_id || item._id);
+    const orderAmount = calculations.totalBeforeDiscount;
+    
+    // Prepare cart items with the EXACT product ID structure
+    const cartItems = cartData.map(item => {
+      // The product ID from your data: "69303737796999383369944b"
+      // It's stored in _id field with $oid wrapper
+      const productId = item._id?.$oid || item._id || item.product_id;
       
-      const couponData = {
-        code: couponCode,
-        orderAmount: orderAmount,
-        productIds: productIds,
-        userId: user?._id
-      };
-
-      
-      const response = await applyCouponCode(couponData);
-
-      // Check different response structures
-      if (response?.data?.data?.coupon) {
-        // Structure from your example: response.data.data.coupon
-        setAppliedCoupon(response.data.data.coupon);
-        setCouponError('');
-      } else if (response?.data?.coupon) {
-        // Alternative structure: response.data.coupon
-        setAppliedCoupon(response.data.coupon);
-        setCouponError('');
-      } else if (response?.coupon) {
-        // Direct structure: response.coupon
-        setAppliedCoupon(response.coupon);
-        setCouponError('');
-      } else if (response?.success && response?.data?.coupon) {
-        // Structure with success flag
-        setAppliedCoupon(response.data.coupon);
-        setCouponError('');
+      // Clean up the ID - remove $oid if present
+      let cleanProductId;
+      if (typeof productId === 'object' && productId.$oid) {
+        cleanProductId = productId.$oid; // Extract from $oid
+      } else if (typeof productId === 'string') {
+        cleanProductId = productId;
       } else {
-        // If no coupon data found, check for message
-        const errorMessage = response?.message || response?.data?.message || 'Invalid coupon code';
-        throw new Error(errorMessage);
+        cleanProductId = String(productId);
       }
+      
+      // Get quantity - ensure it's a number
+      const quantity = Number(item.product_quantity) || 1;
+      
+      // Calculate unit price
+      const unitPrice = (Number(item.final_total_withoutGst||item.final_total) || 0) / (quantity || 1);
+      
+      return {
+        productId: cleanProductId,
+        product_id: cleanProductId, // Some backends expect both
+        _id: cleanProductId, // Some backends expect _id
+        quantity: quantity,
+        price: parseFloat(unitPrice.toFixed(2)),
+        totalPrice: Number(item.final_total_withoutGst||item.final_total) || 0,
+        name: item.product_name || item.name || 'Product'
+      };
+    });
 
-    } catch (err) {
-      console.error('Coupon application error:', err);
-      setCouponError(err.message || 'Invalid coupon code. Please try again.');
-      setAppliedCoupon(null);
-    } finally {
-      setCouponLoading(false);
+    console.log('Cart items for coupon:', {
+      items: cartItems,
+      firstItemId: cartItems[0]?.productId,
+      expectedId: '69303737796999383369944b'
+    });
+
+    const couponData = {
+      code: couponCode.trim().toUpperCase(),
+      orderAmount: parseFloat(orderAmount.toFixed(2)),
+      userId: user?._id,
+      cartItems: cartItems
+    };
+
+    console.log('Final coupon request:', JSON.stringify(couponData, null, 2));
+
+    const response = await applyCouponCode(couponData);
+
+    console.log('Coupon response:', response);
+
+    // Handle response based on your backend structure
+    if (response?.success === true) {
+      // Try different response structures
+      const coupon = response.data?.coupon || response.data?.data?.coupon || response.data;
+      
+      if (coupon) {
+        setAppliedCoupon(coupon);
+        setCouponError('');
+        setError('');
+        
+        console.log('Coupon applied successfully:', coupon);
+      } else {
+        throw new Error('Invalid coupon data in response');
+      }
+    } else {
+      // Check for error message in different structures
+      const errorMsg = response?.message || 
+                      response?.data?.message || 
+                      response?.error?.message || 
+                      'Coupon application failed';
+      throw new Error(errorMsg);
     }
-  };
+
+  } catch (err) {
+    console.error('Detailed coupon error:', err);
+    
+    // Get the actual error message from backend
+    let errorMessage = 'Invalid coupon code. Please try again.';
+    
+    if (err.response?.data?.message) {
+      errorMessage = err.response.data.message;
+    } else if (err.message) {
+      errorMessage = err.message;
+    }
+    
+    // Specific error handling
+    if (errorMessage.includes('Minimum quantity')) {
+      setCouponError(`This coupon requires minimum quantity. ${errorMessage}`);
+    } else if (errorMessage.includes('applicable products')) {
+      setCouponError('This coupon is not applicable to the products in your cart.');
+    } else if (errorMessage.includes('not active') || errorMessage.includes('expired')) {
+      setCouponError('This coupon is not currently active or has expired.');
+    } else if (errorMessage.includes('usage limit')) {
+      setCouponError('This coupon has reached its usage limit.');
+    } else if (errorMessage.includes('minimum order amount')) {
+      const match = errorMessage.match(/₹(\d+)/);
+      const amount = match ? match[1] : '';
+      setCouponError(`Order amount is too low. Minimum order amount is ₹${amount}.`);
+    } else {
+      setCouponError(errorMessage);
+    }
+    
+    setAppliedCoupon(null);
+    setError(errorMessage);
+  } finally {
+    setCouponLoading(false);
+  }
+};
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
@@ -277,7 +357,6 @@ const NewCheckout = () => {
     setError('');
 
     try {
-      const payableAmount = GET_PAYABLE_AMOUNT();
       const orderId = `PRINTE${Date.now()}`;
 
       // Combine address lines into a single street field
@@ -285,7 +364,7 @@ const NewCheckout = () => {
         ? `${formData.addressLine1}\n${formData.addressLine2}`
         : formData.addressLine1;
 
-      // Prepare delivery address in exact format
+      // Prepare delivery address
       const deliveryAddress = {
         name: formData.name,
         email: formData.email,
@@ -303,11 +382,13 @@ const NewCheckout = () => {
         discountType: appliedCoupon.discountType,
         discountValue: appliedCoupon.discountValue,
         discountAmount: appliedCoupon.discountAmount,
-        finalAmount: appliedCoupon.finalAmount
+        finalAmount: appliedCoupon.finalAmount,
+        discountTiers: appliedCoupon.discountTiers,
+        appliedTiers: appliedCoupon.appliedTiers
       } : null;
 
       const paymentData = {
-        amount: payableAmount,
+        amount: calculations.payable,
         order_id: orderId,
         billing_name: formData.name,
         billing_email: formData.email,
@@ -316,16 +397,16 @@ const NewCheckout = () => {
         cart_items: cartData,
         delivery_address: deliveryAddress,
         user_id: user?._id,
-        delivery_charges: get_delivery_Fee(),
+        delivery_charges: calculations.delivery,
         free_delivery: cartData.every(item => item.FreeDelivery),
         gst_no: gstNo || undefined,
         coupon: couponData,
-        subtotal: GET_SUB_TOTAL(),
-        tax_amount: GET_TAX_TOTAL(),
-        discount_amount: GET_COUPON_DISCOUNT(),
-        total_amount: GET_TOTAL_AMOUNT(),
+        subtotal: calculations.subtotal,
+        tax_amount: calculations.tax,
+        discount_amount: calculations.discount,
+        total_amount: calculations.total,
         payment_type: paymentOption,
-        total_before_discount: GET_TOTAL_AMOUNT_BEFORE_DISCOUNT()
+        total_before_discount: calculations.totalBeforeDiscount
       };
 
       console.log('Payment data:', paymentData);
@@ -371,6 +452,31 @@ const NewCheckout = () => {
     setGstNo(value);
   }, []);
 
+  // Function to get discount description based on type
+  const getDiscountDescription = (coupon) => {
+    if (!coupon) return '';
+    
+    switch (coupon.discountType) {
+      case 'percentage':
+        return `${coupon.discountValue}% off`;
+      
+      case 'fixed':
+        return `₹${coupon.discountValue} off`;
+      
+      case 'shipping':
+        return `Free shipping up to ₹${coupon.discountValue}`;
+      
+      case 'tiered_quantity':
+        if (coupon.appliedTiers && coupon.appliedTiers.length > 0) {
+          return `${coupon.appliedTiers[0]?.discountPercent || 0}% off (Tiered quantity discount)`;
+        }
+        return 'Tiered quantity discount';
+      
+      default:
+        return 'Discount applied';
+    }
+  };
+
   // Show loading state
   if (loading && cartData.length === 0) {
     return (
@@ -391,8 +497,8 @@ const NewCheckout = () => {
           <h2 className="text-2xl font-bold mb-4">No Products Selected</h2>
           <p className="mb-4">Please add products to your cart before checkout.</p>
           <button 
-            onClick={() => navigate('/cart')}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+            onClick={() => navigate('/shopping-cart')}
+            className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700"
           >
             Go to Cart
           </button>
@@ -590,7 +696,12 @@ const NewCheckout = () => {
                     disabled={!couponCode.trim() || couponLoading}
                     className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
                   >
-                    {couponLoading ? 'Applying...' : 'Apply'}
+                    {couponLoading ? (
+                      <>
+                        <FaSpinner className="inline mr-2 animate-spin" />
+                        Applying...
+                      </>
+                    ) : 'Apply'}
                   </button>
                 ) : (
                   <button
@@ -608,20 +719,42 @@ const NewCheckout = () => {
               
               {appliedCoupon && (
                 <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mb-2">
                     <div>
                       <span className="font-medium text-green-700">Coupon Applied: {appliedCoupon.code}</span>
                       <div className="text-sm text-green-600">
-                        {appliedCoupon.discountType === 'percentage' 
-                          ? `${appliedCoupon.discountValue}% off` 
-                          : `₹${appliedCoupon.discountValue} off`
-                        }
+                        {getDiscountDescription(appliedCoupon)}
                       </div>
                     </div>
                     <div className="text-green-700 font-bold">
                       -₹{Number(appliedCoupon.discountAmount || 0).toFixed(2)}
                     </div>
                   </div>
+                  
+                  {/* Show tier information for tiered quantity discounts */}
+                  {appliedCoupon.discountType === 'tiered_quantity' && appliedCoupon.appliedTiers && (
+                    <div className="mt-2 pt-2 border-t border-green-200">
+                      <div className="text-xs font-medium text-green-800 mb-1">Applied Tiers:</div>
+                      {appliedCoupon.appliedTiers.map((tier, index) => (
+                        <div key={index} className="text-xs text-green-700 flex justify-between">
+                          <span>{tier.quantity} item(s):</span>
+                          <span>{tier.discountPercent}% off</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Show discount tiers info if available */}
+                  {appliedCoupon.discountTiers && appliedCoupon.discountType === 'tiered_quantity' && (
+                    <div className="mt-2 pt-2 border-t border-green-200">
+                      <div className="text-xs font-medium text-green-800 mb-1">Available Tiers:</div>
+                      {appliedCoupon.discountTiers.map((tier, index) => (
+                        <div key={index} className="text-xs text-green-600">
+                          {tier.minimumQuantity}+ items: {tier.discountValue}% off
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -639,7 +772,7 @@ const NewCheckout = () => {
                     type="text"
                     value={gstNo}
                     onChange={handleGstChange}
-                    placeholder="Enter GSTIN number"
+                    placeholder="Enter GSTIN number (15 characters)"
                     maxLength={15}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none"
                   />
@@ -665,7 +798,10 @@ const NewCheckout = () => {
           <div className="space-y-6">
             {/* Order Summary */}
             <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Order Summary</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <FaShoppingCart className="text-blue-600" />
+                Order Summary
+              </h2>
 
               {/* Order Items */}
               <div className="space-y-4 mb-6">
@@ -680,11 +816,14 @@ const NewCheckout = () => {
                       }}
                     />
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.product_name}</h3>
-                      <p className="text-sm text-gray-600">Qty: {item.product_quantity}</p>
+                      <h3 className="font-medium text-gray-900 line-clamp-1">{item.product_name}</h3>
+                      <p className="text-sm text-gray-600">Qty: {item.product_quantity || 1}</p>
+                      <p className="text-sm text-gray-600">
+                        ₹{(Number(item.final_total_withoutGst||item.final_total) / (item.product_quantity || 1)).toFixed(2)} each
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">₹{Number(item.final_total).toFixed(2)}</p>
+                      <p className="font-bold">₹{Number(item.final_total_withoutGst||item.final_total).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
@@ -694,34 +833,37 @@ const NewCheckout = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Subtotal ({cartData.length} items):</span>
-                  <span className="font-semibold">₹{GET_SUB_TOTAL().toFixed(2)}</span>
+                  <span className="font-semibold">₹{calculations.subtotal.toFixed(2)}</span>
                 </div>
                 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Taxes (18% GST):</span>
-                  <span className="font-semibold">₹{GET_TAX_TOTAL().toFixed(2)}</span>
+                  <span className="font-semibold">₹{calculations.tax.toFixed(2)}</span>
                 </div>
                 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Delivery charges:</span>
-                  <span className="font-semibold">₹{get_delivery_Fee().toFixed(2)}</span>
+                  <span className="font-semibold">₹{calculations.delivery.toFixed(2)}</span>
                 </div>
                 
-                {appliedCoupon && (
+                {appliedCoupon && calculations.discount > 0 && (
                   <div className="flex justify-between items-center text-green-600">
                     <span>Discount ({appliedCoupon.code}):</span>
-                    <span className="font-bold">-₹{GET_COUPON_DISCOUNT().toFixed(2)}</span>
+                    <span className="font-bold">-₹{calculations.discount.toFixed(2)}</span>
                   </div>
                 )}
                 
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between items-center text-lg font-bold">
                     <span>Order Total:</span>
-                    <span className="text-blue-600">₹{GET_TOTAL_AMOUNT().toFixed(2)}</span>
+                    <span className="text-blue-600">₹{calculations.total.toFixed(2)}</span>
                   </div>
                   {appliedCoupon && (
                     <div className="text-sm text-gray-500 mt-1">
-                      Original: <span className="line-through">₹{GET_TOTAL_AMOUNT_BEFORE_DISCOUNT().toFixed(2)}</span>
+                      Original: <span className="line-through">₹{calculations.totalBeforeDiscount.toFixed(2)}</span>
+                      <span className="ml-2 text-green-600">
+                        (Saved ₹{calculations.discount.toFixed(2)})
+                      </span>
                     </div>
                   )}
                 </div>
@@ -745,29 +887,11 @@ const NewCheckout = () => {
                   <div className="flex-1">
                     <div className="font-medium flex justify-between">
                       <span>Full Payment</span>
-                      <span className="font-bold">₹{GET_TOTAL_AMOUNT().toFixed(2)}</span>
+                      <span className="font-bold">₹{calculations.total.toFixed(2)}</span>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">Pay the full amount now</p>
                   </div>
                 </label>
-
-                {/* <label className="flex items-start gap-3 p-4 border border-gray-300 rounded-lg hover:border-yellow-500 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentOption"
-                    value="half"
-                    checked={paymentOption === 'half'}
-                    onChange={(e) => setPaymentOption(e.target.value)}
-                    className="mt-1 text-yellow-600 focus:ring-yellow-500"
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium flex justify-between">
-                      <span>50% Advance Payment</span>
-                      <span className="font-bold">₹{(GET_TOTAL_AMOUNT() * 0.5).toFixed(2)}</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">Pay half now, rest before production</p>
-                  </div>
-                </label> */}
               </div>
 
               {/* Terms and Conditions */}
@@ -802,10 +926,7 @@ const NewCheckout = () => {
                 ) : (
                   <>
                     <FaCreditCard className="w-5 h-5" />
-                    {paymentOption === 'full' 
-                      ? `Pay ₹${GET_PAYABLE_AMOUNT().toFixed(2)}` 
-                      : `Pay 50% Advance ₹${GET_PAYABLE_AMOUNT().toFixed(2)}`
-                    }
+                    Pay ₹{calculations.payable.toFixed(2)}
                   </>
                 )}
               </button>

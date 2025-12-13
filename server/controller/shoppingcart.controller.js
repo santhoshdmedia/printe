@@ -32,6 +32,7 @@ const addToShoppingCart = async (req, res) => {
       
       // Set default values for required fields
       final_total: req.body.final_total || 0,
+      final_total_withoutGst: req.body.final_total_withoutGst || 0,
       cgst: req.body.cgst || 0,
       sgst: req.body.sgst || 0,
       MRP_savings: req.body.MRP_savings || 0,
@@ -154,6 +155,7 @@ const getMyShoppingCart = async (req, res) => {
           sgst: 1,
           cgst: 1,
           final_total: 1,
+          final_total_withoutGst:1,
           quantity: 1,
           size: 1,
           color: 1,
@@ -186,6 +188,7 @@ const getMyShoppingCart = async (req, res) => {
       sgst: item.sgst ? item.sgst.toString() : "0",
       cgst: item.cgst ? item.cgst.toString() : "0",
       final_total: item.final_total || 0,
+      final_total_withoutGst: item.final_total_withoutGst || 0,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
       __v: item.__v || 0

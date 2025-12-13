@@ -208,9 +208,25 @@ export const resendWhatsAppOtp = async (formdata) => {
 }
 
 // coupen
-export const applyCouponCode = async (formdata) => {
-  return await axios.post(`${baseURL}/coupen/apply`, formdata);
-}
+// Make sure your applyCouponCode function is correctly implemented:
+export const applyCouponCode = async (couponData) => {
+  try {
+    const response = await axios.post(
+      `${baseURL}/coupen/apply`, // Note: 'coupen' not 'coupon'
+      couponData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Apply coupon API error:', error.response?.data || error.message);
+    throw error;
+  }
+};
 export const getAvailableCoupons = async (formdata) => {
   return await axios.get(`${baseURL}/whatsapp/resend_otp`, formdata);
 }

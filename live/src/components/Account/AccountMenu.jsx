@@ -25,11 +25,11 @@ const AccountMenu = () => {
       link: "/account/wishlist",
       name: "My Wishlist",
     },
-    //   {
-    //   icon: <FaBoxOpen />,
-    //   link: "/account/my-orders",
-    //   name: "My Orders",
-    // },
+    {
+      icon: <FaBoxOpen />,
+      link: "/account/my-orders",
+      name: "My Orders",
+    },
      {
       icon: <FaRegAddressCard />,
       link: "/account/manage-addresses",
