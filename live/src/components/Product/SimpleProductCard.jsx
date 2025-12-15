@@ -7,8 +7,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { IconHelper } from "../../helper/IconHelper";
 import ExitementTag from "../Nav/ExitementTag";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { DISCOUNT_HELPER,GST_DISCOUNT_HELPER } from "../../helper/form_validation";
-import Soldout from "../../assets/logo/soldOut.png"
+import { DISCOUNT_HELPER, GST_DISCOUNT_HELPER } from "../../helper/form_validation";
+import Soldout from "../../assets/logo/soldOut.png";
 
 const SimpleProductCard = ({ data }) => {
   const navigate = useNavigate();
@@ -24,6 +24,9 @@ const SimpleProductCard = ({ data }) => {
   const rotateX = useTransform(y, [-100, 100], [10, -10]);
   const rotateY = useTransform(x, [-100, 100], [-10, 10]);
 
+  // Determine if product is sold out
+  const isSoldOut = data.is_soldout === true;
+
   // Early return if product is not visible
   if (!data.is_visible) {
     return null;
@@ -31,10 +34,12 @@ const SimpleProductCard = ({ data }) => {
 
   useEffect(() => {
     setIsFav(user?.wish_list?.includes(data.seo_url) ?? false);
-  }, [user]);
+  }, [user, data.seo_url]);
 
   const handleAddWishList = (e) => {
     e.stopPropagation();
+    if (isSoldOut) return; // Don't allow adding to wishlist if sold out
+    
     if (isAuth) {
       if (isFav) {
         const filter = user.wish_list.filter(
@@ -60,10 +65,11 @@ const SimpleProductCard = ({ data }) => {
   };
 
   const handleCardClick = () => {
-      navigate(`/product/${_.get(data, "seo_url", "")}`);
+    navigate(`/product/${_.get(data, "seo_url", "")}`);
   };
 
   const handleMouseMove = (e) => {
+    if (isSoldOut) return; // Disable tilt effect if sold out
     const rect = cardRef.current.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
@@ -93,6 +99,7 @@ const SimpleProductCard = ({ data }) => {
         return 'Customer_discount';
     }
   };
+
   const getRolePriceField = (role) => {
     switch (role) {
       case 'Dealer':
@@ -105,28 +112,40 @@ const SimpleProductCard = ({ data }) => {
   };
 
   const getBasePrice = () => {
-    return _.get(data, `variants_price[0].${getRolePriceField(user.role)}`, "") ||
-           _.get(data, `${getRolePriceField(user.role)}`, "0");
+    const userRole = user?.role || 'Customer';
+    const priceField = getRolePriceField(userRole);
+    
+    // Check variants_price array first
+    if (data.variants_price && data.variants_price.length > 0) {
+      return _.get(data, `variants_price[0].${priceField}`, "0");
+    }
+    // Fallback to direct price field
+    return _.get(data, priceField, "0");
   };
   
   const getMrpPrice = () => {
-    return _.get(data, `variants_price[0].MRP_price`, "") ||
-           _.get(data, `MRP_price`, "0");
+    // Check variants_price array first
+    if (data.variants_price && data.variants_price.length > 0) {
+      return _.get(data, `variants_price[0].MRP_price`, "0");
+    }
+    // Fallback to direct MRP field
+    return _.get(data, `MRP_price`, "0");
   };
 
   const calculateDiscountedPrice = () => {
     try {
       const basePrice = Number(getBasePrice());
+      const userRole = user?.role || 'Customer';
       
-      if (!data.quantity_discount_splitup || !data.quantity_discount_splitup.length || !user?.role) {
+      if (!data.quantity_discount_splitup || !data.quantity_discount_splitup.length) {
         return basePrice;
       }
 
       const firstQuantityTier = data.quantity_discount_splitup[0];
-      const discountField = getRoleDiscountField(user.role);
+      const discountField = getRoleDiscountField(userRole);
       const discountValue = _.get(firstQuantityTier, discountField, 0);
       
-      // Use DISCOUNT_HELPER to calculate final price
+      // Use GST_DISCOUNT_HELPER to calculate final price
       const finalPrice = GST_DISCOUNT_HELPER(discountValue, basePrice, 18);
       
       return finalPrice;
@@ -146,35 +165,41 @@ const SimpleProductCard = ({ data }) => {
   return (
     <motion.div
       ref={cardRef}
-      className={`relative w-full overflow-hidden rounded-2xl shadow-md cursor-pointer`}
+      className={`relative w-full overflow-hidden rounded-2xl shadow-md cursor-pointer ${
+        isSoldOut ? 'opacity-80' : ''
+      }`}
       onClick={handleCardClick}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
+      onMouseMove={!isSoldOut ? handleMouseMove : undefined}
+      onMouseEnter={() => !isSoldOut && setIsHovered(true)}
+      onMouseLeave={!isSoldOut ? handleMouseLeave : undefined}
       style={{
-        rotateX,
-        rotateY,
+        rotateX: isSoldOut ? 0 : rotateX,
+        rotateY: isSoldOut ? 0 : rotateY,
         transformPerspective: 1000,
       }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       {/* Floating background elements */}
       <motion.div 
-        className="absolute inset-0 bg-gradient-to-br from-purple-100/20 to-blue-100/20 rounded-2xl"
+        className={`absolute inset-0 bg-gradient-to-br from-purple-100/20 to-blue-100/20 rounded-2xl ${
+          isSoldOut ? 'from-gray-100/10 to-gray-100/10' : ''
+        }`}
         animate={{
-          scale: isHovered ? 1.05 : 1,
-          opacity: isHovered ? 1 : 0.7,
+          scale: isHovered && !isSoldOut ? 1.05 : 1,
+          opacity: isHovered && !isSoldOut ? 1 : 0.7,
         }}
         transition={{ duration: 0.5 }}
       />
       
       {/* Main card container */}
-      <div className="relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl ">
+      <div className={`relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl ${
+        isSoldOut ? 'bg-gray-50' : ''
+      }`}>
         {/* Image container with floating effect */}
         <motion.div 
           className="relative lg:h-3/4 w-full overflow-hidden"
           animate={{
-            y: isHovered ? -10 : 0,
+            y: isHovered && !isSoldOut ? -10 : 0,
           }}
           transition={{ 
             type: "spring",
@@ -183,31 +208,35 @@ const SimpleProductCard = ({ data }) => {
           }}
         >
           {/* Sold Out Overlay */}
-          {data.is_soldout && (
+          {/* {isSoldOut && (
             <motion.div 
-              className="absolute inset-0  bg-black/70 z-20 flex items-start justify-center"
+              className="absolute inset-0 z-20 flex items-start justify-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-                  <img src={Soldout} alt="" className="w-3/4 object-cover absolute top-0 h-20 overflow-visible" />
+              <img 
+                src={Soldout} 
+                alt="Sold Out" 
+                className="w-3/4 object-cover absolute top-0 h-20 overflow-visible" 
+              />
             </motion.div>
-          )}
+          )} */}
           
           <motion.img
             className={`w-full h-full object-cover ${
-              data.is_soldout ? 'filter grayscale contrast-75' : ''
+              isSoldOut ? 'filter grayscale contrast-50' : ''
             }`}
             src={_.get(data.images, "[0].path", "") || _.get(data.variants, "[0].options[0].image_names[0].path", "")}
             alt={data.name}
             animate={{
-              scale: isHovered && !data.is_soldout ? 1.1 : 1,
+              scale: isHovered && !isSoldOut ? 1.1 : 1,
             }}
             transition={{ duration: 0.5 }}
           />
           
           {/* Floating bubbles effect - only show if not sold out */}
-          {!data.is_soldout && [1, 2, 3].map((i) => (
+          {!isSoldOut && [1, 2, 3].map((i) => (
             <motion.div
               key={i}
               className="absolute bg-white/30 rounded-full"
@@ -232,14 +261,16 @@ const SimpleProductCard = ({ data }) => {
 
         {/* Content area */}
         <div className={`relative h-1/4 p-4 flex flex-col justify-between bg-white z-10 ${
-          data.is_soldout ? 'opacity-80' : ''
+          isSoldOut ? 'bg-gray-50' : ''
         }`}>
           {/* Product info */}
           <div className="overflow-hidden">
             <motion.h3 
-              className={`text-sm lg:text-lg font-bold truncate text-gray-900`}
+              className={`text-sm lg:text-lg font-bold truncate ${
+                isSoldOut ? 'text-gray-600' : 'text-gray-900'
+              }`}
               animate={{
-                x: isHovered && !data.is_soldout ? [0, 5, 0] : 0,
+                x: isHovered && !isSoldOut ? [0, 5, 0] : 0,
               }}
               transition={{
                 duration: 1,
@@ -253,7 +284,9 @@ const SimpleProductCard = ({ data }) => {
               <Rate
                 disabled
                 allowHalf
-                className={`!text-xs !text-yellow-400`}
+                className={`!text-xs ${
+                  isSoldOut ? '!text-gray-400' : '!text-yellow-400'
+                }`}
                 defaultValue={4.5}
               />
             </div>
@@ -263,43 +296,48 @@ const SimpleProductCard = ({ data }) => {
           <div className="flex items-center justify-between mt-2">
             <motion.div
               animate={{
-                scale: isHovered && !data.is_soldout ? 1.1 : 1,
+                scale: isHovered && !isSoldOut ? 1.1 : 1,
               }}
               transition={{ type: "spring" }}
             >
-              <span className={`text-sm lg:text-xl font-bold text-primary`}>
+              <span className={`text-sm lg:text-xl font-bold ${
+                isSoldOut ? 'text-gray-600' : 'text-primary'
+              }`}>
                 {displayPrice}
               </span>
-              <span className={`text-sm lg:text-lg font-primary line-through ml-2 text-primary`}>
+              <span className={`text-sm lg:text-lg line-through ml-2 ${
+                isSoldOut ? 'text-gray-500' : 'text-primary'
+              }`}>
                 {formatPrice(getMrpPrice())}
               </span>
             </motion.div>
             
             <motion.div
-              whileTap={{ scale: data.is_soldout ? 1 : 0.9 }}
-              whileHover={{ scale: data.is_soldout ? 1 : 1.1 }}
+              whileTap={{ scale: isSoldOut ? 1 : 0.9 }}
+              whileHover={{ scale: isSoldOut ? 1 : 1.1 }}
             >
               <button 
                 className={`p-2 rounded-full shadow-md text-xs lg:text-xl ${
-                  data.is_soldout 
+                  isSoldOut 
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                    : 'bg-primary text-white'
+                    : 'bg-primary text-white hover:bg-primary-dark'
                 }`}
                 onClick={handleAddWishList}
-                disabled={data.is_soldout}
+                disabled={isSoldOut}
               >
                 {isFav ? (
-                  <IconHelper.HEART_ICON_FILLED className={data.is_soldout ? "text-gray-500" : "text-white"} />
+                  <IconHelper.HEART_ICON_FILLED className={isSoldOut ? "text-gray-500" : "text-white"} />
                 ) : (
-                  <IconHelper.HEART_ICON className={data.is_soldout ? "text-gray-500" : "text-white"} />
+                  <IconHelper.HEART_ICON className={isSoldOut ? "text-gray-500" : "text-white"} />
                 )}
               </button>
             </motion.div>
           </div>
+          {isSoldOut&&<div className="absolute top-11 right-4 bg-red-600 px-4 rounded-lg PY-2 text-white font-bold">SOLD OUT</div>}
         </div>
 
         {/* Excitement tag with special animation - only show if not sold out */}
-        {!data.is_soldout && (
+        {!isSoldOut && (
           <motion.div
             className="absolute top-4 left-4 z-30"
             animate={{
@@ -317,7 +355,7 @@ const SimpleProductCard = ({ data }) => {
         )}
 
         {/* Hover overlay effect - only show if not sold out */}
-        {!data.is_soldout && (
+        {!isSoldOut && (
           <motion.div 
             className="absolute inset-0 bg-black/10 pointer-events-none"
             animate={{
@@ -329,7 +367,7 @@ const SimpleProductCard = ({ data }) => {
       </div>
 
       {/* Floating particles on hover - only show if not sold out */}
-      {isHovered && !data.is_soldout && (
+      {isHovered && !isSoldOut && (
         <>
           {[...Array(8)].map((_, i) => (
             <motion.div

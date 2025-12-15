@@ -63,7 +63,7 @@ const Layout = () => {
       <div className="sticky top-0 z-[999] w-full overflow-hidden bg-[#f5f5f5] p-2">
         <div className="scrolling-text-container">
           <div className="scrolling-text !font-[300] whitespace-nowrap">
-            A complimentary gift valued at ₹750 will be provided to all users who log in before 15 December 2025
+           Limited Time Offer: Victoria Luxie worth ₹14,500 now at just ₹4,477 — Use Coupon Code: VICTORIA100 — Till December 31
           </div>
         </div>
       </div>

@@ -775,11 +775,11 @@ const ProductDetails = ({
   // Calculate unit prices
   const getUnitPrice = () => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
-    return calculateUnitPrice(basePrice, discountPercentage.percentage, user.role, Gst);
+    return Math.round(calculateUnitPrice(basePrice, discountPercentage.percentage, user.role, Gst));
   };
   const getUnitPricewithoutGst = () => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
-    return calculateUnitPriceWithoutGst(basePrice, discountPercentage.percentage, user.role, Gst);
+    return  Math.round(calculateUnitPriceWithoutGst(basePrice, discountPercentage.percentage, user.role, Gst));
   };
 
   const getMRPUnitPrice = () => {
@@ -1622,7 +1622,7 @@ const ProductDetails = ({
             )}
 
 
-            {(user.role == "Corporate" || user.role == "Dealer"||user.role == "user") ? (
+            {(user.role == "Corporate" || user.role == "Dealer") ? (
               <div className="text-gray-600">
                 <h1 className="!text-[12px] text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
@@ -1638,7 +1638,7 @@ const ProductDetails = ({
                   / piece)
                 </h1>
               </div>
-            ) : ""}
+             ) : ""} 
             {quantity && (
               <div className="!text-[14px] text-gray-600">
                 <h1>

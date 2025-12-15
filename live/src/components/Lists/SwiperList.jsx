@@ -73,7 +73,7 @@ const SwiperList = ({
           </div>
         );
       case "3":
-        return <ProductCard3 data={data} />;
+        return <SimpleProductCard data={data} />;
 
       default:
         return <SimpleProductCard data={data} />;
@@ -97,7 +97,7 @@ const SwiperList = ({
       }
     },
     2: {
-      component: ProductCard2,
+      component: SimpleProductCard,
       slidesPerView: {
         default: 1,
         640: 2,
@@ -112,7 +112,7 @@ const SwiperList = ({
       }
     },
     3: {
-      component: ProductCard3,
+      component: SimpleProductCard,
       slidesPerView: {
         default: 1,
         640: 2,
@@ -152,7 +152,7 @@ const SwiperList = ({
       {products.map((product, index) => (
         <div key={index} className="w-full">
           {product_type === "2" ? (
-            <ProductCard2 data={product} />
+            <SimpleProductCard data={product} />
           ) : (
             <GET_PRODUCT_DISPLAY_TYPE data={product} />
           )}
