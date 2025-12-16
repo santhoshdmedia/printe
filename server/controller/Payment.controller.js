@@ -28,6 +28,10 @@ const createPaymentOrder = async (req, res) => {
       total_before_discount
     } = req.body;
 
+    console.log('Payment order request received:', {
+      amount, order_id, billing_email, user_id, payment_type
+    });
+
     // Validate required fields
     const requiredFields = [
       'amount', 'billing_name', 'billing_email', 'billing_tel', 
@@ -36,31 +40,49 @@ const createPaymentOrder = async (req, res) => {
     
     const missingFields = requiredFields.filter(field => !req.body[field]);
     if (missingFields.length > 0) {
+      console.error('Missing required fields:', missingFields);
       return errorResponse(res, `Missing required fields: ${missingFields.join(', ')}`);
     }
 
     // Validate amount
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
+      console.error('Invalid amount:', amount);
       return errorResponse(res, "Invalid amount");
     }
 
-    // Validate environment variables
-    const requiredEnvVars = {
-      'CCA_MERCHANT_ID': process.env.CCA_MERCHANT_ID,
-      'CCA_WORKING_KEY': process.env.CCA_WORKING_KEY,
-      'CCA_ACCESS_CODE': process.env.CCA_ACCESS_CODE,
-      'FRONTEND_BASE_URL': process.env.FRONTEND_BASE_URL||"http://localhost:5173",
-      'BACKEND_BASE_URL': process.env.BACKEND_BASE_URL||"http://localhost:8080"
+    // Validate and get environment variables with safe defaults
+    const getEnv = (key, defaultValue = '') => {
+      const value = process.env[key];
+      if (value && typeof value === 'string') {
+        return value.trim();
+      }
+      return defaultValue;
     };
 
-    const missingEnvVars = Object.entries(requiredEnvVars)
-      .filter(([key, value]) => !value || value.trim() === '')
-      .map(([key]) => key);
+    // Critical CCAvenue credentials
+    const CCA_MERCHANT_ID = getEnv('CCA_MERCHANT_ID');
+    const CCA_WORKING_KEY = getEnv('CCA_WORKING_KEY');
+    const CCA_ACCESS_CODE = getEnv('CCA_ACCESS_CODE');
+    
+    // URLs with defaults
+    const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
+    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
 
-    if (missingEnvVars.length > 0) {
-      console.error('Missing environment variables:', missingEnvVars);
-      return errorResponse(res, `Payment configuration error. Missing: ${missingEnvVars.join(', ')}`);
+    // Validate critical environment variables
+    const missingCriticalEnvVars = [];
+    if (!CCA_MERCHANT_ID) missingCriticalEnvVars.push('CCA_MERCHANT_ID');
+    if (!CCA_WORKING_KEY) missingCriticalEnvVars.push('CCA_WORKING_KEY');
+    if (!CCA_ACCESS_CODE) missingCriticalEnvVars.push('CCA_ACCESS_CODE');
+
+    if (missingCriticalEnvVars.length > 0) {
+      console.error('Missing critical environment variables:', missingCriticalEnvVars);
+      console.error('Env check:', {
+        CCA_MERCHANT_ID: CCA_MERCHANT_ID ? 'SET' : 'MISSING',
+        CCA_WORKING_KEY: CCA_WORKING_KEY ? 'SET' : 'MISSING',
+        CCA_ACCESS_CODE: CCA_ACCESS_CODE ? 'SET' : 'MISSING'
+      });
+      return errorResponse(res, `Payment gateway configuration error. Missing: ${missingCriticalEnvVars.join(', ')}`);
     }
 
     // Generate unique order ID
@@ -70,21 +92,24 @@ const createPaymentOrder = async (req, res) => {
     let processedCartItems = [];
     if (Array.isArray(cart_items)) {
       processedCartItems = cart_items.map(item => ({
-        product_id: item.product_id || item.id,
-        product_name: item.product_name || item.name,
+        product_id: item.product_id || item.id || '',
+        product_name: item.product_name || item.name || 'Product',
         quantity: parseInt(item.quantity) || 1,
         price: parseFloat(item.price) || 0,
         image: item.image || '',
         size: item.size || '',
         color: item.color || ''
       }));
+    } else {
+      console.error('Cart items is not an array:', cart_items);
+      return errorResponse(res, "Invalid cart items format");
     }
 
     // Prepare delivery address
     const processedDeliveryAddress = {
-      name: delivery_address.name || billing_name,
-      email: delivery_address.email || billing_email,
-      mobile_number: delivery_address.mobile_number || billing_tel,
+      name: delivery_address.name || billing_name || '',
+      email: delivery_address.email || billing_email || '',
+      mobile_number: delivery_address.mobile_number || billing_tel || '',
       alternateMobileNumber: delivery_address.alternateMobileNumber || '',
       street: delivery_address.street || delivery_address.address || '',
       city: delivery_address.city || '',
@@ -134,10 +159,11 @@ const createPaymentOrder = async (req, res) => {
 
     let savedOrder;
     try {
+      console.log('Creating database order:', { invoice_no: finalOrderId });
       const newOrder = new OrderDetailsSchema(orderData);
       savedOrder = await newOrder.save();
       
-      console.log('Order created in database:', {
+      console.log('Order created successfully:', {
         order_id: savedOrder._id,
         invoice_no: savedOrder.invoice_no,
         amount: savedOrder.total_amount,
@@ -151,28 +177,28 @@ const createPaymentOrder = async (req, res) => {
 
     // Prepare CCAvenue parameters
     const ccavenueParams = {
-      merchant_id: process.env.CCA_MERCHANT_ID.trim(),
+      merchant_id: CCA_MERCHANT_ID,
       order_id: finalOrderId,
       amount: numericAmount.toFixed(2),
       currency: currency,
-      redirect_url: `${process.env.BACKEND_BASE_URL.trim()}/api/payment/ccavenue/callback`,
-      cancel_url: `${process.env.BACKEND_BASE_URL.trim()}/api/payment/ccavenue/callback`,
+      redirect_url: `${BACKEND_BASE_URL}/api/payment/ccavenue/callback`,
+      cancel_url: `${BACKEND_BASE_URL}/api/payment/ccavenue/callback`,
       language: 'EN',
-      billing_name: billing_name.substring(0, 50), // CCAvenue has character limits
+      billing_name: (billing_name || '').substring(0, 50),
       billing_email: billing_email,
-      billing_tel: billing_tel.substring(0, 20),
+      billing_tel: (billing_tel || '').substring(0, 20),
       billing_address: (processedDeliveryAddress.street || '').substring(0, 100),
-      billing_city: processedDeliveryAddress.city,
-      billing_state: processedDeliveryAddress.state,
-      billing_zip: processedDeliveryAddress.pincode,
-      billing_country: processedDeliveryAddress.country,
-      delivery_name: processedDeliveryAddress.name.substring(0, 50),
+      billing_city: processedDeliveryAddress.city || '',
+      billing_state: processedDeliveryAddress.state || '',
+      billing_zip: processedDeliveryAddress.pincode || '',
+      billing_country: processedDeliveryAddress.country || 'India',
+      delivery_name: (processedDeliveryAddress.name || '').substring(0, 50),
       delivery_address: (processedDeliveryAddress.street || '').substring(0, 100),
-      delivery_city: processedDeliveryAddress.city,
-      delivery_state: processedDeliveryAddress.state,
-      delivery_zip: processedDeliveryAddress.pincode,
-      delivery_country: processedDeliveryAddress.country,
-      delivery_tel: processedDeliveryAddress.mobile_number.substring(0, 20),
+      delivery_city: processedDeliveryAddress.city || '',
+      delivery_state: processedDeliveryAddress.state || '',
+      delivery_zip: processedDeliveryAddress.pincode || '',
+      delivery_country: processedDeliveryAddress.country || 'India',
+      delivery_tel: (processedDeliveryAddress.mobile_number || '').substring(0, 20),
       merchant_param1: user_id || '',
       merchant_param2: savedOrder._id.toString(),
       merchant_param3: 'web_order_v1'
@@ -183,19 +209,20 @@ const createPaymentOrder = async (req, res) => {
     // Encrypt data for CCAvenue
     let encryptedData;
     try {
-      const ccavenue = new CCAvenue(process.env.CCA_WORKING_KEY.trim());
+      const ccavenue = new CCAvenue(CCA_WORKING_KEY);
       encryptedData = ccavenue.encryptData(ccavenueParams);
+      console.log('CCAvenue encryption successful');
     } catch (encryptError) {
       console.error('CCAvenue encryption error:', encryptError);
       
       // Update order status to reflect encryption failure
       await OrderDetailsSchema.findByIdAndUpdate(savedOrder._id, {
         order_status: "payment gateway error",
-        payment_failure_reason: "Encryption failed",
+        payment_failure_reason: "Encryption failed: " + encryptError.message,
         updated_at: new Date()
       });
       
-      return errorResponse(res, "Payment gateway configuration error");
+      return errorResponse(res, "Payment gateway configuration error. Please try again later.");
     }
 
     // Determine gateway URL based on environment
@@ -204,26 +231,35 @@ const createPaymentOrder = async (req, res) => {
       : 'https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
 
     const responseData = {
+      success: true,
       order_id: finalOrderId,
       database_order_id: savedOrder._id,
       amount: ccavenueParams.amount,
       currency: currency,
       encrypted_data: encryptedData,
-      access_code: process.env.CCA_ACCESS_CODE.trim(),
+      access_code: CCA_ACCESS_CODE,
       gateway_url: gatewayUrl,
-      merchant_id: process.env.CCA_MERCHANT_ID.trim(),
+      merchant_id: CCA_MERCHANT_ID,
       frontend_redirect_urls: {
-        success: `${process.env.FRONTEND_BASE_URL}/payment/success`,
-        failure: `${process.env.FRONTEND_BASE_URL}/payment/failed`,
-        cancel: `${process.env.FRONTEND_BASE_URL}/payment/cancelled`,
-        error: `${process.env.FRONTEND_BASE_URL}/payment/error`
+        success: `${FRONTEND_BASE_URL}/payment/success`,
+        failure: `${FRONTEND_BASE_URL}/payment/failed`,
+        cancel: `${FRONTEND_BASE_URL}/payment/cancelled`,
+        error: `${FRONTEND_BASE_URL}/payment/error`
       }
     };
 
+    console.log('Payment order created successfully for:', {
+      order_id: finalOrderId,
+      amount: numericAmount,
+      email: billing_email
+    });
+
     return successResponse(res, "Order created successfully. Redirect to payment gateway.", responseData);
+    
   } catch (err) {
     console.error('Unexpected error in createPaymentOrder:', err);
-    return errorResponse(res, SOMETHING_WENT_WRONG);
+    console.error('Error stack:', err.stack);
+    return errorResponse(res, "An unexpected error occurred. Please try again.");
   }
 };
 
