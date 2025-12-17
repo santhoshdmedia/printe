@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AccountMenu from "../../components/Account/AccountMenu";
 import { useSelector } from "react-redux";
 import { Avatar } from "antd"; // Import Avatar component
+import { Helmet } from "react-helmet-async";
 
 const Account = () => {
   const { isAuth, isAuthenicating, user } = useSelector((state) => state.authSlice);
@@ -24,6 +25,7 @@ const Account = () => {
 
   return (
     <div className="flex flex-col lg:flex-row items-start bg-[#FFFCF6] px-[6vw] md:px-[8vw] xl:px-[10vw] py-10 gap-10 my-account-bg">
+       
       <div className="w-full lg:w-[30%] h-auto ">
         <AccountMenu />
       </div>

@@ -7,7 +7,7 @@ import launch_product2 from "./src/assets/Arcylic Reverse Light Boards/IMG-20241
 import launch_product2_2 from "./src/assets/Arcylic Reverse Light Boards/IMG-20241203-WA0007.jpg";
 import launch_product2_3 from "./src/assets/Arcylic Reverse Light Boards/IMG-20241203-WA0008.jpg";
 import launch_product2_4 from "./src/assets/Arcylic Reverse Light Boards/IMG-20241203-WA0009.jpg";
-import launch_product3  from "./src/assets/Milled Out Board/IMG-20241203-WA0010.jpg";
+import launch_product3 from "./src/assets/Milled Out Board/IMG-20241203-WA0010.jpg";
 import launch_product3_2 from "./src/assets/Milled Out Board/IMG-20241203-WA0011.jpg";
 import launch_product3_3 from "./src/assets/Milled Out Board/IMG-20241203-WA0012.jpg";
 import launch_product3_4 from "./src/assets/Milled Out Board/IMG-20241203-WA0013.jpg";
@@ -311,7 +311,7 @@ export const footerItems = [
       { value: "My Account", link: "/account" },
       { value: "Track Order", link: "/account/my-orders" },
       { value: "Help", link: "/help" },
-     
+
     ],
   },
   {
@@ -391,74 +391,51 @@ export const blogItems = [
 export const termsAndConditions = [
   {
     title: "Terms and Conditions",
-    desc: `Welcome to Printe. By accessing or using www.printe.in, you agree to comply with and be bound by these Terms & Conditions. If you do not agree, please do not use our Website.or using our website. These terms govern your use of Printe’s services and products.`,
+    desc: `Welcome to Printe. By accessing or using www.printe.in, you agree to comply with and be bound by these Terms & Conditions. If you do not agree, please do not use our Website`,
     children: [
       {
         title: "Use of the Website",
         desc: `You must be at least 18 years old to use our services.You agree not to misuse the Website or engage in unlawful activities. You are responsible for maintaining the confidentiality of your account information`,
+        li: ["You must be at least 18 years old to use our services.", "You agree not to misuse the Website or engage in unlawful activities.", "You are responsible for maintaining the confidentiality of your account information."]
       },
       {
         title: "Products & Services",
         desc: "We offer personalized printing and related services. Product images are for representation purposes only; actual products may vary slightly. All orders are subject to availability.",
+        li: ["We offer personalized printing and related services.", "Product images are for representation purposes only; actual products may vary slightly.", "All orders are subject to availability."]
       },
       {
         title: "Pricing & Payments",
         desc: `Prices listed on the Website are final and inclusive of applicable taxes unless specified. We reserve the right to update prices at any time. Payments must be made online via our supported payment methods`,
+         li:["Prices listed on the Website are final and inclusive of applicable taxes unless specified.","We reserve the right to update prices at any time.","Payments must be made online via our supported payment methods"]
       },
       {
         title: "Order Confirmation",
         desc: `· After placing an order, you will receive a confirmation email. We reserve the right to accept or decline orders at our discretion.If an order is cancelled due to technical or stock issues, you will be notified and refunded.`,
+          li:["After placing an order, you will receive a confirmation email.","We reserve the right to accept or decline orders at our discretion.","If an order is cancelled due to technical or stock issues, you will be notified and refunded."]
       },
       {
         title: "Intellectual Property",
         desc: "All content on the Website (logos, text, graphics, images, etc.) is owned by Printe. You may not copy, reproduce, or distribute any material without prior written permission.",
+         li:["All content on the Website is owned by Printe.","You may not copy, reproduce, or distribute any material without prior written permission."]
       },
       {
         title: "User Content (Custom Prints)",
         desc: "You are responsible for content uploaded for printing (images, text, graphics, etc.). You must ensure you have rights/permissions to use the uploaded content. We reserve the right to reject content that is offensive, illegal, or violates copyrights.",
+        li:["You are responsible for content uploaded for printing.","You must ensure you have rights/permissions to use the uploaded content","We reserve the right to reject content that is offensive, illegal, or violates copyrights."]
       },
       {
         title: "Limitation of Liability",
         desc: "We are not liable for indirect, incidental, or consequential damages. We are not responsible for delays caused by courier partners or unforeseen events.",
+        li:["We are not liable for indirect, incidental, or consequential damages.","· We are not responsible for delays caused by courier partners or unforeseen events."]
       },
       {
         title: "Governing Law",
-        desc: "These Terms shall be governed by the laws of India. Any disputes will fall under the jurisdiction of courts in [Your City/State – you can tell me to fill this].",
+        desc: "These Terms shall be governed by the laws of India. Any disputes will fall under the jurisdiction of courts in Trichy.",
       },
       {
-        title: "Returns and Refunds",
-        desc: `Returns are only accepted for defective or incorrect products. Custom-made or personalized products are generally not eligible for return unless there is a manufacturing defect. Refunds or replacements will be provided at Printe’s discretion, depending on the circumstances of the return.`,
-      },
-      {
-        title: "Intellectual Property",
-        desc: "All content on the Printe website, including logos, images, designs, and text, is the intellectual property of Printe and may not be used without prior written consent. You retain ownership of any custom designs submitted to Printe but grant us a license to use those designs for the purpose of fulfilling your order.",
-      },
-      {
-        title: "Privacy and Data Protection",
-        desc: "We take your privacy seriously. By using our website and services, you consent to our collection, use, and storage of your personal information in accordance with our Privacy Policy. We will not share your personal data with third parties except as required for processing your orders.",
-      },
-      {
-        title: "Limitation of Liability",
-        desc: `Printe is not liable for any indirect, incidental, special, or consequential damages arising from the use of our products or services. Our liability is limited to the value of the product or service purchased.`,
-      },
-      {
-        title: "Indemnification",
-        desc: "You agree to indemnify and hold harmless Printe, its employees, agents, and affiliates from any claims, losses, or damages (including legal fees) arising from your use of our website, products, or services.",
-      },
-      {
-        title: "Governing Law",
-        desc: "These Terms and Conditions are governed by the laws, and any disputes arising from or related to these terms shall be resolved in the courts of Trichy District.",
-      },
-      {
-        title: "Changes to Terms and Conditions",
-        desc: `Printe reserves the right to modify or update these Terms and Conditions at any time. Any changes will be posted on this page, and the revised terms will take effect immediately upon posting.`,
-      },
-      {
-        title: "Contact Information",
-        desc: `If you have any questions or concerns about these Terms and Conditions, please contact us at:
-    Email: info@printe.com
-    Phone:  73736 10000`,
-      },
+        title: "Contact",
+        desc: `For any queries, contact us at: 📧 info@printe.in`,
+      }
     ],
   },
   {
@@ -492,11 +469,11 @@ We use third-party service providers to serve ads on our behalf across the Inter
 
 export const returnPolicy = [
   {
-    title: "Return and Refund Policy",
-    desc: "At Printe, customer satisfaction is our top priority. We are committed to providing high-quality, custom-printed products. However, we understand that in some cases, returns may be necessary. Please review our return policy below:",
+    title: "Return Policy",
+    desc: "At Printe.in, we do not accept returns for personalised or customised products. All customised items are created specifically based on customer-selected designs, text, colours, or specifications. Due to the personalised nature of these products, returns, exchanges, or refunds are not permitted once the order has been confirmed and processed.",
     children: [
       {
-        title: "Eligibility for Returns",
+        title: "Exceptions",
         desc: `Returns can only be accepted if there is a defect in the product or if the product does not match the order specifications.
 We do not accept returns for products that are customized (e.g., personalized gifts, custom designs) unless there is a manufacturing defect or an error on our part.
 The return request must be made within 7 days of receiving the product.`,

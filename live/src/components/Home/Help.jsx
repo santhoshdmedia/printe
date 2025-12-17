@@ -1,29 +1,30 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
-import { 
-  PhoneOutlined, 
-  MailOutlined, 
+import {
+  PhoneOutlined,
+  MailOutlined,
   EnvironmentOutlined,
   CustomerServiceOutlined,
   MessageOutlined,
   SendOutlined,
   PlusOutlined,
-  MinusOutlined 
+  MinusOutlined
 } from "@ant-design/icons";
-import { 
-  Button, 
-  Form, 
-  Input, 
-  Select, 
-  Card, 
-  Typography, 
-  Collapse, 
-  Grid 
+import {
+  Button,
+  Form,
+  Input,
+  Select,
+  Card,
+  Typography,
+  Collapse,
+  Grid
 } from "antd";
 import QAComponents from "../QAComponents";
 import { FrequentlyAskedQuestions_one, FrequentlyAskedQuestions_two } from "../../../data";
 import { helpcenter } from "../../helper/api_helper";
 import { SUCCESS_NOTIFICATION } from "../../helper/notification_helper";
+import { Helmet } from "react-helmet-async";
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -35,13 +36,13 @@ const Help = () => {
   const [activeKey, setActiveKey] = useState(null);
   const screens = useBreakpoint();
 
-const prefixSelector = (
-  <Form.Item name="prefix" noStyle initialValue="91">
-    <Select style={{ width: 80 }} disabled>
-      <Select.Option value="91">+91</Select.Option>
-    </Select>
-  </Form.Item>
-);
+  const prefixSelector = (
+    <Form.Item name="prefix" noStyle initialValue="91">
+      <Select style={{ width: 80 }} disabled>
+        <Select.Option value="91">+91</Select.Option>
+      </Select>
+    </Form.Item>
+  );
 
   const handleFinish = async (values) => {
     setIsSubmitting(true);
@@ -61,8 +62,8 @@ const prefixSelector = (
   };
 
   const customExpandIcon = (props) => {
-    return props.isActive ? 
-      <MinusOutlined style={{ color: '#f2c41a' }} /> : 
+    return props.isActive ?
+      <MinusOutlined style={{ color: '#f2c41a' }} /> :
       <PlusOutlined style={{ color: '#f2c41a' }} />;
   };
 
@@ -71,10 +72,10 @@ const prefixSelector = (
   }, []);
 
   // Combine and render FAQs
-  const renderFAQs = (faqData, prefix) => 
+  const renderFAQs = (faqData, prefix) =>
     faqData.children.map((item, index) => (
-      <Panel 
-        header={<span className="text-md font-semibold text-black">{item.label}</span>} 
+      <Panel
+        header={<span className="text-md font-semibold text-black">{item.label}</span>}
         key={`${prefix}-${index}`}
         className="faq-panel mb-4 bg-white rounded-lg overflow-hidden"
       >
@@ -84,6 +85,12 @@ const prefixSelector = (
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-yellow-50 py-8 px-4 sm:px-6 lg:px-8">
+      <Helmet>
+        <title>Printe.in Help & Support | FAQs, Guides & Customer Assistance</title>
+        <meta name="description" content="Find helpful guides, FAQs, and customer support for Printe.in’s online printing and personalized gifting services. Get answers to common questions and easy solutions.
+" />
+        <meta name="keywords" content="printe help, printing support, FAQs printing India, customer assistance printing, online printing help guides, print order support" />
+      </Helmet>
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <header className="text-center mb-12">
@@ -156,11 +163,11 @@ const prefixSelector = (
               Find quick answers to common questions about our products, services, and policies
             </Text>
           </div>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Collapse 
-              accordion 
-              activeKey={activeKey} 
+            <Collapse
+              accordion
+              activeKey={activeKey}
               onChange={handlePanelChange}
               expandIcon={customExpandIcon}
               expandIconPosition="end"
@@ -169,10 +176,10 @@ const prefixSelector = (
             >
               {renderFAQs(FrequentlyAskedQuestions_one, 'one')}
             </Collapse>
-            
-            <Collapse 
-              accordion 
-              activeKey={activeKey} 
+
+            <Collapse
+              accordion
+              activeKey={activeKey}
               onChange={handlePanelChange}
               expandIcon={customExpandIcon}
               expandIconPosition="end"
@@ -182,13 +189,13 @@ const prefixSelector = (
               {renderFAQs(FrequentlyAskedQuestions_two, 'two')}
             </Collapse>
           </div>
-          
+
           <div className="text-center mt-8 pt-4 border-t border-gray-200">
             <Text className="text-gray-600 block mb-4">
               Still have questions? We're here to help!
             </Text>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               size="large"
               className="bg-[#f2c41a] hover:bg-[#e0ab0a] border-0 h-12 font-medium rounded-lg shadow-md hover:shadow-lg transition-all px-6"
               onClick={() => document.getElementById('contact-form').scrollIntoView({ behavior: 'smooth' })}
@@ -229,12 +236,12 @@ const prefixSelector = (
                   </div>
                 </div>
               </div>
-              
+
               <div className="md:w-3/5 p-6 md:p-8">
                 <Title level={3} className="!text-xl font-semibold text-gray-800 mb-6">
                   Send us a Message
                 </Title>
-                
+
                 <Form
                   form={form}
                   layout="vertical"
@@ -242,14 +249,14 @@ const prefixSelector = (
                   className="contact-form"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <Form.Item 
-                      name="name" 
-                      label="Full Name" 
+                    <Form.Item
+                      name="name"
+                      label="Full Name"
                       rules={[{ required: true, message: "Please enter your name!" }]}
                     >
                       <Input placeholder="Your full name" size="large" />
                     </Form.Item>
-                    
+
                     <Form.Item
                       name="email"
                       label="Email Address"
@@ -261,16 +268,16 @@ const prefixSelector = (
                       <Input placeholder="your.email@example.com" size="large" />
                     </Form.Item>
                   </div>
-                  
+
                   <Form.Item
                     name="phone"
                     label="Phone Number"
                     rules={[{ required: true, message: "Please input your phone number!" }]}
                     className="mb-4"
                   >
-                    <Input 
-                      addonBefore={prefixSelector} 
-                      placeholder="Enter your phone number" 
+                    <Input
+                      addonBefore={prefixSelector}
+                      placeholder="Enter your phone number"
                       size="large"
                     />
                   </Form.Item>
@@ -285,9 +292,9 @@ const prefixSelector = (
                   </Form.Item>
 
                   <Form.Item>
-                    <Button 
-                      type="primary" 
-                      htmlType="submit" 
+                    <Button
+                      type="primary"
+                      htmlType="submit"
                       size="large"
                       icon={<SendOutlined />}
                       loading={isSubmitting}

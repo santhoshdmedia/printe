@@ -9,6 +9,7 @@ import OrderDetailsSkeleton from "../LoadingSkeletons/OrderDetailsSkeleton";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { ImageHelper } from "../../helper/ImageHelper";
+import { Helmet } from "react-helmet-async";
 
 // At the top of your file with other imports
 import signatureImage from "../../../src/assets/logo/signature.png";
@@ -733,6 +734,11 @@ const OrderDetails = () => {
 
   return (
     <div className="w-full h-auto flex-1 flex gap-3 flex-col">
+       <Helmet>
+        <title>My Orders – Printe.in Account | Track & Manage Your Orders</title>
+        <meta name="description" content="View, track, and manage your printing and gifting orders on Printe.in. Check order status, order history, invoices, and delivery updates easily." />
+        <meta name="keywords" content="printe my orders, order history, track printing orders, order status printe, user orders dashboard, manage orders online" />
+    </Helmet>
       <Collapse
         defaultActiveKey={["1"]}
         className="!bg-white overflow-hidden"

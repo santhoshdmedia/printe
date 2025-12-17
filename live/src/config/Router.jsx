@@ -46,6 +46,13 @@ import PaymentMethod from "../components/CheckOut/PaymentMethod.jsx";
 import PaymentError from "../pages/shopping/pay/PaymentError.jsx";
 import WarrantyActivation from "../pages/warrenty/Warrenty.jsx";
 
+// policy
+import ReturnPolicy from "../pages/policys/ReturnPolicy.jsx";
+import ShippingPolicy from "../pages/policys/Shippingpolicy.jsx";
+import TermsAndConditions from "../pages/policys/TermsAndConditions.jsx";
+import CancellationPolicy from "../pages/policys/CancellationPolicy.jsx";
+import PrivacyPolicy from "../pages/policys/Privacypolicy.jsx";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -81,23 +88,23 @@ export const router = createBrowserRouter([
       },
       {
         path: "/terms-&-conditions",
-        element: <Information data={termsAndConditions} subHeadingAvailable={true} />,
+        element: <TermsAndConditions/>,
       },
       {
         path: "/privacy-policy",
-        element: <Information data={privacyPolicy} />,
+        element: <PrivacyPolicy/>,
       },
       {
         path: "/return-policy",
-        element: <Information data={returnPolicy} subHeadingAvailable={true} />,
+        element: <ReturnPolicy  />,
       },
       {
         path: "/cancelling-policy",
-        element: <Information data={cancellingPolicy} subHeadingAvailable={true} />,
+        element: <CancellationPolicy/>,
       },
       {
         path: "/shipping-&-delivery-policy",
-        element: <Information data={shippingAndDeliveryPolicy} subHeadingAvailable={true} />,
+        element: <ShippingPolicy />,
       },
       {
         path: "/about-us",

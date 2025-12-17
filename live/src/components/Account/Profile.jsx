@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IconHelper } from "../../helper/IconHelper";
 import { Button } from "antd";
+import { Helmet } from "react-helmet-async";
 
 const Profile = () => {
   const { user } = useSelector((state) => state.authSlice);
@@ -79,6 +80,11 @@ const Profile = () => {
 
   return (
     <div className="w-full max-w-6xl bg-white">
+       <Helmet>
+        <title>My Profile – Printe.in Account | Manage Your Printing Orders & Details</title>
+        <meta name="description" content="Access and update your Printe.in account profile to manage your printing orders, personal details, preferences, and delivery information securely." />
+        <meta name="keywords" content="printe profile, account profile, manage account, printing orders, user dashboard, update details, Printe.in account" />
+    </Helmet>
       <form className="px-8 py-8">
         <div className="flex justify-between items-center mb-6">
           <div className="flex">

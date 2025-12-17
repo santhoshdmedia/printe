@@ -4,6 +4,7 @@ import { LuMail } from "react-icons/lu";
 import { FiPhoneCall } from "react-icons/fi";
 import { IoLocationOutline } from "react-icons/io5";
 import { FaHeadset, FaShippingFast, FaAward, FaClock, FaChevronDown } from "react-icons/fa";
+import { Helmet } from "react-helmet-async";
 
 const Contact = () => {
   const [activeFaq, setActiveFaq] = useState(null);
@@ -148,6 +149,11 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <Helmet>
+        <title>Contact Printe.in | Online Printing & Custom Gifting Support</title>
+        <meta name="description" content="Get in touch with Printe.in for online printing, personalized gifts, and corporate branding solutions. Contact our team for support, bulk orders, or custom requirements." />
+        <meta name="keywords" content="contact printe, printe.in contact, online printing support, custom gifting contact, corporate printing enquiries, bulk printing orders, branding solutions india" />
+    </Helmet>
       {/* Animated Background Elements */}
       <motion.div
         animate={floatingAnimation}

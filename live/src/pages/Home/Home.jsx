@@ -13,6 +13,7 @@ import HistoryProducts from "../Product/HistoryProducts";
 import BrowseAll from "../../components/Home/BrowseAll";
 import { WGDesigns } from "../../config/QuickAccess";
 import BeforeAfterSlider from "../../components/Home/BeforeAfter";
+import { Helmet } from "react-helmet-async";
 
 const Home = () => {
   const [loading, setLoading] = useState(true);
@@ -68,6 +69,12 @@ const Home = () => {
 
   const renderContent = () => (
     <>
+    <Helmet>
+        <title>Printe – Online Printing Services | Custom Prints & Fast Delivery</title>
+        <meta name="description" content="Get high-quality printing services at Printe — custom business cards, flyers, posters, brochures, photo prints and more with easy online ordering and fast delivery across India. Shop professional print services now!" />
+        <meta name="keywords" content="online printing services, custom printing, business cards, flyers, posters, brochures, photo prints, print delivery India, digital print services, personalized printing" />
+    </Helmet>
+
       <CarouselBanner />
       <div className="pb-10 mx-auto">
         <BrowseAll />
