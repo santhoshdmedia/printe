@@ -48,7 +48,7 @@ import WarrantyActivation from "../pages/warrenty/Warrenty.jsx";
 
 // policy
 import ReturnPolicy from "../pages/policys/ReturnPolicy.jsx";
-import ShippingPolicy from "../pages/policys/Shippingpolicy.jsx";
+import ShippingPolicy from "../pages/policys/ShippingPolicy.jsx";
 import TermsAndConditions from "../pages/policys/TermsAndConditions.jsx";
 import CancellationPolicy from "../pages/policys/CancellationPolicy.jsx";
 import PrivacyPolicy from "../pages/policys/Privacypolicy.jsx";
