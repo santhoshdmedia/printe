@@ -230,9 +230,9 @@ const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 0) =>
   }
 };
 const calculateUnitPriceWithoutGst = (basePrice, discountPercentage, userRole, gst = 18) => {
-    // For dealers and corporate - apply discount only (no GST)
-    return DISCOUNT_HELPER(discountPercentage, basePrice);
-  
+  // For dealers and corporate - apply discount only (no GST)
+  return DISCOUNT_HELPER(discountPercentage, basePrice);
+
 };
 
 const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
@@ -623,10 +623,7 @@ const ProductDetailVarient = ({
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
     return calculateUnitPrice(basePrice, discountPercentage.percentage, user?.role, gst);
   }, [checkOutState.product_price, discountPercentage.percentage, user?.role, gst]);
-  const getUnitPricewithoutGst = useMemo(() => {
-    const basePrice = Number(_.get(checkOutState, "product_price", 0));
-    return calculateUnitPriceWithoutGst(basePrice, discountPercentage.percentage, user?.role, gst);
-  }, [checkOutState.product_price, discountPercentage.percentage, user?.role, gst]);
+
 
   const getMRPUnitPrice = useMemo(() => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
@@ -648,12 +645,12 @@ const ProductDetailVarient = ({
     return (getUnitPrice * quantity).toFixed(2);
   }, [getUnitPrice, quantity]);
 
-    const calculateTotalPricewithoutGst = () => {
+  const calculateTotalPricewithoutGst = () => {
     if (!quantity) return 0;
     const unitPrice = getUnitPricewithoutGst();
     return (unitPrice * quantity).toFixed(2);
   };
-  
+
   const calculateGstPrice = useCallback(() => {
     if (!quantity) return 0;
     return Number(getUnitPrice).toFixed(2);
@@ -713,7 +710,10 @@ const ProductDetailVarient = ({
     if (originalTotal === 0) return 0;
     return ((totalSavings / originalTotal) * 100).toFixed(1);
   }, [calculateTotalSavings, calculateOriginalTotalPrice]);
-
+   const getUnitPricewithoutGst = () => {
+     const basePrice = Number(_.get(checkOutState, "product_price", 0));
+     return  Math.round(calculateUnitPriceWithoutGst(basePrice, discountPercentage.percentage, user.role, 18));
+   };
   // Render variant selector based on variant type
   const renderVariantSelector = useCallback(
     (variant) => {
@@ -733,8 +733,8 @@ const ProductDetailVarient = ({
                 <Tooltip key={index} title={option.value}>
                   <div
                     className={`flex flex-col items-center cursor-pointer transition-all duration-200 p-1 ${selectedVariants[variant_name] === option.value
-                        ? "ring-2 ring-blue-500 rounded-lg"
-                        : "border border-gray-200 rounded-lg hover:border-blue-300"
+                      ? "ring-2 ring-blue-500 rounded-lg"
+                      : "border border-gray-200 rounded-lg hover:border-blue-300"
                       }`}
                     onClick={() => handleVariantChange(variant_name, option.value)}
                   >
@@ -763,6 +763,7 @@ const ProductDetailVarient = ({
         );
       }
 
+
       // For image variants
       if (variant_type === "image_variant") {
         return (
@@ -776,8 +777,8 @@ const ProductDetailVarient = ({
                   <div
                     onClick={() => handleVariantChange(variant_name, option.value)}
                     className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${selectedVariants[variant_name] === option.value
-                        ? "border-blue-500 shadow-md"
-                        : "border-gray-300 hover:border-blue-400"
+                      ? "border-blue-500 shadow-md"
+                      : "border-gray-300 hover:border-blue-400"
                       }`}
                     style={{ width: "60px", height: "60px" }}
                   >
@@ -823,6 +824,7 @@ const ProductDetailVarient = ({
     },
     [selectedVariants, handleVariantChange]
   );
+  
 
   // Helper functions
   const scrollToProductDetails = useCallback(() => {
@@ -864,8 +866,8 @@ const ProductDetailVarient = ({
               <div
                 key={item.value}
                 className={`flex justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 border-2 ${isSelected
-                    ? "border-blue-500 bg-blue-50 shadow-sm"
-                    : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
+                  ? "border-blue-500 bg-blue-50 shadow-sm"
+                  : "border-gray-100 hover:border-blue-300 hover:bg-blue-50"
                   }`}
                 onClick={() => handleQuantitySelect(item.value)}
               >

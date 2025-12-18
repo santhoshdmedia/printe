@@ -781,7 +781,7 @@ const ProductDetails = ({
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
     return  Math.round(calculateUnitPriceWithoutGst(basePrice, discountPercentage.percentage, user.role, Gst));
   };
-
+  
   const getMRPUnitPrice = () => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
     return calculateMRPUnitPrice(basePrice, user.role, Gst);
