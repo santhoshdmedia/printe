@@ -66,9 +66,9 @@ const userSchema = new mongoose.Schema(
       default: "user",
       enum: ["user", "Corporate", "Dealer"],
     },
-    phone: { 
+    phone: {
       type: Number
-     },
+    },
     redeemedRewards: [{
       rewardId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -85,6 +85,10 @@ const userSchema = new mongoose.Schema(
         default: 'pending'
       }
     }],
+    Dealer_verification: {
+      type: Boolean,
+      default: false,
+    },
     wish_list: [],
     history_data: [
       {

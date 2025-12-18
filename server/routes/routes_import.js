@@ -25,6 +25,10 @@ const warentyRoutes=require("./warrenty.route")
 const paymentRoutes=require('./Payment.route')
 const RewardRoutes=require('./reward.router')
 const IntroRoutes=require('./intro.routes')
+const LeadRoutes=require('./lead.routes')
+const CustomerRoutes=require('./CustomerCare.Route')
+
+
 
 
 
@@ -54,5 +58,7 @@ module.exports = {
   paymentRoutes,
   warentyRoutes,
   RewardRoutes,
-  IntroRoutes
+  IntroRoutes,
+  LeadRoutes,
+  CustomerRoutes
 };
