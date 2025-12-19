@@ -7,7 +7,17 @@ const discountTierSchema = new mongoose.Schema({
     required: true,
     min: 1
   },
-  discountValue: {
+  Customer_discountValue: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  Dealer_discountValue: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  Corporate_discountValue: {
     type: Number,
     required: true,
     min: 0
@@ -27,11 +37,19 @@ const couponSchema = new mongoose.Schema({
     enum: ['percentage', 'fixed', 'shipping', 'tiered_quantity'],
     required: true
   },
-  discountValue: {
+Customer_discountValue: {
     type: Number,
-    required: function() {
-      return this.discountType !== 'tiered_quantity';
-    },
+    required: true,
+    min: 0
+  },
+  Dealer_discountValue: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  Corporate_discountValue: {
+    type: Number,
+    required: true,
     min: 0
   },
   discountTiers: [discountTierSchema],
@@ -68,7 +86,7 @@ const couponSchema = new mongoose.Schema({
   }],
   excludedProducts: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product'
+    ref: 'product'
   }],
   singleUse: {
     type: Boolean,
@@ -80,7 +98,7 @@ const couponSchema = new mongoose.Schema({
   }],
   applicableProducts: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product'
+    ref: 'product'
   }],
   isPerProductDiscount: {
     type: Boolean,

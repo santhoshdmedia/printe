@@ -8,8 +8,8 @@ const leadStatusController = require("../controller/leadStatus.controller");
 const {authenticate} = require("../helper/shared.helper")
 
 // dashboard
- router.get("/dashboard", authenticate, leadStatusController.getDashboardStats);
-  router.get("/dashboard/:memberId", authenticate, leadStatusController.getDashboardStats);
+ router.get("/dashboard",  leadStatusController.getDashboardStats);
+  router.get("/dashboard/:memberId",  leadStatusController.getDashboardStats);
 
 
 // Create a new lead

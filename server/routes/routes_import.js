@@ -27,6 +27,7 @@ const RewardRoutes=require('./reward.router')
 const IntroRoutes=require('./intro.routes')
 const LeadRoutes=require('./lead.routes')
 const CustomerRoutes=require('./CustomerCare.Route')
+const CustomerSettingsRoutes=require('./customercaresettings.route')
 
 
 
@@ -60,5 +61,6 @@ module.exports = {
   RewardRoutes,
   IntroRoutes,
   LeadRoutes,
-  CustomerRoutes
+  CustomerRoutes,
+  CustomerSettingsRoutes
 };

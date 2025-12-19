@@ -220,134 +220,167 @@ const NewCheckout = () => {
   };
 
   // Coupon function - FIXED for tiered quantity discounts
- const handleApplyCoupon = async () => {
-  if (!couponCode.trim()) {
-    setCouponError('Please enter a coupon code');
-    return;
-  }
+const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
 
-  try {
-    setCouponLoading(true);
-    setCouponError('');
+    try {
+      setCouponLoading(true);
+      setCouponError('');
 
-    const orderAmount = calculations.totalBeforeDiscount;
-    
-    // Prepare cart items with the EXACT product ID structure
-    const cartItems = cartData.map(item => {
-      // The product ID from your data: "69303737796999383369944b"
-      // It's stored in _id field with $oid wrapper
-      const productId = item._id?.$oid || item._id || item.product_id;
+      const orderAmount = calculations.totalBeforeDiscount;
       
-      // Clean up the ID - remove $oid if present
-      let cleanProductId;
-      if (typeof productId === 'object' && productId.$oid) {
-        cleanProductId = productId.$oid; // Extract from $oid
-      } else if (typeof productId === 'string') {
-        cleanProductId = productId;
-      } else {
-        cleanProductId = String(productId);
-      }
+      // Get user type from user role
+      const userType = user?.role?.toLowerCase() || 'customer';
       
-      // Get quantity - ensure it's a number
-      const quantity = Number(item.product_quantity) || 1;
-      
-      // Calculate unit price
-      const unitPrice = (Number(item.final_total_withoutGst||item.final_total) || 0) / (quantity || 1);
-      
-      return {
-        productId: cleanProductId,
-        product_id: cleanProductId, // Some backends expect both
-        _id: cleanProductId, // Some backends expect _id
-        quantity: quantity,
-        price: parseFloat(unitPrice.toFixed(2)),
-        totalPrice: Number(item.final_total_withoutGst||item.final_total) || 0,
-        name: item.product_name || item.name || 'Product'
-      };
-    });
-
-    console.log('Cart items for coupon:', {
-      items: cartItems,
-      firstItemId: cartItems[0]?.productId,
-      expectedId: '69303737796999383369944b'
-    });
-
-    const couponData = {
-      code: couponCode.trim().toUpperCase(),
-      orderAmount: parseFloat(orderAmount.toFixed(2)),
-      userId: user?._id,
-      cartItems: cartItems
-    };
-
-    console.log('Final coupon request:', JSON.stringify(couponData, null, 2));
-
-    const response = await applyCouponCode(couponData);
-
-    console.log('Coupon response:', response);
-
-    // Handle response based on your backend structure
-    if (response?.success === true) {
-      // Try different response structures
-      const coupon = response.data?.coupon || response.data?.data?.coupon || response.data;
-      
-      if (coupon) {
-        setAppliedCoupon(coupon);
-        setCouponError('');
-        setError('');
+      // Prepare cart items for coupon validation
+      const cartItems = cartData.map(item => {
+        // Extract product ID correctly
+        let productId;
+        if (item._id?.$oid) {
+          productId = item._id.$oid; // MongoDB ObjectId from $oid
+        } else if (item._id) {
+          productId = item._id.toString(); // Convert to string
+        } else {
+          productId = item.product_id || item.id || '';
+        }
         
-        console.log('Coupon applied successfully:', coupon);
-      } else {
-        throw new Error('Invalid coupon data in response');
-      }
-    } else {
-      // Check for error message in different structures
-      const errorMsg = response?.message || 
-                      response?.data?.message || 
-                      response?.error?.message || 
-                      'Coupon application failed';
-      throw new Error(errorMsg);
-    }
+        // Get quantity
+        const quantity = Number(item.product_quantity) || 1;
+        
+        // Get price per item
+        const price = (Number(item.final_total_withoutGst || item.final_total) || 0) / (quantity || 1);
+        
+        return {
+          productId: productId,
+          name: item.product_name || item.name || '',
+          quantity: quantity,
+          price: parseFloat(price.toFixed(2))
+        };
+      });
 
-  } catch (err) {
-    console.error('Detailed coupon error:', err);
-    
-    // Get the actual error message from backend
-    let errorMessage = 'Invalid coupon code. Please try again.';
-    
-    if (err.response?.data?.message) {
-      errorMessage = err.response.data.message;
-    } else if (err.message) {
-      errorMessage = err.message;
-    }
-    
-    // Specific error handling
-    if (errorMessage.includes('Minimum quantity')) {
-      setCouponError(`This coupon requires minimum quantity. ${errorMessage}`);
-    } else if (errorMessage.includes('applicable products')) {
-      setCouponError('This coupon is not applicable to the products in your cart.');
-    } else if (errorMessage.includes('not active') || errorMessage.includes('expired')) {
-      setCouponError('This coupon is not currently active or has expired.');
-    } else if (errorMessage.includes('usage limit')) {
-      setCouponError('This coupon has reached its usage limit.');
-    } else if (errorMessage.includes('minimum order amount')) {
-      const match = errorMessage.match(/₹(\d+)/);
-      const amount = match ? match[1] : '';
-      setCouponError(`Order amount is too low. Minimum order amount is ₹${amount}.`);
-    } else {
+      // Prepare coupon request data
+      const couponData = {
+        code: couponCode.trim().toUpperCase(),
+        orderAmount: parseFloat(orderAmount.toFixed(2)),
+        userId: user?._id?.toString() || user?.id,
+        cartItems: cartItems,
+        userType: user.role
+      };
+
+      console.log('Sending coupon request:', couponData);
+
+      const response = await applyCouponCode(couponData);
+
+      console.log('Coupon response:', response);
+
+      // Handle response
+      if (response?.success === true) {
+        const coupon = response.data?.coupon || response.data;
+        
+        if (coupon) {
+          setAppliedCoupon(coupon);
+          setCouponError('');
+          setError('');
+          
+          console.log('Coupon applied successfully:', coupon);
+          
+          // Recalculate totals with discount
+          const discountAmount = Number(coupon.discountAmount) || 0;
+          const newTotal = Math.max(0, calculations.totalBeforeDiscount - discountAmount);
+          const newPayable = paymentOption === 'half' ? Math.ceil(newTotal * 0.5) : newTotal;
+          
+          setCalculations(prev => ({
+            ...prev,
+            discount: discountAmount,
+            total: newTotal,
+            payable: newPayable
+          }));
+        } else {
+          throw new Error('Invalid coupon response');
+        }
+      } else {
+        const errorMsg = response?.message || 
+                        response?.data?.message || 
+                        response?.error?.message || 
+                        'Coupon application failed';
+        throw new Error(errorMsg);
+      }
+
+    } catch (err) {
+      console.error('Coupon error:', err);
+      
+      let errorMessage = 'Invalid coupon code';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Handle specific error messages
+      if (errorMessage.includes('Victoria Luxe')) {
+        errorMessage = 'This coupon only applies to Victoria Luxe products';
+      } else if (errorMessage.includes('minimum order amount')) {
+        const match = errorMessage.match(/₹(\d+)/);
+        errorMessage = match ? `Minimum order amount is ₹${match[1]}` : errorMessage;
+      } else if (errorMessage.includes('expired') || errorMessage.includes('not active')) {
+        errorMessage = 'This coupon is not valid or has expired';
+      }
+      
       setCouponError(errorMessage);
+      setAppliedCoupon(null);
+      
+      // Reset discount calculations
+      setCalculations(prev => ({
+        ...prev,
+        discount: 0,
+        total: prev.totalBeforeDiscount,
+        payable: paymentOption === 'half' ? Math.ceil(prev.totalBeforeDiscount * 0.5) : prev.totalBeforeDiscount
+      }));
+    } finally {
+      setCouponLoading(false);
     }
-    
-    setAppliedCoupon(null);
-    setError(errorMessage);
-  } finally {
-    setCouponLoading(false);
-  }
-};
+  };
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
     setCouponCode('');
     setCouponError('');
+    
+    // Reset calculations
+    setCalculations(prev => ({
+      ...prev,
+      discount: 0,
+      total: prev.totalBeforeDiscount,
+      payable: paymentOption === 'half' ? Math.ceil(prev.totalBeforeDiscount * 0.5) : prev.totalBeforeDiscount
+    }));
   };
+
+  // Function to get discount description
+  const getDiscountDescription = (coupon) => {
+    if (!coupon) return '';
+    
+    switch (coupon.discountType) {
+      case 'percentage':
+        return `${coupon.discountValue || 0}% off`;
+      
+      case 'fixed':
+        return `₹${coupon.discountValue || 0} off`;
+      
+      case 'shipping':
+        return `Free shipping`;
+      
+      case 'tiered_quantity':
+        return `Tiered discount for Victoria Luxe`;
+      
+      default:
+        return 'Discount applied';
+    }
+  };
+
 
   // Payment handler
   const handlePayment = async () => {
@@ -380,7 +413,7 @@ const NewCheckout = () => {
       const couponData = appliedCoupon ? {
         couponCode: appliedCoupon.code,
         discountType: appliedCoupon.discountType,
-        discountValue: appliedCoupon.discountValue,
+        discountValue: appliedCoupon.getDiscountField(user.role),
         discountAmount: appliedCoupon.discountAmount,
         finalAmount: appliedCoupon.finalAmount,
         discountTiers: appliedCoupon.discountTiers,
@@ -452,31 +485,21 @@ const NewCheckout = () => {
     setGstNo(value);
   }, []);
 
-  // Function to get discount description based on type
-  const getDiscountDescription = (coupon) => {
-    if (!coupon) return '';
-    
-    switch (coupon.discountType) {
-      case 'percentage':
-        return `${coupon.discountValue}% off`;
-      
-      case 'fixed':
-        return `₹${coupon.discountValue} off`;
-      
-      case 'shipping':
-        return `Free shipping up to ₹${coupon.discountValue}`;
-      
-      case 'tiered_quantity':
-        if (coupon.appliedTiers && coupon.appliedTiers.length > 0) {
-          return `${coupon.appliedTiers[0]?.discountPercent || 0}% off (Tiered quantity discount)`;
-        }
-        return 'Tiered quantity discount';
-      
+  const getDiscountField=(role)=>{
+    switch (role) {
+      case "Dealer":
+          return "Dealer_discountValue"
+        break;
+      case "Corporate":
+          return "Corporate_discountValue"
+        break;
       default:
-        return 'Discount applied';
-    }
-  };
+          return "Customer_discountValue"
 
+    }
+  }
+
+ 
   // Show loading state
   if (loading && cartData.length === 0) {
     return (
@@ -727,11 +750,11 @@ const NewCheckout = () => {
                       </div>
                     </div>
                     <div className="text-green-700 font-bold">
-                      -₹{Number(appliedCoupon.discountAmount || 0).toFixed(2)}
+                      ₹{calculations.total.toFixed(2)}
                     </div>
                   </div>
                   
-                  {/* Show tier information for tiered quantity discounts */}
+                  {/* Show tier information for tiered quantity discounts
                   {appliedCoupon.discountType === 'tiered_quantity' && appliedCoupon.appliedTiers && (
                     <div className="mt-2 pt-2 border-t border-green-200">
                       <div className="text-xs font-medium text-green-800 mb-1">Applied Tiers:</div>
@@ -745,7 +768,7 @@ const NewCheckout = () => {
                   )}
                   
                   {/* Show discount tiers info if available */}
-                  {appliedCoupon.discountTiers && appliedCoupon.discountType === 'tiered_quantity' && (
+                  {/* {appliedCoupon.discountTiers && appliedCoupon.discountType === 'tiered_quantity' && (
                     <div className="mt-2 pt-2 border-t border-green-200">
                       <div className="text-xs font-medium text-green-800 mb-1">Available Tiers:</div>
                       {appliedCoupon.discountTiers.map((tier, index) => (
@@ -754,7 +777,7 @@ const NewCheckout = () => {
                         </div>
                       ))}
                     </div>
-                  )}
+                  )}  */}
                 </div>
               )}
             </div>
