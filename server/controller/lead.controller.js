@@ -410,8 +410,7 @@ exports.getUnassignedLeads = async (req, res) => {
 exports.updateLeadStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes, callback_time, next_followup } = req.body;
-    const called_by = req.user.id; // Assuming you have authentication middleware
+    const { status, notes, callback_time, next_followup,called_by } = req.body;
 
     // Validate status
     const validStatuses = [

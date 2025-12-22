@@ -136,6 +136,8 @@ const SimpleProductCard = ({ data }) => {
     try {
       const basePrice = Number(getBasePrice());
       const userRole = user?.role || 'Customer';
+
+      
       
       if (!data.quantity_discount_splitup || !data.quantity_discount_splitup.length) {
         return basePrice;
@@ -146,7 +148,7 @@ const SimpleProductCard = ({ data }) => {
       const discountValue = _.get(firstQuantityTier, discountField, 0);
       
       // Use GST_DISCOUNT_HELPER to calculate final price
-      const finalPrice = GST_DISCOUNT_HELPER(discountValue, basePrice, 18);
+      const finalPrice = (userRole=="Customer"||userRole=="user")?GST_DISCOUNT_HELPER(discountValue, basePrice, 18):DISCOUNT_HELPER(discountValue, basePrice);
       
       return finalPrice;
     } catch (error) {
