@@ -77,6 +77,7 @@ const NewCheckout = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [couponCode, setCouponCode] = useState('');
+  const [couponType, setCouponType] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState('');
@@ -279,8 +280,10 @@ const handleApplyCoupon = async () => {
       // Handle response
       if (response?.success === true) {
         const coupon = response.data?.coupon || response.data;
+        const coupontyp = response.data?.coupon.discountType || response.data;
         
         if (coupon) {
+          setCouponType(coupontyp)
           setAppliedCoupon(coupon);
           setCouponError('');
           setError('');
@@ -734,6 +737,7 @@ const handleApplyCoupon = async () => {
                     Remove
                   </button>
                 )}
+
               </div>
               
               {couponError && (
@@ -746,11 +750,11 @@ const handleApplyCoupon = async () => {
                     <div>
                       <span className="font-medium text-green-700">Coupon Applied: {appliedCoupon.code}</span>
                       <div className="text-sm text-green-600">
-                        {getDiscountDescription(appliedCoupon)}
+                        {/* {getDiscountDescription(appliedCoupon)} */}
                       </div>
                     </div>
                     <div className="text-green-700 font-bold">
-                      ₹{calculations.total.toFixed(2)}
+                      {`Discounted Price ₹${calculations.total.toFixed(2)}`}
                     </div>
                   </div>
                   

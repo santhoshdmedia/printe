@@ -101,7 +101,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    wish_list: [],
+    wish_list: [], 
     history_data: [
       {
         type: mongoose.Schema.Types.ObjectId,
