@@ -1,60 +1,56 @@
-import { Divider, Form, Input, Spin, Tooltip, message } from "antd";
 import React, { useEffect, useState, useRef } from "react";
-import { FaArrowRight, FaInfoCircle } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
-import { MdHelpOutline } from "react-icons/md";
+import { Input, Form, Spin, message, Tooltip } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { EnvHelper } from "../../helper/EnvHelper";
-import abc from "../../assets/logo/ABC.jpg";
-import logo from "../../assets/logo/without_bg.png";
-import axios from "axios";
-import { sendOtp, verifyOtp, resendOtp } from "../../helper/api_helper";
+import { FaArrowRight, FaInfoCircle } from "react-icons/fa";
+import { MdHelpOutline } from "react-icons/md";
+import logo from "../../../assets/logo/without_bg.png";
+import Bnilogo from "../../../assets/BNI/bni.png";
+import abc from "../../../assets/BNI/Group.png";
 
-const Signup = () => {
+const BniLogin = () => {
   const dispatch = useDispatch();
   const { isLogingIn, isAuth } = useSelector((state) => state.authSlice);
   const navigate = useNavigate();
   const [isExiting, setIsExiting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-
-  // Step state for multi-step form
-  const [currentStep, setCurrentStep] = useState(1); // 1: Basic Info, 2: OTP Verification, 3: Password Setup
+  const [currentStep, setCurrentStep] = useState(1);
+  const [otpTimer, setOtpTimer] = useState(0);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const otpRefs = useRef([]);
 
   // Form state
   const [form, setForm] = useState({
-    name: "",
-    phone: "",
+    memberName: "",
+    businessName: "",
+    contactNumber: "",
     email: "",
+    chapterName: "",
+    city: "",
+    category: "",
     otp: "",
     password: "",
-    confirmPassword: "",
+    confirmPassword: ""
   });
 
-  // Timer for OTP resend
-  const [otpTimer, setOtpTimer] = useState(0);
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [isOtpVerified, setIsOtpVerified] = useState(false);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-
   const [errorMessage, setErrorMessage] = useState({
-    name: "",
-    phone: "",
+    memberName: "",
+    businessName: "",
+    contactNumber: "",
     email: "",
+    chapterName: "",
+    city: "",
+    category: "",
     otp: "",
     password: "",
-    confirmPassword: "",
+    confirmPassword: ""
   });
 
   const [passwordStrength, setPasswordStrength] = useState({
     level: 0,
-    message: "",
-    color: "transparent",
+    message: "Very Weak",
+    color: "#ef4444"
   });
-
-  // OTP Refs for handling multiple inputs
-  const otpRefs = useRef([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -73,9 +69,9 @@ const Signup = () => {
         }, 500);
       }
     }
-  }, [isAuth]);
+  }, [isAuth, navigate]);
 
-  // OTP Timer effect
+  // OTP timer effect
   useEffect(() => {
     let interval;
     if (otpTimer > 0) {
@@ -93,122 +89,109 @@ const Signup = () => {
     }, 500);
   };
 
-  // OTP handling functions
-  const handleOtpChange = (index, value) => {
-    // Allow only numbers
-    if (value && !/^\d+$/.test(value)) return;
-    
-    const newOtp = form.otp.split('');
-    newOtp[index] = value;
-    const updatedOtp = newOtp.join('');
-    setForm({ ...form, otp: updatedOtp });
-    
-    // Auto-focus next input
-    if (value && index < 5) {
-      otpRefs.current[index + 1]?.focus();
-    }
-    
-    // Validate OTP
-    if (updatedOtp.length === 6) {
-      otpValidation(updatedOtp);
-    }
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    // Handle backspace
-    if (e.key === 'Backspace' && !form.otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-    
-    // Handle arrow keys
-    if (e.key === 'ArrowLeft' && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-    if (e.key === 'ArrowRight' && index < 5) {
-      otpRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text');
-    const otpDigits = pastedData.replace(/\D/g, '').slice(0, 6);
-    
-    if (otpDigits.length === 6) {
-      setForm({ ...form, otp: otpDigits });
-      
-      // Focus the last input
-      setTimeout(() => {
-        otpRefs.current[5]?.focus();
-      }, 0);
-      
-      // Validate OTP
-      otpValidation(otpDigits);
-    }
-  };
-
   const handleOnChange = (e) => {
     const { name, value } = e.target;
 
     // Clean input values
-    if (name === "name") {
-      const cleanedName = value.replace(/\s+/g, " ").trimStart();
-      setForm((prevForm) => ({ ...prevForm, [name]: cleanedName }));
-    } else if (name === "phone") {
-      // Allow only numbers for phone
+    if (name === "memberName" || name === "businessName" || name === "chapterName" || name === "city" || name === "category") {
+      const cleanedValue = value.replace(/\s+/g, " ").trimStart();
+      setForm((prevForm) => ({ ...prevForm, [name]: cleanedValue }));
+    } else if (name === "contactNumber") {
       const cleanedPhone = value.replace(/\D/g, "");
       setForm((prevForm) => ({ ...prevForm, [name]: cleanedPhone }));
-    } else if (name === "otp") {
-      // Handle OTP from hidden input (fallback)
-      const cleanedOtp = value.replace(/\D/g, "").slice(0, 6);
-      setForm((prevForm) => ({ ...prevForm, [name]: cleanedOtp }));
-      otpValidation(cleanedOtp);
+    } else if (name === "password") {
+      setForm((prevForm) => ({ ...prevForm, [name]: value }));
+      checkPasswordStrength(value);
     } else {
       setForm((prevForm) => ({ ...prevForm, [name]: value }));
     }
 
     // Validate inputs
-    if (name === "name") {
-      nameValidation(value);
-    } else if (name === "phone") {
-      phoneValidation(value);
+    if (name === "memberName") {
+      memberNameValidation(value);
+    } else if (name === "contactNumber") {
+      contactNumberValidation(value);
     } else if (name === "email") {
       emailValidation(value);
     } else if (name === "password") {
-      checkPasswordStrength(value);
-      if (form.confirmPassword) {
-        confirmPasswordValidation(form.confirmPassword, value);
-      }
+      passwordValidation(value);
     } else if (name === "confirmPassword") {
       confirmPasswordValidation(value, form.password);
     }
   };
 
+  // OTP handling functions
+  const handleOtpChange = (index, value) => {
+    if (value && !/^\d+$/.test(value)) return;
+    
+    const newOtp = form.otp.split('');
+    newOtp[index] = value;
+    setForm(prev => ({ ...prev, otp: newOtp.join('') }));
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !form.otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text/plain').replace(/\D/g, '').slice(0, 6);
+    
+    if (pastedData.length === 6) {
+      setForm(prev => ({ ...prev, otp: pastedData }));
+      
+      // Focus the last input
+      setTimeout(() => {
+        otpRefs.current[5]?.focus();
+      }, 0);
+    }
+  };
+
+  const handleResendOtp = () => {
+    if (otpTimer > 0) return;
+    
+    // Dispatch resend OTP action
+    dispatch({
+      type: "RESEND_OTP",
+      data: { email: form.email }
+    });
+    
+    setOtpTimer(60);
+    message.success("OTP resent successfully!");
+  };
+
   // Validation functions
-  const nameValidation = (value) => {
+  const memberNameValidation = (value) => {
     const cleanedName = value.replace(/\s+/g, " ").trim();
-    const pattern = /^[a-zA-Z]+([ ][a-zA-Z]+)*$/;
+    const pattern = /^[a-zA-Z\s.'-]+$/;
     const isValid =
       pattern.test(cleanedName) &&
-      cleanedName.length >= 3 &&
+      cleanedName.length >= 2 &&
       cleanedName.length <= 50;
 
     setErrorMessage((prevError) => ({
       ...prevError,
-      name: isValid
+      memberName: isValid
         ? ""
-        : "Name must be at least 3 characters long and contain only alphabets.",
+        : "Name must be 2-50 characters and contain only letters, spaces, apostrophes, periods, and hyphens.",
     }));
 
     return isValid;
   };
 
-  const phoneValidation = (value) => {
+  const contactNumberValidation = (value) => {
     const isValid = value.length >= 10 && value.length <= 15;
 
     setErrorMessage((prevError) => ({
       ...prevError,
-      phone: isValid ? "" : "Phone number must be 10-15 digits.",
+      contactNumber: isValid ? "" : "Contact number must be 10-15 digits.",
     }));
 
     return isValid;
@@ -227,11 +210,11 @@ const Signup = () => {
   };
 
   const otpValidation = (value) => {
-    const isValid = value.length === 6;
-
+    const isValid = value.length === 6 && /^\d+$/.test(value);
+    
     setErrorMessage((prevError) => ({
       ...prevError,
-      otp: isValid ? "" : "OTP must be 6 digits.",
+      otp: isValid ? "" : "Please enter a valid 6-digit OTP.",
     }));
 
     return isValid;
@@ -239,70 +222,62 @@ const Signup = () => {
 
   const checkPasswordStrength = (password) => {
     let strength = 0;
-    let message = "";
-    let color = "transparent";
+    let message = "Very Weak";
+    let color = "#ef4444";
 
-    if (password.length === 0) {
-      setPasswordStrength({ level: 0, message: "", color });
-      return;
-    }
-
-    if (password.length >= 8) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/[a-z]/.test(password)) strength += 1;
-    if (/[0-9]/.test(password)) strength += 1;
-    if (/[\W_]/.test(password)) strength += 1;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
 
     switch (strength) {
       case 0:
       case 1:
         message = "Very Weak";
-        color = "#ff4d4f";
+        color = "#ef4444";
         break;
       case 2:
         message = "Weak";
-        color = "#ff7a45";
+        color = "#f97316";
         break;
       case 3:
-        message = "Medium";
-        color = "#ffa940";
+        message = "Fair";
+        color = "#eab308";
         break;
       case 4:
-        message = "Strong";
-        color = "#73d13d";
+        message = "Good";
+        color = "#84cc16";
         break;
       case 5:
-        message = "Very Strong";
-        color = "#52c41a";
+        message = "Strong";
+        color = "#22c55e";
         break;
-      default:
-        message = "";
-        color = "transparent";
     }
 
-    setPasswordStrength({ level: strength, message, color });
+    setPasswordStrength({
+      level: strength,
+      message,
+      color
+    });
+
+    return strength >= 3;
   };
 
   const passwordValidation = (value) => {
-    const pattern =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{8,}$/;
-    const isValid = pattern.test(value);
+    const isStrong = checkPasswordStrength(value);
+    const isValid = value.length >= 8 && isStrong;
 
     setErrorMessage((prevError) => ({
       ...prevError,
-      password: isValid
-        ? ""
-        : "Password must be at least 8 characters long, including 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character.",
+      password: isValid ? "" : "Password must be at least 8 characters with mix of letters, numbers, and symbols.",
     }));
 
     return isValid;
   };
 
-  const confirmPasswordValidation = (
-    confirmPassword,
-    password = form.password
-  ) => {
-    const isValid = confirmPassword === password;
+  const confirmPasswordValidation = (value, password) => {
+    const isValid = value === password && value.length > 0;
 
     setErrorMessage((prevError) => ({
       ...prevError,
@@ -312,144 +287,90 @@ const Signup = () => {
     return isValid;
   };
 
-  // Handle step 1 submission - Send OTP
   const handleStep1Submit = async (e) => {
     e.preventDefault();
 
-    // Clean the name
-    const cleanedName = form.name.replace(/\s+/g, " ").trim();
     const cleanedForm = {
-      ...form,
-      name: cleanedName,
+      memberName: form.memberName.replace(/\s+/g, " ").trim(),
+      businessName: form.businessName.replace(/\s+/g, " ").trim(),
+      contactNumber: form.contactNumber,
+      email: form.email.trim(),
+      chapterName: form.chapterName.replace(/\s+/g, " ").trim(),
+      city: form.city.replace(/\s+/g, " ").trim(),
+      category: form.category.replace(/\s+/g, " ").trim(),
     };
 
-    const isNameValid = nameValidation(cleanedName);
-    const isPhoneValid = phoneValidation(cleanedForm.phone);
+    const isMemberNameValid = memberNameValidation(cleanedForm.memberName);
+    const isContactValid = contactNumberValidation(cleanedForm.contactNumber);
     const isEmailValid = emailValidation(cleanedForm.email);
 
-    if (isNameValid && isPhoneValid && isEmailValid) {
-      setIsSendingOtp(true);
-      try {
-        // Send OTP to email
-        const response = await sendOtp({
-          email: cleanedForm.email,
-          phone: cleanedForm.phone,
-        });
+    if (isMemberNameValid && isContactValid && isEmailValid) {
+      // Update the form state with cleaned values
+      setForm(prev => ({ ...prev, ...cleanedForm }));
 
-        if (response.data.success) {
-          message.success("OTP sent to your email!");
-          setIsOtpSent(true);
-          setOtpTimer(60); // 60 seconds timer
-          setCurrentStep(2); // Move to OTP verification step
-        } else {
-          message.error(response.data.message || "Failed to send OTP");
-        }
-      } catch (error) {
-        message.error(
-          error.response?.data?.message ||
-            "Failed to send OTP. Please try again."
-        );
-      } finally {
-        setIsSendingOtp(false);
-      }
-    }
-  };
-
-  // Handle OTP verification
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-
-    const isOtpValid = otpValidation(form.otp);
-
-    if (isOtpValid) {
-      setIsVerifyingOtp(true);
-      try {
-        const response = await verifyOtp({
-          email: form.email,
-          otp: form.otp,
-        });
-
-        if (response.data.success) {
-          message.success("OTP verified successfully!");
-          setIsOtpVerified(true);
-          setCurrentStep(3); // Move to password setup step
-        } else {
-          message.error(response.data.message || "Invalid OTP");
-        }
-      } catch (error) {
-        message.error(error.response?.data?.message || "Failed to verify OTP");
-      } finally {
-        setIsVerifyingOtp(false);
-      }
-    }
-  };
-
-  // Handle resend OTP
-  const handleResendOtp = async () => {
-    if (otpTimer > 0) {
-      message.warning(`Please wait ${otpTimer} seconds before resending OTP`);
-      return;
-    }
-
-    try {
-      const response = await resendOtp({
-        email: form.email,
-      });
-
-      if (response.data.success) {
-        message.success("OTP resent successfully!");
-        setOtpTimer(60);
-      } else {
-        message.error(response.data.message || "Failed to resend OTP");
-      }
-    } catch (error) {
-      message.error(error.response?.data?.message || "Failed to resend OTP");
-    }
-  };
-
-  // Handle final submission
-  const handleFinalSubmit = async (e) => {
-    e.preventDefault();
-
-    // Clean the name field
-    const cleanedName = form.name.replace(/\s+/g, " ").trim();
-    const cleanedForm = {
-      ...form,
-      name: cleanedName,
-    };
-
-    const isPasswordValid = passwordValidation(cleanedForm.password);
-    const isConfirmPasswordValid = confirmPasswordValidation(
-      cleanedForm.confirmPassword
-    );
-
-    if (isPasswordValid && isConfirmPasswordValid) {
-      // Update the form state with cleaned name
-      setForm(cleanedForm);
-
-      // Dispatch signup action with all data
+      // Dispatch signup action to send OTP
       dispatch({
         type: "SIGNUP",
-        data: {
-          name: cleanedForm.name,
-          phone: cleanedForm.phone,
-          email: cleanedForm.email,
-          password: cleanedForm.password,
-          otp: cleanedForm.otp,
-        },
+        data: cleanedForm,
       });
+
+      // Move to OTP step
+      setCurrentStep(2);
+      setOtpTimer(60);
+      message.success("OTP sent to your email!");
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    
+    if (otpValidation(form.otp)) {
+      setIsVerifyingOtp(true);
+      
+      // Dispatch OTP verification action
+      dispatch({
+        type: "VERIFY_OTP",
+        data: { email: form.email, otp: form.otp }
+      });
+      
+      setTimeout(() => {
+        setIsVerifyingOtp(false);
+        setCurrentStep(3);
+        message.success("Email verified successfully!");
+      }, 1500);
+    }
+  };
+
+  const handleFinalSubmit = async (e) => {
+    e.preventDefault();
+    
+    const isPasswordValid = passwordValidation(form.password);
+    const isConfirmValid = confirmPasswordValidation(form.confirmPassword, form.password);
+    
+    if (isPasswordValid && isConfirmValid) {
+      // Dispatch final registration action
+      dispatch({
+        type: "COMPLETE_REGISTRATION",
+        data: {
+          ...form,
+          password: form.password
+        }
+      });
+      
+      message.success("Account created successfully!");
+      // Navigation will be handled by the useEffect when isAuth becomes true
     }
   };
 
   const passwordRequirementsTooltip = (
     <div className="text-xs">
-      <p>Password must contain:</p>
-      <ul className="list-disc pl-4 mt-1">
+      <p className="font-medium mb-1">Password Requirements:</p>
+      <ul className="list-disc pl-3 space-y-1">
         <li>At least 8 characters</li>
-        <li>One uppercase letter (A-Z)</li>
-        <li>One lowercase letter (a-z)</li>
-        <li>One digit (0-9)</li>
-        <li>One special character (!@#$%^&* etc.)</li>
+        <li>One uppercase letter</li>
+        <li>One lowercase letter</li>
+        <li>One number</li>
+        <li>One special character</li>
       </ul>
     </div>
   );
@@ -464,122 +385,148 @@ const Signup = () => {
           : "opacity-0"
       }`}
     >
-      {/* Left Section - Signup Form */}
+      {/* Left Section - BNI Privilege Login Form */}
       <div
         className={`w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8 overflow-auto relative transition-all duration-500 ${
           isMounted
             ? isExiting
-              ? "translate-x-full opacity-0"
-              : "translate-x-0 opacity-100"
+              ? "translate-x-0 opacity-0"
+              : "translate-x-full opacity-100"
             : "translate-x-full opacity-0"
         }`}
       >
-        {/* Logo in top left corner with gold background */}
-        <div className="absolute top-4 md:top-6 left-4 md:left-6">
-          <div className=" flex items-center justify-center rounded-md">
-            <a
-              className="p-2 md:p-3 bg-yellow-400 flex items-center justify-center rounded-md cursor-pointer"
-              href="/"
-              data-discover="true"
-            >
-              <img
-                src={logo}
-                alt="Logo"
-                className="h-6 md:h-8 w-auto object-contain"
-              />
-            </a>
-          </div>
-        </div>
-
-        <div className="w-full max-w-md mt-12 md:mt-16">
-          <div className="mb-6 md:mb-8 flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                {currentStep === 1 && "Create Account"}
-                {currentStep === 2 && "Verify OTP"}
-                {currentStep === 3 && "Set Password"}
-              </h2>
-            </div>
-            <button
-              onClick={() => handleNavigation("/")}
-              className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm md:text-base"
-            >
-              Home <FaArrowRight className="ml-1" />
-            </button>
-          </div>
-
-          <Spin spinning={isLogingIn || isSendingOtp || isVerifyingOtp}>
-            {/* Step 1: Basic Information */}
-            {currentStep === 1 && (
-              <form
-                onSubmit={handleStep1Submit}
-                className="bg-white rounded-lg"
+        <div className="w-full max-w-3xl mt-12 md:mt-16">
+          <div className="mb-1 !w-full flex justify-between items-end">
+            <img src={Bnilogo} alt="logo" className="h-28" />
+            
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => handleNavigation("/")}
+                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm md:text-base"
               >
+                Home <FaArrowRight className="ml-1" />
+              </button>
+            </div>
+          </div>
+
+          {/* Step Indicator */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 1 ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  1
+                </div>
+                <div className={`ml-2 text-sm ${currentStep >= 1 ? 'text-black font-medium' : 'text-gray-500'}`}>
+                  Details
+                </div>
+              </div>
+              <div className="flex-1 h-0.5 mx-4 bg-gray-200"></div>
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 2 ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  2
+                </div>
+                <div className={`ml-2 text-sm ${currentStep >= 2 ? 'text-black font-medium' : 'text-gray-500'}`}>
+                  OTP
+                </div>
+              </div>
+              <div className="flex-1 h-0.5 mx-4 bg-gray-200"></div>
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 3 ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  3
+                </div>
+                <div className={`ml-2 text-sm ${currentStep >= 3 ? 'text-black font-medium' : 'text-gray-500'}`}>
+                  Password
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Spin spinning={isLogingIn}>
+            {/* Step 1: Member Details */}
+            {currentStep === 1 && (
+              <form onSubmit={handleStep1Submit} className="bg-white rounded-lg flex flex-col gap-3">
+                {/* Member name */}
                 <div className="mb-4 md:mb-6">
-                  <label className="block text-gray-700 mb-2 font-medium text-sm md:text-base">
-                    Full Name *
-                  </label>
                   <Input
-                    value={form.name}
+                    value={form.memberName}
                     required
-                    name="name"
+                    name="memberName"
                     onChange={handleOnChange}
-                    placeholder="Enter your full name"
+                    placeholder="Member Name"
                     style={{
-                      fontSize: "14px",
-                      height: "44px",
-                      borderRadius: "8px",
+                      fontSize: "16px",
+                      border: "none",
+                      borderBottom: "",
+                      borderRadius: "none",
+                      borderColor: "#d1d5db",
                     }}
-                    className="w-full border-gray-300 hover:border-gray-400 focus:border-yellow-400"
+                    className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                   />
-                  {errorMessage.name && (
+                  {errorMessage.memberName && (
                     <p className="text-red-500 text-xs mt-1">
-                      {errorMessage.name}
+                      {errorMessage.memberName}
                     </p>
                   )}
                 </div>
 
+                {/* Business name */}
                 <div className="mb-4 md:mb-6">
-                  <label className="block text-gray-700 mb-2 font-medium text-sm md:text-base">
-                    Phone Number *
-                  </label>
                   <Input
-                    value={form.phone}
+                    value={form.businessName}
                     required
-                    name="phone"
+                    name="businessName"
                     onChange={handleOnChange}
-                    placeholder="Enter your phone number"
+                    placeholder="Enter business name"
+                    style={{
+                      fontSize: "16px",
+                      border: "none",
+                      borderBottom: "",
+                      borderRadius: "none",
+                      borderColor: "#d1d5db",
+                    }}
+                    className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
+                  />
+                </div>
+
+                {/* Contact number */}
+                <div className="mb-4 md:mb-6">
+                  <Input
+                    value={form.contactNumber}
+                    required
+                    name="contactNumber"
+                    onChange={handleOnChange}
+                    placeholder="Enter contact number"
                     style={{
                       fontSize: "14px",
-                      height: "44px",
-                      borderRadius: "8px",
+                      border: "none",
+                      borderBottom: "",
+                      borderColor: "#d1d5db",
                     }}
-                    className="w-full border-gray-300 hover:border-gray-400 focus:border-yellow-400"
+                    className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                     type="tel"
                   />
-                  {errorMessage.phone && (
+                  {errorMessage.contactNumber && (
                     <p className="text-red-500 text-xs mt-1">
-                      {errorMessage.phone}
+                      {errorMessage.contactNumber}
                     </p>
                   )}
                 </div>
 
+                {/* Email */}
                 <div className="mb-4 md:mb-6">
-                  <label className="block text-gray-700 mb-2 font-medium text-sm md:text-base">
-                    Email Address *
-                  </label>
                   <Input
                     value={form.email}
                     required
                     name="email"
                     onChange={handleOnChange}
-                    placeholder="Enter your email"
+                    placeholder="Enter email address"
                     style={{
                       fontSize: "14px",
-                      height: "44px",
-                      borderRadius: "8px",
+                      border: "none",
+                      borderBottom: "",
+                      borderColor: "#d1d5db",
                     }}
-                    className="w-full border-gray-300 hover:border-gray-400 focus:border-yellow-400"
+                    className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                     type="email"
                   />
                   {errorMessage.email && (
@@ -587,17 +534,68 @@ const Signup = () => {
                       {errorMessage.email}
                     </p>
                   )}
-                  <p className="text-gray-500 text-xs mt-1">
-                    A verification OTP will be sent to this email
-                  </p>
                 </div>
 
+                {/* Chapter Name */}
+                <div className="mb-4 md:mb-6">
+                  <Input
+                    value={form.chapterName}
+                    required
+                    name="chapterName"
+                    onChange={handleOnChange}
+                    placeholder="Enter chapter name"
+                    style={{
+                      fontSize: "14px",
+                      border: "none",
+                      borderBottom: "",
+                      borderColor: "#d1d5db",
+                    }}
+                    className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
+                  />
+                </div>
+
+                {/* City */}
+                <div className="mb-4 md:mb-6">
+                  <Input
+                    value={form.city}
+                    required
+                    name="city"
+                    onChange={handleOnChange}
+                    placeholder="Enter city"
+                    style={{
+                      fontSize: "14px",
+                      border: "none",
+                      borderBottom: "",
+                      borderColor: "#d1d5db",
+                    }}
+                    className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
+                  />
+                </div>
+
+                {/* Category */}
+                <div className="mb-6 md:mb-8">
+                  <Input
+                    value={form.category}
+                    required
+                    name="category"
+                    onChange={handleOnChange}
+                    placeholder="Enter category"
+                    style={{
+                      fontSize: "14px",
+                      border: "none",
+                      borderBottom: "",
+                      borderColor: "#d1d5db",
+                    }}
+                    className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
+                  />
+                </div>
+
+                {/* Next Button */}
                 <button
-                  className="w-full mb-4 bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-3 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
+                  className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-md transition duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
                   type="submit"
-                  disabled={isSendingOtp}
                 >
-                  {isSendingOtp ? "Sending OTP..." : "Send OTP"}
+                  Next
                 </button>
               </form>
             )}
@@ -630,7 +628,7 @@ const Signup = () => {
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
                         onPaste={handleOtpPaste}
-                        className="w-12 h-12 md:w-14 md:h-14 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 focus:outline-none transition duration-200"
+                        className="w-12 h-12 md:w-14 md:h-14 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-black focus:ring-2 focus:ring-gray-200 focus:outline-none transition duration-200"
                         ref={(el) => (otpRefs.current[index] = el)}
                       />
                     ))}
@@ -675,7 +673,7 @@ const Signup = () => {
                     Back
                   </button>
                   <button
-                    className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-3 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
+                    className="flex-1 bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
                     type="submit"
                     disabled={isVerifyingOtp}
                   >
@@ -692,7 +690,7 @@ const Signup = () => {
                 className="bg-white rounded-lg"
               >
                 <div className="mb-6">
-                  <div className="bg-[#facc152c] border border-[#facc15] rounded-lg p-4 mb-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                     <div className="flex items-center">
                       <div className="bg-green-100 p-2 rounded-full mr-3">
                         <svg
@@ -708,10 +706,10 @@ const Signup = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium text-black">
+                        <p className="font-medium text-gray-800">
                           Email Verified
                         </p>
-                        <p className="text-black text-sm">{form.email}</p>
+                        <p className="text-gray-600 text-sm">{form.email}</p>
                       </div>
                     </div>
                   </div>
@@ -742,7 +740,7 @@ const Signup = () => {
                       height: "44px",
                       borderRadius: "8px",
                     }}
-                    className="w-full border-gray-300 hover:border-gray-400 focus:border-yellow-400"
+                    className="w-full border-gray-300 hover:border-gray-400 focus:border-black"
                   />
 
                   {/* Password Strength Indicator */}
@@ -793,7 +791,7 @@ const Signup = () => {
                       height: "44px",
                       borderRadius: "8px",
                     }}
-                    className="w-full border-gray-300 hover:border-gray-400 focus:border-yellow-400"
+                    className="w-full border-gray-300 hover:border-gray-400 focus:border-black"
                   />
                   {errorMessage.confirmPassword && (
                     <p className="text-red-500 text-xs mt-1">
@@ -811,7 +809,7 @@ const Signup = () => {
                     Back
                   </button>
                   <button
-                    className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-3 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
+                    className="flex-1 bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
                     type="submit"
                   >
                     Create Account
@@ -819,27 +817,9 @@ const Signup = () => {
                 </div>
               </form>
             )}
-
-            {/* Login link for step 1 only */}
-            {currentStep === 1 && (
-              <div className="text-center mt-4">
-                <p className="text-gray-600 text-xs md:text-sm">
-                  Already have an account?{" "}
-                  <Link
-                    to="/login"
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleNavigation("/login");
-                    }}
-                  >
-                    Login here
-                  </Link>
-                </p>
-              </div>
-            )}
           </Spin>
 
+          {/* Help link */}
           <div className="mt-6 md:mt-8 text-center">
             <Link
               to="/help"
@@ -855,13 +835,13 @@ const Signup = () => {
         </div>
       </div>
 
-      {/* Right Section - Illustration */}
+      {/* Right Section - BNI Illustration */}
       <div
-        className={`hidden lg:flex lg:w-1/2 items-center justify-center p-8 fixed right-0 top-0 h-full transition-all duration-500 ${
+        className={`hidden  lg:flex lg:w-1/2 items-center justify-center p-8 fixed right-0 top-0 h-full transition-all duration-500 ${
           isMounted
             ? isExiting
-              ? "-translate-x-full opacity-0"
-              : "translate-x-0 opacity-100"
+              ? " translate-x-0 opacity-0"
+              : "-translate-x-full opacity-100"
             : "-translate-x-full opacity-0"
         }`}
         style={{
@@ -870,41 +850,25 @@ const Signup = () => {
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-
-        <div className="max-w-md relative z-10">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              Create Your Account
+        <div className="max-w-[80%] relative z-10 text-center flex flex-col justify-between h-[80%]">
+          {/* BNI Member Text */}
+          <div className="w-full flex flex-col justify-start items-start">
+           <img src={logo} alt="logo" className="w-[70%] h-fit z-20"/>
+           <h1 className="text-6xl font-bold text-black mb-4 text-left">
+              <span className="text-red-600">BNI</span> Privilege Login
             </h1>
-            <p className="text-white text-lg">
-              Join us today and unlock a world of possibilities. Start your
-              journey with our platform.
-            </p>
           </div>
-          <div className="bg-white bg-opacity-90 p-6 rounded-xl shadow-lg">
-            <div className="flex items-center mb-4">
-              <div className="bg-black p-2 rounded-full mr-3">
-                <svg
-                  className="w-6 h-6 text-yellow-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-black font-semibold">Benefits of Joining</h3>
-            </div>
-            <ul className="text-black text-sm space-y-2">
-              <li>• Access exclusive features and content</li>
-              <li>• Save your preferences and history</li>
-              <li>• Faster checkout process</li>
-              <li>• Personalized recommendations</li>
-            </ul>
+
+          {/* Welcome Text */}
+          <div className="mb-8">
+            <h1 className="text-6xl font-bold text-black mb-4 text-center">
+              Welcome to printe<span className="text-black">!</span>
+            </h1>
+            <p className="text-black text-xl leading-relaxed text-justify">
+              This exclusive login grants early access to premium branding products. 
+              Specially crafted for <span className="text-red-500 font-bold">BNI </span> 
+               privileged members, it is designed to address challenges and deliver tailored solutions.
+            </p>
           </div>
         </div>
       </div>
@@ -912,4 +876,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default BniLogin;

@@ -45,8 +45,8 @@ const clientgoogleLogin = async (req, res) => {
     }
 
     // Check if user already exists - using the User model, not UserSchema
-    let user = await UserSchema.findOne({ 
-      $or: [{ googleId }, { email }] 
+    let user = await UserSchema.findOne({
+      $or: [{ googleId }, { email }]
     });
 
     if (user) {
@@ -69,14 +69,14 @@ const clientgoogleLogin = async (req, res) => {
       });
       await user.save();
     }
-     const payload = {
-        id: _.get(user, "[0]._id", ""),
-        email: _.get(user, "[0].email", ""),
-        role: _.get(user, "[0].role", ""),
-      };
+    const payload = {
+      id: _.get(user, "[0]._id", ""),
+      email: _.get(user, "[0].email", ""),
+      role: _.get(user, "[0].role", ""),
+    };
 
     // Create JWT token
-   const token = await GenerateToken(payload);
+    const token = await GenerateToken(payload);
 
     // Return user and token
     res.status(200).json({
@@ -95,7 +95,7 @@ const clientgoogleLogin = async (req, res) => {
 };
 const clientEmailLogin = async (req, res) => {
   try {
-    const {  name, email } = req.body;
+    const { name, email } = req.body;
 
     // Validate required fields
     if (!name || !email) {
@@ -103,8 +103,8 @@ const clientEmailLogin = async (req, res) => {
     }
 
     // Check if user already exists - using the User model, not UserSchema
-    let user = await UserSchema.findOne({ 
-      $or: [{ email }] 
+    let user = await UserSchema.findOne({
+      $or: [{ email }]
     });
 
     if (user) {
@@ -112,7 +112,7 @@ const clientEmailLogin = async (req, res) => {
       if (!user.name) {
         user.name = name;
         // Only update picture if not already set
-  
+
         await user.save();
       }
     } else {
@@ -123,14 +123,14 @@ const clientEmailLogin = async (req, res) => {
       });
       await user.save();
     }
-     const payload = {
-        id: _.get(user, "[0]._id", ""),
-        email: _.get(user, "[0].email", ""),
-        role: _.get(user, "[0].role", ""),
-      };
+    const payload = {
+      id: _.get(user, "[0]._id", ""),
+      email: _.get(user, "[0].email", ""),
+      role: _.get(user, "[0].role", ""),
+    };
 
     // Create JWT token
-   const token = await GenerateToken(payload);
+    const token = await GenerateToken(payload);
 
     // Return user and token
     res.status(200).json({
@@ -157,22 +157,22 @@ const customSignup = async (req, res) => {
     role,
     phone
   } = req.body;
-  
+
   // Basic validation
   if (!email || !password || !name) {
     return errorResponse(res, "Missing required fields: email, password, name");
   }
-  
+
   // Validate role against enum values
   const validRoles = ["user", "Corporate", "Dealer"];
   if (role && !validRoles.includes(role)) {
     return errorResponse(res, "Invalid role specified");
   }
-  
+
   try {
     // Check for existing user (case-insensitive)
-    const existingUser = await UserSchema.findOne({ 
-      email: email.toLowerCase().trim() 
+    const existingUser = await UserSchema.findOne({
+      email: email.toLowerCase().trim()
     });
     if (existingUser) {
       return errorResponse(res, CLIENT_USER_ACCOUNT_ALREADY_EXISTS);
@@ -183,7 +183,7 @@ const customSignup = async (req, res) => {
       email: email.toLowerCase().trim(),
       password: await EncryptPassword(password),
       name: name.trim(),
-      phone:phone,
+      phone: phone,
       role,
       ...(unique_code && { unique_code }),
       ...(business_name && { business_name })
@@ -227,11 +227,103 @@ const customSignup = async (req, res) => {
     return errorResponse(res, "An error occurred during signup");
   }
 };
+const BNISignup = async (req, res) => {
+  const {
+    email,
+    password,
+    name,
+    unique_code,
+    business_name,
+    role,
+    phone,
+    member_Name,
+    chapter_Name,
+    city,
+    categorey,
+  } = req.body;
+
+  // Basic validation
+  if (!email || !password || !name) {
+    return errorResponse(res, "Missing required fields: email, password, name");
+  }
+
+  // Validate role against enum values
+  const validRoles = ["user", "Corporate", "Dealer"];
+  if (role && !validRoles.includes(role)) {
+    return errorResponse(res, "Invalid role specified");
+  }
+
+  try {
+    // Check for existing user (case-insensitive)
+    const existingUser = await UserSchema.findOne({
+      email: email.toLowerCase().trim()
+    });
+    if (existingUser) {
+      return errorResponse(res, CLIENT_USER_ACCOUNT_ALREADY_EXISTS);
+    }
+
+    // Create new user
+    const newUser = new UserSchema({
+      email: email.toLowerCase().trim(),
+      password: await EncryptPassword(password),
+      name: name.trim(),
+      phone: phone,
+      role,
+      ...(unique_code && { unique_code }),
+      ...(business_name && { business_name }),
+      member_Name,
+      chapter_Name,
+      city,
+      categorey,
+    });
+
+    const savedUser = await newUser.save();
+
+    // Prepare payload for token
+    const payload = {
+      id: savedUser._id,
+      email: savedUser.email,
+      role: savedUser.role,
+      ...(savedUser.business_name && { business_name: savedUser.business_name }),
+      ...(savedUser.unique_code && { unique_code: savedUser.unique_code }),
+      member_Name,
+    chapter_Name,
+    city,
+    categorey,
+    };
+
+    // Generate JWT token
+    const token = await GenerateToken(payload);
+
+    // Return success response (omit password from response)
+    const userResponse = _.omit(savedUser.toObject(), "password");
+    return successResponse(res, SIGNUP_SUCCESS, {
+      ...userResponse,
+      token
+    });
+  } catch (error) {
+    console.error("Signup Error:", error);
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return errorResponse(res, "Account already exists with this email");
+    }
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      // For debugging, you might want to log the specific validation errors
+      console.error("Validation errors:", error.errors);
+      return errorResponse(res, "Validation failed. Please check your input.");
+    }
+
+    return errorResponse(res, "An error occurred during signup");
+  }
+};
 
 const clientSignup = async (req, res) => {
   console.log(req.body);
 
-  const { email, password, name,phone, gst_no } = req.body;
+  const { email, password, name, phone, gst_no } = req.body;
   try {
     const result = await UserSchema.findOne({ email });
     if (result) {
@@ -249,7 +341,7 @@ const clientSignup = async (req, res) => {
       id: _.get(user, "_id", ""),
       email: _.get(user, "email", ""),
       role: _.get(user, "role", ""),
-      phone:_.get(user, "phone", "")
+      phone: _.get(user, "phone", "")
     };
     const token = await GenerateToken(payload);
     return successResponse(res, SIGNUP_SUCCESS, {
@@ -276,12 +368,12 @@ const getAllClientUsers = async (req, res) => {
 const getAllCustomUsers = async (req, res) => {
   try {
     const result = await UserSchema.aggregate([
-  { 
-    $match: { 
-      role: { $ne: "user" }  
-    } 
-  }
-]);
+      {
+        $match: {
+          role: { $ne: "user" }
+        }
+      }
+    ]);
     return successResponse(res, CLIENT_USERS_GETTING_SUCESS, result);
   } catch (error) {
     console.log(error);
@@ -430,5 +522,6 @@ module.exports = {
   deleteClientUser,
   getSingleClient,
   addtoHistory,
-  clientgoogleLogin
+  clientgoogleLogin,
+  BNISignup
 };

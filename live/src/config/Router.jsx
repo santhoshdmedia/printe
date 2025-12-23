@@ -53,6 +53,9 @@ import TermsAndConditions from "../pages/policys/TermsAndConditions.jsx";
 import CancellationPolicy from "../pages/policys/CancellationPolicy.jsx";
 import PrivacyPolicy from "../pages/policys/PrivacyPolicy.jsx";
 
+// BNI
+import BniLogin from "../pages/Login/BNI/BniLogin.jsx";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -141,6 +144,11 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
+  },
+  // BNI
+  {
+    path: "/Bni/Sign-up",
+    element: <BniLogin />,
   },
   {
     path: "/sign-up",

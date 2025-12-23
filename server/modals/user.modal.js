@@ -64,7 +64,19 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       default: "user",
-      enum: ["user", "Corporate", "Dealer"],
+      enum: ["user", "Corporate", "Dealer","BNI"],
+    },
+    member_Name: {
+      type: String,
+    },
+    chapter_Name: {
+      type: String,
+    },
+    city: {
+      type: String,
+    },
+    categorey: {
+      type: String,
     },
     phone: {
       type: Number
