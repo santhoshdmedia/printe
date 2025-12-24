@@ -108,6 +108,7 @@ const {
   resetPassword,
   verfiyLink,
   craeteOrderId,
+  sendDealerPasswordMail
 } = require("../controller/mail.controller");
 const {
   getAllCategoryProducts,
@@ -277,6 +278,7 @@ module.exports = {
 
   // mail
   sendForgetPasswordMail,
+  sendDealerPasswordMail,
   craeteOrderId,
   verfiyLink,
   resetPassword,

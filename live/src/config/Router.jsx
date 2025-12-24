@@ -53,6 +53,8 @@ import TermsAndConditions from "../pages/policys/TermsAndConditions.jsx";
 import CancellationPolicy from "../pages/policys/CancellationPolicy.jsx";
 import PrivacyPolicy from "../pages/policys/PrivacyPolicy.jsx";
 
+// import ResetPassword from "../pages/Login/ResetPassword.jsx";
+// import ResetPasswordPage from "../components/Account/ResetPasswordPage.jsx";
 // BNI
 import BniLogin from "../pages/Login/BNI/BniLogin.jsx";
 
@@ -61,6 +63,8 @@ export const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
+
+      { path: "/:id", element: <ResetPassword /> },
       { path: "/shopping-cart", element: <ShoppingCart /> },
       { path: "/checkout", element: <NewCheckout /> },
       { path: "/blogs", element: <Blog /> },

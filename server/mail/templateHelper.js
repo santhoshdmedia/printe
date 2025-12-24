@@ -5,9 +5,19 @@ const path = require("path");
 const TemplateHelper = (value) => {
   switch (value.target) {
     case "reset password": {
+      console.log(value);
       return {
         subject: "Forgot Your Password? Here’s How to Reset It",
+        
         templete: ejs.render(fs.readFileSync(path.join(__dirname, "./forgetpassword.ejs"), "utf-8"), value),
+      };
+    }
+    case "Dealer password": {
+      console.log(value);
+      return {
+        subject: "Forgot Your Password? Here’s How to Reset It",
+        
+        templete: ejs.render(fs.readFileSync(path.join(__dirname, "./welcomeDealer.ejs"), "utf-8"), value),
       };
     }
     case "placed order": {

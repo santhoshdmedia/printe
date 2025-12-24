@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Multi-Ventor Project</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f8;
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            max-width: 780px;
+            margin: 30px auto;
+            background: #ffffff;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            border: 2px solid;
+        }
+        .header {
+            background: linear-gradient(135deg, #FFD700, #FFB703);
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .logo {
+            max-width: 180px;
+            margin-bottom: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 30px;
+            color: #2d2d2d;
+        }
+        .header p {
+            margin-top: 10px;
+            color: #555;
+            font-size: 16px;
+        }
+        .content {
+            padding: 40px;
+        }
+        .greeting {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .message {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+        .highlight-box {
+            background: #fff8e1;
+            border-left: 6px solid #FFD700;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 35px;
+        }
+        .highlight-box h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #FFD700, #FFB703);
+            color: #2d2d2d !important;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 18px 45px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(255,183,3,0.4);
+            margin: 20px 0;
+        }
+        .cta-btn:hover {
+            background: linear-gradient(135deg, #FFB703, #FFD700);
+        }
+        .url-box {
+            margin-top: 20px;
+            background: #f4f6f8;
+            border: 1px dashed #ccc;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            color: #666;
+        }
+        .checklist {
+            margin-top: 30px;
+        }
+        .checklist li {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        .security-note {
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #777;
+        }
+        .footer {
+            background: #f4f6f8;
+            padding: 25px 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #888;
+        }
+        .footer strong {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <img src="https://printe.in/assets/without_bg-B7FPZzwZ.png" class="logo" alt="Multi-Ventor Project">
+        <h1>Welcome to Printe 🚀</h1>
+        <p>Your Dealer Account Is Ready</p>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <div class="greeting">
+            Hi <%= name %>,
+        </div>
+
+        <div class="message">
+            We’re excited to welcome you to the <strong>Printe Dealer Account</strong>.
+            Your account has been created successfully — you’re just one step away from getting started.
+        </div>
+
+        <!-- CTA Section -->
+        <div class="highlight-box">
+            <h3>🔐 Set Your Password</h3>
+            <p>
+                Click the button below to securely set your password and activate your dealer account.
+                This link is valid for <strong>24 hours</strong>.
+            </p>
+
+            <div style="text-align:center;">
+                <a href="<%= url %>" class="cta-btn">
+                    RESET YOUR PASSWORD
+                </a>
+            </div>
+
+            <p style="font-size:14px; text-align:center; color:#666;">
+                Or copy & paste this link into your browser:
+            </p>
+
+            <div class="url-box">
+                <%= url %>
+            </div>
+        </div>
+
+        <!-- Getting Started -->
+        <div class="checklist">
+            <h3>✅ Get Started Quickly</h3>
+            <ul>
+                <li>Complete your dealer profile</li>
+                <li>Explore available vendors & products</li>
+                <li>Manage orders and commissions</li>
+                <li>Enable security features</li>
+            </ul>
+        </div>
+
+        <!-- Security -->
+        <div class="security-note">
+            <strong>Security Tip:</strong><br>
+            Use a strong, unique password and never share your login details with anyone — including support staff.
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <strong>Printe Team</strong><br>
+        Empowering Dealers with Smart Multi-Vendor Solutions<br><br>
+        © 2025 Printe. All rights reserved.<br>
+        This is an automated email. Please do not reply.
+    </div>
+
+</div>
+</body>
+</html>

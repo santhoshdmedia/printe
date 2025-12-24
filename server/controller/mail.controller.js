@@ -25,7 +25,7 @@ const sendForgetPasswordMail = async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(20).toString("hex");
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     await ResetPasswordSchema.create({
       user_id: user._id,
@@ -40,6 +40,50 @@ const sendForgetPasswordMail = async (req, res) => {
       name: user.name,
       url: resetLink,
       target: "reset password",
+    };
+
+    try {
+      await sendMail(emailData);
+      return successResponse(res, "Password reset email sent successfully");
+    } catch (err) {
+      console.log(err);
+      return errorResponse(res, "Failed to send email");
+    }
+  } catch (err) {
+    console.log(err);
+    return errorResponse(err, "Server Error");
+  }
+};
+const sendDealerPasswordMail = async (req, res) => {
+  try {
+    const { mail_id } = req.body;
+
+    if (!mail_id) {
+      return errorResponse(res, "Email is required");
+    }
+
+    const user = await UserSchema.findOne({ email: mail_id });
+
+    if (!user) {
+      return errorResponse(res, "Account not found");
+    }
+
+    const resetToken = crypto.randomBytes(20).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await ResetPasswordSchema.create({
+      user_id: user._id,
+      reset_link: resetToken,
+      expiresAt: expiresAt,
+    });
+
+    const resetLink = `${CUSTOMER_URL}/${resetToken}`;
+
+    const emailData = {
+      email: user.email,
+      name: user.name,
+      url: resetLink,
+      target: "Dealer password",
     };
 
     try {
@@ -121,6 +165,7 @@ const craeteOrderId = async (req, res) => {
 
 module.exports = {
   sendForgetPasswordMail,
+  sendDealerPasswordMail,
   verfiyLink,
   resetPassword,
   craeteOrderId,
