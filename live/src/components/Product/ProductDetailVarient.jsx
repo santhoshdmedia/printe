@@ -725,7 +725,7 @@ const ProductDetailVarient = ({
       if (variant_type === "color_variant") {
         return (
           <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
-            <Text strong className="block mb-2 md:mb-0 md:w-24 capitalize">
+            <Text strong className="block mb-2 md:mb-0 md:w-24 !capitalize">
               {variant_name}:
             </Text>
             <div className="flex flex-wrap gap-2">
@@ -768,7 +768,7 @@ const ProductDetailVarient = ({
       if (variant_type === "image_variant") {
         return (
           <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
-            <Text strong className="block mb-2 md:mb-0 md:w-24">
+            <Text strong className="block mb-2 md:mb-0 md:w-24 capitalize">
               {variant_name}:
             </Text>
             <div className="flex flex-wrap gap-2">
@@ -804,7 +804,7 @@ const ProductDetailVarient = ({
       // Default dropdown for other variants
       return (
         <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
-          <Text strong className="block mb-2 md:mb-0 md:w-24">
+          <Text strong className="block mb-2 md:mb-0 md:w-24 capitalize">
             {variant_name}:
           </Text>
           <Select
