@@ -172,6 +172,9 @@ export const bulkOrder = async (formData) => {
 export const getProductDescription = async (id) => {
   return await axios.get(`${baseURL}/product/get_product_descriptions/${id}`);
 };
+export const getAllProduct = async (id) => {
+  return await axios.get(`${baseURL}/product/get_product`);
+};
 
 export const getVariantPrice = async (id, key) => {
 

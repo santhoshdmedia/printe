@@ -35,6 +35,7 @@ const {
   deleteClientUser,
   getSingleClient,
   addtoHistory,
+  BNISignup
 } = require("../controller/user.controller");
 const {
   addSubProductCategory,
@@ -54,6 +55,7 @@ const {
   getProductDescription,
   updateProductDescription,
   deleteProductDescription,
+  getAllProductsSimple
 } = require("../controller/product.controller");
 const {
   CreateOrder,
@@ -198,6 +200,9 @@ module.exports = {
   getSingleClient,
   addtoHistory,
   clientgoogleLogin,
+
+  // bni
+  BNISignup,
   // custom user
   customSignup,
   getAllCustomUsers,
@@ -226,6 +231,7 @@ module.exports = {
   UpdateOrderVendor,
   acceptOrderByVendor,
   completeOrderByVendor,
+  getAllProductsSimple,
 
   // Dashboard
   getAllDashbardCounts,

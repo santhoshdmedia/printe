@@ -105,6 +105,9 @@ module.exports = mongoose.model(
       is_customer: {
         type: Boolean,
       },
+      is_BNI: {
+        type: Boolean,
+      },
       is_dealer: {
         type: Boolean,
       },

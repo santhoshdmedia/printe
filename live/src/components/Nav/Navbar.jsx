@@ -4,10 +4,10 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import _ from "lodash";
 
 // Icons
-import { 
-  BsCart3, 
-  BsSearch, 
-  BsXLg, 
+import {
+  BsCart3,
+  BsSearch,
+  BsXLg,
   BsPerson,
   BsHeart,
   BsHouse,
@@ -25,6 +25,7 @@ import { SET_CART_COUNT } from "../../redux/slices/cart.slice";
 // Components
 import SearchProductCard from "../Product/SearchProductCard";
 import Logo from "../../assets/logo/without_bg.png";
+import { ButtonGlass, Button3D } from "../reusable/Glass";
 
 const Navbar = () => {
   const dispatch = useDispatch();
@@ -76,7 +77,7 @@ const Navbar = () => {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
+
       // For top navbar shadow
       setIsScrolled(currentScrollY > 10);
 
@@ -156,7 +157,7 @@ const Navbar = () => {
       ) {
         // Reset the flag
         isClickFromResultRef.current = false;
-        
+
         // Only collapse if click didn't come from result
         if (!isClickFromResultRef.current) {
           setTimeout(() => {
@@ -234,14 +235,14 @@ const Navbar = () => {
   const handleSearchResultClick = useCallback((data) => {
     // Set flag to indicate click came from result
     isClickFromResultRef.current = true;
-    
+
     // Clear search input
     setSearchProduct("");
     setIsExpanded(false);
-    
+
     // Navigate to product
     navigate(`/product/${data.seo_url || data._id}`);
-    
+
     // Close mobile search bar if open
     if (showSearchBar) {
       closeSearchBar();
@@ -271,9 +272,8 @@ const Navbar = () => {
     return (
       <div
         ref={searchContainerRef}
-        className={`relative ${
-          isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[25vw]"
-        }`}
+        className={`relative ${isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[25vw]"
+          }`}
       >
         <form onSubmit={handleSearchSubmit}>
           <div className="relative">
@@ -285,9 +285,8 @@ const Navbar = () => {
               onChange={handleSearchChange}
               onFocus={handleSearchFocus}
               onBlur={handleSearchBlur}
-              className={`w-full px-5 py-4 rounded-2xl border-2 border-transparent focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 transition-all duration-300 ${
-                isMobile ? "pr-12 text-base" : "pr-12"
-              }`}
+              className={`w-full px-5 py-4 rounded-2xl border-2 border-transparent focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 transition-all duration-300 ${isMobile ? "pr-12 text-base" : "pr-12"
+                }`}
               autoComplete="off"
             />
             <button
@@ -306,11 +305,10 @@ const Navbar = () => {
         {isExpanded && searchProduct && (
           <div
             ref={searchResultsRef}
-            className={`absolute top-full left-0 bg-white backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden mt-3 border border-yellow-100 transition-all duration-200 ${
-              isExpanded && searchProduct
+            className={`absolute top-full left-0 bg-white backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden mt-3 border border-yellow-100 transition-all duration-200 ${isExpanded && searchProduct
                 ? "opacity-100 visible max-h-[60vh]"
                 : "opacity-0 invisible max-h-0"
-            } ${isMobile ? "fixed left-4 right-4 w-auto" : "w-full"}`}
+              } ${isMobile ? "fixed left-4 right-4 w-auto" : "w-full"}`}
             style={{
               zIndex: 10010,
               maxHeight: "60vh",
@@ -515,23 +513,20 @@ const Navbar = () => {
   // Custom Drawer (Mobile Menu)
   const CustomDrawer = React.memo(({ isOpen, onClose, children }) => (
     <div
-      className={`fixed inset-0 z-[10000] transition-all duration-500 ${
-        isOpen ? "opacity-100 visible" : "opacity-0 invisible"
-      }`}
+      className={`fixed inset-0 z-[10000] transition-all duration-500 ${isOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
     >
       {/* Overlay */}
       <div
-        className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${
-          isOpen ? "opacity-100" : "opacity-0"
-        }`}
+        className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${isOpen ? "opacity-100" : "opacity-0"
+          }`}
         onClick={onClose}
       ></div>
 
       {/* Drawer Panel */}
       <div
-        className={`absolute left-0 top-0 h-screen w-full bg-gradient-to-b from-white to-yellow-50 shadow-2xl transform transition-transform duration-500 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`absolute left-0 top-0 h-screen w-full bg-gradient-to-b from-white to-yellow-50 shadow-2xl transform transition-transform duration-500 ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
         style={{ zIndex: 10001 }}
       >
         {/* Header */}
@@ -541,14 +536,14 @@ const Navbar = () => {
               <img src={Logo} alt="Logo" className="h-8" />
               <span className="text-white font-bold text-lg">Menu</span>
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95"
             >
               <IoClose className="text-white text-xl" />
             </button>
           </div>
-          
+
           {/* User Welcome */}
           {isAuth && (
             <div className="mt-4 flex items-center gap-3">
@@ -589,7 +584,7 @@ const Navbar = () => {
             </div>
             <span className="text-sm font-semibold text-gray-700">Home</span>
           </div>
-          
+
           {isAuth ? (
             <div
               onClick={() => handleDestination("/account")}
@@ -709,19 +704,17 @@ const Navbar = () => {
 
   // Bottom Navigation Component
   const BottomNavigation = React.memo(() => (
-    <div className={`fixed bottom-0 left-0 right-0 z-[9998] w-screen block lg:hidden transition-transform duration-500 ${
-      bottomNavVisible ? 'translate-y-0' : 'translate-y-full'
-    }`}>
+    <div className={`fixed bottom-0 left-0 right-0 z-[9998] w-screen block lg:hidden transition-transform duration-500 ${bottomNavVisible ? 'translate-y-0' : 'translate-y-full'
+      }`}>
       <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
         <div className="flex items-center justify-around">
           {/* Home */}
           <button
             onClick={() => handleDestination("/")}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
-              activeNav === "home" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeNav === "home"
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
                 : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-            }`}
+              }`}
           >
             <BsHouse className={`text-xl ${activeNav === "home" ? "scale-110" : ""}`} />
             <span className="text-xs mt-1 font-medium">Home</span>
@@ -730,11 +723,10 @@ const Navbar = () => {
           {/* Categories */}
           <button
             onClick={() => setMenuStatus(true)}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
-              activeNav === "categories" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeNav === "categories"
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
                 : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-            }`}
+              }`}
           >
             <BsGrid className={`text-xl ${activeNav === "categories" ? "scale-110" : ""}`} />
             <span className="text-xs mt-1 font-medium">Menu</span>
@@ -757,11 +749,10 @@ const Navbar = () => {
               fetchCartData();
               handleDestination("/shopping-cart");
             }}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 relative ${
-              activeNav === "cart" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 relative ${activeNav === "cart"
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
                 : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-            }`}
+              }`}
           >
             <div className="relative">
               <BsCart3 className={`text-xl ${activeNav === "cart" ? "scale-110" : ""}`} />
@@ -777,11 +768,10 @@ const Navbar = () => {
           {/* Account */}
           <button
             onClick={() => isAuth ? setShowUserDropdown(!showUserDropdown) : handleDestination("/login")}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${
-              activeNav === "account" 
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110" 
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeNav === "account"
+                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
                 : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-            }`}
+              }`}
           >
             <BsPerson className={`text-xl ${activeNav === "account" ? "scale-110" : ""}`} />
             <span className="text-xs mt-1 font-medium">Me</span>
@@ -847,16 +837,27 @@ const Navbar = () => {
     <div className="w-full m-0">
       {/* Desktop Navbar */}
       <div
-        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-20 sticky top-0 z-40 ${
-          isScrolled ? "shadow-xl" : "shadow-lg"
-        }`}
+        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-20 sticky top-0 z-40 ${isScrolled ? "shadow-xl" : "shadow-lg"
+          }`}
       >
         {/* Left: Logo + Search */}
-        <div className="flex items-center gap-x-8 xl:gap-x-32 w-[70%]">
+        <div className="flex items-center gap-x-8 xl:gap-x-32 ">
           <Link to="/">
             <img src={Logo} alt="logo" className="h-16" />
           </Link>
           <SearchInput />
+        </div>
+        <div className="mr-24">
+          {/* Your Button3D - Updated to proper usage */}
+          {user.role=="bni_user"&&<Link to="/products">
+            <Button3D 
+              variant="gradient" 
+              size="sm"
+              onClick={() => handleDestination("/products")}
+            >
+              BNI Privealeage
+            </Button3D>
+          </Link>}
         </div>
 
         {/* Right: User Section */}
@@ -869,9 +870,8 @@ const Navbar = () => {
 
       {/* Mobile Top Bar */}
       <div
-        className={`block lg:hidden w-full fixed top-0 left-0 z-[9999] bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${
-          isScrolled ? "shadow-2xl" : "shadow-lg"
-        }`}
+        className={`block lg:hidden w-full fixed top-0 left-0 z-[9999] bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${isScrolled ? "shadow-2xl" : "shadow-lg"
+          }`}
       >
         <div className="w-full h-16 flex items-center justify-between px-4">
           {/* Left: Menu & Logo */}
@@ -882,9 +882,9 @@ const Navbar = () => {
             >
               <IoMenu className="text-white text-xl" />
             </button>
-            <Link 
-              to="/" 
-              onClick={closeSearchBar} 
+            <Link
+              to="/"
+              onClick={closeSearchBar}
               className="flex items-center gap-2"
             >
               <img src={Logo} alt="Logo" className="h-7 object-contain" />
@@ -907,9 +907,8 @@ const Navbar = () => {
 
         {/* Expandable Search Bar */}
         <div
-          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 overflow-visible ${
-            showSearchBar ? "max-h-28 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
-          }`}
+          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 overflow-visible ${showSearchBar ? "max-h-28 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
+            }`}
         >
           <div className="px-4 relative">
             <SearchInput isMobile />

@@ -234,7 +234,7 @@ const BNISignup = async (req, res) => {
     name,
     unique_code,
     business_name,
-    role,
+    role="bni_user",
     phone,
     member_Name,
     chapter_Name,
@@ -248,7 +248,7 @@ const BNISignup = async (req, res) => {
   }
 
   // Validate role against enum values
-  const validRoles = ["user", "Corporate", "Dealer"];
+  const validRoles = ["bni_user"];
   if (role && !validRoles.includes(role)) {
     return errorResponse(res, "Invalid role specified");
   }
@@ -354,6 +354,7 @@ const clientSignup = async (req, res) => {
     return errorResponse(res, "An error occurred while sign in");
   }
 };
+
 
 const getAllClientUsers = async (req, res) => {
   try {

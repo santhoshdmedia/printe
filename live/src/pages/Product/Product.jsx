@@ -16,6 +16,10 @@ const Breadcrumbs = React.lazy(() => import("../../components/cards/Breadcrumbs"
 const SimilarProducts = React.lazy(() => import("./SimilarProducts"));
 const HistoryProducts = React.lazy(() => import("./HistoryProducts"));
 
+import { Helmet } from "react-helmet-async";
+
+
+
 // API
 import { addTohistory } from "../../helper/api_helper";
 
@@ -97,6 +101,8 @@ const Product = () => {
     });
   }, [productData, getAbsoluteImageUrl]);
 
+
+  
   // Process variants - runs only once per product
   useEffect(() => {
     if (!productData?.variants || processedProductId.current === productId) return;
@@ -191,6 +197,11 @@ const Product = () => {
 
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
+        <Helmet>
+              <title>{productData.seo_title}</title>
+              <meta name="description" content={`${productData.seo_description}`} />
+              <meta name="keywords" content={`${productData.seo_keywords}`} />
+          </Helmet>
       {/* Breadcrumbs */}
       <div className="pt-5 pb-0">
         <React.Suspense fallback={<div>Loading...</div>}>

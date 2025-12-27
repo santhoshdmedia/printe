@@ -4,9 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { FaArrowRight, FaInfoCircle } from "react-icons/fa";
 import { MdHelpOutline } from "react-icons/md";
-import logo from "../../../assets/logo/without_bg.png";
-import Bnilogo from "../../../assets/BNI/bni.png";
-import abc from "../../../assets/BNI/Group.png";
+import logo from "../../assets/logo/without_bg.png";
+import Bnilogo from "../../assets/BNI/bni.png";
+import abc from "../../assets/BNI/Group.png";
+import { sendOtp, verifyOtp, resendOtp } from "../../helper/api_helper";
 
 const BniLogin = () => {
   const dispatch = useDispatch();
@@ -16,6 +17,7 @@ const BniLogin = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [otpTimer, setOtpTimer] = useState(0);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const otpRefs = useRef([]);
 
@@ -99,6 +101,10 @@ const BniLogin = () => {
     } else if (name === "contactNumber") {
       const cleanedPhone = value.replace(/\D/g, "");
       setForm((prevForm) => ({ ...prevForm, [name]: cleanedPhone }));
+    } else if (name === "otp") {
+      const cleanedOtp = value.replace(/\D/g, "").slice(0, 6);
+      setForm((prevForm) => ({ ...prevForm, [name]: cleanedOtp }));
+      otpValidation(cleanedOtp);
     } else if (name === "password") {
       setForm((prevForm) => ({ ...prevForm, [name]: value }));
       checkPasswordStrength(value);
@@ -126,11 +132,17 @@ const BniLogin = () => {
     
     const newOtp = form.otp.split('');
     newOtp[index] = value;
-    setForm(prev => ({ ...prev, otp: newOtp.join('') }));
-
+    const updatedOtp = newOtp.join('');
+    setForm(prev => ({ ...prev, otp: updatedOtp }));
+    
     // Auto-focus next input
     if (value && index < 5) {
       otpRefs.current[index + 1]?.focus();
+    }
+    
+    // Validate OTP
+    if (updatedOtp.length === 6) {
+      otpValidation(updatedOtp);
     }
   };
 
@@ -138,33 +150,54 @@ const BniLogin = () => {
     if (e.key === 'Backspace' && !form.otp[index] && index > 0) {
       otpRefs.current[index - 1]?.focus();
     }
+    
+    // Handle arrow keys
+    if (e.key === 'ArrowLeft' && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+    if (e.key === 'ArrowRight' && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
   };
 
   const handleOtpPaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text/plain').replace(/\D/g, '').slice(0, 6);
+    const pastedData = e.clipboardData.getData('text/plain');
+    const otpDigits = pastedData.replace(/\D/g, '').slice(0, 6);
     
-    if (pastedData.length === 6) {
-      setForm(prev => ({ ...prev, otp: pastedData }));
+    if (otpDigits.length === 6) {
+      setForm(prev => ({ ...prev, otp: otpDigits }));
       
       // Focus the last input
       setTimeout(() => {
         otpRefs.current[5]?.focus();
       }, 0);
+      
+      // Validate OTP
+      otpValidation(otpDigits);
     }
   };
 
-  const handleResendOtp = () => {
-    if (otpTimer > 0) return;
-    
-    // Dispatch resend OTP action
-    dispatch({
-      type: "RESEND_OTP",
-      data: { email: form.email }
-    });
-    
-    setOtpTimer(60);
-    message.success("OTP resent successfully!");
+  const handleResendOtp = async () => {
+    if (otpTimer > 0) {
+      message.warning(`Please wait ${otpTimer} seconds before resending OTP`);
+      return;
+    }
+
+    try {
+      const response = await resendOtp({
+        email: form.email,
+      });
+
+      if (response.data.success) {
+        message.success("OTP resent successfully!");
+        setOtpTimer(60);
+      } else {
+        message.error(response.data.message || "Failed to resend OTP");
+      }
+    } catch (error) {
+      message.error(error.response?.data?.message || "Failed to resend OTP");
+    }
   };
 
   // Validation functions
@@ -225,6 +258,11 @@ const BniLogin = () => {
     let message = "Very Weak";
     let color = "#ef4444";
 
+    if (password.length === 0) {
+      setPasswordStrength({ level: 0, message: "", color: "transparent" });
+      return;
+    }
+
     if (password.length >= 8) strength++;
     if (/[a-z]/.test(password)) strength++;
     if (/[A-Z]/.test(password)) strength++;
@@ -265,12 +303,14 @@ const BniLogin = () => {
   };
 
   const passwordValidation = (value) => {
-    const isStrong = checkPasswordStrength(value);
-    const isValid = value.length >= 8 && isStrong;
+    const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{8,}$/;
+    const isValid = pattern.test(value);
 
     setErrorMessage((prevError) => ({
       ...prevError,
-      password: isValid ? "" : "Password must be at least 8 characters with mix of letters, numbers, and symbols.",
+      password: isValid
+        ? ""
+        : "Password must be at least 8 characters with mix of uppercase, lowercase, numbers, and symbols.",
     }));
 
     return isValid;
@@ -305,19 +345,33 @@ const BniLogin = () => {
     const isEmailValid = emailValidation(cleanedForm.email);
 
     if (isMemberNameValid && isContactValid && isEmailValid) {
-      // Update the form state with cleaned values
-      setForm(prev => ({ ...prev, ...cleanedForm }));
+      setIsSendingOtp(true);
+      try {
+        // Send OTP to email using API
+        const response = await sendOtp({
+          email: cleanedForm.email,
+          phone: cleanedForm.contactNumber,
+        });
 
-      // Dispatch signup action to send OTP
-      dispatch({
-        type: "SIGNUP",
-        data: cleanedForm,
-      });
+        if (response.data.success) {
+          // Update the form state with cleaned values
+          setForm(prev => ({ ...prev, ...cleanedForm }));
 
-      // Move to OTP step
-      setCurrentStep(2);
-      setOtpTimer(60);
-      message.success("OTP sent to your email!");
+          // Move to OTP step
+          setCurrentStep(2);
+          setOtpTimer(60);
+          message.success("OTP sent to your email!");
+        } else {
+          message.error(response.data.message || "Failed to send OTP");
+        }
+      } catch (error) {
+        message.error(
+          error.response?.data?.message ||
+            "Failed to send OTP. Please try again."
+        );
+      } finally {
+        setIsSendingOtp(false);
+      }
     }
   };
 
@@ -327,19 +381,28 @@ const BniLogin = () => {
     if (otpValidation(form.otp)) {
       setIsVerifyingOtp(true);
       
-      // Dispatch OTP verification action
-      dispatch({
-        type: "VERIFY_OTP",
-        data: { email: form.email, otp: form.otp }
-      });
-      
-      setTimeout(() => {
+      try {
+        // Verify OTP using API
+        const response = await verifyOtp({
+          email: form.email,
+          otp: form.otp,
+        });
+
+        if (response.data.success) {
+          setIsVerifyingOtp(false);
+          setCurrentStep(3);
+          message.success("Email verified successfully!");
+        } else {
+          message.error(response.data.message || "Invalid OTP");
+          setIsVerifyingOtp(false);
+        }
+      } catch (error) {
+        message.error(error.response?.data?.message || "Failed to verify OTP");
         setIsVerifyingOtp(false);
-        setCurrentStep(3);
-        message.success("Email verified successfully!");
-      }, 1500);
+      }
     }
   };
+  
 
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
@@ -348,16 +411,23 @@ const BniLogin = () => {
     const isConfirmValid = confirmPasswordValidation(form.confirmPassword, form.password);
     
     if (isPasswordValid && isConfirmValid) {
-      // Dispatch final registration action
+      // Dispatch final registration action with all BNI-specific data
       dispatch({
-        type: "COMPLETE_REGISTRATION",
+        type: "BNISIGNUP",
         data: {
-          ...form,
-          password: form.password
+          name: form.memberName,
+          phone: form.contactNumber,
+          email: form.email,
+          password: form.password,
+          otp: form.otp,
+          businessName: form.businessName,
+          chapterName: form.chapterName,
+          city: form.city,
+          category: form.category,
         }
       });
       
-      message.success("Account created successfully!");
+      message.success("BNI account created successfully!");
       // Navigation will be handled by the useEffect when isAuth becomes true
     }
   };
@@ -367,17 +437,17 @@ const BniLogin = () => {
       <p className="font-medium mb-1">Password Requirements:</p>
       <ul className="list-disc pl-3 space-y-1">
         <li>At least 8 characters</li>
-        <li>One uppercase letter</li>
-        <li>One lowercase letter</li>
-        <li>One number</li>
-        <li>One special character</li>
+        <li>One uppercase letter (A-Z)</li>
+        <li>One lowercase letter (a-z)</li>
+        <li>One number (0-9)</li>
+        <li>One special character (!@#$%^&* etc.)</li>
       </ul>
     </div>
   );
 
   return (
     <div
-      className={`w-full min-h-screen flex !font-primary transition-all duration-500 ${
+      className={`w-full min-h-screen flex flex-col lg:flex-row !font-primary transition-all duration-500 ${
         isMounted
           ? isExiting
             ? "exit-animation"
@@ -386,67 +456,35 @@ const BniLogin = () => {
       }`}
     >
       {/* Left Section - BNI Privilege Login Form */}
-      <div
-        className={`w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8 overflow-auto relative transition-all duration-500 ${
-          isMounted
-            ? isExiting
-              ? "translate-x-0 opacity-0"
-              : "translate-x-full opacity-100"
-            : "translate-x-full opacity-0"
-        }`}
-      >
-        <div className="w-full max-w-3xl mt-12 md:mt-16">
-          <div className="mb-1 !w-full flex justify-between items-end">
-            <img src={Bnilogo} alt="logo" className="h-28" />
-            
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => handleNavigation("/")}
-                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm md:text-base"
-              >
-                Home <FaArrowRight className="ml-1" />
-              </button>
-            </div>
+     <div
+  className={`w-full lg:w-1/2 flex items-center justify-center p-4 md:p-6 lg:p-8 overflow-auto transition-all duration-500 
+              // Mobile: always at translate-x-0, animate opacity
+              translate-x-0
+              ${isMounted
+                ? isExiting
+                  ? "opacity-0"
+                  : "opacity-100"
+                : "opacity-0"
+              }
+              // Desktop: animate both translate and opacity
+              ${isMounted
+                ? isExiting
+                  ? "lg:translate-x-0 lg:opacity-0"
+                  : "lg:translate-x-full lg:opacity-100"
+                : "lg:translate-x-full lg:opacity-0"
+              }`}
+>
+        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mt-8 md:mt-10 lg:mt-12">
+          <div className="mb-4 !w-full flex flex-col sm:flex-row justify-center items-start sm:items-end gap-4">
+            <img src={Bnilogo} alt="BNI Logo" className="h-16 sm:h-20 md:h-24 lg:h-28" />
           </div>
 
-          {/* Step Indicator */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 1 ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'}`}>
-                  1
-                </div>
-                <div className={`ml-2 text-sm ${currentStep >= 1 ? 'text-black font-medium' : 'text-gray-500'}`}>
-                  Details
-                </div>
-              </div>
-              <div className="flex-1 h-0.5 mx-4 bg-gray-200"></div>
-              <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 2 ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'}`}>
-                  2
-                </div>
-                <div className={`ml-2 text-sm ${currentStep >= 2 ? 'text-black font-medium' : 'text-gray-500'}`}>
-                  OTP
-                </div>
-              </div>
-              <div className="flex-1 h-0.5 mx-4 bg-gray-200"></div>
-              <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 3 ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'}`}>
-                  3
-                </div>
-                <div className={`ml-2 text-sm ${currentStep >= 3 ? 'text-black font-medium' : 'text-gray-500'}`}>
-                  Password
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <Spin spinning={isLogingIn}>
+          <Spin spinning={isLogingIn || isSendingOtp || isVerifyingOtp}>
             {/* Step 1: Member Details */}
             {currentStep === 1 && (
-              <form onSubmit={handleStep1Submit} className="bg-white rounded-lg flex flex-col gap-3">
+              <form onSubmit={handleStep1Submit} className="bg-white rounded-lg flex flex-col gap-0">
                 {/* Member name */}
-                <div className="mb-4 md:mb-6">
+                <div className="mb-3 sm:mb-4">
                   <Input
                     value={form.memberName}
                     required
@@ -454,11 +492,10 @@ const BniLogin = () => {
                     onChange={handleOnChange}
                     placeholder="Member Name"
                     style={{
-                      fontSize: "16px",
-                      border: "none",
-                      borderBottom: "",
+                      fontSize: "14px sm:text-base",
+                      height: "44px",
+                      border: "1px solid #d1d5db",
                       borderRadius: "none",
-                      borderColor: "#d1d5db",
                     }}
                     className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                   />
@@ -470,7 +507,7 @@ const BniLogin = () => {
                 </div>
 
                 {/* Business name */}
-                <div className="mb-4 md:mb-6">
+                <div className="mb-3 sm:mb-4">
                   <Input
                     value={form.businessName}
                     required
@@ -478,18 +515,17 @@ const BniLogin = () => {
                     onChange={handleOnChange}
                     placeholder="Enter business name"
                     style={{
-                      fontSize: "16px",
-                      border: "none",
-                      borderBottom: "",
-                      borderRadius: "none",
-                      borderColor: "#d1d5db",
+                      fontSize: "14px sm:text-base",
+                      height: "44px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
                     }}
                     className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                   />
                 </div>
 
                 {/* Contact number */}
-                <div className="mb-4 md:mb-6">
+                <div className="mb-3 sm:mb-4">
                   <Input
                     value={form.contactNumber}
                     required
@@ -497,10 +533,10 @@ const BniLogin = () => {
                     onChange={handleOnChange}
                     placeholder="Enter contact number"
                     style={{
-                      fontSize: "14px",
-                      border: "none",
-                      borderBottom: "",
-                      borderColor: "#d1d5db",
+                      fontSize: "14px sm:text-base",
+                      height: "44px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
                     }}
                     className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                     type="tel"
@@ -513,7 +549,7 @@ const BniLogin = () => {
                 </div>
 
                 {/* Email */}
-                <div className="mb-4 md:mb-6">
+                <div className="mb-3 sm:mb-4">
                   <Input
                     value={form.email}
                     required
@@ -521,10 +557,10 @@ const BniLogin = () => {
                     onChange={handleOnChange}
                     placeholder="Enter email address"
                     style={{
-                      fontSize: "14px",
-                      border: "none",
-                      borderBottom: "",
-                      borderColor: "#d1d5db",
+                      fontSize: "14px sm:text-base",
+                      height: "44px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
                     }}
                     className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                     type="email"
@@ -537,7 +573,7 @@ const BniLogin = () => {
                 </div>
 
                 {/* Chapter Name */}
-                <div className="mb-4 md:mb-6">
+                <div className="mb-3 sm:mb-4">
                   <Input
                     value={form.chapterName}
                     required
@@ -545,17 +581,17 @@ const BniLogin = () => {
                     onChange={handleOnChange}
                     placeholder="Enter chapter name"
                     style={{
-                      fontSize: "14px",
-                      border: "none",
-                      borderBottom: "",
-                      borderColor: "#d1d5db",
+                      fontSize: "14px sm:text-base",
+                      height: "44px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
                     }}
                     className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                   />
                 </div>
 
                 {/* City */}
-                <div className="mb-4 md:mb-6">
+                <div className="mb-3 sm:mb-4">
                   <Input
                     value={form.city}
                     required
@@ -563,17 +599,17 @@ const BniLogin = () => {
                     onChange={handleOnChange}
                     placeholder="Enter city"
                     style={{
-                      fontSize: "14px",
-                      border: "none",
-                      borderBottom: "",
-                      borderColor: "#d1d5db",
+                      fontSize: "14px sm:text-base",
+                      height: "44px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
                     }}
                     className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                   />
                 </div>
 
                 {/* Category */}
-                <div className="mb-6 md:mb-8">
+                <div className="mb-4 sm:mb-6">
                   <Input
                     value={form.category}
                     required
@@ -581,10 +617,10 @@ const BniLogin = () => {
                     onChange={handleOnChange}
                     placeholder="Enter category"
                     style={{
-                      fontSize: "14px",
-                      border: "none",
-                      borderBottom: "",
-                      borderColor: "#d1d5db",
+                      fontSize: "14px sm:text-base",
+                      height: "44px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
                     }}
                     className="w-full hover:border-gray-400 focus:border-black focus:shadow-none"
                   />
@@ -592,10 +628,11 @@ const BniLogin = () => {
 
                 {/* Next Button */}
                 <button
-                  className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-md transition duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
+                  className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm sm:text-base h-12 sm:h-14"
                   type="submit"
+                  disabled={isSendingOtp}
                 >
-                  Next
+                  {isSendingOtp ? "Sending OTP..." : "Send OTP"}
                 </button>
               </form>
             )}
@@ -603,20 +640,20 @@ const BniLogin = () => {
             {/* Step 2: OTP Verification */}
             {currentStep === 2 && (
               <form onSubmit={handleVerifyOtp} className="bg-white rounded-lg">
-                <div className="mb-6 text-center">
-                  <p className="text-gray-600 mb-2">
+                <div className="mb-4 sm:mb-6 text-center">
+                  <p className="text-gray-600 text-sm sm:text-base mb-2">
                     Enter the 6-digit OTP sent to
                   </p>
-                  <p className="font-medium text-gray-800">{form.email}</p>
+                  <p className="font-medium text-gray-800 text-sm sm:text-base">{form.email}</p>
                 </div>
 
-                <div className="mb-4 md:mb-6">
-                  <label className="block text-gray-700 mb-4 font-medium text-sm md:text-base text-center">
+                <div className="mb-4 sm:mb-6">
+                  <label className="block text-gray-700 mb-4 font-medium text-sm sm:text-base text-center">
                     Enter 6-digit OTP *
                   </label>
 
                   {/* OTP Boxes Container */}
-                  <div className="flex justify-center gap-2 md:gap-3 mb-2">
+                  <div className="flex justify-center gap-2 sm:gap-3 mb-2">
                     {[...Array(6)].map((_, index) => (
                       <input
                         key={index}
@@ -628,7 +665,7 @@ const BniLogin = () => {
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
                         onPaste={handleOtpPaste}
-                        className="w-12 h-12 md:w-14 md:h-14 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-black focus:ring-2 focus:ring-gray-200 focus:outline-none transition duration-200"
+                        className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 text-center text-lg sm:text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-black focus:ring-2 focus:ring-gray-200 focus:outline-none transition duration-200"
                         ref={(el) => (otpRefs.current[index] = el)}
                       />
                     ))}
@@ -649,12 +686,12 @@ const BniLogin = () => {
                   )}
                 </div>
 
-                <div className="mb-6 text-center">
+                <div className="mb-4 sm:mb-6 text-center">
                   <button
                     type="button"
                     onClick={handleResendOtp}
                     disabled={otpTimer > 0}
-                    className={`text-sm ${
+                    className={`text-xs sm:text-sm ${
                       otpTimer > 0
                         ? "text-gray-400"
                         : "text-blue-600 hover:text-blue-800"
@@ -668,12 +705,12 @@ const BniLogin = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentStep(1)}
-                    className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 px-4 rounded-lg transition duration-200 text-sm md:text-base"
+                    className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 rounded-lg transition duration-200 text-sm sm:text-base h-12 sm:h-14"
                   >
                     Back
                   </button>
                   <button
-                    className="flex-1 bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
+                    className="flex-1 bg-black hover:bg-gray-800 text-white font-medium py-3 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm sm:text-base h-12 sm:h-14"
                     type="submit"
                     disabled={isVerifyingOtp}
                   >
@@ -689,12 +726,12 @@ const BniLogin = () => {
                 onSubmit={handleFinalSubmit}
                 className="bg-white rounded-lg"
               >
-                <div className="mb-6">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="mb-4 sm:mb-6">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4">
                     <div className="flex items-center">
-                      <div className="bg-green-100 p-2 rounded-full mr-3">
+                      <div className="bg-green-100 p-1.5 sm:p-2 rounded-full mr-3">
                         <svg
-                          className="w-5 h-5 text-green-600"
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-green-600"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -706,18 +743,18 @@ const BniLogin = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium text-gray-800">
+                        <p className="font-medium text-gray-800 text-sm sm:text-base">
                           Email Verified
                         </p>
-                        <p className="text-gray-600 text-sm">{form.email}</p>
+                        <p className="text-gray-600 text-xs sm:text-sm">{form.email}</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mb-4 md:mb-6">
+                <div className="mb-3 sm:mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-gray-700 font-medium text-sm md:text-base">
+                    <label className="block text-gray-700 font-medium text-sm sm:text-base">
                       Password *
                     </label>
                     <Tooltip
@@ -776,8 +813,8 @@ const BniLogin = () => {
                   )}
                 </div>
 
-                <div className="mb-4 md:mb-6">
-                  <label className="block text-gray-700 mb-2 font-medium text-sm md:text-base">
+                <div className="mb-4 sm:mb-6">
+                  <label className="block text-gray-700 mb-2 font-medium text-sm sm:text-base">
                     Confirm Password *
                   </label>
                   <Input.Password
@@ -804,12 +841,12 @@ const BniLogin = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentStep(2)}
-                    className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 px-4 rounded-lg transition duration-200 text-sm md:text-base"
+                    className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 rounded-lg transition duration-200 text-sm sm:text-base h-12 sm:h-14"
                   >
                     Back
                   </button>
                   <button
-                    className="flex-1 bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm md:text-base"
+                    className="flex-1 bg-black hover:bg-gray-800 text-white font-medium py-3 rounded-lg transition duration-200 shadow-md hover:shadow-lg text-sm sm:text-base h-12 sm:h-14"
                     type="submit"
                   >
                     Create Account
@@ -820,16 +857,16 @@ const BniLogin = () => {
           </Spin>
 
           {/* Help link */}
-          <div className="mt-6 md:mt-8 text-center">
+          <div className="mt-4 sm:mt-6 text-center">
             <Link
               to="/help"
-              className="inline-flex items-center text-gray-500 hover:text-gray-700 text-xs md:text-sm"
+              className="inline-flex items-center text-gray-500 hover:text-gray-700 text-xs sm:text-sm"
               onClick={(e) => {
                 e.preventDefault();
                 handleNavigation("/help");
               }}
             >
-              <MdHelpOutline className="mr-1" /> Need help?
+              <MdHelpOutline className="mr-1 sm:mr-2" /> Need help?
             </Link>
           </div>
         </div>
@@ -837,10 +874,10 @@ const BniLogin = () => {
 
       {/* Right Section - BNI Illustration */}
       <div
-        className={`hidden  lg:flex lg:w-1/2 items-center justify-center p-8 fixed right-0 top-0 h-full transition-all duration-500 ${
+        className={`hidden lg:flex lg:w-1/2 items-center justify-center p-6 lg:p-8 transition-all duration-500 ${
           isMounted
             ? isExiting
-              ? " translate-x-0 opacity-0"
+              ? "translate-x-0 opacity-0"
               : "-translate-x-full opacity-100"
             : "-translate-x-full opacity-0"
         }`}
@@ -848,23 +885,24 @@ const BniLogin = () => {
           backgroundImage: `url(${abc})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="max-w-[80%] relative z-10 text-center flex flex-col justify-between h-[80%]">
+        <div className="max-w-[90%] xl:max-w-[80%] relative z-10 text-center flex flex-col justify-between  gap-10 h-[80vh]">
           {/* BNI Member Text */}
-          <div className="w-full flex flex-col justify-start items-start">
-           <img src={logo} alt="logo" className="w-[70%] h-fit z-20"/>
-           <h1 className="text-6xl font-bold text-black mb-4 text-left">
+          <div className="w-full flex flex-col justify-center items-center">
+            <img src={logo} alt="logo" className="w-[60%] lg:w-[70%] xl:w-[80%] h-fit z-20"/>
+            <h1 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-black mt-4 lg:mt-6 text-center">
               <span className="text-red-600">BNI</span> Privilege Login
             </h1>
           </div>
 
           {/* Welcome Text */}
-          <div className="mb-8">
-            <h1 className="text-6xl font-bold text-black mb-4 text-center">
+          <div className="mb-4 lg:mb-8">
+            <h1 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-black mb-4 lg:mb-6 text-center">
               Welcome to printe<span className="text-black">!</span>
             </h1>
-            <p className="text-black text-xl leading-relaxed text-justify">
+            <p className="text-black text-base lg:text-lg xl:text-xl leading-relaxed text-justify">
               This exclusive login grants early access to premium branding products. 
               Specially crafted for <span className="text-red-500 font-bold">BNI </span> 
                privileged members, it is designed to address challenges and deliver tailored solutions.

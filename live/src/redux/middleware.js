@@ -41,7 +41,37 @@ function* signUp(action) {
     const res = yield call(axios.post, `${baseURL}/client_user/signup`, action.data);
 
     const token = _.get(res, "data.data.token", "");
-    const user = _.get(res, "data.data.user", {}); // Adjust according to your API response structure
+    const user = _.get(res, "data.data.user", {}); 
+    console.log(user,"users");
+    
+
+    yield call(saveTokenToLocalStorage, token);
+    // Store user data in localStorage
+    localStorage.setItem('userData', JSON.stringify(user));
+
+    
+
+   yield put(isSignUpSuccess({
+  data: {
+    _doc: user,
+    token: token
+  },
+  message: _.get(res, "data.message", "")
+}));
+  } catch (err) {
+    yield put(isSignUpFailed(_.get(err, "response.data.message", "")));
+    console.log(err);
+  }
+}
+function* BNIsignUp(action) {
+  try {
+    yield put(isSignUpStarted());
+    const res = yield call(axios.post, `${baseURL}/client_user/bnisignup`, action.data);
+
+    const token = _.get(res, "data.data.token", "");
+    const user = _.get(res, "data.data.user", {}); 
+    console.log(user,"users");
+    
 
     yield call(saveTokenToLocalStorage, token);
     // Store user data in localStorage
@@ -361,6 +391,7 @@ function* addProductReview(action) {
 function* rootSaga() {
   yield takeLatest("LOGIN", logIn);
   yield takeLatest("SIGNUP", signUp);
+  yield takeLatest("BNISIGNUP", BNIsignUp);
   yield takeLatest("CHECK_LOGIN", checkLogin);
   yield takeLatest("LOGOUT", logOut);
   yield takeLatest("UPDATE_USER", updateUser);

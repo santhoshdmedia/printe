@@ -17,6 +17,7 @@ import Big_sale from "../../assets/mockup/big_sale.png";
 import { motion } from "motion/react";
 import QuickAccess from "../../config/QuickAccess";
 
+
 const SwiperList = ({
   data = [],
   title = "",

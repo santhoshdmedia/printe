@@ -68,6 +68,82 @@ const addProduct = async (req, res) => {
 //   }
 // };
 
+const getAllProductsSimple = async (req, res) => {
+  try {
+    const {
+      category,
+      subcategory,
+      vendor,
+      search,
+      minPrice,
+      maxPrice,
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      status = 'active'
+    } = req.query;
+
+    // Build filter
+    const filter = { status };
+    
+    if (category) filter.category_details = new ObjectId(category);
+    if (subcategory) filter.sub_category_details = new ObjectId(subcategory);
+    if (vendor) filter.vendor_details = new ObjectId(vendor);
+    
+    if (minPrice || maxPrice) {
+      filter.single_product_price = {};
+      if (minPrice) filter.single_product_price.$gte = parseFloat(minPrice);
+      if (maxPrice) filter.single_product_price.$lte = parseFloat(maxPrice);
+    }
+    
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { product_codeS_NO: { $regex: search, $options: 'i' } },
+        { Vendor_Code: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Build sort
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Pagination
+    const skip = (page - 1) * limit;
+
+    // Execute query
+    const products = await ProductSchema.find(filter)
+      .populate('vendor_details', 'vendor_name')
+      .populate('category_details', 'name')
+      .populate('sub_category_details', 'name')
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    const totalCount = await ProductSchema.countDocuments(filter);
+
+    const response = {
+      success: true,
+      count: products.length,
+      total: totalCount,
+      page: parseInt(page),
+      pages: Math.ceil(totalCount / limit),
+      data: products
+    };
+
+    return res.status(200).json(response);
+
+  } catch (error) {
+    console.error('Error in getAllProductsSimple:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve products'
+    });
+  }
+};
+
 const getProduct = async (req, res) => {
   const { 
     filterByProduct_category = "", 
@@ -350,6 +426,7 @@ const deleteProductDescription = async (req, res) => {
 module.exports = {
   addProduct,
   getProduct,
+  getAllProductsSimple,
   deleteProduct,
   editProduct,
   getProductVariantPrice,

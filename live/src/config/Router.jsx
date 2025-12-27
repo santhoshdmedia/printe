@@ -56,7 +56,8 @@ import PrivacyPolicy from "../pages/policys/PrivacyPolicy.jsx";
 // import ResetPassword from "../pages/Login/ResetPassword.jsx";
 // import ResetPasswordPage from "../components/Account/ResetPasswordPage.jsx";
 // BNI
-import BniLogin from "../pages/Login/BNI/BniLogin.jsx";
+import BniLogin from "../pages/Signup/BniLogin.jsx";
+import BniProduct from "../pages/CategoryProduct/BniProduct.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -73,6 +74,7 @@ export const router = createBrowserRouter([
       { path: "/", element: <Home /> },
       { path: "/product/:id", element: <Product /> },
       { path: "/category/:category/:id", element: <SubcategoryProduct /> },
+      { path: "/products", element: <BniProduct /> },
       { path: "/category/:id", element: <CategoryProduct /> },
       { path: "/contact-us", element: <Contact /> },
       { path: "/see-more/:section_name/:id", element: <SectionExplore /> },
@@ -172,6 +174,10 @@ export const router = createBrowserRouter([
   },
   {
     path: "/not-found",
+    element: <NotFound />,
+  },
+  {
+    path: "*",
     element: <NotFound />,
   },
   {

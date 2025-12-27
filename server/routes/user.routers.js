@@ -1,4 +1,4 @@
-const { clientLogin, clientSignup,customSignup,getAllCustomUsers, clientCheckloginstatus, getAllClientUsers, deleteClientUser,clientgoogleLogin, updateClientUser, getblog, getSingleClient, addtoHistory } = require("./controller_import");
+const { clientLogin, clientSignup,customSignup,getAllCustomUsers, clientCheckloginstatus, getAllClientUsers, deleteClientUser,clientgoogleLogin, updateClientUser, getblog, getSingleClient, addtoHistory,BNISignup } = require("./controller_import");
 const router = require("express").Router();
 const { VerfiyToken } = require("../helper/shared.helper");
 
@@ -18,5 +18,7 @@ router.get("/get_all_blogs", getblog);
 
 // history
 router.post("/add_to_history", VerfiyToken, addtoHistory);
+router.post("/bnisignup", BNISignup);
+
 
 module.exports = router;
