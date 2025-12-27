@@ -847,7 +847,7 @@ const Navbar = () => {
           </Link>
           <SearchInput />
         </div>
-        <div className="mr-24">
+        <div className="mr-24 w-[200px]">
           {/* Your Button3D - Updated to proper usage */}
           {user.role=="bni_user"&&<Link to="/products">
             <Button3D 
@@ -855,7 +855,7 @@ const Navbar = () => {
               size="sm"
               onClick={() => handleDestination("/products")}
             >
-              BNI Privealeage
+              BNI Privilage
             </Button3D>
           </Link>}
         </div>
