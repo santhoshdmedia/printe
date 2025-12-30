@@ -1,8 +1,9 @@
 export const initiateCCAvenuePayment = async (paymentData) => {
   try {
-    const apiUrl = import.meta.env.VITE_BASE_API_URL || 'https://printe.in/';
+    const apiUrl = import.meta.env.VITE_BASE_API_URL || 'https://printe.in';
     
-   
+
+
 
     const response = await fetch(`${apiUrl}/payment/create-order`, { // Fixed endpoint path
       method: 'POST',
