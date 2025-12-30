@@ -10,7 +10,7 @@ import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { DISCOUNT_HELPER, GST_DISCOUNT_HELPER } from "../../helper/form_validation";
 import Soldout from "../../assets/logo/soldOut.png";
 
-const SimpleProductCard = ({ data }) => {
+const BniProductCard = ({ data }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuth } = useSelector((state) => state.authSlice);
@@ -242,17 +242,17 @@ const SimpleProductCard = ({ data }) => {
               />
             </motion.div>
           )} */}
-
           <motion.img
             className={`w-full h-full object-cover ${isSoldOut ? 'filter grayscale contrast-50' : ''
-              }`}
+            }`}
             src={_.get(data.images, "[0].path", "") || _.get(data.variants, "[0].options[0].image_names[0].path", "")}
             alt={data.name}
             animate={{
               scale: isHovered && !isSoldOut ? 1.1 : 1,
             }}
             transition={{ duration: 0.5 }}
-          />
+            />
+            {isSoldOut && <div className="absolute bottom-2 right-2 bg-red-600 px-4 rounded-lg PY-2 text-white text-xs md:text-md font-bold">SOLD OUT</div>}
 
           {/* Floating bubbles effect - only show if not sold out */}
           {!isSoldOut && [1, 2, 3].map((i) => (
@@ -284,7 +284,7 @@ const SimpleProductCard = ({ data }) => {
           {/* Product info */}
           <div className="overflow-hidden">
             <motion.h3
-              className={`text-sm lg:text-lg font-bold truncate ${isSoldOut ? 'text-gray-600' : 'text-gray-900'
+              className={`text-sm lg:text-sm font-bold truncate ${isSoldOut ? 'text-gray-600' : 'text-gray-900'
                 }`}
               animate={{
                 x: isHovered && !isSoldOut ? [0, 5, 0] : 0,
@@ -316,7 +316,7 @@ const SimpleProductCard = ({ data }) => {
               }}
               transition={{ type: "spring" }}
             >
-              <span className={`text-sm lg:text-xl font-bold ${isSoldOut ? 'text-gray-600' : 'text-primary'
+              <span className={`text-sm lg:text-sm font-bold ${isSoldOut ? 'text-gray-600' : 'text-primary'
                 }`}>
                 {displayPrice}
               </span>
@@ -331,7 +331,7 @@ const SimpleProductCard = ({ data }) => {
               whileHover={{ scale: isSoldOut ? 1 : 1.1 }}
             >
               <button
-                className={`p-2 rounded-full shadow-md text-xs lg:text-xl ${isSoldOut
+                className={`p-2 rounded-full shadow-md text-xs lg:text-sm ${isSoldOut
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-primary text-white hover:bg-primary-dark'
                   }`}
@@ -346,7 +346,7 @@ const SimpleProductCard = ({ data }) => {
               </button>
             </motion.div>
           </div>
-          {isSoldOut && <div className="absolute top-11 right-4 bg-red-600 px-4 rounded-lg PY-2 text-white text-xs md:text-md font-bold">SOLD OUT</div>}
+
         </div>
 
         {/* Excitement tag with special animation - only show if not sold out */}
@@ -411,4 +411,4 @@ const SimpleProductCard = ({ data }) => {
   );
 };
 
-export default SimpleProductCard;
+export default BniProductCard;

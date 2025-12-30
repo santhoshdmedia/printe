@@ -58,6 +58,7 @@ import PrivacyPolicy from "../pages/policys/PrivacyPolicy.jsx";
 // BNI
 import BniLogin from "../pages/Signup/BniLogin.jsx";
 import BniProduct from "../pages/CategoryProduct/BniProduct.jsx";
+import AcBNi from "../pages/CategoryProduct/AcBNi.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -97,19 +98,19 @@ export const router = createBrowserRouter([
       },
       {
         path: "/terms-&-conditions",
-        element: <TermsAndConditions/>,
+        element: <TermsAndConditions />,
       },
       {
         path: "/privacy-policy",
-        element: <PrivacyPolicy/>,
+        element: <PrivacyPolicy />,
       },
       {
         path: "/return-policy",
-        element: <ReturnPolicy  />,
+        element: <ReturnPolicy />,
       },
       {
         path: "/cancelling-policy",
-        element: <CancellationPolicy/>,
+        element: <CancellationPolicy />,
       },
       {
         path: "/shipping-&-delivery-policy",
@@ -135,6 +136,10 @@ export const router = createBrowserRouter([
             element: <UserOrders />,
           },
           {
+            path: "BNI",
+            element: <AcBNi />,
+          },
+          {
             path: "reward",
             element: <Reward />,
           },
@@ -143,6 +148,11 @@ export const router = createBrowserRouter([
             path: "my-orders/:order_id",
             element: <OrderDetails />,
           },
+          {
+            path: "Warranty",
+            element: <WarrantyActivation />,
+          },
+        
         ],
       },
     ],
@@ -153,7 +163,7 @@ export const router = createBrowserRouter([
   },
   // BNI
   {
-    path: "/Bni/Sign-up",
+    path: "/BNI/Signup",
     element: <BniLogin />,
   },
   {
@@ -168,10 +178,7 @@ export const router = createBrowserRouter([
     path: "/reset-password/:id",
     element: <ResetPassword />,
   },
-  {
-    path: "/Warranty",
-    element: <WarrantyActivation />,
-  },
+
   {
     path: "/not-found",
     element: <NotFound />,

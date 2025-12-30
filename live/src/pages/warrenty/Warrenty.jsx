@@ -231,17 +231,7 @@ const WarrantyActivation =  () => {
 
   return (
     <>
-         <div
-          className={`w-full  flex h-20 gap-x-10 bg-[#f2c41a] justify-center items-center px-4 lg:px-8 xl:px-20 sticky top-0 z-40 `}
-        >
-          {/* Left: Logo + Search */}
-            <Link to="/">
-              <img src={Logo} alt="logo" className="h-16" />
-            </Link>
-
-          {/* Right: User Section */}
-
-        </div>
+       
     <div className="max-w-5xl mx-auto px-4" style={{ backgroundColor: YELLOW_THEME.bg, minHeight: '100vh', padding: '20px 0' }}>
       {/* Header */}
       <div className="text-center mb-10 fade-in">
@@ -256,25 +246,11 @@ const WarrantyActivation =  () => {
             <HiShieldCheck style={{ fontSize: '48px', color: YELLOW_THEME.primary }} />
           </div>
         </div>
-        <Title level={2} style={{ color: '#1a202c', marginBottom: '8px' }}>
-          Warranty Activation Portal
-        </Title>
-        <Text style={{ color: '#4a5568', fontSize: '16px' }}>
-          Activate your product warranty and enjoy 6 months of protection
-        </Text>
-        
-        {/* Authentication Status */}
-        {isAuth && (
-          <div className="mt-4">
-            <Tag color="green" style={{ fontSize: '14px', padding: '4px 12px' }}>
-              <UserOutlined /> Logged in as: {user?.email || user?.name}
-            </Tag>
-          </div>
-        )}
+
       </div>
 
       {/* Progress Bar */}
-      <div className="mb-10" style={{ padding: '0 20px' }}>
+      {/* <div className="mb-10" style={{ padding: '0 20px' }}>
         <div 
           className="h-2 rounded-full mb-6"
           style={{ 
@@ -334,7 +310,7 @@ const WarrantyActivation =  () => {
             <Text strong>Complete</Text>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Content */}
       <div style={{ padding: '0 20px' }}>
@@ -350,9 +326,9 @@ const WarrantyActivation =  () => {
               }}
             >
               <div className="text-center mb-8">
-                <div className="mb-6">
+                {/* <div className="mb-6">
                   <FaQrcode style={{ fontSize: '64px', color: YELLOW_THEME.primary }} />
-                </div>
+                </div> */}
                 <Title level={3} style={{ color: '#1a202c', marginBottom: '8px' }}>
                   Verify Your Product Code
                 </Title>
@@ -1007,33 +983,7 @@ const WarrantyActivation =  () => {
         )}
 
         {/* Help Section */}
-        {step !== 2 && (
-          <div className="mt-10 text-center fade-in">
-            <div 
-              className="inline-flex items-center gap-3 px-6 py-4 rounded-xl"
-              style={{ 
-                backgroundColor: 'white',
-                border: `1px solid ${YELLOW_THEME.primary}`,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
-              }}
-            >
-              <HiShieldCheck style={{ color: YELLOW_THEME.primary, fontSize: '20px' }} />
-              <Text style={{ color: '#4a5568' }}>
-                Need assistance? Contact our support team at{' '}
-                <a 
-                  href="mailto:support@example.com"
-                  style={{ 
-                    color: YELLOW_THEME.primary,
-                    fontWeight: 600,
-                    textDecoration: 'underline'
-                  }}
-                >
-                  support@printe.in
-                </a>
-              </Text>
-            </div>
-          </div>
-        )}
+        
       </div>
 
       {/* Login Modal */}
