@@ -96,7 +96,7 @@ const BniProduct = () => {
           ) : (
             <>
               {sortedProducts.length > 0 ? (
-                <GridList data={sortedProducts} type="Product" productCardType="Simple" />
+                <GridList data={sortedProducts} gridItems="3" type="Product" productCardType="Simple" />
               ) : (
                 <div className="text-center py-12">
                   <div className="text-gray-400 mb-4">

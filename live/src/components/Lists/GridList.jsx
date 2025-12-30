@@ -17,7 +17,7 @@ const GridList = ({ data = [], title = "", subtitle = "", type = "Category", pro
   return (
     <div>
       {/* {title && <DividerCards name={title} subtitle={subtitle} to={to} />} */}
-      <div className={`grid grid-cols-1  md:grid-cols-5  gap-4 lg:px-0 `}>
+      <div className={`grid grid-cols-1  md:${gridItems?`grid-cols-${gridItems}`:"grid-cols-3"}  gap-4 lg:px-0 `}>
         {products.map((product, index) => (
           <div key={index}>{ productCardType === "Modern" && <ProductCard data={product} /> ||productCardType === "Simple" &&<SimpleProductCard data={product} /> ||productCardType === "BNI" &&<BniProductCard data={product} />}</div>
         ))}

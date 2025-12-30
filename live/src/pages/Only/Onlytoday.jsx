@@ -27,7 +27,7 @@ const Onlytoday = () => {
     <div className="flex justify-center pt-5 pb-10">
       <div className="w-[80%]">
         <Breadcrumbs title={"Only For Today"} />
-        <div className="flex flex-col gap-y-6 pt-4">{isGettingOnlyForTodayProduct ? <CarouselListLoadingSkeleton title="Only For Today" type="Product" /> : <GridList to="/only-today" data={onlyForTodayProduct} type="Product" productCardType="Simple" />}</div>
+        <div className="flex flex-col gap-y-6 pt-4">{isGettingOnlyForTodayProduct ? <CarouselListLoadingSkeleton title="Only For Today" type="Product" /> : <GridList gridItems="3" to="/only-today" data={onlyForTodayProduct} type="Product" productCardType="Simple" />}</div>
       </div>
     </div>
   );

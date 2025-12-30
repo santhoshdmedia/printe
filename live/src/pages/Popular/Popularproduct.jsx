@@ -27,7 +27,7 @@ const Popularproduct = () => {
     <div className="flex justify-center pt-5 pb-10">
       <div className="w-[80%]">
         <Breadcrumbs title={"Popular Product"} />
-        <div className="flex flex-col gap-y-6 pt-4">{isGettingPopularProduct ? <CarouselListLoadingSkeleton title="Popular Product" type="Product" /> : <GridList data={popularProduct} type="Product" productCardType="Simple" />}</div>
+        <div className="flex flex-col gap-y-6 pt-4">{isGettingPopularProduct ? <CarouselListLoadingSkeleton title="Popular Product" type="Product" /> : <GridList gridItems="3" data={popularProduct} type="Product" productCardType="Simple" />}</div>
       </div>
     </div>
   );

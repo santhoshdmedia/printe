@@ -128,7 +128,7 @@ const SubcategoryProduct = () => {
           ) : (
             <>
               {sortedProducts.length > 0 ? (
-                <GridList data={sortedProducts} type="Product" productCardType="Simple" />
+                <GridList gridItems="3" data={sortedProducts} type="Product" productCardType="Simple" />
               ) : (
                 <div className="text-center py-12">
                   <div className="text-gray-400 mb-4">

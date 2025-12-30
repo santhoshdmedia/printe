@@ -35,7 +35,7 @@ const SectionExplore = () => {
         <Breadcrumbs title={section_name} />
       </div>
       <div className="px-[5vw] pb-10">
-        <GridList title={section_name} subtitle={_.get(productDetails, "sub_title", [])} data={_.get(productDetails, "productDetails", [])} type="Product" productCardType="Simple" />
+        <GridList title={section_name} gridItems="3" subtitle={_.get(productDetails, "sub_title", [])} data={_.get(productDetails, "productDetails", [])} type="Product" productCardType="Simple" />
       </div>
     </Spin>
   );

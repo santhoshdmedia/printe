@@ -26,7 +26,7 @@ const Newproduct = () => {
     <div className="flex justify-center pt-5 pb-10">
       <div className="w-[80%]">
         <Breadcrumbs title={"New Launch"} />
-        <div className="flex flex-col gap-y-6 pt-4">{isGettingNewLaunchProduct ? <CarouselListLoadingSkeleton title="New Launch" type="Product" /> : <GridList to="/only-today" data={newLaunchProduct} type="Product" productCardType="Simple" />}</div>
+        <div className="flex flex-col gap-y-6 pt-4">{isGettingNewLaunchProduct ? <CarouselListLoadingSkeleton title="New Launch" type="Product" /> : <GridList gridItems="3" to="/only-today" data={newLaunchProduct} type="Product" productCardType="Simple" />}</div>
       </div>
     </div>
   );

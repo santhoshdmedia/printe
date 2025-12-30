@@ -139,6 +139,7 @@ const CategoryProduct = () => {
                     
                     {validProducts.length > 0 ? (
                       <GridList
+                      gridItems="3"
                         data={validProducts}
                         type="Product"
                         productCardType="Simple"
