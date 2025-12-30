@@ -69,6 +69,9 @@ const createPaymentOrder = async (req, res) => {
     const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
     const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
 
+    console.log(FRONTEND_BASE_URL,"front",BACKEND_BASE_URL,"back");
+    
+
     // Validate critical environment variables
     const missingCriticalEnvVars = [];
     if (!CCA_MERCHANT_ID) missingCriticalEnvVars.push('CCA_MERCHANT_ID');
