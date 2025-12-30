@@ -618,7 +618,7 @@ const ProductDetailVarient = ({
 
   // Price calculation functions
   const formatPrice = useCallback((price) => {
-    return `₹${Math.round(parseFloat(price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}`;
+    return `₹${parseFloat(price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }, []);
 
   const formatMRPPrice = useCallback((price) => {
@@ -628,7 +628,7 @@ const ProductDetailVarient = ({
   // Calculate unit prices
   const getUnitPrice = useMemo(() => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
-    return Math.round(calculateUnitPrice(basePrice, discountPercentage.percentage, user?.role, gst));
+    return calculateUnitPrice(basePrice, discountPercentage.percentage, user?.role, gst);
   }, [checkOutState.product_price, discountPercentage.percentage, user?.role, gst]);
 
 
