@@ -16,17 +16,36 @@ export const formValidation = (message) => [
   },
 ];
 
+
 export const DISCOUNT_HELPER = (discount, totalPrice) => {
-  return Number(totalPrice) - Number(totalPrice) * (Number(discount) / 100).toFixed(2);
-};
-export const Gst_HELPER = (Gst, totalPrice) => {
-  return Number(totalPrice)+Number(totalPrice) * Number(Gst)/100 .toFixed(2);
-};
-export const GST_DISCOUNT_HELPER = (discount, totalPrice,Gst) => {
-    const discountedPrice = Number(totalPrice) * (1 - Number(discount) / 100);
-  const finalPrice = discountedPrice * ( Number(Gst) / 100);
-  const Gst_price= discountedPrice + finalPrice;
-  return Gst_price.toFixed(2);
+  const price = Number(totalPrice);
+  const disc = Number(discount);
+  const discountMultiplier = 1 - (disc / 100);
+  const finalPrice = price * discountMultiplier;
+  return Number(finalPrice.toFixed(2));
 };
 
+export const Gst_HELPER = (gstRate, totalPrice) => {
+  const price = Number(totalPrice);
+  const gst = Number(gstRate);
+  const gstMultiplier = 1 + (gst / 100);
+  const finalPrice = price * gstMultiplier;
+  return Number(finalPrice.toFixed(2));
+};
+
+export const GST_DISCOUNT_HELPER = (discount, totalPrice, gstRate) => {
+  const price = Number(totalPrice);
+  const disc = Number(discount);
+  const gst = Number(gstRate);
+  
+  // Apply discount
+  const discountMultiplier = 1 - (disc / 100);
+  const discountedPrice = price * discountMultiplier;
+  
+  // Apply GST on discounted price
+  const gstMultiplier = 1 + (gst / 100);
+  const finalPrice = discountedPrice * gstMultiplier;
+  
+  return Number(finalPrice.toFixed(2));
+};
 

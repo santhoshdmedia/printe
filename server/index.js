@@ -171,8 +171,8 @@ app.get("/product/:id", async (req, res) => {
     console.log(`📸 Product images:`, product.images);
 
     // Prepare OG data
-    const ogTitle = product.seo_title || `${product.name} | PRINTE`;
-    let ogDescription = product.product_description_tittle || 
+    const ogTitle = product.seo_title ;
+    let ogDescription = product.seo_description || 
                        'Check out this amazing product on Printe';
     
     // Truncate description for SEO
@@ -267,7 +267,7 @@ app.get("/product/:id", async (req, res) => {
       ${JSON.stringify({
         "@context": "https://schema.org/",
         "@type": "Product",
-        "name": product.name,
+        "name": product.seo_title,
         "description": ogDescription,
         "image": ogImage,
         "sku": product._id?.toString() || productId,

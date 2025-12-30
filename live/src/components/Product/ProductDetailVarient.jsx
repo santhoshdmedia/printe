@@ -223,7 +223,7 @@ const getRoleFields = (role) => {
 
 // Price calculation helper functions
 const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 0) => {
-  if (userRole === "Corporate" || userRole === "Dealer") {
+  if (userRole === "Corporate" || userRole === "Dealer"||userRole === "bni_user") {
     return DISCOUNT_HELPER(discountPercentage, basePrice);
   } else {
     return GST_DISCOUNT_HELPER(discountPercentage, basePrice, gst);
@@ -236,7 +236,7 @@ const calculateUnitPriceWithoutGst = (basePrice, discountPercentage, userRole, g
 };
 
 const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
-  if (userRole === "Corporate" || userRole === "Dealer") {
+  if (userRole === "Corporate" || userRole === "Dealer"||userRole === "bni_user") {
     return basePrice;
   } else {
     return basePrice * (1 + gst / 100);
@@ -333,6 +333,13 @@ const ProductDetailVarient = ({
       return _.get(variantData, "Deler_product_price", _.get(variantData, "price", 0));
     } else if (user?.role === "Corporate") {
       return _.get(variantData, "corporate_product_price", _.get(variantData, "price", 0));
+    } else if (user?.role === "bni_user") {
+      let Del_price=_.get(variantData, "Deler_product_price", _.get(variantData, "price", 0));
+      let cus_price= _.get(variantData, "customer_product_price", _.get(variantData, "price", 0));
+      
+        let bni_price=cus_price-Math.abs((cus_price-Del_price)/2)
+        console.log(`Deler=${Del_price},Customer=${cus_price} =Bni:${bni_price}`);
+        return bni_price
     } else {
       return _.get(variantData, "customer_product_price", _.get(variantData, "price", 0));
     }
@@ -611,7 +618,7 @@ const ProductDetailVarient = ({
 
   // Price calculation functions
   const formatPrice = useCallback((price) => {
-    return `₹${parseFloat(price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `₹${Math.round(parseFloat(price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}`;
   }, []);
 
   const formatMRPPrice = useCallback((price) => {
@@ -621,7 +628,7 @@ const ProductDetailVarient = ({
   // Calculate unit prices
   const getUnitPrice = useMemo(() => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
-    return calculateUnitPrice(basePrice, discountPercentage.percentage, user?.role, gst);
+    return Math.round(calculateUnitPrice(basePrice, discountPercentage.percentage, user?.role, gst));
   }, [checkOutState.product_price, discountPercentage.percentage, user?.role, gst]);
 
 
@@ -632,7 +639,7 @@ const ProductDetailVarient = ({
 
   const getOriginalUnitPrice = useMemo(() => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
-    if (user?.role === "Corporate" || user?.role === "Dealer") {
+    if (user?.role === "Corporate" || user?.role === "Dealer"||user.role === "bni_user") {
       return basePrice;
     } else {
       return basePrice * (1 + gst / 100);
@@ -1440,7 +1447,7 @@ const ProductDetailVarient = ({
                     <div>
                       <div className="font-semibold ">
                         You Saved: {formatPrice(calculateMRPSavings())} &nbsp;(
-                        {(user.role === "Dealer" || user.role === "Corporate")
+                        {(user.role === "Dealer" || user.role === "Corporate"||user.role === "bni_user")
                           ? <>{calculateDealPercentageDiscount()}% Discount</>
                           : <>{calculateTotalSavingsPercentage()}% Discount</>
                         })
@@ -1470,7 +1477,7 @@ const ProductDetailVarient = ({
               )}
             </div>
 
-            {(user.role == "Corporate" || user.role == "Dealer") ? (
+            {(user.role == "Corporate" || user.role == "Dealer"||user.role === "bni_user") ? (
               <div className="text-gray-600">
                 <h1 className="!text-[12px] text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
@@ -1492,7 +1499,7 @@ const ProductDetailVarient = ({
                 <h1>
                   Inclusive of all taxes for <span strong>{quantity}</span> Qty
                   <span className="font-bold">
-                    &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
+                    &nbsp;({(user.role === "Dealer" || user.role === "Corporate"||user.role === "bni_user")
                       ? <>{formatPrice(Gst_HELPER(18, getUnitPrice))}</>
                       : <>{formatPrice(calculateGstPrice())}</>
                     }

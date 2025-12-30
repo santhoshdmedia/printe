@@ -17,7 +17,7 @@ const SimpleProductCard = ({ data }) => {
   const [isFav, setIsFav] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef(null);
-  
+
   // 3D tilt animation values
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -39,7 +39,7 @@ const SimpleProductCard = ({ data }) => {
   const handleAddWishList = (e) => {
     e.stopPropagation();
     if (isSoldOut) return; // Don't allow adding to wishlist if sold out
-    
+
     if (isAuth) {
       if (isFav) {
         const filter = user.wish_list.filter(
@@ -77,7 +77,7 @@ const SimpleProductCard = ({ data }) => {
     const mouseY = e.clientY - rect.top;
     const centerX = mouseX - width / 2;
     const centerY = mouseY - height / 2;
-    
+
     x.set(centerX);
     y.set(centerY);
   };
@@ -114,7 +114,28 @@ const SimpleProductCard = ({ data }) => {
   const getBasePrice = () => {
     const userRole = user?.role || 'Customer';
     const priceField = getRolePriceField(userRole);
-    
+
+    if (userRole == "bni_user") {
+      let Del_Field = getRolePriceField("Dealer")
+      let cus_Field = getRolePriceField("user")
+      if (data.variants_price && data.variants_price.length > 0) {
+         let Del_Price=_.get(data, `variants_price[0].${Del_Field}`, "0");
+         let cus_Price=_.get(data, `variants_price[0].${cus_Field}`, "0");
+         let bni_price=cus_Price-Math.abs((cus_Price-Del_Price)/2)
+         return bni_price
+      }
+    }
+    if (userRole == "bni_user") {
+      let Del_Field = getRolePriceField("Dealer")
+      let cus_Field = getRolePriceField("user")
+      if (data.variants_price.length == 0) {
+         let Del_Price=_.get(data, `${Del_Field}`, "0");
+         let cus_Price=_.get(data, `${cus_Field}`, "0");
+         let bni_price=cus_Price-Math.abs((cus_Price-Del_Price)/2)
+         return bni_price
+      }
+    }
+
     // Check variants_price array first
     if (data.variants_price && data.variants_price.length > 0) {
       return _.get(data, `variants_price[0].${priceField}`, "0");
@@ -122,7 +143,7 @@ const SimpleProductCard = ({ data }) => {
     // Fallback to direct price field
     return _.get(data, priceField, "0");
   };
-  
+
   const getMrpPrice = () => {
     // Check variants_price array first
     if (data.variants_price && data.variants_price.length > 0) {
@@ -137,8 +158,8 @@ const SimpleProductCard = ({ data }) => {
       const basePrice = Number(getBasePrice());
       const userRole = user?.role || 'Customer';
 
-      
-      
+
+
       if (!data.quantity_discount_splitup || !data.quantity_discount_splitup.length) {
         return basePrice;
       }
@@ -146,10 +167,10 @@ const SimpleProductCard = ({ data }) => {
       const firstQuantityTier = data.quantity_discount_splitup[0];
       const discountField = getRoleDiscountField(userRole);
       const discountValue = _.get(firstQuantityTier, discountField, 0);
-      
+
       // Use GST_DISCOUNT_HELPER to calculate final price
-      const finalPrice = (userRole=="Customer"||userRole=="user")?GST_DISCOUNT_HELPER(discountValue, basePrice, 18):DISCOUNT_HELPER(discountValue, basePrice);
-      
+      const finalPrice = (userRole == "Customer" || userRole == "user") ? GST_DISCOUNT_HELPER(discountValue, basePrice, 18) : DISCOUNT_HELPER(discountValue, basePrice);
+
       return finalPrice;
     } catch (error) {
       console.error('Error calculating price:', error);
@@ -163,13 +184,12 @@ const SimpleProductCard = ({ data }) => {
   };
 
   const displayPrice = formatPrice(calculateDiscountedPrice());
-  
+
   return (
     <motion.div
       ref={cardRef}
-      className={`relative w-full overflow-hidden rounded-2xl shadow-md cursor-pointer ${
-        isSoldOut ? 'opacity-80' : ''
-      }`}
+      className={`relative w-full overflow-hidden rounded-2xl shadow-md cursor-pointer ${isSoldOut ? 'opacity-80' : ''
+        }`}
       onClick={handleCardClick}
       onMouseMove={!isSoldOut ? handleMouseMove : undefined}
       onMouseEnter={() => !isSoldOut && setIsHovered(true)}
@@ -182,28 +202,26 @@ const SimpleProductCard = ({ data }) => {
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       {/* Floating background elements */}
-      <motion.div 
-        className={`absolute inset-0 bg-gradient-to-br from-purple-100/20 to-blue-100/20 rounded-2xl ${
-          isSoldOut ? 'from-gray-100/10 to-gray-100/10' : ''
-        }`}
+      <motion.div
+        className={`absolute inset-0 bg-gradient-to-br from-purple-100/20 to-blue-100/20 rounded-2xl ${isSoldOut ? 'from-gray-100/10 to-gray-100/10' : ''
+          }`}
         animate={{
           scale: isHovered && !isSoldOut ? 1.05 : 1,
           opacity: isHovered && !isSoldOut ? 1 : 0.7,
         }}
         transition={{ duration: 0.5 }}
       />
-      
+
       {/* Main card container */}
-      <div className={`relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl ${
-        isSoldOut ? 'bg-gray-50' : ''
-      }`}>
+      <div className={`relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl ${isSoldOut ? 'bg-gray-50' : ''
+        }`}>
         {/* Image container with floating effect */}
-        <motion.div 
+        <motion.div
           className="relative lg:h-3/4 w-full overflow-hidden"
           animate={{
             y: isHovered && !isSoldOut ? -10 : 0,
           }}
-          transition={{ 
+          transition={{
             type: "spring",
             stiffness: 300,
             damping: 10,
@@ -224,11 +242,10 @@ const SimpleProductCard = ({ data }) => {
               />
             </motion.div>
           )} */}
-          
+
           <motion.img
-            className={`w-full h-full object-cover ${
-              isSoldOut ? 'filter grayscale contrast-50' : ''
-            }`}
+            className={`w-full h-full object-cover ${isSoldOut ? 'filter grayscale contrast-50' : ''
+              }`}
             src={_.get(data.images, "[0].path", "") || _.get(data.variants, "[0].options[0].image_names[0].path", "")}
             alt={data.name}
             animate={{
@@ -236,7 +253,7 @@ const SimpleProductCard = ({ data }) => {
             }}
             transition={{ duration: 0.5 }}
           />
-          
+
           {/* Floating bubbles effect - only show if not sold out */}
           {!isSoldOut && [1, 2, 3].map((i) => (
             <motion.div
@@ -262,15 +279,13 @@ const SimpleProductCard = ({ data }) => {
         </motion.div>
 
         {/* Content area */}
-        <div className={`relative h-1/4 p-4 flex flex-col justify-between bg-white z-10 ${
-          isSoldOut ? 'bg-gray-50' : ''
-        }`}>
+        <div className={`relative h-1/4 p-4 flex flex-col justify-between bg-white z-10 ${isSoldOut ? 'bg-gray-50' : ''
+          }`}>
           {/* Product info */}
           <div className="overflow-hidden">
-            <motion.h3 
-              className={`text-sm lg:text-lg font-bold truncate ${
-                isSoldOut ? 'text-gray-600' : 'text-gray-900'
-              }`}
+            <motion.h3
+              className={`text-sm lg:text-lg font-bold truncate ${isSoldOut ? 'text-gray-600' : 'text-gray-900'
+                }`}
               animate={{
                 x: isHovered && !isSoldOut ? [0, 5, 0] : 0,
               }}
@@ -286,9 +301,8 @@ const SimpleProductCard = ({ data }) => {
               <Rate
                 disabled
                 allowHalf
-                className={`!text-xs ${
-                  isSoldOut ? '!text-gray-400' : '!text-yellow-400'
-                }`}
+                className={`!text-xs ${isSoldOut ? '!text-gray-400' : '!text-yellow-400'
+                  }`}
                 defaultValue={4.5}
               />
             </div>
@@ -302,28 +316,25 @@ const SimpleProductCard = ({ data }) => {
               }}
               transition={{ type: "spring" }}
             >
-              <span className={`text-sm lg:text-xl font-bold ${
-                isSoldOut ? 'text-gray-600' : 'text-primary'
-              }`}>
+              <span className={`text-sm lg:text-xl font-bold ${isSoldOut ? 'text-gray-600' : 'text-primary'
+                }`}>
                 {displayPrice}
               </span>
-              <span className={`text-sm lg:text-lg line-through ml-2 ${
-                isSoldOut ? 'text-gray-500' : 'text-primary'
-              }`}>
+              <span className={`text-sm lg:text-lg line-through ml-2 ${isSoldOut ? 'text-gray-500' : 'text-primary'
+                }`}>
                 {formatPrice(getMrpPrice())}
               </span>
             </motion.div>
-            
+
             <motion.div
               whileTap={{ scale: isSoldOut ? 1 : 0.9 }}
               whileHover={{ scale: isSoldOut ? 1 : 1.1 }}
             >
-              <button 
-                className={`p-2 rounded-full shadow-md text-xs lg:text-xl ${
-                  isSoldOut 
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+              <button
+                className={`p-2 rounded-full shadow-md text-xs lg:text-xl ${isSoldOut
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-primary text-white hover:bg-primary-dark'
-                }`}
+                  }`}
                 onClick={handleAddWishList}
                 disabled={isSoldOut}
               >
@@ -335,7 +346,7 @@ const SimpleProductCard = ({ data }) => {
               </button>
             </motion.div>
           </div>
-          {isSoldOut&&<div className="absolute top-11 right-4 bg-red-600 px-4 rounded-lg PY-2 text-white font-bold">SOLD OUT</div>}
+          {isSoldOut && <div className="absolute top-11 right-4 bg-red-600 px-4 rounded-lg PY-2 text-white font-bold">SOLD OUT</div>}
         </div>
 
         {/* Excitement tag with special animation - only show if not sold out */}
@@ -358,7 +369,7 @@ const SimpleProductCard = ({ data }) => {
 
         {/* Hover overlay effect - only show if not sold out */}
         {!isSoldOut && (
-          <motion.div 
+          <motion.div
             className="absolute inset-0 bg-black/10 pointer-events-none"
             animate={{
               opacity: isHovered ? 1 : 0,

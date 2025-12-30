@@ -350,6 +350,7 @@ const getRoleFields = (role) => {
         recommended: 'recommended_stats_dealer',
         deliveryCharges: 'delivery_charges_dealer'
       };
+
     case 'Corporate':
       return {
         quantity: 'Corporate_quantity',
@@ -371,7 +372,7 @@ const getRoleFields = (role) => {
 
 // Price calculation helper functions
 const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 18) => {
-  if (userRole === "Corporate" || userRole === "Dealer") {
+  if (userRole === "Corporate" || userRole === "Dealer"||userRole === "bni_user") {
     // For dealers and corporate - apply discount only (no GST)
     return DISCOUNT_HELPER(discountPercentage, basePrice);
   } else {
@@ -386,7 +387,7 @@ const calculateUnitPriceWithoutGst = (basePrice, discountPercentage, userRole, g
 };
 
 const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
-  if (userRole === "Corporate" || userRole === "Dealer") {
+  if (userRole === "Corporate" || userRole === "Dealer"||userRole === "bni_user") {
     // For dealers and corporate - base price without GST
     return basePrice;
   } else {
@@ -423,6 +424,16 @@ const ProductDetails = ({
       return product_type === "Stand Alone Product"
         ? _.get(data, "corporate_product_price", 0) || _.get(data, "single_product_price", 0)
         : _.get(data, "variants_price[0].corporate_product_price", "");
+    } else if (user.role === "bni_user") {
+      let Del_price= product_type === "Stand Alone Product"
+        ? _.get(data, "Deler_product_price", 0) 
+        : _.get(data, "variants_price[0].Deler_product_price", "");
+      let cus_price= product_type === "Stand Alone Product"
+        ? _.get(data, "customer_product_price", 0) 
+        : _.get(data, "variants_price[0].customer_product_price", "");
+        
+        let bni_price=cus_price-Math.abs((cus_price-Del_price)/2)
+        return bni_price
     } else {
       return product_type === "Stand Alone Product"
         ? _.get(data, "customer_product_price", 0) || _.get(data, "single_product_price", 0)
@@ -1597,7 +1608,7 @@ const ProductDetails = ({
                         </div>
                       )}
 
-                      {calculateDiscountSavings() > 0 && (
+                      {discountPercentage.percentage == 0 ?"": (
                         <div className="text-sm mt-2">
                           Additional Savings: {formatPrice(calculateDiscountSavings())} ({discountPercentage.percentage}% Quantity Discount)
                         </div>
@@ -1622,7 +1633,7 @@ const ProductDetails = ({
             )}
 
 
-            {(user.role == "Corporate" || user.role == "Dealer") ? (
+            {(user.role == "Corporate" || user.role == "Dealer"||user.role === "bni_user") ? (
               <div className="text-gray-600">
                 <h1 className="!text-[12px] text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
@@ -1644,7 +1655,7 @@ const ProductDetails = ({
                 <h1>
                   Inclusive of all taxes for <span strong>{quantity}</span> Qty
                   <span className="font-bold">
-                    &nbsp;({(user.role === "Dealer" || user.role === "Corporate")
+                    &nbsp;({(user.role === "Dealer" || user.role === "Corporate"||user.role === "bni_user")
                       ? <>{formatPrice(Gst_HELPER(Gst, getUnitPrice()))}</>
                       : <>{formatPrice(calculateGstPrice())}</>
                     }
