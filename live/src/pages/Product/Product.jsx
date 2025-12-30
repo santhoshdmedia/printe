@@ -1,9 +1,8 @@
 import React, { useEffect, useCallback, useState, useRef, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Spin } from "antd";
 import _ from "lodash";
-
 
 // Lazy load heavy components
 const Imageslider = React.lazy(() => import("../../components/Product/ImagesSlider"));
@@ -18,20 +17,19 @@ const HistoryProducts = React.lazy(() => import("./HistoryProducts"));
 
 import { Helmet } from "react-helmet-async";
 
-
-
 // API
 import { addTohistory } from "../../helper/api_helper";
 
 const Product = () => {
   const params = useParams();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { id } = params;
 
   // Refs for tracking
   const processedProductId = useRef(null);
   const hasAddedToHistory = useRef(false);
-  const initialMount = useRef(true);
+  const prevLocation = useRef(location.pathname);
 
   // Redux state selectors with shallow equality
   const user = useSelector((state) => state.authSlice.user);
@@ -42,6 +40,7 @@ const Product = () => {
   // Local state
   const [selectedVariants, setSelectedVariants] = useState({});
   const [variantImages, setVariantImages] = useState({});
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   // Get product data (SSR first, then Redux)
   const productData = window.__INITIAL_STATE__?.product || product;
@@ -55,14 +54,30 @@ const Product = () => {
   const productId = useMemo(() => productData?._id, [productData]);
   const userId = useMemo(() => user?._id, [user]);
 
-  // Reset trackers when product ID changes
+  // Reset component state when location changes (product ID changes)
   useEffect(() => {
-    if (productId && productId !== processedProductId.current) {
+    const resetComponent = () => {
+      setSelectedVariants({});
+      setVariantImages({});
       processedProductId.current = null;
       hasAddedToHistory.current = false;
-      initialMount.current = true;
+      setIsPageLoading(true);
+      
+      // Clear SSR state for the new product
+      if (window.__INITIAL_STATE__?.product) {
+        window.__INITIAL_STATE__.product = null;
+      }
+      
+      // Clear Redux product state if needed
+      dispatch({ type: "CLEAR_CURRENT_PRODUCT" });
+    };
+
+    // Check if location actually changed (different product)
+    if (location.pathname !== prevLocation.current) {
+      resetComponent();
+      prevLocation.current = location.pathname;
     }
-  }, [productId]);
+  }, [location.pathname, dispatch]);
 
   // Get product value safely
   const getProductValue = useCallback((path, defaultValue = "") => {
@@ -101,9 +116,7 @@ const Product = () => {
     });
   }, [productData, getAbsoluteImageUrl]);
 
-
-  
-  // Process variants - runs only once per product
+  // Process variants - runs when product data changes
   useEffect(() => {
     if (!productData?.variants || processedProductId.current === productId) return;
 
@@ -134,7 +147,7 @@ const Product = () => {
   // Add to history - runs only once per product/user
   useEffect(() => {
     const addToHistoryOnce = async () => {
-      if (!productId || !userId || hasAddedToHistory.current || !initialMount.current) return;
+      if (!productId || !userId || hasAddedToHistory.current) return;
       
       try {
         await addTohistory({ product_id: productId });
@@ -147,26 +160,37 @@ const Product = () => {
     addToHistoryOnce();
   }, [productId, userId]);
 
-  // Fetch product data if not from SSR
+  // Fetch product data when ID changes
   useEffect(() => {
-    if (!window.__INITIAL_STATE__?.product && id && initialMount.current) {
-      const fetchProductData = async () => {
-        try {
-          await Promise.all([
-            dispatch({ type: "GET_PRODUCT", data: { id } }),
-            dispatch({ type: "GET_PRODUCT_REVIEW", data: { id } })
-          ]);
+    const fetchProductData = async () => {
+      if (!id) return;
+      
+      try {
+        setIsPageLoading(true);
+        
+        await Promise.all([
+          dispatch({ type: "GET_PRODUCT", data: { id } }),
+          dispatch({ type: "GET_PRODUCT_REVIEW", data: { id } })
+        ]);
 
-          localStorage.removeItem("redirect_url");
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        } catch (error) {
-          console.error("Failed to fetch product data:", error);
-        } finally {
-          initialMount.current = false;
-        }
-      };
+        localStorage.removeItem("redirect_url");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (error) {
+        console.error("Failed to fetch product data:", error);
+      } finally {
+        // Small delay to ensure smooth transition
+        setTimeout(() => setIsPageLoading(false), 300);
+      }
+    };
 
+    // Only fetch if we don't have SSR data for this specific product
+    const hasSSRDataForCurrentProduct = window.__INITIAL_STATE__?.product && 
+                                        window.__INITIAL_STATE__.product._id === id;
+    
+    if (!hasSSRDataForCurrentProduct) {
       fetchProductData();
+    } else {
+      setIsPageLoading(false);
     }
   }, [id, dispatch]);
 
@@ -187,7 +211,7 @@ const Product = () => {
   const categoryId = useMemo(() => getProductValue("category_details._id"), [getProductValue]);
 
   // Loading state
-  if ((isGettingProduct && !window.__INITIAL_STATE__?.product) || !productData) {
+  if (isPageLoading || (isGettingProduct && !productData)) {
     return (
       <React.Suspense fallback={<div>Loading...</div>}>
         <ProductPageLoadingSkeleton />
@@ -195,13 +219,26 @@ const Product = () => {
     );
   }
 
+  // If no product data after loading, show error
+  if (!productData) {
+    return (
+      <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0 py-8">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-semibold text-gray-700">Product Not Found</h2>
+          <p className="text-gray-500 mt-2">The product you're looking for doesn't exist or has been removed.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
-        <Helmet>
-              <title>{productData.seo_title}</title>
-              <meta name="description" content={`${productData.seo_description}`} />
-              <meta name="keywords" content={`${productData.seo_keywords}`} />
-          </Helmet>
+      <Helmet>
+        <title>{productData.seo_title}</title>
+        <meta name="description" content={`${productData.seo_description}`} />
+        <meta name="keywords" content={`${productData.seo_keywords}`} />
+      </Helmet>
+      
       {/* Breadcrumbs */}
       <div className="pt-5 pb-0">
         <React.Suspense fallback={<div>Loading...</div>}>
@@ -216,7 +253,7 @@ const Product = () => {
               <React.Suspense fallback={<div>Loading images...</div>}>
                 {hasVariants ? (
                   <ImagesliderVarient
-                    key={`variants-${productId}`}
+                    key={`variants-${productId}-${location.key}`}
                     imageList={productImages}
                     data={productData}
                     selectedVariants={selectedVariants}
@@ -224,7 +261,7 @@ const Product = () => {
                   />
                 ) : (
                   <Imageslider
-                    key={`images-${productId}`}
+                    key={`images-${productId}-${location.key}`}
                     imageList={productImages}
                     data={productData}
                   />
@@ -236,14 +273,14 @@ const Product = () => {
               <React.Suspense fallback={<div>Loading details...</div>}>
                 {hasVariants ? (
                   <ProductDetailVarient
-                    key={`details-variants-${productId}`}
+                    key={`details-variants-${productId}-${location.key}`}
                     data={productData}
                     onVariantChange={handleVariantChange}
                     selectedVariants={selectedVariants}
                   />
                 ) : (
                   <ProductDetails
-                    key={`details-${productId}`}
+                    key={`details-${productId}-${location.key}`}
                     data={productData}
                   />
                 )}
