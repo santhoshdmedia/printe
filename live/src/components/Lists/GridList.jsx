@@ -7,7 +7,7 @@ import BniProductCard from "../Product/BniProductCard";
 import DividerCards from "../cards/DividerCards";
 import { Swiper, SwiperSlide } from "swiper/react";
 
-const GridList = ({ data = [], title = "", subtitle = "", type = "Category", productCardType = "Modern", to = "" ,gridItems=5}) => {
+const GridList = ({ data = [], title = "", subtitle = "", type = "Category", productCardType = "Modern", to = "" ,gridItems="5"}) => {
   // const products = data;
    const filteredProducts = data.filter(
         product => product.is_visible === true
