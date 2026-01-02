@@ -63,7 +63,7 @@ const Layout = () => {
       <div className="sticky top-0 z-[999] w-full overflow-hidden bg-[#f5f5f5] p-2">
         <div className="scrolling-text-container">
           <div className="scrolling-text !font-[300] whitespace-nowrap">
-          Limited Time Offer: Victoria Luxie worth ₹14,500 now at just ₹4,477 — Till December 31!
+          Premium Roll-Up Standee for just ₹1030 – limited stock, order today!
           </div>
         </div>
       </div>
