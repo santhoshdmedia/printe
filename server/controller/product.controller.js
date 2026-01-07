@@ -9,9 +9,9 @@ const addProduct = async (req, res) => {
   try {
     if (!_.get(req, "body.is_cloned", false)) {
       const check = await ProductSchema.findOne({ seo_url: req.body.seo_url });
-      if (!_.isEmpty(check)) {
-        return errorResponse(res, PRODUCT_SEO_TITLE_ALREADYUSED);
-      }
+      // if (!_.isEmpty(check)) {
+      //   return errorResponse(res, PRODUCT_SEO_TITLE_ALREADYUSED);
+      // }
     }
     const result = await ProductSchema.create(req.body);
     successResponse(res, PRODUCT_ADDED_SUCCESS, result);
@@ -204,6 +204,7 @@ const getProduct = async (req, res) => {
       .populate("vendor_details", "vendor_name")
       .populate("category_details", "")
       .populate("sub_category_details", "");
+    console.log(result);
     
     return successResponse(res, PRODUCT_GET_SUCCESS, result);
   } catch (error) {

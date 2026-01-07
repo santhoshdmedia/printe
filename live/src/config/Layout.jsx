@@ -67,7 +67,7 @@ const Layout = () => {
           </div>
         </div>
       </div>
-
+   
       <div className="sticky top-[40px] z-[999] w-full">
         <Navbar />
       </div>
