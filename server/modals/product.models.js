@@ -143,7 +143,7 @@ module.exports = mongoose.model(
       variants_price: { type: Array },
       description_tabs: { type: Array },
       quantity_discount_splitup: { type: Array },
-      vendor_details: [{ type: mongoose.Schema.Types.ObjectId, ref: "vendor" }],
+      vendor_details: { type: mongoose.Schema.Types.ObjectId, ref: "vendor" },
       vendor_product: { type: mongoose.Schema.Types.ObjectId, ref: "vendor" },
       new_product: { type: Boolean, require: true },
       recommended_product: { type: Boolean, require: true },
