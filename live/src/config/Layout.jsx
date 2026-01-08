@@ -47,6 +47,7 @@ const Layout = () => {
     location.pathname.includes(route)
   );
 
+  
   return (
     <div className={` w-full mx-auto !transition-all !duration-700 `}>
       {/* <div
