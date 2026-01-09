@@ -39,17 +39,24 @@ const clientgoogleLogin = async (req, res) => {
   try {
     const { googleId, name, email, picture } = req.body;
 
+    console.log("Received Google login request:", { googleId, email, name });
+
     // Validate required fields
     if (!googleId || !email) {
-      return res.status(400).json({ message: 'Missing required fields' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Missing required fields (googleId or email)' 
+      });
     }
 
-    // Check if user already exists - using the User model, not UserSchema
+    // Check if user already exists - using the correct model name
     let user = await UserSchema.findOne({
       $or: [{ googleId }, { email }]
     });
 
     if (user) {
+      console.log("Existing user found:", user._id);
+      
       // Update user if they signed up with email previously
       if (!user.googleId) {
         user.googleId = googleId;
@@ -58,41 +65,64 @@ const clientgoogleLogin = async (req, res) => {
           user.picture = picture;
         }
         await user.save();
+        console.log("Updated existing user with Google info");
       }
     } else {
+      console.log("Creating new user");
+      
       // Create new user
       user = new UserSchema({
         googleId,
         name,
         email,
-        picture
+        picture,
+        role: "user" // Default role
       });
       await user.save();
+      console.log("New user created:", user._id);
     }
+
+    // Prepare payload for JWT - use the user object directly
     const payload = {
-      id: _.get(user, "[0]._id", ""),
-      email: _.get(user, "[0].email", ""),
-      role: _.get(user, "[0].role", ""),
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role || "user",
     };
+
+    console.log("JWT payload:", payload);
 
     // Create JWT token
     const token = await GenerateToken(payload);
 
-    // Return user and token
+    console.log("Token generated successfully");
+
+    // Return user and token - make sure format matches frontend expectations
     res.status(200).json({
+      success: true,
       token,
       user: {
-        id: user._id,
+        id: user._id.toString(),
+        _id: user._id.toString(),
         name: user.name,
         email: user.email,
-        picture: user.picture
+        picture: user.picture,
+        role: user.role || "user",
+        wish_list: user.wish_list || []
       }
     });
   } catch (error) {
     console.error('Google auth error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error stack:', error.stack);
+    
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
+
+module.exports = { clientgoogleLogin };
 const clientEmailLogin = async (req, res) => {
   try {
     const { name, email } = req.body;

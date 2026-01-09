@@ -24,6 +24,8 @@ export const sendForgetPassowrdMail = async (formData) => {
 export const googleLogin = async (formData) => {
   try {
     const response = await axios.post(`${baseURL}/client_user/google_login`, formData);
+    console.log(response);
+    
     return response;
   } catch (error) {
     console.error("Google login API error:", error);

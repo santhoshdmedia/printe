@@ -37,7 +37,7 @@ const App = () => {
     
     // If current date is AFTER the fixed target date
     if (now > FIXED_TARGET_DATE) {
-      console.log("🔄 Current date has passed fixed target date. Clearing localStorage...");
+      
       localStorage.removeItem('countdownHasExpired');
       localStorage.removeItem('countdownTargetDate');
       return true; // Indicates we cleared localStorage
@@ -47,7 +47,6 @@ const App = () => {
 
   // Debug function to reset everything
   const resetCountdown = () => {
-    console.log("RESETTING COUNTDOWN");
     localStorage.removeItem('countdownHasExpired');
     localStorage.removeItem('countdownTargetDate');
     window.location.reload();
@@ -162,7 +161,6 @@ const App = () => {
   // Start confetti when countdown expires
   useEffect(() => {
     if (!showCountdown && timeRemaining.expired) {
-      console.log("Countdown expired - showing confetti animation");
       setShowConfetti(true);
     }
   }, [showCountdown, timeRemaining.expired]);
@@ -180,32 +178,23 @@ const App = () => {
   // Initialize target date - MAIN LOGIC
   useEffect(() => {
     const now = new Date();
-    console.log("====================================");
-    console.log("DEBUG INFO:");
-    console.log("Current time:", now.toLocaleString());
-    console.log("Current time (24h):", now.getHours() + ":" + now.getMinutes());
-    console.log("Fixed target time:", FIXED_TARGET_DATE.toLocaleString());
-    console.log("Fixed target (24h):", FIXED_TARGET_DATE.getHours() + ":" + FIXED_TARGET_DATE.getMinutes());
-    console.log("Is target > now?", FIXED_TARGET_DATE > now);
+   
     
     // FIRST: Check if current date has passed the fixed target date
     // This ensures localStorage is cleared if user visits after the target date
     const shouldClearStorage = checkAndClearExpiredCountdown();
     
     if (shouldClearStorage) {
-      console.log("🗑️  Cleared localStorage because current date passed target date");
     }
     
     // Check localStorage
     const hasCountdownExpired = localStorage.getItem('countdownHasExpired');
     const storedTargetDate = localStorage.getItem('countdownTargetDate');
     
-    console.log("localStorage countdownHasExpired:", hasCountdownExpired);
-    console.log("localStorage countdownTargetDate:", storedTargetDate);
+ 
     
     // Check if fixed target date is in the future
     if (FIXED_TARGET_DATE > now) {
-      console.log("✅ Fixed countdown target is in the FUTURE - showing countdown");
       
       // Only show countdown if it hasn't been marked as expired
       if (hasCountdownExpired !== 'true') {
@@ -216,12 +205,10 @@ const App = () => {
         localStorage.setItem('countdownTargetDate', FIXED_TARGET_DATE.getTime().toString());
         localStorage.removeItem('countdownHasExpired'); // Ensure not marked as expired
       } else {
-        console.log("⚠️  Countdown was previously marked as expired, but target is in future. Showing website.");
         setShowCountdown(false);
       }
     } else {
       // Countdown has expired - mark it as permanently expired
-      console.log("❌ Fixed countdown target has EXPIRED - showing website permanently");
       localStorage.setItem('countdownHasExpired', 'true');
       localStorage.removeItem('countdownTargetDate');
       setShowCountdown(false);
@@ -230,39 +217,39 @@ const App = () => {
     setIsLoading(false);
   }, []);
 
-  function calculateTimeRemaining() {
-    if (!targetDate) {
-      return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: false };
-    }
+  // function calculateTimeRemaining() {
+  //   if (!targetDate) {
+  //     return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: false };
+  //   }
 
-    const now = new Date();
-    const target = targetDate;
-    const difference = target.getTime() - now.getTime();
+  //   const now = new Date();
+  //   const target = targetDate;
+  //   const difference = target.getTime() - now.getTime();
 
-    if (difference <= 0) {
-      // Mark countdown as permanently expired
-      localStorage.setItem('countdownHasExpired', 'true');
-      localStorage.removeItem('countdownTargetDate');
+  //   if (difference <= 0) {
+  //     // Mark countdown as permanently expired
+  //     localStorage.setItem('countdownHasExpired', 'true');
+  //     localStorage.removeItem('countdownTargetDate');
       
-      console.log("Countdown EXPIRED PERMANENTLY! Showing main website forever...");
-      return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-    }
+  //     console.log("Countdown EXPIRED PERMANENTLY! Showing main website forever...");
+  //     return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+  //   }
 
-    // Calculate remaining time
-    const totalSeconds = Math.floor(difference / 1000);
-    const days = Math.floor(totalSeconds / (3600 * 24));
-    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+  //   // Calculate remaining time
+  //   const totalSeconds = Math.floor(difference / 1000);
+  //   const days = Math.floor(totalSeconds / (3600 * 24));
+  //   const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+  //   const minutes = Math.floor((totalSeconds % 3600) / 60);
+  //   const seconds = totalSeconds % 60;
 
-    return {
-      days,
-      hours,
-      minutes,
-      seconds,
-      expired: false,
-    };
-  }
+  //   return {
+  //     days,
+  //     hours,
+  //     minutes,
+  //     seconds,
+  //     expired: false,
+  //   };
+  // }
 
   // Initialize countdown when targetDate is set
   useEffect(() => {
@@ -270,7 +257,6 @@ const App = () => {
       const initialTime = calculateTimeRemaining();
       setTimeRemaining(initialTime);
       setShowCountdown(!initialTime.expired);
-      console.log("Initial countdown time:", initialTime);
     }
   }, [targetDate]);
 
@@ -278,14 +264,12 @@ const App = () => {
   useEffect(() => {
     if (!targetDate || !showCountdown) return;
     
-    console.log("Starting countdown timer for fixed target...");
     
     const interval = setInterval(() => {
       const newTimeRemaining = calculateTimeRemaining();
       setTimeRemaining(newTimeRemaining);
       
       if (newTimeRemaining.expired) {
-        console.log("Countdown finished PERMANENTLY. Showing main app forever.");
         setShowCountdown(false);
         clearInterval(interval);
       }
@@ -301,14 +285,12 @@ const App = () => {
     
     // Set up interval to check daily (every 24 hours)
     const dailyCheckInterval = setInterval(() => {
-      console.log("🔄 Running daily check for countdown expiration...");
       checkAndClearExpiredCountdown();
     }, 24 * 60 * 60 * 1000); // 24 hours
     
     // Also check when user comes back to tab (visibility change)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log("🔍 Tab became visible, checking countdown...");
         checkAndClearExpiredCountdown();
       }
     };
@@ -361,7 +343,6 @@ const App = () => {
 
   // If countdown is active and not expired, show countdown screen
   if (showCountdown && !timeRemaining.expired) {
-    console.log("Rendering countdown screen");
     return (
       <div className='w-screen h-screen bg-black'>
         <DomeGallery countdown={timeRemaining} />
