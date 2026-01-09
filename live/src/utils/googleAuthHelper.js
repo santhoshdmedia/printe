@@ -78,6 +78,7 @@ export const handleGoogleLoginSuccess = async (
       type: "GOOGLE_LOGIN", 
       data: { token, user }
     });
+    window.location.reload()
 
     console.log("✅ Redux action dispatched - User authenticated");
     message.success(`Welcome back, ${user.name || user.email}!`);
