@@ -218,9 +218,9 @@ const editProduct = async (req, res) => {
     const { id } = req.params;
 
     const result = await ProductSchema.findOne({ $and: [{ seo_url: req.body.seo_url }, { _id: { $ne: id } }, { parent_product_id: { $ne: id } }] });
-    if (!_.isEmpty(result)) {
-      return errorResponse(res, PRODUCT_SEO_TITLE_ALREADYUSED);
-    }
+    // if (!_.isEmpty(result)) {
+    //   return errorResponse(res, PRODUCT_SEO_TITLE_ALREADYUSED);
+    // }
     const checkCloneAVailable = await ProductSchema.find({ parent_product_id: id });
 
     if (!_.isEmpty(checkCloneAVailable)) {
