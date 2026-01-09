@@ -1,65 +1,96 @@
-// Add this to your existing saga file (where you handle LOGIN action)
-
-import { call, put, takeLatest } from "redux-saga/effects";
+import { call, put, takeLatest, all } from "redux-saga/effects";
 import {
   isLogInStarted,
   isLogInSuccess,
   isLogInFailed,
-} from "./slices/authSlice"; // Adjust path as needed
+  isSignUpStarted,
+  isSignUpSuccess,
+  isSignUpFailed,
+  googleLoginStarted,
+  googleLoginSuccess,
+  googleLoginFailed,
+  // ... other imports
+} from "./slices/authSlice";
+import { login, signUp } from "../helper/api_helper";
 
-// Note: This is different from regular login because the API call
-// is already done in the component. We just need to handle the response.
-
-function* googleLoginSaga(action) {
+// Regular Login Saga (existing)
+function* loginSaga(action) {
   try {
     yield put(isLogInStarted());
-    
-    const { token, user } = action.data;
-    
-    if (token && user) {
-      // Format user data to match your Redux state structure
-      const userData = {
-        _id: user.id || user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role || "user",
-        wish_list: user.wish_list || [],
-        picture: user.picture
-      };
-
-      yield put(
-        isLogInSuccess({
-          data: userData,
-          message: "Login successful with Google!",
-        })
-      );
-    } else {
-      throw new Error("Invalid response from server");
-    }
+    const response = yield call(login, action.data);
+    yield put(isLogInSuccess(response.data));
   } catch (error) {
+    yield put(isLogInFailed(error.response?.data?.message || "Login failed"));
+  }
+}
+
+// ========================================
+// NEW: Google Login Saga
+// ========================================
+function* googleLoginSaga(action) {
+  try {
+    console.log("🔵 Saga: Google login started");
+    yield put(googleLoginStarted());
+    
+    const { token, user } = action.payload;
+    
+    console.log("📦 Saga: Received data:", { token: !!token, user });
+    
+    if (!token || !user) {
+      throw new Error("Invalid data from Google login");
+    }
+
+    // Format user data to match Redux state structure
+    const userData = {
+      _id: user.id || user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role || "user",
+      wish_list: user.wish_list || [],
+      picture: user.picture,
+    };
+
+    console.log("✅ Saga: Formatted user data:", userData);
+
+    // Dispatch success action
     yield put(
-      isLogInFailed(error.message || "Google login failed. Please try again.")
+      googleLoginSuccess({
+        data: userData,
+        message: "Login successful with Google!",
+      })
+    );
+
+    console.log("✅ Saga: Success action dispatched - Auth state updated");
+    
+  } catch (error) {
+    console.error("❌ Saga: Google login error:", error);
+    yield put(
+      googleLoginFailed(
+        error.message || "Google login failed. Please try again."
+      )
     );
   }
 }
 
-// Watcher for Google login
-export function* watchGoogleLogin() {
+// Watchers
+function* watchLogin() {
+  yield takeLatest("LOGIN", loginSaga);
+}
+
+function* watchGoogleLogin() {
   yield takeLatest("GOOGLE_LOGIN", googleLoginSaga);
 }
 
-// Make sure to add watchGoogleLogin to your rootSaga
-// Example of rootSaga (adjust based on your setup):
-/*
-import { all } from "redux-saga/effects";
+function* watchSignUp() {
+  yield takeLatest("SIGN_UP", signUpSaga);
+}
 
+// Root Saga - combine all watchers
 export default function* rootSaga() {
   yield all([
     watchLogin(),
-    watchSignUp(),
     watchGoogleLogin(), // <-- Add this
-    watchUpdateUser(),
+    watchSignUp(),
     // ... other watchers
   ]);
 }
-*/

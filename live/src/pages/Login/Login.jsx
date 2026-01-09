@@ -1,3 +1,4 @@
+
 import { Divider, Input, Spin, message } from "antd";
 import React, { useEffect, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa";
@@ -10,7 +11,6 @@ import logo from "../../assets/logo/without_bg.png";
 import { googleLogin, mergeCart } from "../../helper/api_helper";
 import { saveTokenToLocalStorage } from "../../redux/middleware";
 
-// Main Login Component - Production Ready
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -20,7 +20,6 @@ const Login = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // Get Google Client ID from environment variable
   const GOOGLE_CLIENT_ID = "323773820042-ube4qhfaig1dbrgvl85gchkrlvphnlv9.apps.googleusercontent.com";
 
   useEffect(() => {
@@ -68,85 +67,88 @@ const Login = () => {
     }
   };
 
-  // Google Login Success Handler - Production Ready
-const handleGoogleSuccess = async (credentialResponse) => {
-  try {
-    setIsGoogleLoading(true);
-    setErrorMessage("");
+  // ========================================
+  // FIXED: Google Login Success Handler
+  // ========================================
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setIsGoogleLoading(true);
+      setErrorMessage("");
 
-    const decoded = jwtDecode(credentialResponse.credential);
-    
-    const googleData = {
-      googleId: decoded.sub,
-      name: decoded.name,
-      email: decoded.email,
-      picture: decoded.picture
-    };
+      // Decode JWT credential
+      const decoded = jwtDecode(credentialResponse.credential);
+      
+      const googleData = {
+        googleId: decoded.sub,
+        name: decoded.name,
+        email: decoded.email,
+        picture: decoded.picture
+      };
 
-    console.log("🔵 Google Login - Sending data to backend:", googleData);
+      console.log("🔵 Google Login - Sending to backend:", googleData);
 
-    const response = await googleLogin(googleData);
-    
-    console.log("✅ Google Login - Full Response:", response);
-    
-    // Handle different response structures
-    const data = response.data || response;
-    const token = data.token || data.accessToken || data.jwt;
-    const user = data.user || data.userData;
-    
-    if (!token || !user) {
-      console.error("❌ Missing token or user in response:", data);
-      throw new Error(`Invalid response structure. Token: ${!!token}, User: ${!!user}`);
-    }
-
-    console.log("✅ Valid response - Token and User found");
-    
-    saveTokenToLocalStorage(token);
-    console.log("✅ Token saved to localStorage");
-    
-    // Merge guest cart if exists
-    const guest = localStorage.getItem("guest");
-    if ((user.id || user._id) && guest && guest !== "") {
-      try {
-        const mergeData = {
-          guestId: guest,
-          id: { _id: user.id || user._id }
-        };
-        await mergeCart(mergeData);
-        localStorage.removeItem("guest");
-        console.log("✅ Guest cart merged");
-      } catch (cartError) {
-        console.error("⚠️ Cart merge error (non-critical):", cartError);
+      // Call backend API
+      const response = await googleLogin(googleData);
+      
+      console.log("✅ Full API Response:", response);
+      
+      // FIX: Extract data from response.data (Axios wraps it)
+      const responseData = response.data || response;
+      const { token, user } = responseData;
+      
+      console.log("📦 Extracted Token:", token ? "✓ Present" : "✗ Missing");
+      console.log("📦 Extracted User:", user);
+      
+      if (!token || !user) {
+        console.error("❌ Invalid response structure");
+        throw new Error("Invalid response from server - missing token or user");
       }
+
+      // Save token to localStorage
+      saveTokenToLocalStorage(token);
+      console.log("✅ Token saved to localStorage");
+      
+      // Handle guest cart merge
+      const guestId = localStorage.getItem("guest");
+      if ((user.id || user._id) && guestId && guestId !== "") {
+        try {
+          console.log("🛒 Merging guest cart...");
+          const mergeData = {
+            guestId: guestId,
+            id: { _id: user.id || user._id }
+          };
+          await mergeCart(mergeData);
+          localStorage.removeItem("guest");
+          console.log("✅ Guest cart merged successfully");
+        } catch (cartError) {
+          console.error("⚠️ Cart merge error (non-critical):", cartError);
+        }
+      }
+
+      // Dispatch Redux action for saga to handle
+      console.log("🚀 Dispatching GOOGLE_LOGIN action to Redux");
+      dispatch({ 
+        type: "GOOGLE_LOGIN", 
+        payload: { token, user }
+      });
+
+      console.log("✅ Redux action dispatched - Saga will handle state update");
+      
+    } catch (error) {
+      console.error("❌ Google login error:", error);
+      console.error("Error details:", error.response?.data);
+      
+      const errorMsg = error.response?.data?.message 
+        || error.message 
+        || "Google login failed. Please try again.";
+      
+      setErrorMessage(errorMsg);
+      message.error(errorMsg);
+      setIsGoogleLoading(false);
     }
+    // Note: Don't set loading false here on success - let saga handle it
+  };
 
-    dispatch({ 
-      type: "GOOGLE_LOGIN", 
-      data: { token, user }
-    });
-
-    console.log("✅ Redux action dispatched");
-    message.success("Login successful with Google!");
-    
-    setTimeout(() => {
-      const redirectUrl = localStorage.getItem("redirect_url");
-      localStorage.removeItem("redirect_url");
-      navigate(redirectUrl ? `/product/${redirectUrl}` : "/");
-    }, 500);
-    
-  } catch (error) {
-    console.error("❌ Google login error:", error);
-    console.error("Error response:", error.response?.data);
-    console.error("Error stack:", error.stack);
-    
-    const errorMsg = error.response?.data?.message || error.message || "Google login failed. Please try again.";
-    setErrorMessage(errorMsg);
-    message.error(errorMsg);
-  } finally {
-    setIsGoogleLoading(false);
-  }
-};
-  // Google Login Error Handler
   const handleGoogleError = (error) => {
     console.error("❌ Google Login Failed:", error);
     setErrorMessage("Google login failed. Please try again.");
@@ -154,22 +156,17 @@ const handleGoogleSuccess = async (credentialResponse) => {
     setIsGoogleLoading(false);
   };
 
-  // Check if Google Client ID is configured
   if (!GOOGLE_CLIENT_ID) {
-    console.error("❌ REACT_APP_GOOGLE_CLIENT_ID is not configured!");
+    console.error("❌ GOOGLE_CLIENT_ID is not configured!");
   }
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <div className={`w-full min-h-screen flex !font-primary transition-all duration-500 ${isMounted ? (isExiting ? "exit-animation" : "enter-animation") : "opacity-0"}`}>
-        {/* Logo in top right corner with gold background */}
+        {/* Logo */}
         <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50">
           <Link to={"/"} className="p-2 md:p-3 bg-yellow-400 flex items-center justify-center rounded-md cursor-pointer">
-            <img 
-              src={logo} 
-              alt="Logo" 
-              className="h-6 md:h-8 w-auto object-contain"
-            />
+            <img src={logo} alt="Logo" className="h-6 md:h-8 w-auto object-contain" />
           </Link>
         </div>
 
