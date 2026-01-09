@@ -1,5 +1,3 @@
-// auth slice.js
-
 import { createSlice } from "@reduxjs/toolkit";
 import { message } from "antd";
 
@@ -219,38 +217,11 @@ const authSlice = createSlice({
         duration: 3,
       });
     },
-    // Google Login reducers
-    googleLoginStarted: (state) => {
-      state.isLogingIn = true;
-    },
-    googleLoginSuccess: (state, action) => {
-      state.isAuth = true;
-      state.isLogingIn = false;
-      state.user = action.payload.data;
-      message.success({
-        key: "google-login",
-        content: "Login successful with Google!",
-      });
-    },
-    googleLoginFailed: (state, action) => {
-      state.isLogingIn = false;
-      message.error({
-        key: "google-login",
-        content: action.payload,
-        duration: 0,
-        onClick(e) {
-          message.destroy("google-login");
-        },
-      });
-    },
   },
 });
 
 export default authSlice.reducer;
 export const {
-  googleLoginStarted,
-  googleLoginSuccess,
-  googleLoginFailed,
   isLogInFailed,
   isLogInStarted,
   isLogInSuccess,
