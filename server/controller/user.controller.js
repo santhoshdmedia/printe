@@ -39,36 +39,46 @@ const clientgoogleLogin = async (req, res) => {
   try {
     const { googleId, name, email, picture } = req.body;
 
-    console.log("Received Google login request:", { googleId, email, name });
+    // Log for debugging (remove in production if needed)
+    console.log("🔵 Received Google login request:", { 
+      googleId, 
+      email, 
+      name,
+      timestamp: new Date().toISOString()
+    });
 
     // Validate required fields
     if (!googleId || !email) {
+      console.error("❌ Missing required fields");
       return res.status(400).json({ 
         success: false,
         message: 'Missing required fields (googleId or email)' 
       });
     }
 
-    // Check if user already exists - using the correct model name
+    // Check if user already exists
     let user = await UserSchema.findOne({
       $or: [{ googleId }, { email }]
     });
 
     if (user) {
-      console.log("Existing user found:", user._id);
+      console.log("✅ Existing user found:", user._id);
       
-      // Update user if they signed up with email previously
+      // Update user if they signed up with email/password previously
       if (!user.googleId) {
         user.googleId = googleId;
+        user.name = name || user.name; // Update name if provided
+        
         // Only update picture if not already set
-        if (!user.picture) {
+        if (!user.picture && picture) {
           user.picture = picture;
         }
+        
         await user.save();
-        console.log("Updated existing user with Google info");
+        console.log("✅ Updated existing user with Google info");
       }
     } else {
-      console.log("Creating new user");
+      console.log("🔵 Creating new user");
       
       // Create new user
       user = new UserSchema({
@@ -76,51 +86,61 @@ const clientgoogleLogin = async (req, res) => {
         name,
         email,
         picture,
-        role: "user" // Default role
+        role: "user", // Default role
+        wish_list: [] // Initialize empty wish list
       });
+      
       await user.save();
-      console.log("New user created:", user._id);
+      console.log("✅ New user created:", user._id);
     }
 
-    // Prepare payload for JWT - use the user object directly
+    // Prepare payload for JWT
     const payload = {
       id: user._id.toString(),
       email: user.email,
       role: user.role || "user",
     };
 
-    console.log("JWT payload:", payload);
+    console.log("🔵 Generating JWT token");
 
     // Create JWT token
     const token = await GenerateToken(payload);
 
-    console.log("Token generated successfully");
+    console.log("✅ Token generated successfully");
 
-    // Return user and token - make sure format matches frontend expectations
-    res.status(200).json({
+    // Return standardized response
+    const response = {
       success: true,
       token,
       user: {
         id: user._id.toString(),
-        _id: user._id.toString(),
+        _id: user._id.toString(), // Include both for compatibility
         name: user.name,
         email: user.email,
         picture: user.picture,
         role: user.role || "user",
         wish_list: user.wish_list || []
       }
-    });
+    };
+
+    console.log("✅ Sending success response");
+    
+    res.status(200).json(response);
+    
   } catch (error) {
-    console.error('Google auth error:', error);
+    console.error('❌ Google auth error:', error);
     console.error('Error stack:', error.stack);
     
+    // Send error response
     res.status(500).json({ 
       success: false,
       message: 'Internal server error',
+      // Only include error details in development
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
+
 
 module.exports = { clientgoogleLogin };
 const clientEmailLogin = async (req, res) => {
