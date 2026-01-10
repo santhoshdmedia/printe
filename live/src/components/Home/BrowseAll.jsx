@@ -30,18 +30,24 @@ const BrowseAll = () => {
   return (
     <section className="py-10 sm:py-12 md:py-16 px-3 sm:px-6 md:px-16 bg-white text-black">
       {/* ---------- Heading ---------- */}
-      <div className="text-center mb-8 sm:mb-10">
-        <h1 className="text-base sm:text-2xl md:text-3xl font-extrabold uppercase tracking-wide relative inline-block text-black animate-slide-up">
-          Browse All{" "}
-          <span className="text-[#f2c41a] relative">
-            Categories
-            <span className="absolute bottom-[-3px] left-0 w-full h-[2px] sm:h-[3px] bg-[#f2c41a] rounded-full animate-underline"></span>
-          </span>
-        </h1>
-        <p className="text-gray-700 mt-2 text-xs sm:text-sm md:text-base animate-fade-in-delay">
-          Discover Everything You Need!
-        </p>
-      </div>
+      <div className="text-center mb-12 md:mb-16 relative">
+          <div className=" lg:block absolute inset-0 flex items-center justify-center opacity-5">
+            <div className="text-7xl lg:text-9xl font-black text-gray-900">CATEGORIES</div>
+          </div>
+          <div className="relative z-10">
+            <span className="inline-block text-[#f2c41a] text-xs sm:text-sm font-bold tracking-widest uppercase mb-2">
+              Explore Our Collection
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-3 md:mb-4">
+              Browse{" "}
+              <span className="bg-gradient-to-r from-[#f2c41a] to-yellow-500 bg-clip-text text-transparent">
+                Categories
+              </span>
+            </h2>
+            <div className="w-20 sm:w-24 h-1 bg-gradient-to-r from-[#f2c41a] to-yellow-500 mx-auto rounded-full"></div>
+          </div>
+        </div>
+
 
       {/* ---------- Swiper ---------- */}
       <Swiper
