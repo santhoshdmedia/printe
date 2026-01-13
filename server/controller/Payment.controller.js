@@ -1,9 +1,13 @@
+// ==================== PAYMENT CONTROLLER ====================
+// File: controller/Payment.controller.js
+
 const { errorResponse, successResponse } = require("../helper/response.helper");
 const { SOMETHING_WENT_WRONG } = require("../helper/message.helper");
 const CCAvenue = require("../utils/ccavenue");
-const { OrderDetailsSchema } = require("./models_import");
+const { OrderDetailsSchema,User } = require("./models_import");
 require("dotenv").config();
 
+// Create payment order from frontend checkout
 const createPaymentOrder = async (req, res) => {
   try {
     const { 
@@ -25,11 +29,12 @@ const createPaymentOrder = async (req, res) => {
       discount_amount,
       total_amount,
       payment_type,
-      total_before_discount
+      total_before_discount,
+      created_by = "customer"
     } = req.body;
 
     console.log('Payment order request received:', {
-      amount, order_id, billing_email, user_id, payment_type
+      amount, order_id, billing_email, user_id, payment_type, created_by
     });
 
     // Validate required fields
@@ -51,7 +56,7 @@ const createPaymentOrder = async (req, res) => {
       return errorResponse(res, "Invalid amount");
     }
 
-    // Validate and get environment variables with safe defaults
+    // Get environment variables
     const getEnv = (key, defaultValue = '') => {
       const value = process.env[key];
       if (value && typeof value === 'string') {
@@ -60,17 +65,11 @@ const createPaymentOrder = async (req, res) => {
       return defaultValue;
     };
 
-    // Critical CCAvenue credentials
     const CCA_MERCHANT_ID = getEnv('CCA_MERCHANT_ID');
     const CCA_WORKING_KEY = getEnv('CCA_WORKING_KEY');
     const CCA_ACCESS_CODE = getEnv('CCA_ACCESS_CODE');
-    
-    // URLs with defaults
     const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
     const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
-
-    console.log(FRONTEND_BASE_URL,"front",BACKEND_BASE_URL,"back");
-    
 
     // Validate critical environment variables
     const missingCriticalEnvVars = [];
@@ -80,11 +79,6 @@ const createPaymentOrder = async (req, res) => {
 
     if (missingCriticalEnvVars.length > 0) {
       console.error('Missing critical environment variables:', missingCriticalEnvVars);
-      console.error('Env check:', {
-        CCA_MERCHANT_ID: CCA_MERCHANT_ID ? 'SET' : 'MISSING',
-        CCA_WORKING_KEY: CCA_WORKING_KEY ? 'SET' : 'MISSING',
-        CCA_ACCESS_CODE: CCA_ACCESS_CODE ? 'SET' : 'MISSING'
-      });
       return errorResponse(res, `Payment gateway configuration error. Missing: ${missingCriticalEnvVars.join(', ')}`);
     }
 
@@ -97,9 +91,9 @@ const createPaymentOrder = async (req, res) => {
       processedCartItems = cart_items.map(item => ({
         product_id: item.product_id || item.id || '',
         product_name: item.product_name || item.name || 'Product',
-        quantity: parseInt(item.quantity) || 1,
-        price: parseFloat(item.price) || 0,
-        image: item.image || '',
+        quantity: parseInt(item.quantity || item.product_quantity) || 1,
+        price: parseFloat(item.price || item.final_total_withoutGst || item.final_total) || 0,
+        image: item.image || item.product_image || '',
         size: item.size || '',
         color: item.color || ''
       }));
@@ -112,14 +106,14 @@ const createPaymentOrder = async (req, res) => {
     const processedDeliveryAddress = {
       name: delivery_address.name || billing_name || '',
       email: delivery_address.email || billing_email || '',
-      mobile_number: delivery_address.mobile_number || billing_tel || '',
+      mobile_number: delivery_address.mobile_number || delivery_address.phone || billing_tel || '',
       alternateMobileNumber: delivery_address.alternateMobileNumber || '',
-      street: delivery_address.street || delivery_address.address || '',
+      street: delivery_address.street || delivery_address.addressLine1 || delivery_address.address || '',
       city: delivery_address.city || '',
       state: delivery_address.state || '',
       pincode: delivery_address.pincode || delivery_address.zip || '',
       country: delivery_address.country || 'India',
-      landmark: delivery_address.landmark || '',
+      landmark: delivery_address.landmark || delivery_address.addressLine2 || '',
       address_type: delivery_address.address_type || 'home'
     };
 
@@ -144,6 +138,7 @@ const createPaymentOrder = async (req, res) => {
       total_amount: parseFloat(total_amount || numericAmount),
       total_before_discount: parseFloat(total_before_discount || numericAmount),
       payment_option: payment_type || "full",
+      created_by: created_by, // "customer" or "admin"
       created_at: new Date(),
       updated_at: new Date()
     };
@@ -204,7 +199,7 @@ const createPaymentOrder = async (req, res) => {
       delivery_tel: (processedDeliveryAddress.mobile_number || '').substring(0, 20),
       merchant_param1: user_id || '',
       merchant_param2: savedOrder._id.toString(),
-      merchant_param3: 'web_order_v1'
+      merchant_param3: created_by
     };
 
     console.log('Preparing CCAvenue request for order:', finalOrderId);
@@ -218,7 +213,6 @@ const createPaymentOrder = async (req, res) => {
     } catch (encryptError) {
       console.error('CCAvenue encryption error:', encryptError);
       
-      // Update order status to reflect encryption failure
       await OrderDetailsSchema.findByIdAndUpdate(savedOrder._id, {
         order_status: "payment gateway error",
         payment_failure_reason: "Encryption failed: " + encryptError.message,
@@ -228,7 +222,7 @@ const createPaymentOrder = async (req, res) => {
       return errorResponse(res, "Payment gateway configuration error. Please try again later.");
     }
 
-    // Determine gateway URL based on environment
+    // Determine gateway URL
     const gatewayUrl = process.env.NODE_ENV === 'production' 
       ? 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction'
       : 'https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
@@ -251,28 +245,22 @@ const createPaymentOrder = async (req, res) => {
       }
     };
 
-    console.log('Payment order created successfully for:', {
-      order_id: finalOrderId,
-      amount: numericAmount,
-      email: billing_email
-    });
+    console.log('Payment order created successfully');
 
     return successResponse(res, "Order created successfully. Redirect to payment gateway.", responseData);
     
   } catch (err) {
     console.error('Unexpected error in createPaymentOrder:', err);
-    console.error('Error stack:', err.stack);
     return errorResponse(res, "An unexpected error occurred. Please try again.");
   }
 };
 
+// CCAvenue callback handler
 const handleCCAvenueCallback = async (req, res) => {
   try {
     console.log('CCAvenue callback received:', {
       timestamp: new Date().toISOString(),
-      method: req.method,
-      query: req.query,
-      body: req.body
+      method: req.method
     });
 
     let encResp = req.body.encResp || req.query.encResp;
@@ -286,13 +274,12 @@ const handleCCAvenueCallback = async (req, res) => {
     try {
       const ccavenue = new CCAvenue(process.env.CCA_WORKING_KEY.trim());
       decryptedData = ccavenue.decryptData(encResp);
-      console.log('Decrypted CCAvenue response:', JSON.stringify(decryptedData, null, 2));
+      console.log('Decrypted CCAvenue response');
     } catch (decryptError) {
       console.error('CCAvenue decryption error:', decryptError);
       return res.redirect(`${process.env.FRONTEND_BASE_URL}/payment/error?message=Invalid payment response`);
     }
 
-    // Extract important fields
     const {
       order_id,
       tracking_id,
@@ -304,9 +291,7 @@ const handleCCAvenueCallback = async (req, res) => {
       payment_mode,
       card_name,
       status_code,
-      billing_name,
-      billing_email,
-      billing_tel
+      merchant_param3
     } = decryptedData;
 
     if (!order_id) {
@@ -319,8 +304,6 @@ const handleCCAvenueCallback = async (req, res) => {
     try {
       order = await OrderDetailsSchema.findOne({ invoice_no: order_id });
       if (!order) {
-        console.error('Order not found in database:', order_id);
-        // Try to find by merchant_param2 which contains database _id
         const merchantParam2 = decryptedData.merchant_param2;
         if (merchantParam2) {
           order = await OrderDetailsSchema.findById(merchantParam2);
@@ -341,22 +324,17 @@ const handleCCAvenueCallback = async (req, res) => {
     let frontendRedirectUrl;
     let redirectParams = new URLSearchParams();
 
-    // Set payment status and transaction IDs
+    // Set payment status based on CCAvenue response
     if (order_status === 'Success') {
       updateData.payment_status = 'completed';
       updateData.order_status = 'accounting team';
-      if (tracking_id) {
-        updateData.transaction_id = tracking_id;
-      }
-      if (bank_ref_no) {
-        updateData.payment_id = bank_ref_no;
-      }
+      if (tracking_id) updateData.transaction_id = tracking_id;
+      if (bank_ref_no) updateData.payment_id = bank_ref_no;
       
       frontendRedirectUrl = `${process.env.FRONTEND_BASE_URL}/payment/success`;
       redirectParams.append('order_id', order_id);
       if (tracking_id) redirectParams.append('tracking_id', tracking_id);
       redirectParams.append('amount', amount);
-      redirectParams.append('payment_mode', payment_mode || '');
       
     } else if (order_status === 'Aborted') {
       updateData.payment_status = 'cancelled';
@@ -374,7 +352,6 @@ const handleCCAvenueCallback = async (req, res) => {
       frontendRedirectUrl = `${process.env.FRONTEND_BASE_URL}/payment/failed`;
       redirectParams.append('order_id', order_id);
       if (failure_message) redirectParams.append('message', encodeURIComponent(failure_message));
-      if (status_code) redirectParams.append('status_code', status_code);
       
     } else {
       updateData.payment_status = 'failed';
@@ -383,32 +360,27 @@ const handleCCAvenueCallback = async (req, res) => {
       
       frontendRedirectUrl = `${process.env.FRONTEND_BASE_URL}/payment/error`;
       redirectParams.append('order_id', order_id);
-      redirectParams.append('message', encodeURIComponent(status_message || 'Unknown payment status'));
     }
 
-    // Update order in database if found
+    // Update order in database
     if (order) {
       try {
-        const updatedOrder = await OrderDetailsSchema.findByIdAndUpdate(
+        await OrderDetailsSchema.findByIdAndUpdate(
           order._id,
           updateData,
           { new: true }
         );
 
-        console.log('Order updated in database:', {
+        console.log('Order updated:', {
           order_id: order_id,
-          database_id: order._id,
-          payment_status: updateData.payment_status,
-          transaction_id: updateData.transaction_id,
-          order_status: updateData.order_status
+          payment_status: updateData.payment_status
         });
 
       } catch (dbError) {
-        console.error('Error updating order in database:', dbError);
+        console.error('Error updating order:', dbError);
       }
     }
 
-    // Construct final redirect URL
     const finalRedirectUrl = `${frontendRedirectUrl}?${redirectParams.toString()}`;
     console.log('Redirecting to:', finalRedirectUrl);
     
@@ -420,6 +392,7 @@ const handleCCAvenueCallback = async (req, res) => {
   }
 };
 
+// Get payment status
 const getPaymentStatus = async (req, res) => {
   try {
     const { order_id } = req.params;
@@ -430,10 +403,7 @@ const getPaymentStatus = async (req, res) => {
 
     let order;
     try {
-      // Try to find by invoice_no first
       order = await OrderDetailsSchema.findOne({ invoice_no: order_id });
-      
-      // If not found, try to find by database _id
       if (!order) {
         order = await OrderDetailsSchema.findById(order_id);
       }
@@ -458,7 +428,8 @@ const getPaymentStatus = async (req, res) => {
       payment_mode: order.payment_mode,
       failure_reason: order.payment_failure_reason,
       created_at: order.created_at,
-      updated_at: order.updated_at
+      updated_at: order.updated_at,
+      created_by: order.created_by
     });
   } catch (err) {
     console.error('Error getting payment status:', err);
@@ -466,8 +437,270 @@ const getPaymentStatus = async (req, res) => {
   }
 };
 
+// Admin: Create order manually
+const adminCreateOrder = async (req, res) => {
+  try {
+    const { 
+      customer_name,
+      customer_email,
+      customer_phone,
+      cart_items,
+      delivery_address,
+      delivery_charges = 0,
+      free_delivery = false,
+      gst_no,
+      subtotal,
+      tax_amount,
+      discount_amount,
+      total_amount,
+      payment_type = "Online Payment",
+      notes,
+      admin_id
+    } = req.body;
+
+    console.log('Admin creating order:', { customer_email, admin_id });
+
+    // Validate required fields FIRST (before any async operations)
+    if (!customer_name || !customer_email || !customer_phone || !cart_items || !delivery_address) {
+      return errorResponse(res, "Missing required fields");
+    }
+
+    // Validate delivery_address structure
+    if (!delivery_address.city || !delivery_address.state || !delivery_address.pincode) {
+      return errorResponse(res, "Delivery address must include city, state, and pincode");
+    }
+let userId = null;
+try {
+  // Check if User model is properly imported
+    const existingUser = await User.findOne({ email: customer_email });
+    if (existingUser) {
+      userId = existingUser._id;
+      console.log(`Found existing user: ${userId}`);
+    } else {
+      console.log(`No user found for email: ${customer_email}. Creating order without user ID.`);
+    }
+  
+} catch (userError) {
+  console.error('Error finding user:', userError);
+  console.log('Continuing without user ID lookup');
+}
+
+    // Generate unique invoice number
+    const invoiceNo = `PRINTE${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+    // Process cart items
+    let processedCartItems = [];
+    if (Array.isArray(cart_items)) {
+      processedCartItems = cart_items.map(item => ({
+        product_id: item.product_id || '',
+        product_name: item.product_name || '',
+        quantity: parseInt(item.quantity) || 1,
+        price: parseFloat(item.price) || 0,
+        image: item.image || '',
+        size: item.size || '',
+        color: item.color || ''
+      }));
+    } else {
+      return errorResponse(res, "cart_items must be an array");
+    }
+
+    // Validate numeric fields
+    const subtotalValue = parseFloat(subtotal) || 0;
+    const taxAmountValue = parseFloat(tax_amount || 0);
+    const discountAmountValue = parseFloat(discount_amount || 0);
+    const deliveryChargesValue = parseFloat(delivery_charges || 0);
+    const totalAmountValue = parseFloat(total_amount) || 0;
+
+    // Calculate total_before_discount
+    const totalBeforeDiscount = subtotalValue + taxAmountValue + deliveryChargesValue;
+
+    // Create order
+    const orderData = {
+      user_id: userId,
+      cart_items: processedCartItems,
+      delivery_address: {
+        name: customer_name,
+        email: customer_email,
+        mobile_number: customer_phone,
+        street: delivery_address.street || delivery_address.address || '',
+        city: delivery_address.city,
+        state: delivery_address.state,
+        pincode: delivery_address.pincode,
+        country: delivery_address.country || 'India'
+      },
+      order_status: "pending payment",
+      total_price: totalAmountValue,
+      DeliveryCharges: deliveryChargesValue,
+      FreeDelivery: !!free_delivery,
+      payment_type: payment_type,
+      invoice_no: invoiceNo,
+      payment_status: "pending",
+      gst_no: gst_no || "",
+      subtotal: subtotalValue,
+      tax_amount: taxAmountValue,
+      discount_amount: discountAmountValue,
+      total_amount: totalAmountValue,
+      total_before_discount: totalBeforeDiscount,
+      payment_option: "full",
+      created_by: "admin",
+      admin_notes: notes || "",
+      created_by_admin_id: admin_id,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+
+    const newOrder = new OrderDetailsSchema(orderData);
+    const savedOrder = await newOrder.save();
+
+    console.log('Admin order created:', {
+      order_id: savedOrder._id,
+      invoice_no: savedOrder.invoice_no
+    });
+
+    return successResponse(res, "Order created successfully", {
+      order_id: savedOrder._id,
+      invoice_no: savedOrder.invoice_no,
+      payment_status: savedOrder.payment_status,
+      total_amount: savedOrder.total_amount,
+      payment_link: `${process.env.FRONTEND_BASE_URL}/admin-payment/${savedOrder.invoice_no}`
+    });
+
+  } catch (err) {
+    console.error('Error in adminCreateOrder:', err);
+    return errorResponse(res, "Failed to create order: " + err.message);
+  }
+};
+
+// Get all orders (admin)
+const getAllOrders = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 20, 
+      payment_status, 
+      order_status,
+      created_by,
+      search 
+    } = req.query;
+
+    const query = {};
+    
+    if (payment_status) query.payment_status = payment_status;
+    if (order_status) query.order_status = order_status;
+    if (created_by) query.created_by = created_by;
+    if (search) {
+      query.$or = [
+        { invoice_no: { $regex: search, $options: 'i' } },
+        { 'delivery_address.email': { $regex: search, $options: 'i' } },
+        { 'delivery_address.name': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const orders = await OrderDetailsSchema.find(query)
+      .sort({ created_at: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await OrderDetailsSchema.countDocuments(query);
+
+    return successResponse(res, "Orders retrieved successfully", {
+      orders,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+
+  } catch (err) {
+    console.error('Error in getAllOrders:', err);
+    return errorResponse(res, "Failed to retrieve orders");
+  }
+};
+
+// Generate payment link for order
+const generatePaymentLink = async (req, res) => {
+  try {
+    const { order_id } = req.params;
+
+    const order = await OrderDetailsSchema.findOne({ 
+      $or: [
+        { invoice_no: order_id },
+        { _id: order_id }
+      ]
+    });
+
+    if (!order) {
+      return errorResponse(res, "Order not found");
+    }
+
+    if (order.payment_status !== 'pending') {
+      return errorResponse(res, "Payment link can only be generated for pending orders");
+    }
+
+    const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || 'https://printe.in';
+    const paymentLink = `${FRONTEND_BASE_URL}/admin-payment/${order.invoice_no}`;
+
+    return successResponse(res, "Payment link generated", {
+      payment_link: paymentLink,
+      order_id: order.invoice_no,
+      amount: order.total_amount,
+      customer_email: order.delivery_address.email,
+      customer_name: order.delivery_address.name
+    });
+
+  } catch (err) {
+    console.error('Error in generatePaymentLink:', err);
+    return errorResponse(res, "Failed to generate payment link");
+  }
+};
+
+// Get order by invoice number (for payment page)
+const getOrderByInvoice = async (req, res) => {
+  try {
+    const { invoice_no } = req.params;
+
+    const order = await OrderDetailsSchema.findOne({ invoice_no });
+
+    if (!order) {
+      return errorResponse(res, "Order not found");
+    }
+
+    return successResponse(res, "Order retrieved", {
+      order_id: order._id,
+      invoice_no: order.invoice_no,
+      customer_name: order.delivery_address.name,
+      customer_email: order.delivery_address.email,
+      customer_phone: order.delivery_address.mobile_number,
+      cart_items: order.cart_items,
+      delivery_address: order.delivery_address,
+      subtotal: order.subtotal,
+      tax_amount: order.tax_amount,
+      delivery_charges: order.DeliveryCharges,
+      discount_amount: order.discount_amount,
+      total_amount: order.total_amount,
+      payment_status: order.payment_status,
+      order_status: order.order_status,
+      gst_no: order.gst_no,
+      created_by: order.created_by,
+      created_at: order.created_at
+    });
+
+  } catch (err) {
+    console.error('Error in getOrderByInvoice:', err);
+    return errorResponse(res, "Failed to retrieve order");
+  }
+};
+
 module.exports = {
   createPaymentOrder,
   handleCCAvenueCallback,
-  getPaymentStatus
+  getPaymentStatus,
+  adminCreateOrder,
+  getAllOrders,
+  generatePaymentLink,
+  getOrderByInvoice
 };

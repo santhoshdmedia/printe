@@ -25,7 +25,7 @@ const NavMenu = () => {
   const { menu } = useSelector((state) => state.publicSlice);
   const navigation = useNavigate();
   const dropdownRefs = useRef({});
-  
+
 
   // State management
   const [activeDropdown, setActiveDropdown] = useState({
@@ -129,21 +129,21 @@ const NavMenu = () => {
   };
 
   // Click outside handler
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const shouldClose = !Object.values(dropdownRefs.current).some((ref) =>
-        ref?.current?.contains(event.target)
-      );
+  // useEffect(() => {
+  //   const handleClickOutside = (event) => {
+  //     const shouldClose = !Object.values(dropdownRefs.current).some((ref) =>
+  //       ref?.current?.contains(event.target)
+  //     );
 
-      if (shouldClose) closeAllDropdowns();
-    };
+  //     if (shouldClose) closeAllDropdowns();
+  //   };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  //   document.addEventListener("mousedown", handleClickOutside);
+  //   return () => document.removeEventListener("mousedown", handleClickOutside);
+  // }, []);
 
-  const filterMenu=menu.filter((menu)=>menu.category_active_status==true)
-  
+  const filterMenu = menu.filter((menu) => menu.category_active_status == true)
+
 
   return (
     <div className="hidden lg:block xl:block 2xl:block bg-primary h-full capitalize text-base lg:px-10 2xl:px-40 w-full p-4">
@@ -181,8 +181,8 @@ const NavMenu = () => {
                               handleHoverState("side_category_id", category._id)
                             }
                             className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${hoverStates.side_category_id === category._id
-                                ? "bg-blue-50 border border-blue-200"
-                                : "hover:bg-gray-50"
+                              ? "bg-blue-50 border border-blue-200"
+                              : "hover:bg-gray-50"
                               }`}
                           >
                             <div className="flex items-center justify-between">
@@ -192,8 +192,8 @@ const NavMenu = () => {
                               <SafeIcon
                                 icon={IconHelper.RIGHT_ARROW_ICON}
                                 className={`text-xs ${hoverStates.side_category_id === category._id
-                                    ? "text-blue-500"
-                                    : "text-gray-400"
+                                  ? "text-blue-500"
+                                  : "text-gray-400"
                                   }`}
                               />
                             </div>
@@ -223,7 +223,7 @@ const NavMenu = () => {
                             <div className="animate-fade-in">
                               <div className="flex items-center justify-between mb-6 pb-3 border-b border-gray-200">
                                 <h3 className="font-bold text-gray-800 text-lg">
-                                  {selectedCategory.main_category_name} 
+                                  {selectedCategory.main_category_name}
                                 </h3>
                                 {hasAnyProducts && (
                                   <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
@@ -244,10 +244,10 @@ const NavMenu = () => {
                                           handleHoverState("sideSubcatId", subcat._id)
                                         }
                                         className={`p-4 rounded-lg border transition-all duration-200 cursor-pointer ${hoverStates.sideSubcatId === subcat._id
-                                            ? hasProducts
-                                              ? "border-yellow-300 bg-yellow-50 shadow-md"
-                                              : "border-gray-300 bg-gray-50 shadow-md"
-                                            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                          ? hasProducts
+                                            ? "border-yellow-300 bg-yellow-50 shadow-md"
+                                            : "border-gray-300 bg-gray-50 shadow-md"
+                                          : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                                           } ${!hasProducts ? 'opacity-80' : ''}`}
                                       >
                                         {/* Subcategory Image and Name */}
@@ -337,7 +337,7 @@ const NavMenu = () => {
                                       </div>
                                     );
                                   })}
-                                  
+
                                   {/* Add image placeholders for remaining columns */}
                                   {placeholdersNeeded > 0 && (
                                     <>
@@ -357,7 +357,7 @@ const NavMenu = () => {
                                           />
                                         </div>
                                       )}
-                                      
+
                                       {/* If 1 column empty (remainder = 2), show cat_img */}
                                       {/* Or if 2 columns empty, show cat_img in second empty column */}
                                       {placeholdersNeeded >= 1 && (
@@ -375,7 +375,7 @@ const NavMenu = () => {
                                           />
                                         </div>
                                       )}
-                                      
+
                                       {/* If 2 columns empty and we need second image placeholder */}
                                       {placeholdersNeeded === 2 && (
                                         <div
@@ -508,8 +508,8 @@ const NavMenu = () => {
                               <div
                                 key={subcat._id}
                                 className={`group transition-all duration-300 rounded-lg p-4 border ${hasProducts
-                                    ? 'bg-white hover:bg-gray-50 border-transparent hover:border-gray-200'
-                                    : 'bg-gray-50 border-gray-200 opacity-80'
+                                  ? 'bg-white hover:bg-gray-50 border-transparent hover:border-gray-200'
+                                  : 'bg-gray-50 border-gray-200 opacity-80'
                                   }`}
                               >
                                 {/* Subcategory Title */}
@@ -526,8 +526,8 @@ const NavMenu = () => {
                                 >
                                   <div className="flex items-center justify-between">
                                     <h3 className={`text-lg font-bold flex flex-col items-center gap-2 ${hasProducts
-                                        ? 'text-gray-800 group-hover:text-yellow-600 transition-colors'
-                                        : 'text-gray-500'
+                                      ? 'text-gray-800 group-hover:text-yellow-600 transition-colors'
+                                      : 'text-gray-500'
                                       }`}>
                                       {subcat.sub_category_name}
                                       {!hasProducts && <ComingSoonBadge />}
@@ -595,7 +595,7 @@ const NavMenu = () => {
                                       className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-yellow-200 to-yellow-500 text-black hover:!text-black rounded-lg  transition-all duration-300 shadow-md hover:shadow-lg font-medium transform hover:scale-105"
                                       onClick={closeAllDropdowns}
                                     >
-                                      View All {category.main_category_name}
+                                      View All {subcat.sub_category_name}
                                       <IconHelper.RIGHT_ARROW_ICON className="text-sm" />
                                     </Link>
                                   </div>
@@ -649,9 +649,23 @@ const NavMenu = () => {
                                     <Link
                                       to={`/product/${product.seo_url}`}
                                       key={product._id}
-                                      className="px-4 py-2 text-sm hover:bg-gray-50 text-gray-700 hover:text-yellow-500 transition-colors flex items-center group/item"
+                                      className="px-4 py-2 text-sm hover:bg-gray-50 text-gray-700 hover:text-yellow-500 transition-colors flex items-center gap-2 group/item"
                                       onClick={closeAllDropdowns}
                                     >
+                                      <div className="">
+                                        <img
+                                          src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
+                                            product,
+                                            "images[0].path",
+                                            "/placeholder-product.jpg"
+                                          )}
+                                          alt={product.name}
+                                          className="w-10 h-full object-cover"
+                                          onError={(e) => {
+                                            e.target.src = "/placeholder-product.jpg";
+                                          }}
+                                        />
+                                      </div>
                                       <span className="truncate">
                                         {product.name}
                                       </span>

@@ -24,7 +24,7 @@ import {
   message,
   Drawer,
 } from "antd";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import _ from "lodash";
 import { useDispatch, useSelector } from "react-redux";
 import UploadFileButton from "../UploadFileButton";
@@ -56,8 +56,6 @@ import {
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import Soldout from "../../assets/logo/soldOut.png";
 
-
-
 import {
   DISCOUNT_HELPER,
   GST_DISCOUNT_HELPER,
@@ -74,15 +72,14 @@ import {
   MailOutlined,
   PhoneOutlined,
   UserOutlined,
-} from "@ant-design/icons";
-import { CiFaceSmile } from "react-icons/ci";
-import { CgSmileSad } from "react-icons/cg";
-import toast from "react-hot-toast";
-import {
+  LockOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
+import { CiFaceSmile } from "react-icons/ci";
+import { CgSmileSad } from "react-icons/cg";
+import toast from "react-hot-toast";
 import TextArea from "antd/es/input/TextArea";
 import {
   bulkOrder,
@@ -93,6 +90,9 @@ import {
   verifyWhatsAppOtp,
   resendWhatsAppOtp,
 } from "../../helper/api_helper";
+
+// Import social media icons
+import { FaGoogle, FaInstagram, FaFacebook, FaYoutube, FaWhatsapp, FaGlobe, FaPlus } from "react-icons/fa";
 
 export const CustomModal = ({
   open,
@@ -218,107 +218,10 @@ const AnimatedWaxSealBadge = () => (
     whileHover={{ scale: 1.05 }}
     className="relative -top-20 h-0 overflow-visible"
   >
-   <SimpleHangingSoldBoard/>
+    <SimpleHangingSoldBoard />
     {/* Ribbon tail */}
   </motion.div>
 );
-// Enhanced Sold Out Overlay Component
-// const SoldOutOverlay = () => {
-//   return (
-//     <div className="absolute inset-0 z-50 pointer-events-none">
-//       {/* Background Overlay */}
-//       <motion.div
-//         initial={{ opacity: 0 }}
-//         animate={{ opacity: 1 }}
-//         className="absolute inset-0 bg-white/80 backdrop-blur-[2px]"
-//       />
-      
-//       {/* Main Badge Container */}
-//       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-//         <motion.div
-//           initial={{ scale: 0, y: 20 }}
-//           animate={{ scale: 1, y: 0 }}
-//           transition={{
-//             type: "spring",
-//             stiffness: 200,
-//             damping: 15
-//           }}
-//           className="relative"
-//         >
-//           {/* Animated Wax Seal */}
-//           <AnimatedWaxSealBadge />
-          
-//           {/* Text Message */}
-//           <motion.div
-//             initial={{ opacity: 0, y: 10 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ delay: 0.3 }}
-//             className="mt-6 text-center"
-//           >
-//             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-//               Currently Unavailable
-//             </h3>
-//             <p className="text-gray-600 max-w-md">
-//               This product is temporarily out of stock. <br />
-//               We're working hard to restock it soon!
-//             </p>
-//           </motion.div>
-          
-//           {/* Floating Elements */}
-//           <motion.div
-//             animate={{
-//               rotate: 360
-//             }}
-//             transition={{
-//               duration: 20,
-//               repeat: Infinity,
-//               ease: "linear"
-//             }}
-//             className="absolute -top-8 -left-8 w-16 h-16 border-2 border-red-300/30 rounded-full"
-//           />
-//           <motion.div
-//             animate={{
-//               rotate: -360
-//             }}
-//             transition={{
-//               duration: 25,
-//               repeat: Infinity,
-//               ease: "linear"
-//             }}
-//             className="absolute -bottom-8 -right-8 w-20 h-20 border-2 border-red-400/20 rounded-full"
-//           />
-//         </motion.div>
-//       </div>
-      
-//       {/* Corner Indicators */}
-//       <motion.div
-//         animate={{
-//           scale: [1, 1.1, 1],
-//           opacity: [0.5, 0.8, 0.5]
-//         }}
-//         transition={{
-//           duration: 2,
-//           repeat: Infinity,
-//           repeatType: "reverse"
-//         }}
-//         className="absolute top-4 left-4 w-8 h-8 bg-red-500/20 rounded-full"
-//       />
-//       <motion.div
-//         animate={{
-//           scale: [1, 1.1, 1],
-//           opacity: [0.5, 0.8, 0.5]
-//         }}
-//         transition={{
-//           duration: 2,
-//           repeat: Infinity,
-//           repeatType: "reverse",
-//           delay: 0.5
-//         }}
-//         className="absolute top-4 right-4 w-8 h-8 bg-red-500/20 rounded-full"
-//       />
-//     </div>
-//   );
-// };
 
 // Helper functions
 const getProductImages = (data) => {
@@ -372,7 +275,7 @@ const getRoleFields = (role) => {
 
 // Price calculation helper functions
 const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 18) => {
-  if (userRole === "Corporate" || userRole === "Dealer"||userRole === "bni_user") {
+  if (userRole === "Corporate" || userRole === "Dealer" || userRole === "bni_user") {
     // For dealers and corporate - apply discount only (no GST)
     return DISCOUNT_HELPER(discountPercentage, basePrice);
   } else {
@@ -381,13 +284,13 @@ const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 18) =
   }
 };
 const calculateUnitPriceWithoutGst = (basePrice, discountPercentage, userRole, gst = 18) => {
-    // For dealers and corporate - apply discount only (no GST)
-    return DISCOUNT_HELPER(discountPercentage, basePrice);
-  
+  // For dealers and corporate - apply discount only (no GST)
+  return DISCOUNT_HELPER(discountPercentage, basePrice);
+
 };
 
 const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
-  if (userRole === "Corporate" || userRole === "Dealer"||userRole === "bni_user") {
+  if (userRole === "Corporate" || userRole === "Dealer" || userRole === "bni_user") {
     // For dealers and corporate - base price without GST
     return basePrice;
   } else {
@@ -425,15 +328,15 @@ const ProductDetails = ({
         ? _.get(data, "corporate_product_price", 0) || _.get(data, "single_product_price", 0)
         : _.get(data, "variants_price[0].corporate_product_price", "");
     } else if (user.role === "bni_user") {
-      let Del_price= product_type === "Stand Alone Product"
-        ? _.get(data, "Deler_product_price", 0) 
+      let Del_price = product_type === "Stand Alone Product"
+        ? _.get(data, "Deler_product_price", 0)
         : _.get(data, "variants_price[0].Deler_product_price", "");
-      let cus_price= product_type === "Stand Alone Product"
-        ? _.get(data, "customer_product_price", 0) 
+      let cus_price = product_type === "Stand Alone Product"
+        ? _.get(data, "customer_product_price", 0)
         : _.get(data, "variants_price[0].customer_product_price", "");
-        
-        let bni_price=cus_price-Math.abs((cus_price-Del_price)/2)
-        return bni_price
+
+      let bni_price = cus_price - Math.abs((cus_price - Del_price) / 2)
+      return bni_price
     } else {
       return product_type === "Stand Alone Product"
         ? _.get(data, "customer_product_price", 0) || _.get(data, "single_product_price", 0)
@@ -445,6 +348,17 @@ const ProductDetails = ({
   const product_type = _.get(data, "type", "Stand Alone Product");
   const Gst = _.get(data, "GST", 0);
   const isSoldOut = _.get(data, "is_soldout", false);
+  const CheckisQrProduct =()=>{ 
+    let name=_.get(data, "name", false);
+    if(name.includes('QR')){
+      return true
+    }else{
+      return false
+    }
+    }
+  const isQrProduct = CheckisQrProduct()
+  console.log(data,"vbghvghvghvghccfhc");
+  
 
   // State declarations
   const [quantity, setQuantity] = useState(null);
@@ -470,7 +384,6 @@ const ProductDetails = ({
     category_name: _.get(data, "category_details.main_category_name", ""),
     subcategory_name: _.get(data, "sub_category_details.sub_category_name", ""),
     product_price: basePrice,
-    // withGst:,
     product_variants: {},
     product_quantity: 0,
     product_seo_url: _.get(data, "seo_url", ""),
@@ -480,6 +393,12 @@ const ProductDetails = ({
     FreeDelivery: false,
     DeliveryCharges: 100,
   });
+
+  // State for social media platforms - CORRECTED
+  const [selectedPlatforms, setSelectedPlatforms] = useState([]);
+  const [platformLinks, setPlatformLinks] = useState({});
+  const [expandedPlatform, setExpandedPlatform] = useState(null);
+  const [platformSelectionLocked, setPlatformSelectionLocked] = useState(false);
 
   const [needDesignUpload, setNeedDesignUpload] = useState(true);
   const [reviewData, setReviewData] = useState([]);
@@ -500,6 +419,9 @@ const ProductDetails = ({
   const [otpSent, setOtpSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+
+  // Refs for platform items
+  const platformRefs = useRef({});
 
   // Product configuration
   const { isGettingVariantPrice, product, productRateAndReview } = useSelector(
@@ -585,6 +507,145 @@ const ProductDetails = ({
       }));
     }
   }, [quantityDiscounts, quantityType, maxQuantity, user.role]);
+
+  // FIXED: Handle platform selection - SIMPLIFIED VERSION
+  const handlePlatformSelect = (platform, e) => {
+    // Prevent event propagation
+    if (e) {
+      e.stopPropagation();
+    }
+
+    // For QR products: allow multiple selection
+    if (isQrProduct) {
+      if (selectedPlatforms.includes(platform)) {
+        // Remove platform
+        const newPlatforms = selectedPlatforms.filter(p => p !== platform);
+        setSelectedPlatforms(newPlatforms);
+
+        // Remove link for deselected platform
+        const newLinks = { ...platformLinks };
+        delete newLinks[platform];
+        setPlatformLinks(newLinks);
+
+        // Close expanded view if this platform was expanded
+        if (expandedPlatform === platform) {
+          setExpandedPlatform(null);
+        }
+      } else {
+        // Add platform
+        const newPlatforms = [...selectedPlatforms, platform];
+        setSelectedPlatforms(newPlatforms);
+
+        // Initialize empty link for new platform
+        const newLinks = {
+          ...platformLinks,
+          [platform]: ""
+        };
+        setPlatformLinks(newLinks);
+
+        // Expand this platform to show input
+        setExpandedPlatform(platform);
+      }
+    } else {
+      // For non-QR products: single selection only
+      if (selectedPlatforms.includes(platform)) {
+        // Deselect if already selected
+        setSelectedPlatforms([]);
+        setPlatformLinks({});
+        setExpandedPlatform(null);
+      } else {
+        // Select new platform
+        setSelectedPlatforms([platform]);
+        setPlatformLinks({
+          [platform]: ""
+        });
+        setExpandedPlatform(platform);
+      }
+    }
+  };
+
+  // FIXED: Handle platform link input
+  const handlePlatformLinkChange = (platform, link) => {
+    const newLinks = {
+      ...platformLinks,
+      [platform]: link
+    };
+    setPlatformLinks(newLinks);
+
+    // Also update checkout state
+    setCheckOutState(prev => ({
+      ...prev,
+      platform_links: newLinks
+    }));
+  };
+
+  // Handle checkbox change separately
+  const handlePlatformCheckboxChange = (platform, e) => {
+    e.stopPropagation();
+    handlePlatformSelect(platform, e);
+  };
+
+  // Handle click on platform container
+  const handlePlatformContainerClick = (platform, e) => {
+    // Only handle if click is not on checkbox or input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.closest('.ant-checkbox') || e.target.closest('.ant-input')) {
+      return;
+    }
+    handlePlatformSelect(platform, e);
+  };
+
+  // Platform options with proper icons and colors
+  const platformOptions = [
+    {
+      value: "Google",
+      label: "Google",
+      icon: <FaGoogle />,
+      color: "#4285F4",
+      bgColor: "#4285F41A"
+    },
+    {
+      value: "Instagram",
+      label: "Instagram",
+      icon: <FaInstagram />,
+      color: "#E4405F",
+      bgColor: "#E4405F1A"
+    },
+    {
+      value: "Facebook",
+      label: "Facebook",
+      icon: <FaFacebook />,
+      color: "#1877F2",
+      bgColor: "#1877F21A"
+    },
+    {
+      value: "YouTube",
+      label: "YouTube",
+      icon: <FaYoutube />,
+      color: "#FF0000",
+      bgColor: "#FF00001A"
+    },
+    {
+      value: "WhatsApp",
+      label: "WhatsApp",
+      icon: <FaWhatsapp />,
+      color: "#25D366",
+      bgColor: "#25D3661A"
+    },
+    {
+      value: "Website",
+      label: "Website",
+      icon: <FaGlobe />,
+      color: "#4CAF50",
+      bgColor: "#4CAF501A"
+    },
+    {
+      value: "Other",
+      label: "Other",
+      icon: <FaPlus />,
+      color: "#9C27B0",
+      bgColor: "#9C27B01A"
+    },
+  ];
 
   // Rating calculations
   useEffect(() => {
@@ -790,9 +851,9 @@ const ProductDetails = ({
   };
   const getUnitPricewithoutGst = () => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
-    return  Math.round(calculateUnitPriceWithoutGst(basePrice, discountPercentage.percentage, user.role, Gst));
+    return Math.round(calculateUnitPriceWithoutGst(basePrice, discountPercentage.percentage, user.role, Gst));
   };
-  
+
   const getMRPUnitPrice = () => {
     const basePrice = Number(_.get(checkOutState, "product_price", 0));
     return calculateMRPUnitPrice(basePrice, user.role, Gst);
@@ -813,13 +874,13 @@ const ProductDetails = ({
     const unitPrice = getUnitPrice();
     return (unitPrice * quantity).toFixed(2);
   };
-  
+
   const calculateTotalPricewithoutGst = () => {
     if (!quantity) return 0;
     const unitPrice = getUnitPricewithoutGst();
     return (unitPrice * quantity).toFixed(2);
   };
-  
+
   const calculateGstPrice = () => {
     if (!quantity) return "0.00";
 
@@ -832,7 +893,7 @@ const ProductDetails = ({
 
     return unitPrice.toFixed(2);
   };
-  
+
   const calculateMRPTotalPrice = () => {
     if (!quantity) return 0;
     const mrpPrice = Number(_.get(data, "MRP_price", 0));
@@ -885,14 +946,14 @@ const ProductDetails = ({
   const calculateTotalSavingsPercentage = () => {
     const totalSavings = parseFloat(calculateTotalSavings());
     const mrpTotal = parseFloat(calculateMRPTotalPrice());
-    
+
     if (mrpTotal === 0 || totalSavings <= 0) return 0;
-    
+
     const percentage = (totalSavings / mrpTotal) * 100;
     return Math.min(100, Math.round(percentage)); // Cap at 100%
   };
 
-  // Handle add to cart
+  // FIXED: Handle add to cart with proper platform links
   const handlebuy = async () => {
     try {
       setLoading(true);
@@ -900,6 +961,27 @@ const ProductDetails = ({
       if (!quantity) {
         toast.error("Please select quantity first");
         return;
+      }
+
+      // Validate platform links for QR products
+      if (isQrProduct && selectedPlatforms.length > 0) {
+        const missingLinks = selectedPlatforms.filter(platform =>
+          !platformLinks[platform] || platformLinks[platform].trim() === ""
+        );
+
+        if (missingLinks.length > 0) {
+          toast.error(`Please enter links for: ${missingLinks.join(", ")}`);
+          return;
+        }
+
+        // Validate URL format for entered links
+        for (const platform of selectedPlatforms) {
+          const link = platformLinks[platform];
+          if (link && !link.startsWith('http://') && !link.startsWith('https://')) {
+            toast.error(`Please enter a valid URL for ${platform} (include http:// or https://)`);
+            return;
+          }
+        }
       }
 
       if (needDesignUpload && !checkOutState.product_design_file) {
@@ -932,9 +1014,20 @@ const ProductDetails = ({
         return guestId;
       };
 
+      // Create platform links object with only selected platforms
+      const selectedPlatformLinks = {};
+      selectedPlatforms.forEach(platform => {
+        if (platformLinks[platform]) {
+          selectedPlatformLinks[platform] = platformLinks[platform];
+        }
+      });
 
+      // UPDATED: Include platform links in checkout state
       const finalCheckoutState = {
         ...checkOutState,
+        selected_platforms: selectedPlatforms,
+        platform_links: selectedPlatformLinks,
+        is_qr_product: isQrProduct,
         guestId: getGuestId(),
         userRole: token,
         sgst: Number(Gst / 2),
@@ -950,6 +1043,9 @@ const ProductDetails = ({
 
       const GuestCheckoutState = {
         ...checkOutState,
+        selected_platforms: selectedPlatforms,
+        platform_links: selectedPlatformLinks,
+        is_qr_product: isQrProduct,
         GuestId: getGuestId(),
         userRole: token,
         sgst: Number(Gst / 2),
@@ -962,6 +1058,8 @@ const ProductDetails = ({
         final_total: Number(calculateTotalPrice()),
         final_total_withoutGst: Number(calculateTotalPricewithoutGst()),
       };
+
+      console.log("Sending to cart:", token == "user" ? finalCheckoutState : GuestCheckoutState);
 
       const result = await addToShoppingCart(token == "user" ? finalCheckoutState : GuestCheckoutState);
 
@@ -995,16 +1093,16 @@ const ProductDetails = ({
   // Handle Notify When Available
   const handleNotify = () => {
     // Check if user is logged in
-  
-      // User is not logged in, show popup
-      setShowNotifyModal(true);
-      notifyForm.resetFields();
+
+    // User is not logged in, show popup
+    setShowNotifyModal(true);
+    notifyForm.resetFields();
   };
 
   const sendNotification = async (userData) => {
     try {
       setSendingNotification(true);
-      
+
       const notificationData = {
         productName: _.get(data, "name", ""),
         productId: _.get(data, "Vendor_Code", data._id),
@@ -1014,9 +1112,9 @@ const ProductDetails = ({
         userName: userData.name,
         timestamp: new Date().toISOString(),
       };
-      
+
       const result = await notifyWhenAvailable(notificationData);
-      
+
       if (result.data.success) {
         toast.success("We'll notify you when this product is available!");
         setShowNotifyModal(false);
@@ -1034,7 +1132,7 @@ const ProductDetails = ({
 
   const handleNotifySubmit = async (values) => {
     console.log(values);
-    
+
     await sendNotification(values);
     setShowNotifyModal(false)
     form.resetFields()
@@ -1306,7 +1404,7 @@ const ProductDetails = ({
       <div className="font-primary w-full space-y-2 relative">
         {/* Sold Out Overlay */}
         {/* {isSoldOut && <SoldOutOverlay />} */}
-        
+
         {/* Product Header with Animated Wax Seal */}
         <div className="space-y-1 flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="flex-1 w-full md:w-auto">
@@ -1314,7 +1412,7 @@ const ProductDetails = ({
               <h1 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-2xl leading-tight w-full md:w-[80%]">
                 {data.name}
               </h1>
-           
+
             </div>
             <div className="flex flex-wrap gap-2">
               {data.label?.map((label, index) => (
@@ -1362,7 +1460,7 @@ const ProductDetails = ({
               >
                 <IoShareSocial />
               </button>
-                 {isSoldOut && (
+              {isSoldOut && (
                 <div className="relative top-0">
                   <AnimatedWaxSealBadge />
                 </div>
@@ -1378,7 +1476,7 @@ const ProductDetails = ({
                 }}
                 className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
               >
-                
+
                 <div className="flex items-baseline gap-2">
                   <span className="text-white/70 text-xs line-through">
                     {formatPrice(Number(_.get(data, "MRP_price", 0)))}
@@ -1441,36 +1539,6 @@ const ProductDetails = ({
           </ul>
         </div>
 
-        {/* Sold Out Message Section */}
-        {/* {isSoldOut && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm"
-          >
-            <div className="flex items-start gap-3">
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                className="text-2xl text-red-500"
-              >
-                ⚠️
-              </motion.div>
-              <div>
-                <h3 className="font-bold text-red-700 text-lg mb-1">
-                  Item Temporarily Unavailable
-                </h3>
-                <p className="text-gray-600">
-                  This product is currently out of stock. We expect to have it back in 
-                  <span className="font-semibold text-red-600"> 3-5 business days</span>. 
-                  You can join the waitlist to be notified immediately when it's back!
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )} */}
-
         {/* Quantity and Variants Section */}
         <div className="w-full flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
@@ -1486,7 +1554,7 @@ const ProductDetails = ({
               dropdownRender={quantityDropdownRender}
               open={quantityDropdownVisible}
               onDropdownVisibleChange={setQuantityDropdownVisible}
-              // disabled={isSoldOut}
+            // disabled={isSoldOut}
             />
           </div>
 
@@ -1515,7 +1583,7 @@ const ProductDetails = ({
                           }
                           placeholder={`Select ${variant.variant_name}`}
                           className="w-full"
-                          // disabled={isSoldOut}
+                        // disabled={isSoldOut}
                         />
                       ) : (
                         <div className="flex flex-wrap gap-2">
@@ -1596,7 +1664,7 @@ const ProductDetails = ({
             </div>
 
             {/* Savings Alerts - FIXED PERCENTAGE CALCULATION */}
-            { calculateTotalSavings() > 0 && (
+            {calculateTotalSavings() > 0 && (
               <div className="space-y-2">
                 <Alert
                   message={
@@ -1608,7 +1676,7 @@ const ProductDetails = ({
                         </div>
                       )}
 
-                      {discountPercentage.percentage == 0 ?"": (
+                      {discountPercentage.percentage == 0 ? "" : (
                         <div className="text-sm mt-2">
                           Additional Savings: {formatPrice(calculateDiscountSavings())} ({discountPercentage.percentage}% Quantity Discount)
                         </div>
@@ -1619,7 +1687,7 @@ const ProductDetails = ({
                           💡 Select higher quantity to get extra discounts
                         </div>
                       )}
-                      
+
                       <div className="font-semibold text-green-700 text-lg mt-1">
                         🎉 Total Savings: {formatPrice(calculateTotalSavings())} ({calculateTotalSavingsPercentage()}% OFF)
                       </div>
@@ -1633,7 +1701,7 @@ const ProductDetails = ({
             )}
 
 
-            {(user.role == "Corporate" || user.role == "Dealer"||user.role === "bni_user") ? (
+            {(user.role == "Corporate" || user.role == "Dealer" || user.role === "bni_user") ? (
               <div className="text-gray-600">
                 <h1 className="!text-[12px] text-gray-600">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
@@ -1649,13 +1717,13 @@ const ProductDetails = ({
                   / piece)
                 </h1>
               </div>
-             ) : ""} 
+            ) : ""}
             {quantity && (
               <div className="!text-[14px] text-gray-600">
                 <h1>
                   Inclusive of all taxes for <span strong>{quantity}</span> Qty
                   <span className="font-bold">
-                    &nbsp;({(user.role === "Dealer" || user.role === "Corporate"||user.role === "bni_user")
+                    &nbsp;({(user.role === "Dealer" || user.role === "Corporate" || user.role === "bni_user")
                       ? <>{formatPrice(Gst_HELPER(Gst, getUnitPrice()))}</>
                       : <>{formatPrice(calculateGstPrice())}</>
                     }
@@ -1708,124 +1776,319 @@ const ProductDetails = ({
           </motion.div>
         </Card>
 
-        {/* File Upload Section */}
-        {isSoldOut?<></>:<>
-        <div className="space-y-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-            <Checkbox
-              checked={noDesignUpload}
-              onChange={handleNoCustomization}
-              disabled={isSoldOut}
-            >
-              Proceed without Design
-            </Checkbox>
+        {/* FIXED: SOCIAL MEDIA PLATFORMS SECTION - SIMPLIFIED AND CORRECTED */}
+        {isQrProduct && (
+          <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-white">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Text strong className="text-lg">
+                  Select Platforms <span className="text-red-500">*</span>
+                </Text>
+                <Tag color="blue" className="text-xs">
+                  {isQrProduct ? "Multiple Selection" : "Single Selection"}
+                </Tag>
+              </div>
+              <Text className="block mb-3 text-gray-600 text-sm">
+                {isQrProduct
+                  ? "Select platforms and enter the corresponding links (You can select multiple platforms)"
+                  : "Select a platform and enter the corresponding link (You can select up to 1 platform)"}
+              </Text>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {platformOptions.map((platform) => {
+                  const isSelected = selectedPlatforms.includes(platform.value);
+                  const isExpanded = expandedPlatform === platform.value;
+
+                  return (
+                    <div
+                      key={platform.value}
+                      className={`flex flex-col p-3 border rounded-lg transition-all cursor-pointer ${isSelected
+                          ? `border-[${platform.color}] bg-[${platform.bgColor}]`
+                          : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                        }`}
+                      onClick={(e) => handlePlatformContainerClick(platform.value, e)}
+                      style={isSelected ? {
+                        borderColor: platform.color,
+                        backgroundColor: platform.bgColor
+                      } : {}}
+                    >
+                      <div className="flex items-center">
+                        <div
+                          className="flex items-center justify-center w-8 h-8 rounded-full mr-3"
+                          style={{
+                            backgroundColor: isSelected ? platform.color : '#f3f4f6',
+                            color: isSelected ? 'white' : platform.color
+                          }}
+                        >
+                          {platform.icon}
+                        </div>
+                        <span className="font-medium">{platform.label}</span>
+
+                        <div className="ml-auto">
+                          {isSelected ? (
+                            <CheckCircleOutlined
+                              style={{ color: platform.color, fontSize: '16px' }}
+                            />
+                          ) : (
+                            <div className="w-4 h-4 border border-gray-300 rounded"></div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Link input box for selected platforms */}
+                      {isSelected && isExpanded && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="mt-3 overflow-hidden"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Input
+                              placeholder={`Enter ${platform.label} link`}
+                              value={platformLinks[platform.value] || ""}
+                              onChange={(e) => handlePlatformLinkChange(platform.value, e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              className="flex-1"
+                              size="small"
+                              prefix={<span className="text-gray-400">🔗</span>}
+                              autoFocus={isExpanded}
+                              style={{ borderColor: platform.color }}
+                            />
+                            <Button
+                              type="text"
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedPlatform(null);
+                              }}
+                              style={{ color: platform.color }}
+                            >
+                              Done
+                            </Button>
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Enter full URL (e.g., https://example.com)
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Show edit button for selected but not expanded */}
+                      {isSelected && !isExpanded && (
+                        <div className="mt-2">
+                          <Button
+                            type="link"
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedPlatform(platform.value);
+                            }}
+                            style={{ color: platform.color }}
+                            className="p-0"
+                          >
+                            {platformLinks[platform.value] ? "Edit link" : "Add link"}
+                          </Button>
+                          {platformLinks[platform.value] && (
+                            <div className="text-xs text-gray-600 truncate mt-1">
+                              {platformLinks[platform.value].length > 30
+                                ? `${platformLinks[platform.value].substring(0, 30)}...`
+                                : platformLinks[platform.value]
+                              }
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Selected platforms summary */}
+              {selectedPlatforms.length > 0 && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <Text strong>
+                    Selected Platforms ({selectedPlatforms.length})
+                  </Text>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedPlatforms.map(platform => {
+                      const platformInfo = platformOptions.find(p => p.value === platform);
+                      return (
+                        <Tag
+                          key={platform}
+                          style={{
+                            backgroundColor: platformInfo?.bgColor,
+                            borderColor: platformInfo?.color,
+                            color: platformInfo?.color
+                          }}
+                          className="py-1 px-2 flex items-center gap-1"
+                        >
+                          <span style={{ color: platformInfo?.color }}>
+                            {platformInfo?.icon}
+                          </span>
+                          <span className="font-medium">{platform}: </span>
+                          {platformLinks[platform] ? (
+                            <span className="text-xs truncate max-w-[150px] inline-block">
+                              {platformLinks[platform]}
+                            </span>
+                          ) : (
+                            <span className="text-red-500 text-xs">No link</span>
+                          )}
+                          <CloseOutlined
+                            className="ml-1 cursor-pointer hover:opacity-70"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handlePlatformSelect(platform);
+                            }}
+                          />
+                        </Tag>
+                      );
+                    })}
+                  </div>
+                  {selectedPlatforms.some(p => !platformLinks[p] || platformLinks[p].trim() === "") && (
+                    <Alert
+                      message="Some platforms are missing links. Please enter links for all selected platforms."
+                      type="warning"
+                      showIcon
+                      className="mt-2 !py-2"
+                    />
+                  )}
+
+                </div>
+              )}
+
+              {/* Instructions */}
+
+            </div>
+          </div>
+        )}
+
+        {/* ORIGINAL FILE UPLOAD SECTION */}
+        {isSoldOut ? <></> : <>
+          <div className="space-y-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+              <Checkbox
+                checked={noDesignUpload}
+                onChange={handleNoCustomization}
+                disabled={isSoldOut}
+              >
+                Proceed without Design
+              </Checkbox>
+
+              {!noDesignUpload && (
+                <div className="flex items-center gap-2">
+                  <Text>Already have a Design</Text>
+                  <Switch
+                    checked={needDesignUpload}
+                    onChange={(checked) => {
+                      setNeedDesignUpload(checked);
+                      if (!checked) {
+                        setCheckOutState((prev) => ({
+                          ...prev,
+                          product_design_file: "",
+                        }));
+                        setChecked(false);
+                      }
+                    }}
+                    disabled={isSoldOut}
+                  />
+                </div>
+              )}
+            </div>
 
             {!noDesignUpload && (
-              <div className="flex items-center gap-2">
-                <Text>Already have a Design</Text>
+              <div className="">
+                {needDesignUpload ? (
+                  <>
+                      <Alert
+                        message="If you already have a design, we will review it prior to starting production."
+                        type="warning"
+                        showIcon
+                        className="my-2 !py-2 "
+                      />
+                    <UploadFileButton
+                      handleUploadImage={handleUploadImage}
+                      buttonText="Drag & Drop Files Here or Browse Files"
+                      className="w-full border-dotted rounded-lg flex flex-col items-center justify-center transition-colors"
+                      disabled={isSoldOut}
+                    />
+
+                    {checkOutState.product_design_file && (
+                      <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <div className="md:order-1">
+                          <Button
+                            type="link"
+                            icon={<EyeOutlined />}
+                            onClick={() => setDesignPreviewVisible(true)}
+                            className="md:order-1"
+                            disabled={isSoldOut}
+                          >
+                            View Design
+                          </Button>
+                          <Button
+                            type="link"
+                            onClick={handleDesignRemove}
+                            className="md:order-1"
+                            disabled={isSoldOut}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+
+                        <Checkbox
+                          checked={checked}
+                          onChange={(e) => setChecked(e.target.checked)}
+                          className="md:order-2"
+                          disabled={isSoldOut}
+                        >
+                          I confirm this design
+                        </Checkbox>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <Alert
+                    message="Our Designing Team will contact you within 24 Hours After Booking"
+                    type="info"
+                    showIcon
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Instructions Section */}
+            <div>
+              <div className="flex gap-3 mb-2">
+                <Text className="text-gray-800 font-bold">Instructions</Text>
                 <Switch
-                  checked={needDesignUpload}
-                  onChange={(checked) => {
-                    setNeedDesignUpload(checked);
-                    if (!checked) {
-                      setCheckOutState((prev) => ({
-                        ...prev,
-                        product_design_file: "",
-                      }));
-                      setChecked(false);
-                    }
-                  }}
+                  checked={instructionsVisible}
+                  onChange={setInstructionsVisible}
                   disabled={isSoldOut}
                 />
               </div>
-            )}
-          </div>
-
-          {!noDesignUpload && (
-            <div className="">
-              {needDesignUpload ? (
-                <>
-                  <UploadFileButton
-                    handleUploadImage={handleUploadImage}
-                    buttonText="Drag & Drop Files Here or Browse Files"
-                    className="w-full border-dotted rounded-lg flex flex-col items-center justify-center transition-colors"
-                    disabled={isSoldOut}
-                  />
-
-                  {checkOutState.product_design_file && (
-                    <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
-                      <div className="md:order-1">
-                        <Button
-                          type="link"
-                          icon={<EyeOutlined />}
-                          onClick={() => setDesignPreviewVisible(true)}
-                          className="md:order-1"
-                          disabled={isSoldOut}
-                        >
-                          View Design
-                        </Button>
-                        <Button
-                          type="link"
-                          onClick={handleDesignRemove}
-                          className="md:order-1"
-                          disabled={isSoldOut}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-
-                      <Checkbox
-                        checked={checked}
-                        onChange={(e) => setChecked(e.target.checked)}
-                        className="md:order-2"
-                        disabled={isSoldOut}
-                      >
-                        I confirm this design
-                      </Checkbox>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <Alert
-                  message="Our Designing Team will contact you within 24 Hours After Booking"
-                  type="info"
-                  showIcon
+              {instructionsVisible && (
+                <TextArea
+                  rows={4}
+                  placeholder="Please provide the instructions for this product. Your response should be clear, concise, and must not exceed 180 words"
+                  maxLength={180}
+                  onChange={(e) =>
+                    setCheckOutState((prev) => ({
+                      ...prev,
+                      instructions: e.target.value,
+                    }))
+                  }
+                  disabled={isSoldOut}
                 />
               )}
             </div>
-          )}
 
-          {/* Instructions Section */}
-          <div>
-            <div className="flex gap-3 mb-2">
-              <Text className="text-gray-800 font-bold">Instructions</Text>
-              <Switch
-                checked={instructionsVisible}
-                onChange={setInstructionsVisible}
-                disabled={isSoldOut}
-              />
-            </div>
-            {instructionsVisible && (
-              <TextArea
-                rows={4}
-                placeholder="Please provide the instructions for this product. Your response should be clear, concise, and must not exceed 180 words"
-                maxLength={180}
-                onChange={(e) =>
-                  setCheckOutState((prev) => ({
-                    ...prev,
-                    instructions: e.target.value,
-                  }))
-                }
-                disabled={isSoldOut}
-              />
-            )}
           </div>
-
-        </div>
         </>}
 
-            <div className="">
-              
+        <div className="">
+
           {/* Add to Cart / Notify Button */}
           <div className="w-full">
             {isGettingVariantPrice ? (
@@ -1835,15 +2098,12 @@ const ProductDetails = ({
             ) : (
               <>
                 {isSoldOut ? (
-                  // ENHANCED NOTIFY BUTTON SECTION - UPDATED TO MATCH IMAGE
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 }}
                     className=""
                   >
-                    
-                    
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -1860,10 +2120,6 @@ const ProductDetails = ({
                         Notify Me
                       </Button>
                     </motion.div>
-                    
-                    
-                    
-
                   </motion.div>
                 ) : (
                   <Button
@@ -1907,7 +2163,7 @@ const ProductDetails = ({
               />
             </div>
           </CustomModal>
-            </div>
+        </div>
         {/* Notify Modal (for non-logged in users) */}
         <CustomModal
           open={showNotifyModal}
@@ -2489,18 +2745,6 @@ export const SimpleHangingSoldBoard = () => {
     <div className=" z-50 pointer-events-none flex justify-center">
       {/* Top hook */}
       <div className="relative">
-        {/* Hook */}
-        {/* <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-gradient-to-r from-gray-700 to-gray-800 rounded-b-lg shadow-lg">
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-2 bg-gray-800 rounded-t-sm"></div>
-        </div> */}
-        
-        {/* Chain */}
-        {/* <div className="absolute top-6 left-1/2 -translate-x-1/2 w-1 h-12 bg-gradient-to-b from-gray-600 to-gray-700">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gray-800"></div>
-          <div className="absolute top-4 left-0 w-full h-1 bg-gray-800"></div>
-          <div className="absolute top-8 left-0 w-full h-1 bg-gray-800"></div>
-        </div> */}
-        
         {/* Board */}
         <motion.div
           className="relative mt-20 w-40 h-14 bg-red-600 rounded-md border-3 shadow-xl"
@@ -2508,10 +2752,6 @@ export const SimpleHangingSoldBoard = () => {
           animate="animate"
           style={{ originY: 0 }}
         >
-          {/* Wood texture */}
-          {/* <div className="absolute inset-0 opacity-30">
-          </div> */}
-          
           {/* SOLD text */}
           <div className="relative w-full h-full flex items-center justify-center">
             <div className="text-xl font-black tracking-wider">
@@ -2520,13 +2760,8 @@ export const SimpleHangingSoldBoard = () => {
               </span>
             </div>
           </div>
-          
-          {/* Chain connections */}
-          {/* <div className="absolute -top-4 left-6 w-3 h-4 bg-gradient-to-b from-gray-600 to-gray-700 rounded-t-sm"></div> */}
-          {/* <div className="absolute -top-4 right-6 w-3 h-4 bg-gradient-to-b from-gray-600 to-gray-700 rounded-t-sm"></div> */}
         </motion.div>
       </div>
     </div>
   );
 };
-

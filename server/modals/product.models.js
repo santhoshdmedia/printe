@@ -120,6 +120,9 @@ module.exports = mongoose.model(
       is_corporate: {
         type: Boolean,
       },
+      is_qr: {
+        type: Boolean,
+      },
       unit: { type: String },
       name: { type: String, require: true },
       Point_one: { type: String, require: true },

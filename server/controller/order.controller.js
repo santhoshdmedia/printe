@@ -156,6 +156,8 @@ const CollectAllOrder = async (req, res) => {
   }
 };
 
+
+// Updated CollectMyOrders function with better data handling
 const CollectMyOrders = async (req, res) => {
   try {
     const { id } = req.userData;
@@ -163,10 +165,6 @@ const CollectMyOrders = async (req, res) => {
     let where = {
       user_id: new mongoose.Types.ObjectId(id),
     };
-
-    // if (order_id) {
-    //   where._id = new mongoose.Types.ObjectId(order_id);
-    // }
 
     const result = await OrderDetailsSchema.aggregate([
       {
@@ -181,15 +179,118 @@ const CollectMyOrders = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "user",
+          localField: "user_id",
+          foreignField: "_id",
+          as: "user_details",
+          pipeline: [{ $project: { password: 0 } }],
+        },
+      },
+      // Add project stage to ensure all fields are returned
+      {
+        $project: {
+          _id: 1,
+          user_id: 1,
+          cart_items: 1,
+          delivery_address: 1,
+          order_status: 1,
+          total_price: 1,
+          total_amount: 1,
+          DeliveryCharges: 1,
+          FreeDelivery: 1,
+          payment_type: 1,
+          invoice_no: 1,
+          payment_id: 1,
+          payment_status: 1,
+          transaction_id: 1,
+          payment_date: 1,
+          payment_mode: 1,
+          card_name: 1,
+          gst_no: 1,
+          subtotal: 1,
+          tax_amount: 1,
+          discount_amount: 1,
+          total_before_discount: 1,
+          payment_option: 1,
+          created_by: 1,
+          admin_notes: 1,
+          created_by_admin_id: 1,
+          payment_failure_reason: 1,
+          coupon: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          order_delivery_timeline: 1,
+          user_details: 1,
+        },
+      },
+      {
         $sort: {
           createdAt: -1,
         },
       },
     ]);
-    successResponse(res, "get user order success", result);
+
+    // Log for debugging
+    console.log(`Found ${result.length} orders for user ${id}`);
+
+    return successResponse(res, "get user order success", result);
   } catch (err) {
-    console.log(err);
-    errorResponse(res, "");
+    console.error("Error in CollectMyOrders:", err);
+    return errorResponse(res, "Failed to retrieve orders");
+  }
+};
+
+// Alternative function to get orders by email (for admin-created orders without user_id)
+const CollectMyOrdersByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+    const { id } = req.userData;
+
+    if (!email) {
+      return errorResponse(res, "Email is required");
+    }
+
+    // Find orders by user_id OR by email in delivery address
+    const result = await OrderDetailsSchema.aggregate([
+      {
+        $match: {
+          $or: [
+            { user_id: new mongoose.Types.ObjectId(id) },
+            { "delivery_address.email": email },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "order_delivery_timeline",
+          localField: "_id",
+          foreignField: "order_id",
+          as: "order_delivery_timeline",
+        },
+      },
+      {
+        $lookup: {
+          from: "user",
+          localField: "user_id",
+          foreignField: "_id",
+          as: "user_details",
+          pipeline: [{ $project: { password: 0 } }],
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ]);
+
+    console.log(`Found ${result.length} orders for user ${id} or email ${email}`);
+
+    return successResponse(res, "get user orders success", result);
+  } catch (err) {
+    console.error("Error in CollectMyOrdersByEmail:", err);
+    return errorResponse(res, "Failed to retrieve orders");
   }
 };
 
@@ -617,5 +718,6 @@ module.exports = {
   UpdateOrderDesign,
   UpdateOrderVendor,
   acceptOrderByVendor,
-  completeOrderByVendor
+  completeOrderByVendor,
+  CollectMyOrdersByEmail
 };

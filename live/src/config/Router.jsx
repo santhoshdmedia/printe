@@ -35,6 +35,7 @@ import NewCheckout from "../pages/shopping/NewCheckout.jsx";
 import SectionExplore from "../pages/Home/SectionExplore.jsx";
 import HistoryExplore from "../pages/Product/HistoryExplore.jsx";
 import AboutUs from "../pages/Information/AboutUs.jsx";
+import CustomerPaymentPage from "../pages/Payment/CustomerPaymentPage.jsx";
 
 import Reward from "../components/Account/Reward.jsx";
 
@@ -202,6 +203,10 @@ export const router = createBrowserRouter([
   {
     path: "/payment/error",
     element: <PaymentError />,
+  },
+  {
+    path: "/admin-payment/:invoice_no",
+    element: <CustomerPaymentPage />,
   },
 
 ]);

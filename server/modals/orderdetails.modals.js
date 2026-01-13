@@ -7,7 +7,6 @@ const Order = model(
       user_id: {
         type: Schema.Types.ObjectId,
         ref: "user",
-        required: true,
       },
       cart_items: {
         type: Object,
