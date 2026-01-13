@@ -533,7 +533,7 @@ const Navbar = () => {
         <div className="p-6 bg-gradient-to-r from-yellow-400 to-yellow-500 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={Logo} alt="Logo" className="h-8" />
+              <img src={Logo} alt="Logo" className="h-12 w-full object-contain" />
               <span className="text-white font-bold text-lg">Menu</span>
             </div>
             <button
@@ -843,7 +843,7 @@ const Navbar = () => {
         {/* Left: Logo + Search */}
         <div className="flex items-center gap-x-8 xl:gap-x-32 ">
           <Link to="/">
-            <img src={Logo} alt="logo" className="h-16" />
+            <img src={Logo} alt="logo" className="h-16 w-full object-contain" />
           </Link>
           <SearchInput />
         </div>

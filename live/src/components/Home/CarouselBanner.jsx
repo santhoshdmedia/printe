@@ -85,12 +85,12 @@ const CarouselBanner = () => {
             nextEl: ".banner-next",
           }}
           autoplay={{
-            delay: 5000,
+            delay: 15000,
             disableOnInteraction: false,
             pauseOnMouseEnter: true,
             pauseOnHover: true,
           }}
-          speed={2000}
+          speed={20000}
           className="w-full  relative"
           onSlideChange={handleSlideChange}
           onSwiper={handleSwiperInit}

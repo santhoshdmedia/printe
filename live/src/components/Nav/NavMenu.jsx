@@ -129,18 +129,18 @@ const NavMenu = () => {
   };
 
   // Click outside handler
-  // useEffect(() => {
-  //   const handleClickOutside = (event) => {
-  //     const shouldClose = !Object.values(dropdownRefs.current).some((ref) =>
-  //       ref?.current?.contains(event.target)
-  //     );
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const shouldClose = !Object.values(dropdownRefs.current).some((ref) =>
+        ref?.current?.contains(event.target)
+      );
 
-  //     if (shouldClose) closeAllDropdowns();
-  //   };
+      if (shouldClose) closeAllDropdowns();
+    };
 
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => document.removeEventListener("mousedown", handleClickOutside);
-  // }, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const filterMenu = menu.filter((menu) => menu.category_active_status == true)
 
