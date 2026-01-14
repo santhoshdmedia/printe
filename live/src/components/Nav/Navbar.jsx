@@ -838,8 +838,7 @@ const Navbar = () => {
       {/* Desktop Navbar */}
       <div
         className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-20 sticky top-0 z-40 ${isScrolled ? "shadow-xl" : "shadow-lg"
-          }`}
-      >
+          }`}>
         {/* Left: Logo + Search */}
         <div className="flex items-center gap-x-8 xl:gap-x-32 ">
           <Link to="/">

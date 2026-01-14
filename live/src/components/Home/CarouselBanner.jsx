@@ -90,7 +90,7 @@ const CarouselBanner = () => {
             pauseOnMouseEnter: true,
             pauseOnHover: true,
           }}
-          speed={20000}
+          speed={2000}
           className="w-full  relative"
           onSlideChange={handleSlideChange}
           onSwiper={handleSwiperInit}
