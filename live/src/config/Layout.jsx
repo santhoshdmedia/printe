@@ -180,7 +180,7 @@ const LayoutContent = () => {
         </div>
       </div>
       
-      <div>
+      {/* <div>
         <div
           className={`fixed bottom-0 -Left-8 cursor-pointer z-50 rounded-full lg:p-4 p-3`}
         >
@@ -190,7 +190,7 @@ const LayoutContent = () => {
             className="w-40 h-52"
           />
         </div>
-      </div>
+      </div> */}
       
       {/* Enhanced WhatsApp Button with Glow Animation */}
       <div
