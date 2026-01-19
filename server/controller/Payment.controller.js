@@ -111,7 +111,7 @@ const createPaymentOrder = async (req, res) => {
     }
 
     const { merchantId, workingKey, accessCode } = credentialCheck.credentials;
-    const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
+    const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
     const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
     const gatewayUrl = getGatewayUrl();
 
@@ -306,7 +306,7 @@ const qrRedirectToGateway = async (req, res) => {
 
     if (!order) {
       console.log('✗ Order not found');
-      const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
+      const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
       return res.redirect(`${FRONTEND_BASE_URL}/payment/error?message=${encodeURIComponent('Order not found')}&order_id=${invoice_no}`);
     }
 
@@ -316,7 +316,7 @@ const qrRedirectToGateway = async (req, res) => {
       payment_status: order.payment_status
     });
 
-    const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
+    const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
 
     // Check payment status
     if (order.payment_status === 'completed') {
@@ -695,7 +695,7 @@ console.log('CCAvenue Parameters (sanitized):', {
   } catch (err) {
     console.error('✗ QR redirect error:', err);
     console.error('  Stack:', err.stack);
-    const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
+    const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
     return res.redirect(`${FRONTEND_BASE_URL}/payment/error?message=${encodeURIComponent('Payment system error: ' + err.message)}`);
   }
 };
@@ -708,7 +708,7 @@ const handleCCAvenueCallback = async (req, res) => {
 
     let encResp = req.body.encResp || req.query.encResp;
     if (!encResp) {
-      const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
+      const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
       return res.redirect(`${FRONTEND_BASE_URL}/payment/error?message=${encodeURIComponent('No response from payment gateway')}`);
     }
 
@@ -946,7 +946,7 @@ const adminCreateOrder = async (req, res) => {
     const ccavenueParams = {
       merchant_id: merchantId,
       order_id: invoiceNo,
-      amount: parseFloat(total_amount || 0).toFixed(2),
+      amount: parseFloat(total_amount+44 || 0).toFixed(2),
       currency: "INR",
       redirect_url: `${BACKEND_BASE_URL}/api/payment/ccavenue/callback`,
       cancel_url: `${BACKEND_BASE_URL}/api/payment/ccavenue/callback`,
@@ -1084,7 +1084,7 @@ const generatePaymentLink = async (req, res) => {
       return errorResponse(res, "Link only for pending orders");
     }
 
-    const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
+    const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
     const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
 
     return successResponse(res, "Payment link generated", {
