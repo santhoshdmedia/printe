@@ -946,7 +946,7 @@ const adminCreateOrder = async (req, res) => {
     const ccavenueParams = {
       merchant_id: merchantId,
       order_id: invoiceNo,
-      amount: parseFloat(total_amount+44 || 0).toFixed(2),
+      amount: parseFloat(total_amount || 0).toFixed(2),
       currency: "INR",
       redirect_url: `${BACKEND_BASE_URL}/api/payment/ccavenue/callback`,
       cancel_url: `${BACKEND_BASE_URL}/api/payment/ccavenue/callback`,
