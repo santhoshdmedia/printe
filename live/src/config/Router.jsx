@@ -205,7 +205,7 @@ export const router = createBrowserRouter([
     element: <PaymentError />,
   },
   {
-    path: "/admin-payment/:invoice_no",
+    path: "/payment/:invoice_no",
     element: <CustomerPaymentPage />,
   },
 

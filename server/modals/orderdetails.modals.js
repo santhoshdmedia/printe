@@ -12,7 +12,6 @@ const Order = model(
         type: Object,
         required: true,
       },
-
       delivery_address: {
         type: Object,
         required: true,
@@ -45,7 +44,7 @@ const Order = model(
       designFile: {
         type: String,
       },
-      design_time:{
+      design_time: {
         type: String,
       },
       production_id: {
@@ -83,7 +82,7 @@ const Order = model(
       gst_no: {
         type: String,
       },
-         vendor_deadline: {
+      vendor_deadline: {
         type: Date,
       },
       vendor_accepted_at: {
@@ -92,6 +91,65 @@ const Order = model(
       vendor_notes: {
         type: String,
       },
+      // New QR Code fields
+      payment_qr_code: {
+        type: String, // Base64 encoded QR code image
+      },
+      payment_qr_url: {
+        type: String, // URL encoded in QR code
+      },
+      qr_code_generated_at: {
+        type: Date,
+      },
+      // Additional payment fields
+      subtotal: {
+        type: Number,
+      },
+      tax_amount: {
+        type: Number,
+      },
+      discount_amount: {
+        type: Number,
+      },
+      total_amount: {
+        type: Number,
+      },
+      total_before_discount: {
+        type: Number,
+      },
+      payment_option: {
+        type: String,
+        default: "full"
+      },
+      payment_mode: {
+        type: String,
+      },
+      card_name: {
+        type: String,
+      },
+      payment_failure_reason: {
+        type: String,
+      },
+      created_by: {
+        type: String,
+        enum: ["customer", "admin"],
+        default: "customer"
+      },
+      created_by_admin_id: {
+        type: Schema.Types.ObjectId,
+        ref: "admin_users",
+      },
+      admin_notes: {
+        type: String,
+      },
+      coupon: {
+        code: String,
+        discount_type: String,
+        discount_value: Number,
+        discount_amount: Number,
+        final_amount: Number,
+        applied_at: Date
+      }
     },
     {
       collection: "order_details",
@@ -139,7 +197,6 @@ const order_delivery_timeline = model(
             type: Schema.Types.ObjectId,
             ref: "admin_users",
           },
-          
         }),
       },
     },
