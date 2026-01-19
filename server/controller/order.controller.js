@@ -213,6 +213,7 @@ const CollectMyOrders = async (req, res) => {
           discount_amount: 1,
           total_before_discount: 1,
           payment_option: 1,
+          payment_qr_code: 1,
           created_by: 1,
           admin_notes: 1,
           created_by_admin_id: 1,

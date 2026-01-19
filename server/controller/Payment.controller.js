@@ -19,7 +19,7 @@ const getEnv = (key, defaultValue = '') => {
 const generatePaymentQRCode = async (orderData, encryptedData, accessCode) => {
   try {
     const { invoice_no } = orderData;
-    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'http://localhost:8080');
+    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
     
     // QR URL points to backend endpoint that auto-submits to payment gateway
     const qrPaymentUrl = `${BACKEND_BASE_URL}/api/payment/qr-redirect/${invoice_no}`;
@@ -112,7 +112,7 @@ const createPaymentOrder = async (req, res) => {
 
     const { merchantId, workingKey, accessCode } = credentialCheck.credentials;
     const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
-    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'http://localhost:8080');
+    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
     const gatewayUrl = getGatewayUrl();
 
     const finalOrderId = order_id || `PRINTE${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -335,7 +335,7 @@ const qrRedirectToGateway = async (req, res) => {
     }
 
     const { merchantId, workingKey, accessCode } = credentialCheck.credentials;
-    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'http://localhost:8080');
+    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
     const gatewayUrl = getGatewayUrl();
 
     // Log credential info (remove sensitive data in production)
@@ -927,7 +927,7 @@ const adminCreateOrder = async (req, res) => {
     }
 
     const { merchantId, workingKey, accessCode } = credentialCheck.credentials;
-    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'http://localhost:8080');
+    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
     const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
     const gatewayUrl = getGatewayUrl();
 
@@ -1085,7 +1085,7 @@ const generatePaymentLink = async (req, res) => {
     }
 
     const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
-    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'http://localhost:8080');
+    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
 
     return successResponse(res, "Payment link generated", {
       payment_link: `${FRONTEND_BASE_URL}/payment/${order.invoice_no}`,
@@ -1117,7 +1117,7 @@ const regenerateQRCode = async (req, res) => {
     }
 
     const { merchantId, workingKey, accessCode } = credentialCheck.credentials;
-    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'http://localhost:8080');
+    const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
 
     const ccavenueParams = {
       merchant_id: merchantId,
