@@ -493,19 +493,20 @@ const BniLogin = () => {
           {/* Mobile Header with Logo and Title */}
           <div className="mb-6 lg:mb-8 text-center lg:hidden">
             <div className="flex justify-center mb-2 bg-[#facc15] relative">
-              <div className="absolute w-full h-36 bg-[#facc15] rounded-full -z-10"></div>
+              <div
+  className="absolute w-full top-0 h-32 bg-[#facc15] rounded-full -z-10"
+  style={{ clipPath: "ellipse(50% 40% at 50% 50%)" }}
+></div>
+
               <img src={logo} alt="Logo" className="h-16 sm:h-24 drop-shadow-md" />
             </div>
             <h1 className="text-2xl  sm:text-3xl font-bold text-gray-900 mb-2">
-              Weclome to PRINTE <br />
               <span className="text-red-600">BNI</span> Privilege Login
             </h1>
-               <div className="flex justify-center mb-4">
+               <div className="flex justify-center my-4">
               <img src={Bnilogo} alt="BNI Logo" className="h-20 sm:h-24 drop-shadow-md" />
             </div>
-            <p className="text-sm text-gray-600 px-4">
-              Exclusive access for BNI members
-            </p>
+        
           </div>
 
           {/* Desktop Logo */}
@@ -517,13 +518,14 @@ const BniLogin = () => {
             <Spin spinning={isLogingIn || isSendingOtp || isVerifyingOtp}>
             {/* Step 1: Member Details */}
             {currentStep === 1 && (
-              <form onSubmit={handleStep1Submit} className="bg-transparent rounded-2xl shadow-xl p-5 sm:p-6 lg:p-8 border border-gray-100">
+              <form onSubmit={handleStep1Submit} className="bg-transparent rounded-2xl shadow-xl p-3 md:p-5 sm:p-6 lg:p-8 border border-gray-100">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-5 sm:mb-6 text-center">
                   Member Information
                 </h2>
 
                 {/* Member name */}
-                <div className="mb-4">
+                <div className="flex gap-2 md:block lg:block">
+                  <div className="mb-4">
                   <Input
                     value={form.memberName}
                     required
@@ -569,8 +571,10 @@ const BniLogin = () => {
                     className="w-full hover:border-b-gray-400 focus:border-b-black focus:shadow-none px-0"
                   />
                 </div>
+                </div>
 
-                {/* Contact number */}
+                <div className="flex gap-2 md:block lg:block">
+                  {/* Contact number */}
                 <div className="mb-4">
                   <Input
                     value={form.contactNumber}
@@ -625,9 +629,10 @@ const BniLogin = () => {
                     </p>
                   )}
                 </div>
+                </div>
 
                 {/* Chapter Name & City in Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <Input
                       value={form.chapterName}
