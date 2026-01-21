@@ -142,6 +142,10 @@ const Order = model(
       admin_notes: {
         type: String,
       },
+      Is_cancelledOrder: {
+        type: Boolean,
+        default:false
+      },
       coupon: {
         code: String,
         discount_type: String,

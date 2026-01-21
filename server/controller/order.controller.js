@@ -109,7 +109,6 @@ const CollectAllOrder = async (req, res) => {
 
     // Handle date_filter validation and parsing
     if (date_filter && date_filter !== "null" && Array.isArray(date_filter)) {
-      console.log("Raw date_filter:", date_filter); // Debug log
 
       const start = moment(date_filter[0]);
       const end = moment(date_filter[1]);
@@ -119,7 +118,6 @@ const CollectAllOrder = async (req, res) => {
         const startOfDay = start.startOf("day").toDate();
         const endOfDay = end.endOf("day").toDate();
         where.createdAt = { $gte: startOfDay, $lte: endOfDay };
-        console.log("Processed Date Range:", startOfDay, endOfDay); // Debug log
       } else {
         console.error("Invalid date(s) in date_filter:", date_filter);
         // Optionally skip date filtering if dates are invalid
@@ -537,6 +535,85 @@ const UpdateOrderStatus = async (req, res) => {
     return errorResponse(res, "Internal server error", 500);
   }
 };
+const ToggleOrderCancellation = async (req, res) => {
+  try {
+    const { order_id, member_id, cancellation_reason } = req.body;
+
+    if (!order_id) {
+      return errorResponse(res, "Order ID is required", 400);
+    }
+
+    const currentOrder = await OrderDetailsSchema.findById(order_id);
+    if (!currentOrder) {
+      return errorResponse(res, "Order not found", 404);
+    }
+
+    const newCancelledStatus = !currentOrder.Is_cancelledOrder;
+    const updateData = {
+      Is_cancelledOrder: newCancelledStatus,
+      order_status: newCancelledStatus ? "cancelled" : currentOrder.order_status,
+      $set: {},
+    };
+
+    // If cancelling, clear all team assignments
+    if (newCancelledStatus) {
+      updateData.$set = {
+        account_id: null,
+        designerId: null,
+        production_id: null,
+        vender_id: null,
+        Quality_check_id: null,
+        package_team_id: null,
+        delivery_team_id: null,
+        admin_notes: cancellation_reason 
+          ? `Order cancelled: ${cancellation_reason}`
+          : `Order cancelled at ${new Date().toISOString()}`,
+      };
+    }
+
+    const updatedOrder = await OrderDetailsSchema.findByIdAndUpdate(
+      order_id,
+      updateData,
+      { new: true }
+    );
+
+    // Create timeline entry
+    // let user;
+    // if (member_id) {
+    //   user = await AdminUsersSchema.findById(member_id);
+    // }
+
+    // await orderdeliverytimelineSchema.create({
+    //   order_id,
+    //   order_status: updatedOrder.order_status,
+    //   changed_by: member_id || null,
+    //   changed_by_name: user ? user.name : "System",
+    //   changed_by_role: user ? user.role : "System",
+    //   notes: newCancelledStatus
+    //     ? `Order cancelled. ${cancellation_reason ? `Reason: ${cancellation_reason}` : ''} All team assignments cleared.`
+    //     : `Order uncancelled and restored to previous workflow.`,
+    //   team_participation: user
+    //     ? {
+    //         [user.role]: {
+    //           user_id: user._id,
+    //           name: user.name,
+    //           role: user.role,
+    //           action: newCancelledStatus ? "cancelled" : "uncancelled",
+    //           timestamp: new Date(),
+    //         },
+    //       }
+    //     : {},
+    // });
+
+    return successResponse(res, `Order ${newCancelledStatus ? 'cancelled' : 'uncancelled'} successfully`, {
+      order: updatedOrder,
+      is_cancelled: updatedOrder.Is_cancelledOrder,
+    });
+  } catch (err) {
+    console.error("Error toggling order cancellation:", err);
+    return errorResponse(res, "Internal server error", 500);
+  }
+};
 
 const UpdateOrderDesign = async (req, res) => {
   try {
@@ -720,5 +797,6 @@ module.exports = {
   UpdateOrderVendor,
   acceptOrderByVendor,
   completeOrderByVendor,
-  CollectMyOrdersByEmail
+  CollectMyOrdersByEmail,
+  ToggleOrderCancellation
 };

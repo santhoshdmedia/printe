@@ -25,6 +25,7 @@ import { SET_CART_COUNT } from "../../redux/slices/cart.slice";
 // Components
 import SearchProductCard from "../Product/SearchProductCard";
 import Logo from "../../assets/logo/without_bg.png";
+import BNILogo from "../../assets/BNI/bni.png";
 import { ButtonGlass, Button3D } from "../reusable/Glass";
 
 const Navbar = () => {
@@ -272,7 +273,7 @@ const Navbar = () => {
     return (
       <div
         ref={searchContainerRef}
-        className={`relative ${isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[25vw]"
+        className={`relative ${isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[30vw]"
           }`}
       >
         <form onSubmit={handleSearchSubmit}>
@@ -306,8 +307,8 @@ const Navbar = () => {
           <div
             ref={searchResultsRef}
             className={`absolute top-full left-0 bg-white backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden mt-3 border border-yellow-100 transition-all duration-200 ${isExpanded && searchProduct
-                ? "opacity-100 visible max-h-[60vh]"
-                : "opacity-0 invisible max-h-0"
+              ? "opacity-100 visible max-h-[60vh]"
+              : "opacity-0 invisible max-h-0"
               } ${isMobile ? "fixed left-4 right-4 w-auto" : "w-full"}`}
             style={{
               zIndex: 10010,
@@ -712,8 +713,8 @@ const Navbar = () => {
           <button
             onClick={() => handleDestination("/")}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeNav === "home"
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
-                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+              ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
+              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
               }`}
           >
             <BsHouse className={`text-xl ${activeNav === "home" ? "scale-110" : ""}`} />
@@ -724,8 +725,8 @@ const Navbar = () => {
           <button
             onClick={() => setMenuStatus(true)}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeNav === "categories"
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
-                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+              ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
+              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
               }`}
           >
             <BsGrid className={`text-xl ${activeNav === "categories" ? "scale-110" : ""}`} />
@@ -750,8 +751,8 @@ const Navbar = () => {
               handleDestination("/shopping-cart");
             }}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 relative ${activeNav === "cart"
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
-                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+              ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
+              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
               }`}
           >
             <div className="relative">
@@ -769,8 +770,8 @@ const Navbar = () => {
           <button
             onClick={() => isAuth ? setShowUserDropdown(!showUserDropdown) : handleDestination("/login")}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeNav === "account"
-                ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
-                : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
+              ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
+              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
               }`}
           >
             <BsPerson className={`text-xl ${activeNav === "account" ? "scale-110" : ""}`} />
@@ -837,20 +838,24 @@ const Navbar = () => {
     <div className="w-full m-0">
       {/* Desktop Navbar */}
       <div
-        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-20 sticky top-0 z-40 ${isScrolled ? "shadow-xl" : "shadow-lg"
+        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-12 sticky top-0 z-40 ${isScrolled ? "shadow-xl" : "shadow-lg"
           }`}>
         {/* Left: Logo + Search */}
-        <div className="flex items-center gap-x-8 xl:gap-x-32 ">
+        <div className="flex items-center gap-x-4 xl:gap-x-12 ">
           <Link to="/">
             <img src={Logo} alt="logo" className="h-16 w-full object-contain" />
           </Link>
+              {user.role == "bni_user" && <Link to="/products">
+
+              <img src={BNILogo} alt="Logo" className="h-16 object-contain" />
+            </Link>}
           <SearchInput />
         </div>
         <div className="mr-24 w-[200px]">
           {/* Your Button3D - Updated to proper usage */}
-          {user.role=="bni_user"&&<Link to="/products">
-            <Button3D 
-              variant="gradient" 
+          {user.role == "bni_user" && <Link to="/products">
+            <Button3D
+              variant="gradient"
               size="sm"
               onClick={() => handleDestination("/products")}
             >
@@ -886,9 +891,12 @@ const Navbar = () => {
               onClick={closeSearchBar}
               className="flex items-center gap-2"
             >
-              <img src={Logo} alt="Logo" className="h-7 object-contain" />
-              <span className="text-white font-bold text-sm hidden sm:block">Store</span>
+              <img src={Logo} alt="Logo" className="h-10 object-contain" />
             </Link>
+            {user.role == "bni_user" && <Link to="/products">
+
+              <img src={BNILogo} alt="Logo" className="h-10 object-contain" />
+            </Link>}
           </div>
 
           {/* Right: Search */}

@@ -1,5 +1,5 @@
 const { VerfiyToken } = require("../helper/shared.helper");
-const { CreateOrder, CollectAllOrder, CollectMyOrders, UpdateOrderStatus, getOrderStates,UpdateOrderDesign,UpdateOrderVendor,acceptOrderByVendor,completeOrderByVendor,CollectMyOrdersByEmail } = require("./controller_import");
+const { CreateOrder, CollectAllOrder, CollectMyOrders, UpdateOrderStatus, getOrderStates,UpdateOrderDesign,UpdateOrderVendor,acceptOrderByVendor,completeOrderByVendor,CollectMyOrdersByEmail,ToggleOrderCancellation } = require("./controller_import");
 
 const router = require("express").Router();
 
@@ -14,6 +14,7 @@ router.put('/update-design',  UpdateOrderDesign);
 router.put('/update-vendor',  UpdateOrderVendor);
 router.post('/accept-order',  acceptOrderByVendor);
 router.post('/complete-order', completeOrderByVendor);
+router.put('/toggle-cancellation', ToggleOrderCancellation);
 
 
 module.exports = router;

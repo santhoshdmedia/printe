@@ -65,7 +65,7 @@ const {
   getOrderStates,
   UpdateOrderDesign,
   UpdateOrderVendor,
-  acceptOrderByVendor, completeOrderByVendor,CollectMyOrdersByEmail
+  acceptOrderByVendor, completeOrderByVendor,CollectMyOrdersByEmail,ToggleOrderCancellation
 } = require("../controller/order.controller");
 const { getAllDashbardCounts } = require("../controller/dashboard.controller");
 const {
@@ -232,6 +232,7 @@ module.exports = {
   acceptOrderByVendor,
   completeOrderByVendor,
   getAllProductsSimple,
+  ToggleOrderCancellation,
   CollectMyOrdersByEmail,
 
   // Dashboard

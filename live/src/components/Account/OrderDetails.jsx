@@ -199,6 +199,8 @@ const OrderDetails = () => {
 
     const firstOrder = orders[0] || {};
     const cartItems = getCartItems(firstOrder);
+    console.log(cartItems);
+
 
     // Calculate item details
     const itemDetails = cartItems.map(item => {
@@ -219,7 +221,9 @@ const OrderDetails = () => {
     const totalTax = itemDetails.reduce((sum, item) => sum + item.taxAmount, 0);
     const cgst = totalTax / 2;
     const sgst = totalTax / 2;
+    const MRP = cartItems.reduce((sum, item) => sum + item.Mrp_price, 0);
     const grandTotal = Math.round(taxableAmount + totalTax + (firstOrder.DeliveryCharges || 0));
+    const grandSavings = Math.abs(MRP - grandTotal);
     const totalQuantity = itemDetails.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
     // Get delivery address
@@ -230,7 +234,7 @@ const OrderDetails = () => {
       deliveryAddress.street || deliveryAddress.street_address,
       deliveryAddress.city,
       deliveryAddress.state,
-      deliveryAddress.pincode ? `PIN: ${deliveryAddress.pincode}` : null
+      deliveryAddress.pincode ? `PINCODE: ${deliveryAddress.pincode}` : null
     ].filter(Boolean);
     const fullAddress = addressParts.join(", ");
 
@@ -274,24 +278,13 @@ const OrderDetails = () => {
       <div class="w-full" style="font-family: Arial, sans-serif; position: relative; min-height: 1120px; width: 794px; padding: 20px 20px;">
         <!-- Header Section -->
         <div style="text-align: center; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; position: relative;">
-        <div style=" padding: 0px;  display: inline-block; text-align: center;">
-                  <img src="${ImageHelper.pdf_logo}" alt="Payment QR Code" style="width: 150px; height: 50px; margin-bottom: 10px;" />
+        <div style=" padding: 0px; padding-top: 5px; display: inline-block; text-align: center;">
+                  <img src="${ImageHelper.pdf_logo}" alt="Payment QR Code" style="width: 140px; height: 40px; margin-bottom: 2px; object-fit: contain;" />
                 </div>
-          <div style="display: flex; justify-content: center; gap: 30px; margin: 8px 0;">
-            <p style="margin: 0; font-size: 10px;">
-              <b>GSTIN:</b> 33AANCP3376Q1ZN
-            </p>
-            <p style="margin: 0; font-size: 10px;">
-              <b>PAN:</b> AANCP3376Q
-            </p>
-          </div>
-          <p style="margin: 5px 0; font-size: 10px; line-height: 1.4;">
-          #6 Church Colony, Tiruchirappalli  Tamil Nadu 620017
-          </p>
+           
+         
           <div style="display: flex; justify-content: center; gap: 20px; margin: 8px 0; font-size: 10px;">
-            <p style="margin: 0;">
-              <b>Mobile:</b> +91 95856 10000
-            </p>
+           
             <p style="margin: 0;">
               <b>Email:</b> info@printe.in
             </p>
@@ -318,7 +311,7 @@ const OrderDetails = () => {
           </div>
           ${firstOrder.payment_status === "pending" &&
       ` <div style="text-align: right;">
-            <div style=" color: #ff6b6b; padding: 8px 10px; border-radius: 4px; display: inline-block;">
+            <div style=" color: #ff6b6b ;  padding: 10px; border-radius: 4px; display: inline-block;">
               <p style="margin: 0; font-weight: bold; font-size: 12px; ">
                 ${firstOrder.payment_status === "pending" ? "PAYMENT PENDING" : "PAID"}
               </p>
@@ -333,8 +326,8 @@ const OrderDetails = () => {
             <h3 style="font-size: 13px; font-weight: bold; margin: 0 0 10px 0; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
               Customer Details:
             </h3>
-            <p style="margin: 5px 0; font-size: 13px; font-weight: bold;">${deliveryAddress.name || "Customer Name"}</p>
-            <p style="margin: 5px 0; font-size: 12px; line-height: 1.4;">${fullAddress}</p>
+            <p style="margin: 5px 0; font-size: 13px; font-weight: bold;">Mr.${deliveryAddress.name || "Customer Name"}</p>
+            <p style="margin: 5px 0; font-size: 12px; line-height: 1.4; width:50%;">${fullAddress}</p>
             <p style="margin: 5px 0; font-size: 12px;"><b>Phone:</b> ${deliveryAddress.mobile_number || ""}</p>
             <p style="margin: 5px 0; font-size: 12px;"><b>Email:</b> ${deliveryAddress.email || ""}</p>
           </div>
@@ -356,10 +349,10 @@ const OrderDetails = () => {
               <tr style="background-color: #f2c41a; color: #333;">
                 <th style="border: 1px solid #ddd; padding: 10px; text-align: left; width: 30px;">#</th>
                 <th style="border: 1px solid #ddd; padding: 10px; text-align: left; width: 250px;">Item</th>
-                <th style="border: 1px solid #ddd; padding: 10px; text-align: right; width: 80px;">Rate / Item</th>
+                <th style="border: 1px solid #ddd; padding: 10px; text-align: right; width: 80px;">MRP</th>
                 <th style="border: 1px solid #ddd; padding: 10px; text-align: center; width: 60px;">Qty</th>
-                <th style="border: 1px solid #ddd; padding: 10px; text-align: right; width: 100px;">Taxable Value</th>
-                <th style="border: 1px solid #ddd; padding: 10px; text-align: right; width: 120px;">Tax Amount</th>
+                <th style="border: 1px solid #ddd; padding: 10px; text-align: right; width: 100px;">Rate / Item</th>
+                <th style="border: 1px solid #ddd; padding: 10px; text-align: right; width: 120px;">Tax Amount (18%)</th>
                 <th style="border: 1px solid #ddd; padding: 10px; text-align: right; width: 100px;">Amount</th>
               </tr>
             </thead>
@@ -372,12 +365,11 @@ const OrderDetails = () => {
                     ${item.size ? `<div style="font-size: 11px; color: #666;">Size: ${item.size}</div>` : ''}
                     ${item.color ? `<div style="font-size: 11px; color: #666;">Color: ${item.color}</div>` : ''}
                   </td>
-                  <td style="border: 1px solid #ddd; padding: 10px; text-align: right; vertical-align: top;">₹ ${(item.price || 0).toFixed(2)}</td>
+                  <td style="border: 1px solid #ddd; padding: 10px; text-align: right; vertical-align: top;">₹ ${(item.Mrp_price || 0).toFixed(2)}</td>
                   <td style="border: 1px solid #ddd; padding: 10px; text-align: center; vertical-align: top;">${item.quantity || 0}</td>
                   <td style="border: 1px solid #ddd; padding: 10px; text-align: right; vertical-align: top;">₹ ${item.taxableValue.toFixed(2)}</td>
                   <td style="border: 1px solid #ddd; padding: 10px; text-align: right; vertical-align: top;">
                     ₹ ${item.taxAmount.toFixed(2)}<br/>
-                    <span style="font-size: 11px; color: #666;">(18%)</span>
                   </td>
                   <td style="border: 1px solid #ddd; padding: 10px; text-align: right; vertical-align: top; font-weight: bold;">₹ ${item.amount.toFixed(2)}</td>
                 </tr>
@@ -433,6 +425,10 @@ const OrderDetails = () => {
                     <td style="padding: 8px 10px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${firstOrder.DeliveryCharges.toFixed(2)}</td>
                   </tr>
                 ` : ''}
+                 <tr style="font-size:12px; color:#1b8755;">
+                    <td style="padding: 8px 10px; border-bottom: 1px solid #ddd;"><b>Savings</b></td>
+                    <td style="padding: 8px 10px; border-bottom: 1px solid #ddd; text-align: right; "><b>₹ ${grandSavings.toFixed(2)}</b></td>
+                  </tr>
                 <tr>
                   <td style="padding: 12px 10px; background: #f8f9fa; font-weight: bold; font-size: 14px;">Total Amount</td>
                   <td style="padding: 12px 10px; background: #f8f9fa; text-align: right; font-weight: bold; font-size: 14px; color: #ff6b6b;">₹ ${grandTotal.toFixed(2)}</td>
@@ -440,10 +436,7 @@ const OrderDetails = () => {
               </tbody>
             </table>
             
-            <div style="font-size: 12px; color: #666; text-align: center;">
-              <p style="margin: 5px 0;">Total Items: ${itemDetails.length}</p>
-              <p style="margin: 5px 0;">Total Quantity: ${totalQuantity}</p>
-            </div>
+            
           </div>
         </div>
 
@@ -456,15 +449,20 @@ const OrderDetails = () => {
         <div style="margin-top: 10px; margin-bottom:10px; padding-top: 10px; border-top: 1px solid #ddd;">
           <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div style="flex: 1;">
-              <h4 style="font-size: 10px; margin-bottom: 10px;">Terms & Conditions:</h4>
-              <ul style="font-size: 8px; margin: 0; padding-left: 15px; color: #666;">
-                <li>Goods once sold will not be taken back</li>
-                <li>All disputes subject to Tiruchirappalli jurisdiction</li>
-                <li>Payment due within 7 days from invoice date</li>
-              </ul>
+             <p style="margin: 2px 0; font-size: 10px; ">Seller Information</p>
+                <table style=" font-size: 10px; ">
+              <tr>
+                <td><b>GST NO</b></td>
+                <td>: 33AANCP3376Q1ZN</td>
+              </tr>
+              <tr>
+                <td><b>PAN NO</b></td>
+                <td>: AANCP3376Q</td>
+              </tr>
+              </table>
             </div>
             
-            <div style="text-align: center; displat:flex; flex-direction:coloum;">
+            <div style="text-align: center; display:fle; flex-direction:coloum;">
             <p style="font-size: 6px; color: #666; margin: 5px 0 0 0;">For PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
             <div style="margin-bottom: 2px;">
             <img src="${signatureImage}" alt="Authorized Signature" style="width: 80px; height: auto; transform:rotate(30deg); margin-left:50px;" />
@@ -476,13 +474,13 @@ const OrderDetails = () => {
 
 
 
-<div style="margin-top: 2px; padding-top: 2px; border-top: 2px solid #f2c41a; text-align: center; font-size: 8px; color: #666;">
-          <p style="margin: 2px 0;">MARKETED BY PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
-          <p style="margin: 2px 0;">Registered Office: #6 Church Colony, Tiruchirappalli, Tamil Nadu - 620017</p>
-          <p style="margin: 2px 0; margin-bottom:5px;">Email: info@printe.in | Phone: +91 95856 10000 | Website: www.printe.in</p>
-          <div style="background-color: #444; color: white; padding: 8px; margin-top: 5px; border-radius: 4px;">
-            <span>Powered By <a href="https://www.dmedia.in/" style="color: white; text-decoration: underline; font-weight: bold;">DMEDIA</a></span>
-          </div>
+<div style="margin-top: 2px;  border-top: 2px solid #f2c41a; text-align: center; font-size: 12px;  color: #666;">
+          <p style="margin: 2px 0;">MARKETED BY <br /> PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
+          <p style="margin: 2px 0;">Communication address: #6 Church Colony, Tiruchirappalli, Tamil Nadu - 620017</p>
+          <p style="margin: 2px 0; margin-bottom:5px;">Email: info@printe.in | Customer-care: +91 95856 10000 | Website: www.printe.in</p>
+          <div style="background-color: #444; color: white;  padding: 10px; position: relative; display:flex !important; align-items: center !important; justify-content: center !important; margin-top: 20px !important; position: relative;">
+  <span style="position: absolute; top:-6px;">Powered By <a href="https://www.dmedia.in/" style="color: white; text-decoration: underline; font-weight: bold;">DMEDIA</a></span>
+</div>
         </div>
       </div>
     `;
@@ -513,9 +511,12 @@ const OrderDetails = () => {
     // Calculate totals
     const taxableAmount = itemDetails.reduce((sum, item) => sum + item.taxableValue, 0);
     const totalTax = itemDetails.reduce((sum, item) => sum + item.taxAmount, 0);
+    const MRP = cartItems.reduce((sum, item) => sum + item.Mrp_price, 0);
+
     const cgst = totalTax / 2;
     const sgst = totalTax / 2;
     const grandTotal = Math.round(taxableAmount + totalTax + (firstOrder.DeliveryCharges || 0));
+    const grandSavings = Math.abs(MRP - grandTotal);
     const totalQuantity = itemDetails.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
     // Get delivery address
@@ -526,7 +527,7 @@ const OrderDetails = () => {
       deliveryAddress.street || deliveryAddress.street_address,
       deliveryAddress.city,
       deliveryAddress.state,
-      deliveryAddress.pincode ? `PIN: ${deliveryAddress.pincode}` : null
+      deliveryAddress.pincode ? `PINCode: ${deliveryAddress.pincode}` : null
     ].filter(Boolean);
     const fullAddress = addressParts.join(", ");
 
@@ -537,14 +538,14 @@ const OrderDetails = () => {
         style={{ maxWidth: "794px" }}
       >
         {/* Header Section */}
-        <div className="text-center mb-8 pb-6 border-b-2 border-gray-800 relative">
-            <img
-              src={ImageHelper.pdf_logo}
-              alt="Authorized Signature"
-              className="w-36 mx-auto object-contain mb-2"
-            />
+        <div className="text-center mb-6 pb-3 border-b-2 border-gray-800 relative">
+          <img
+            src={ImageHelper.pdf_logo}
+            alt="Authorized Signature"
+            className="w-36 mx-auto object-contain mb-2"
+          />
 
-          
+          {/* 
           <div className="flex justify-center gap-6 mb-2">
             <p className="text-sm text-gray-600">
               <span className="font-semibold">GSTIN:</span> 33AANCP3376Q1ZN
@@ -552,13 +553,11 @@ const OrderDetails = () => {
             <p className="text-sm text-gray-600">
               <span className="font-semibold">PAN:</span> AANCP3376Q
             </p>
-          </div>
-          <p className="text-sm text-gray-600 mb-2">
-            #6 Church Colony,  Tiruchirappalli  Tamil Nadu 620017
-          </p>
-          <div className="flex justify-center gap-4 text-sm text-gray-600">
+          </div> */}
+
+          {/* <div className="flex justify-center gap-4 text-sm text-gray-600">
             <p>
-              <span className="font-semibold">Mobile:</span> +91 95856 10000
+              <span className="font-semibold">Customer-care:</span> +91 95856 10000
             </p>
             <p>
               <span className="font-semibold">Email:</span> info@printe.in
@@ -566,7 +565,7 @@ const OrderDetails = () => {
             <p>
               <span className="font-semibold">Website:</span> www.printe.in
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Invoice Details */}
@@ -612,7 +611,7 @@ const OrderDetails = () => {
               Customer Details:
             </h3>
             <p className="font-bold text-gray-800">{deliveryAddress.name || "Customer Name"}</p>
-            <p className="text-sm text-gray-600 mt-1">{fullAddress}</p>
+            <p className="text-sm text-gray-600 mt-1 w-[80%]">{fullAddress}</p>
             <p className="text-sm text-gray-600 mt-1">
               <span className="font-semibold">Phone:</span> {deliveryAddress.mobile_number || "N/A"}
             </p>
@@ -645,18 +644,18 @@ const OrderDetails = () => {
               <tr className="bg-yellow-500 text-gray-800">
                 <th className="border border-gray-300 px-4 py-2 text-left text-xs font-semibold w-8 ">#</th>
                 <th className="border border-gray-300 px-4 py-2 text-left text-xs font-semibold">Item</th>
-                <th className="border border-gray-300 px-4 py-2 text-right text-xs font-semibold w-24">Rate / Item</th>
+                <th className="border border-gray-300 px-4 py-2 text-right text-xs font-semibold w-24">MRP</th>
                 <th className="border border-gray-300 px-4 py-2 text-center text-xs font-semibold w-16">Qty</th>
-                <th className="border border-gray-300 px-4 py-2 text-right text-xs font-semibold w-32">Taxable Value</th>
-                <th className="border border-gray-300 px-4 py-2 text-right text-xs font-semibold w-36">Tax Amount</th>
+                <th className="border border-gray-300 px-4 py-2 text-right text-xs font-semibold w-32">Rate / Item</th>
+                <th className="border border-gray-300 px-4 py-2 text-right text-xs font-semibold w-36">Tax Amount (18%)</th>
                 <th className="border border-gray-300 px-4 py-2 text-right text-xs font-semibold w-32">Amount</th>
               </tr>
             </thead>
             <tbody className="text-xs">
               {itemDetails.map((item, index) => (
                 <tr key={index} className="hover:bg-gray-50">
-                  <td className="border border-gray-300 px-4 py-3 align-top">{index + 1}</td>
-                  <td className="border border-gray-300 px-4 py-3 align-top">
+                  <td className="border border-gray-300 px-4 py-1 pt-2 align-top">{index + 1}</td>
+                  <td className="border border-gray-300 px-4 py-1 pt-2 align-top">
                     <div className="font-semibold mb-1">{item.product_name || "Product"}</div>
                     {item.size && (
                       <div className="text-xs text-gray-500">Size: {item.size}</div>
@@ -666,20 +665,19 @@ const OrderDetails = () => {
                     )}
 
                   </td>
-                  <td className="border border-gray-300 px-4 py-3 text-right align-top">
-                    ₹ {(item.price || 0).toFixed(2)}
+                  <td className="border border-gray-300 px-4 py-1 pt-2 text-right align-center">
+                    ₹ {(item.Mrp_price || 0).toFixed(2)}
                   </td>
-                  <td className="border border-gray-300 px-4 py-3 text-center align-top">
+                  <td className="border border-gray-300 px-4 py-1 pt-2 text-center align-center">
                     {item.quantity || 0}
                   </td>
-                  <td className="border border-gray-300 px-4 py-3 text-right align-top">
+                  <td className="border border-gray-300 px-4 py-1 pt-2 text-right align-center">
                     ₹ {item.taxableValue.toFixed(2)}
                   </td>
-                  <td className="border border-gray-300 px-4 py-3 text-right align-top">
+                  <td className="border border-gray-300 px-4 py-1 pt-2 text-right align-center">
                     <div>₹ {item.taxAmount.toFixed(2)}</div>
-                    <div className="text-xs text-gray-500">(18%)</div>
                   </td>
-                  <td className="border border-gray-300 px-4 py-3 text-right align-top font-semibold">
+                  <td className="border border-gray-300 px-4 py-1 pt-2 text-right align-center font-semibold">
                     ₹ {item.amount.toFixed(2)}
                   </td>
                 </tr>
@@ -740,6 +738,10 @@ const OrderDetails = () => {
                       <td className="px-4 py-3 text-right">₹ {firstOrder.DeliveryCharges.toFixed(2)}</td>
                     </tr>
                   )}
+                  <tr className="border-t border-gray-300">
+                    <td className="px-4 py-3">Savings</td>
+                    <td className="px-4 py-3 text-right">₹{grandSavings.toFixed(2)} </td>
+                  </tr>
                   <tr className="border-t border-gray-300 bg-gray-800 text-white">
                     <td className="px-4 py-3 font-bold">Total Amount</td>
                     <td className="px-4 py-3 text-right font-bold">₹ {grandTotal.toFixed(2)}</td>
@@ -778,12 +780,17 @@ const OrderDetails = () => {
         <div className="mt-8 pt-6 border-t border-gray-300">
           <div className="flex justify-between items-start">
             <div className="w-2/3">
-              <h4 className="font-semibold text-gray-800 mb-2">Terms & Conditions:</h4>
-              <ul className="text-xs text-gray-600 space-y-1">
-                <li>• Goods once sold will not be taken back</li>
-                <li>• All disputes subject to Tiruchirappalli jurisdiction</li>
-                <li>• Payment due within 7 days from invoice date</li>
-              </ul>
+              <p className="font-bold text-md uppercase text-gray-800 mb-2">Seller information:</p>
+              <tr>
+                <td className="font-semibold">GST NO</td>
+                <td>: 33AANCP3376Q1ZN</td>
+              </tr>
+              <tr>
+                <td><b>PAN</b></td>
+                <td>: AANCP3376Q</td>
+              </tr>
+
+
             </div>
 
             <div className="text-center">
@@ -801,9 +808,9 @@ const OrderDetails = () => {
 
           {/* Footer */}
           <div className="mt-8 pt-4 border-t border-gray-300 text-center text-xs text-gray-500">
-            <p className="mb-1">MARKETED BY PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
-            <p className="mb-1">Registered Office: #6 Church Colony, Tiruchirappalli, Tamil Nadu - 620017</p>
-            <p className="mb-3">Email: info@printe.in | Phone: +91 95856 10000 | Website: www.printe.in</p>
+            <p className="mb-1">MARKETED BY <br /> PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
+            <p className="mb-1">Communication Address: #6 Church Colony, Tiruchirappalli, Tamil Nadu - 620017</p>
+            <p className="mb-3">Email: info@printe.in | Customer-care: +91 95856 10000 | Website: www.printe.in</p>
             <div className="bg-gray-800 text-white py-2 px-4 rounded">
               <span>Powered By{" "}
                 <a href="https://www.dmedia.in/" className="text-white font-bold hover:underline">

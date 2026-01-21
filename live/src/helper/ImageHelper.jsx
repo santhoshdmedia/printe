@@ -16,7 +16,7 @@ import color3 from "../assets/logo/color/dynamic/9f1239.png";
 import color4 from "../assets/logo/color/dynamic/3f6212.png";
 import color5 from "../assets/logo/color/dynamic/9a3412.png";
 import color6 from "../assets/logo/color/dynamic/292524.png";
-import pdf_logo from "../assets/logo/logo.jpeg";
+import pdf_logo from "../assets/logo/logo.png";
 import without_bg from "../assets/logo/without_bg.png";
 import bottomimage from "../assets/About_Us/bottom_image.avif";
 import { VscArrowCircleUp } from "react-icons/vsc";
