@@ -204,7 +204,7 @@ const customSignup = async (req, res) => {
     password,
     name,
     unique_code,
-    business_name,
+    businessName,
     role,
     phone
   } = req.body;
@@ -237,7 +237,7 @@ const customSignup = async (req, res) => {
       phone: phone,
       role,
       ...(unique_code && { unique_code }),
-      ...(business_name && { business_name })
+      ...(businessName && { businessName })
     });
 
     const savedUser = await newUser.save();
@@ -284,7 +284,7 @@ const BNISignup = async (req, res) => {
     password,
     name,
     unique_code,
-    business_name,
+    businessName,
     role = "bni_user",
     phone,
     member_Name,
@@ -321,7 +321,7 @@ const BNISignup = async (req, res) => {
       phone: phone,
       role,
       ...(unique_code && { unique_code }),
-      ...(business_name && { business_name }),
+      ...(businessName && { businessName }),
       member_Name,
       chapter_Name,
       city,
@@ -335,7 +335,7 @@ const BNISignup = async (req, res) => {
       id: savedUser._id,
       email: savedUser.email,
       role: savedUser.role,
-      ...(savedUser.business_name && { business_name: savedUser.business_name }),
+      ...(savedUser.businessName && { businessName: savedUser.businessName }),
       ...(savedUser.unique_code && { unique_code: savedUser.unique_code }),
       member_Name: savedUser.member_Name,
       chapter_Name: savedUser.chapter_Name,

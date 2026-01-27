@@ -23,7 +23,7 @@ const TemplateHelper = (value) => {
     case "BNI welcome mail": {
       console.log(value);
       return {
-        subject: "Welcome to printe",
+        subject: "Welcome to Printe.in – Let’s Print Something Amazing!",
         
         templete: ejs.render(fs.readFileSync(path.join(__dirname, "./BNIwelcome.ejs"), "utf-8"), value),
       };

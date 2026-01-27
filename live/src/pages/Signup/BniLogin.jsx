@@ -27,7 +27,7 @@ const BniLogin = () => {
     businessName: "",
     contactNumber: "",
     email: "",
-    chapterName: "",
+    chapter_Name: "",
     city: "",
     category: "",
     otp: "",
@@ -40,7 +40,7 @@ const BniLogin = () => {
     businessName: "",
     contactNumber: "",
     email: "",
-    chapterName: "",
+    chapter_Name: "",
     city: "",
     category: "",
     otp: "",
@@ -95,7 +95,7 @@ const BniLogin = () => {
     const { name, value } = e.target;
 
     // Clean input values
-    if (name === "memberName" || name === "businessName" || name === "chapterName" || name === "city" || name === "category") {
+    if (name === "memberName" || name === "businessName" || name === "chapter_Name" || name === "city" || name === "category") {
       const cleanedValue = value.replace(/\s+/g, " ").trimStart();
       setForm((prevForm) => ({ ...prevForm, [name]: cleanedValue }));
     } else if (name === "contactNumber") {
@@ -335,7 +335,7 @@ const BniLogin = () => {
       businessName: form.businessName.replace(/\s+/g, " ").trim(),
       contactNumber: form.contactNumber,
       email: form.email.trim(),
-      chapterName: form.chapterName.replace(/\s+/g, " ").trim(),
+      chapter_Name: form.chapter_Name.replace(/\s+/g, " ").trim(),
       city: form.city.replace(/\s+/g, " ").trim(),
       category: form.category.replace(/\s+/g, " ").trim(),
     };
@@ -421,7 +421,7 @@ const BniLogin = () => {
           password: form.password,
           otp: form.otp,
           businessName: form.businessName,
-          chapterName: form.chapterName,
+          chapter_Name: form.chapter_Name,
           city: form.city,
           category: form.category,
         }
@@ -634,9 +634,9 @@ const BniLogin = () => {
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <Input
-                        value={form.chapterName}
+                        value={form.chapter_Name}
                         required
-                        name="chapterName"
+                        name="chapter_Name"
                         onChange={handleOnChange}
                         placeholder="Chapter Name *"
                         style={{

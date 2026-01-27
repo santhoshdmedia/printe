@@ -124,7 +124,7 @@ const userSchema = new mongoose.Schema(
     unique_code: {
       type: String,
     },
-    business_name: {
+    businessName: {
       type: String,
     }
   },
