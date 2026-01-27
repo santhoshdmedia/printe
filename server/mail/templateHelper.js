@@ -20,6 +20,14 @@ const TemplateHelper = (value) => {
         templete: ejs.render(fs.readFileSync(path.join(__dirname, "./welcomeDealer.ejs"), "utf-8"), value),
       };
     }
+    case "BNI welcome mail": {
+      console.log(value);
+      return {
+        subject: "Forgot Your AC verify",
+        
+        templete: ejs.render(fs.readFileSync(path.join(__dirname, "./BNIwelcome.ejs"), "utf-8"), value),
+      };
+    }
     case "placed order": {
       return {
         subject: "Your Order Has Been Successfully Placed! 🎉",

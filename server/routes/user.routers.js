@@ -1,6 +1,7 @@
 const { clientLogin, clientSignup,customSignup,getAllCustomUsers, clientCheckloginstatus, getAllClientUsers, deleteClientUser,clientgoogleLogin, updateClientUser, getblog, getSingleClient, addtoHistory,BNISignup } = require("./controller_import");
 const router = require("express").Router();
 const { VerfiyToken } = require("../helper/shared.helper");
+const { userVerifyTest } = require("../controller/user.controller");
 
 router.post("/login", clientLogin);
 router.post("/google_login", clientgoogleLogin);
@@ -12,6 +13,7 @@ router.post("/delete_client_user", VerfiyToken, deleteClientUser);
 router.put("/update_client_user/:id", updateClientUser);
 router.get("/check_login", VerfiyToken, clientCheckloginstatus);
 router.get("/get_sinlge_client/:id", getSingleClient);
+router.post("/user-Test", userVerifyTest);
 
 // blogs
 router.get("/get_all_blogs", getblog);

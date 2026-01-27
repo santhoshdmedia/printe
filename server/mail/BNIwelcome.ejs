@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Printe</title>
+  <style>
+    body {
+        font-family: 'Arial', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 100%;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+        background: #fad026;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+    }
+
+    .header p {
+        margin: 10px 0 0;
+        opacity: 0.9;
+    }
+
+    .content {
+        padding: 40px 30px;
+    }
+
+    .welcome-text {
+        font-size: 18px;
+        margin-bottom: 25px;
+        color: #444;
+    }
+
+    .verification-box {
+        background: #fef9e7;
+        border-left: 4px solid #fad026;
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 4px;
+    }
+
+    .verification-box h3 {
+        color: #2c3e50;
+        margin-top: 0;
+    }
+
+    .highlight {
+        background: #fef9e7;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #fad026;
+        margin: 20px 0;
+        text-align: center;
+        font-weight: 600;
+        color: #856404;
+    }
+
+    .steps {
+        margin: 30px 0;
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .step-number {
+        color: #333;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0;
+        font-weight: bold;
+    }
+
+    .step-content h4 {
+        margin: 0 0 8px 0;
+        color: #2c3e50;
+    }
+
+    .footer {
+        background: #f8f9fa;
+        padding: 25px 30px;
+        text-align: center;
+        border-top: 1px solid #eee;
+        color: #666;
+        font-size: 14px;
+    }
+
+    .contact-info {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px dashed #ddd;
+    }
+
+    .contact-info p {
+        margin: 5px 0;
+    }
+
+    .button {
+        display: inline-block;
+        padding: 12px 30px;
+        background: #fad026;
+        color: #333;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: 600;
+        margin: 10px 0;
+    }
+
+    .button:hover {
+        background: #e0b820;
+    }
+
+    @media (max-width: 600px) {
+        .container {
+            margin: 10px;
+        }
+
+        .content {
+            padding: 25px 20px;
+        }
+    }
+</style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <img src="https://printe.in/assets/logo-BQbty1hL.png" alt="Printe Logo"
+                    style="max-height: 70px; width: auto; display: block; margin: 0 auto;" />
+            </div>
+            <p>Your BNI Member Account is Almost Ready</p>
+        </div>
+
+        <div class="content">
+            <div class="welcome-text">
+                <p>Hello <strong>
+                        <%= name %>
+                    </strong>,</p>
+                <p>Thank you for joining Printe as a BNI member! We're excited to have you on board.</p>
+            </div>
+
+            <div class="highlight">
+                ⏳ Your account will be verified within 24 hours
+            </div>
+
+            <div class="verification-box">
+                <h3>🔒 Account Verification Process</h3>
+                <p>Our team is currently reviewing your account details to ensure everything is set up correctly. This
+                    verification process helps us maintain the security and quality of our BNI community.</p>
+            </div>
+
+            <div class="steps">
+                <h3>What happens next?</h3>
+
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Verification Review</h4>
+                        <p>Our team will verify your BNI membership details and account information.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Account Activation</h4>
+                        <p>Once verified, your account will be activated automatically.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Full Access Granted</h4>
+                        <p>You'll receive a confirmation email and gain access to all BNI member features.</p>
+                    </div>
+                </div>
+            </div>
+
+            <p>In the meantime, you can:</p>
+            <ul>
+                <li>Complete your profile information</li>
+                <li>Explore our Products and enjoy BNI benefits</li>
+            </ul>
+
+            <p>If you have any questions during this process, feel free to reach out to our support team.</p>
+
+            
+        </div>
+
+        <div class="footer">
+          
+
+            <div class="contact-info">
+                <p><strong>Need Help?</strong></p>
+                <p>Email: info@printe.in</p>
+                <p>Customer-care: +91 95856 10000</p>
+                <p>Workig-Hours: Monday-Saturday, 09.00 AM - 07.00 PM</p>
+            </div>
+
+            <p style="margin-top: 20px; font-size: 12px; color: #999;">
+                This is an automated message. Please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

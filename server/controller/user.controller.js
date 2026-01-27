@@ -5,6 +5,7 @@ const { UserSchema } = require("./models_import");
 const { PlaintoHash, GenerateToken, EncryptPassword } = require("../helper/shared.helper");
 const { ObjectAlreadyInActiveTierError } = require("@aws-sdk/client-s3");
 const { default: mongoose } = require("mongoose");
+const { sendMail } = require('../mail/sendMail')
 
 const clientLogin = async (req, res) => {
   try {
@@ -40,9 +41,9 @@ const clientgoogleLogin = async (req, res) => {
     const { googleId, name, email, picture } = req.body;
 
     // Log for debugging (remove in production if needed)
-    console.log("🔵 Received Google login request:", { 
-      googleId, 
-      email, 
+    console.log("🔵 Received Google login request:", {
+      googleId,
+      email,
       name,
       timestamp: new Date().toISOString()
     });
@@ -50,9 +51,9 @@ const clientgoogleLogin = async (req, res) => {
     // Validate required fields
     if (!googleId || !email) {
       console.error("❌ Missing required fields");
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'Missing required fields (googleId or email)' 
+        message: 'Missing required fields (googleId or email)'
       });
     }
 
@@ -63,23 +64,23 @@ const clientgoogleLogin = async (req, res) => {
 
     if (user) {
       console.log("✅ Existing user found:", user._id);
-      
+
       // Update user if they signed up with email/password previously
       if (!user.googleId) {
         user.googleId = googleId;
         user.name = name || user.name; // Update name if provided
-        
+
         // Only update picture if not already set
         if (!user.picture && picture) {
           user.picture = picture;
         }
-        
+
         await user.save();
         console.log("✅ Updated existing user with Google info");
       }
     } else {
       console.log("🔵 Creating new user");
-      
+
       // Create new user
       user = new UserSchema({
         googleId,
@@ -89,7 +90,7 @@ const clientgoogleLogin = async (req, res) => {
         role: "user", // Default role
         wish_list: [] // Initialize empty wish list
       });
-      
+
       await user.save();
       console.log("✅ New user created:", user._id);
     }
@@ -124,15 +125,15 @@ const clientgoogleLogin = async (req, res) => {
     };
 
     console.log("✅ Sending success response");
-    
+
     res.status(200).json(response);
-    
+
   } catch (error) {
     console.error('❌ Google auth error:', error);
     console.error('Error stack:', error.stack);
-    
+
     // Send error response
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Internal server error',
       // Only include error details in development
@@ -284,7 +285,7 @@ const BNISignup = async (req, res) => {
     name,
     unique_code,
     business_name,
-    role="bni_user",
+    role = "bni_user",
     phone,
     member_Name,
     chapter_Name,
@@ -328,7 +329,7 @@ const BNISignup = async (req, res) => {
     });
 
     const savedUser = await newUser.save();
-
+    
     // Prepare payload for token
     const payload = {
       id: savedUser._id,
@@ -336,14 +337,27 @@ const BNISignup = async (req, res) => {
       role: savedUser.role,
       ...(savedUser.business_name && { business_name: savedUser.business_name }),
       ...(savedUser.unique_code && { unique_code: savedUser.unique_code }),
-      member_Name,
-    chapter_Name,
-    city,
-    categorey,
+      member_Name: savedUser.member_Name,
+      chapter_Name: savedUser.chapter_Name,
+      city: savedUser.city,
+      categorey: savedUser.categorey,
     };
 
     // Generate JWT token
     const token = await GenerateToken(payload);
+
+    // Send welcome email (async - don't wait for it)
+    const emailData = {
+      email: savedUser.email,
+      name: member_Name || name,
+      target: "BNI welcome mail",
+    };
+    
+    // Send email in background, don't block the response
+    sendMail(emailData).catch(err => {
+      console.error("Failed to send welcome email:", err);
+      // Log the error but don't fail the signup process
+    });
 
     // Return success response (omit password from response)
     const userResponse = _.omit(savedUser.toObject(), "password");
@@ -351,6 +365,7 @@ const BNISignup = async (req, res) => {
       ...userResponse,
       token
     });
+    
   } catch (error) {
     console.error("Signup Error:", error);
 
@@ -367,6 +382,44 @@ const BNISignup = async (req, res) => {
     }
 
     return errorResponse(res, "An error occurred during signup");
+  }
+};
+
+const userVerifyTest = async (req, res) => {
+  const { name, email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+  
+  const emailData = {
+    email: email,
+    name: name || "Test User",
+    target: "BNI welcome mail",
+  };
+  
+  try {
+    console.log("Sending test email with data:", emailData);
+    
+  
+    
+    // Send email
+    await sendMail(emailData);
+    
+    return res.json({
+      success: true,
+      message: "Test email sent",
+      debug: {
+        email: email,
+      }
+    });
+    
+  } catch (err) {
+    console.error("Test email error:", err);
+    return res.status(500).json({ 
+      error: "Failed to send email",
+      details: err.message 
+    });
   }
 };
 
@@ -574,5 +627,5 @@ module.exports = {
   getSingleClient,
   addtoHistory,
   clientgoogleLogin,
-  BNISignup
+  BNISignup,userVerifyTest
 };

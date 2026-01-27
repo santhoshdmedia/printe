@@ -43,6 +43,22 @@ const sendMail = async (values) => {
     return false;
   }
 };
+const BNIwelcome = async (values) => {
+  try {
+    const result = await webmailTransporter.sendMail({
+      from: '"Printe" <info@printe.in>',
+      to: values.email,
+      subject: TemplateHelper(values)?.subject,
+      html: TemplateHelper(values)?.templete,
+    });
+
+    console.log('✅ Email sent successfully via Hostinger');
+    return true;
+  } catch (err) {
+    console.log("❌ Error sending email:", err.message);
+    return false;
+  }
+};
 
 const otpMail = async (values) => {
   try {
@@ -56,7 +72,7 @@ const otpMail = async (values) => {
   
     <!-- Logo -->
     <div style="text-align: center; margin-bottom: 25px;">
-      <img src="https://printe.in/assets/without_bg-B7FPZzwZ.png" alt="Printe Logo" style="max-height: 70px; width: auto; display: block; margin: 0 auto;" />
+      <img src="https://printe.in/assets/logo-BQbty1hL.png" alt="Printe Logo" style="max-height: 70px; width: auto; display: block; margin: 0 auto;" />
     </div>
     
     <!-- OTP Content -->

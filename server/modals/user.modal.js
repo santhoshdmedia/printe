@@ -101,6 +101,17 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    verified_at: {
+      type: Date,
+    },
+    verified_by: {
+      type: mongoose.Schema.Types.ObjectId,
+        ref: 'admin users'
+    },
+    Dealer_verification: {
+      type: Boolean,
+      default: false,
+    },
     wish_list: [], 
     history_data: [
       {
@@ -110,7 +121,6 @@ const userSchema = new mongoose.Schema(
     ],
 
     addresses: [addressSchema],
-    // corporate and dealer
     unique_code: {
       type: String,
     },
