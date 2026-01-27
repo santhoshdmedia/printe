@@ -1,657 +1,148 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Printe - BNI Member Account</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Welcome to Printe - BNI Member</title>
+    <!--[if mso]>
+    <style type="text/css">
+        body, table, td {font-family: Arial, sans-serif !important;}
+    </style>
+    <![endif]-->
+    <style type="text/css">
+        @import url('https://fonts.googleapis.com/css2?family=Playwrite+US+Trad:wght@100..400&family=Lexend+Deca:wght@300;400;500;600;700&family=Poetsen+One&display=swap');
 
+        /* Reset styles */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
         }
 
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
-            border: 3px solid #FFD700;
+        table {
+            border-spacing: 0;
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
         }
 
-        /* Header with Dual Logos */
-        .header {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            padding: 35px 30px 40px;
-            text-align: center;
-            position: relative;
-            border-bottom: 5px solid #FFD700;
-        }
-
-        .logo-dual-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .logo-box {
-            background: white;
-            padding: 20px 35px;
-            border-radius: 20px;
-            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
-            border: 4px solid #FFD700;
-            transition: transform 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .logo-box:hover {
-            transform: translateY(-3px);
-        }
-
-        .logo-image {
-            max-height: 50px;
-            height: 50px;
-            width: auto;
-            display: block;
-            object-fit: contain;
-        }
-
-        .logo-divider {
-            color: #FFD700;
-            font-size: 32px;
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header h1 {
-            font-size: 34px;
-            color: white;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            letter-spacing: 1px;
-        }
-
-        .header .tagline {
-            color: #FFD700;
-            font-size: 18px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* Content Sections */
-        .content {
-            padding: 50px 40px;
-            background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
-        }
-
-        .welcome-section {
-            text-align: center;
-            margin-bottom: 40px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
-            padding: 45px 40px;
-            border-radius: 20px;
-            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
-        }
-
-        .welcome-icon {
-            font-size: 56px;
-            margin-bottom: 20px;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .welcome-section h2 {
-            font-size: 38px;
-            color: #1a1a1a;
-            margin-bottom: 15px;
-            font-weight: 800;
-        }
-
-        .member-name {
-            color: #1a1a1a;
-            font-size: 32px;
-            font-weight: 900;
-            display: inline-block;
-            margin: 15px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .welcome-section p {
-            color: #2d2d2d;
-            font-size: 18px;
-            font-weight: 500;
-        }
-
-        /* Verification Box - Enhanced */
-        .verification-box {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border: 4px solid #FFD700;
-            border-radius: 20px;
-            padding: 40px;
-            margin: 40px 0;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .verification-box::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
-            animation: pulse 3s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-        }
-
-        .verification-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .verification-box h3 {
-            color: #FFD700;
-            font-size: 28px;
-            margin-bottom: 20px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .verification-box p {
-            color: white;
-            font-size: 16px;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .countdown {
-            font-size: 36px;
-            color: #1a1a1a;
-            font-weight: 900;
-            background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
-            padding: 20px 40px;
-            border-radius: 50px;
-            display: inline-block;
-            margin: 20px 0;
-            border: 3px solid white;
-            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
-            position: relative;
-            z-index: 1;
-            animation: glow 2s ease-in-out infinite;
-        }
-
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4); }
-            50% { box-shadow: 0 8px 35px rgba(255, 215, 0, 0.6); }
-        }
-
-        /* Steps Container - Enhanced */
-        .steps-container {
-            margin: 50px 0;
-        }
-
-        .steps-container h3 {
-            text-align: center;
-            color: #1a1a1a;
-            margin-bottom: 40px;
-            font-size: 28px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .step {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 25px;
-            padding: 30px;
-            background: white;
-            border-radius: 20px;
-            border: 3px solid #FFD700;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .step::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 5px;
-            background: linear-gradient(180deg, #FFD700 0%, #FFC700 100%);
-        }
-
-        .step:hover {
-            transform: translateX(10px);
-            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.3);
-        }
-
-        .step-number {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            color: #FFD700;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 24px;
-            margin-right: 25px;
-            flex-shrink: 0;
-            border: 3px solid #FFD700;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .step-content h4 {
-            color: #1a1a1a;
-            margin-bottom: 10px;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .step-content p {
-            color: #666;
-            font-size: 16px;
-            line-height: 1.8;
-        }
-
-        /* CTA Section - Enhanced */
-        .cta-section {
-            text-align: center;
-            margin: 50px 0;
-            padding: 40px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
-        }
-
-        .cta-section p {
-            margin-bottom: 25px;
-            color: #1a1a1a;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            color: #FFD700;
-            padding: 20px 50px;
-            font-size: 20px;
-            font-weight: 700;
+        img {
+            border: 0;
+            outline: none;
             text-decoration: none;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            border: 3px solid #FFD700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
-
-        .cta-button:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
-            background: #1a1a1a;
-        }
-
-        /* Benefits Section */
-        .benefits-section {
-            background: #f8f8f8;
-            padding: 40px;
-            border-radius: 20px;
-            margin: 40px 0;
-            border: 2px solid #FFD700;
-        }
-
-        .benefits-section h3 {
-            text-align: center;
-            color: #1a1a1a;
-            margin-bottom: 30px;
-            font-size: 26px;
-            font-weight: 800;
-        }
-
-        .benefits-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .benefit-card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-            border: 2px solid #FFD700;
-            transition: all 0.3s ease;
-        }
-
-        .benefit-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
-        }
-
-        .benefit-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-        }
-
-        .benefit-card h4 {
-            color: #1a1a1a;
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .benefit-card p {
-            color: #666;
-            font-size: 14px;
-        }
-
-        /* Footer - Enhanced */
-        .footer {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            color: white;
-            padding: 50px 40px;
-            text-align: center;
-            border-top: 5px solid #FFD700;
-        }
-
-        .footer h3 {
-            color: #FFD700;
-            margin-bottom: 30px;
-            font-size: 26px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .contact-info {
-            margin: 40px 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 30px;
-        }
-
-        .contact-item {
-            padding: 20px;
-            background: rgba(255, 215, 0, 0.1);
-            border-radius: 15px;
-            border: 2px solid #FFD700;
-        }
-
-        .contact-item strong {
-            color: #FFD700;
+            -ms-interpolation-mode: bicubic;
             display: block;
-            margin-bottom: 10px;
-            font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
-        .contact-item a {
-            color: white;
-            text-decoration: none;
-            transition: color 0.3s ease;
+        /* Font fallbacks for email clients that don't support Google Fonts */
+        .playwrite-font {
+            font-family: 'Playwrite US Trad', 'Comic Sans MS', cursive, Arial, sans-serif;
         }
 
-        .contact-item a:hover {
-            color: #FFD700;
+        .lexend-font {
+            font-family: 'Lexend Deca', Arial, Helvetica, sans-serif;
+            color: #1a1a1a !important;
         }
 
-        .disclaimer {
-            margin-top: 40px;
-            padding-top: 30px;
-            border-top: 2px solid #FFD700;
-            color: #999;
-            font-size: 14px;
+        .poetsen-font {
+            font-family: 'Poetsen One', 'Arial Black', Arial, sans-serif;
         }
 
-        .disclaimer p {
-            margin: 10px 0;
+        .sec_two {
+            height: 600px !important;
         }
 
-        /* Responsive Design */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
             .container {
-                border-radius: 15px;
-            }
-            
-            .content {
-                padding: 30px 20px;
-            }
-            
-            .logo-dual-container {
-                gap: 10px;
+                width: 100% !important;
             }
 
-            .logo-box {
-                padding: 15px 25px;
-                border: 3px solid #FFD700;
+            .lexend-font {
+                font-family: 'Lexend Deca', Arial, Helvetica, sans-serif;
+                color: #1a1a1a !important;
             }
 
-            .logo-image {
-                max-height: 40px;
-                height: 40px;
+            .mobile-padding {
+                padding: 20px !important;
             }
 
-            .logo-divider {
-                font-size: 24px;
-            }
-            
-            .welcome-section h2 {
-                font-size: 28px;
-            }
-            
-            .member-name {
-                font-size: 24px;
+            .mobile-text-center {
+                text-align: center !important;
             }
 
-            .countdown {
-                font-size: 28px;
-                padding: 15px 30px;
+            .hide-mobile {
+                display: none !important;
             }
 
-            .step {
-                padding: 20px;
-            }
-
-            .benefits-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .contact-info {
-                grid-template-columns: 1fr;
+            .mobile-block {
+                display: block !important;
+                width: 100% !important;
             }
         }
     </style>
 </head>
 
-<body>
-    <div class="container">
-        <!-- Header with Dual Logos -->
-        <div class="header">
-            <!--[if mso]>
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-            <tr>
-            <td align="center">
-            <![endif]-->
-            <div class="logo-dual-container">
-                <div class="logo-box">
-                    <img src="https://printe.in/assets/logo-BQbty1hL.png" 
-                         alt="Printe Logo" 
-                         class="logo-image"
-                         style="max-height: 50px; height: 50px; width: auto; display: block; border: none;"
-                         onerror="this.style.display='none';">
-                </div>
-                <div class="logo-divider">×</div>
-                <div class="logo-box">
-                    <img src="https://printe.in/assets/bni-CkGDp_72.png" 
-                         alt="BNI Logo" 
-                         class="logo-image"
-                         style="max-height: 50px; height: 50px; width: auto; display: block; border: none;"
-                         onerror="this.style.display='none';">
-                </div>
-            </div>
-            <!--[if mso]>
+<body style="margin: 0; padding: 0; background-color: #FFF8E8;">
+
+    <!-- Main Container -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+        style="background-color: #FFF8E8;">
+        <tr>
+            <td style="padding: 0;">
+
+                <!-- Email Content Table (600px wide for email compatibility) -->
+                <table role="presentation" class="container" cellspacing="0" cellpadding="0" border="0" align="center"
+                    style="max-width: 800px; background-color: #FFF8E8; margin: 0 auto;">
+
+                    <!-- SECTION 1: Hero Section with Logo and Gift Set -->
+                    <tr>
+                        <td>
+                            <a href="https://printe.in">
+                                <img src="https://printe.s3.ap-south-1.amazonaws.com/1769521293008-bgk33srsm3g.jpeg"
+                                    alt="" style="width: 100%;">
+                            </a>
+
+                        </td>
+                    </tr>
+
+                    <!-- SECTION 2: Trending Products -->
+                              <tr>
+                        <td>
+                            <a href="https://printe.in/products">
+                                <img src="https://printe.s3.ap-south-1.amazonaws.com/1769526472301-7d5w3ndzr6a.jpeg"
+                                    alt="" style="width: 100%;">
+                            </a>
+
+                        </td>
+                    </tr>
+
+                    <!-- SECTION 3: Account Verification & Benefits -->
+                    <tr>
+                        <td>
+
+                            <!-- Content Container -->
+                            <img src="https://printe.s3.ap-south-1.amazonaws.com/1769523315047-j79r3l6zaip.jpeg" alt=""
+                                style="width: 100%;">
+
+                        </td>
+                    </tr>
+
+                    <!-- SECTION 4: Footer -->
+
+
+                </table>
+                <!-- End Email Content Table -->
+
             </td>
-            </tr>
-            </table>
-            <![endif]-->
-            
-            <h1>Welcome to Printe</h1>
-            <p class="tagline">BNI Member Exclusive Access</p>
-        </div>
+        </tr>
+    </table>
+    <!-- End Main Container -->
 
-        <div class="content">
-            <!-- Welcome Section -->
-            <div class="welcome-section">
-                <div class="welcome-icon">🎉</div>
-                <h2>Welcome Aboard!</h2>
-                <p style="font-size: 20px; margin: 15px 0;">Hello</p>
-                <p class="member-name"><%= name %></p>
-                <p style="margin-top: 15px;">We're thrilled to have you join Printe as a valued BNI member!</p>
-            </div>
-
-            <!-- Verification Status -->
-            <div class="verification-box">
-                <div class="verification-icon">⏰</div>
-                <h3>Account Verification in Progress</h3>
-                <p>Our dedicated team is carefully reviewing your BNI membership credentials to ensure seamless access to all exclusive features.</p>
-                <div class="countdown">⏱ 24 Hours</div>
-                <p style="font-size: 18px; font-weight: 600;">Your account will be fully activated within 24 hours!</p>
-            </div>
-
-            <!-- Benefits Section -->
-            <div class="benefits-section">
-                <h3>🌟 Your BNI Member Benefits</h3>
-                <div class="benefits-grid">
-                    <div class="benefit-card">
-                        <div class="benefit-icon">💰</div>
-                        <h4>Special Pricing</h4>
-                        <p>Exclusive discounts on all services</p>
-                    </div>
-                    <div class="benefit-card">
-                        <div class="benefit-icon">⚡</div>
-                        <h4>Priority Support</h4>
-                        <p>Fast-track customer service</p>
-                    </div>
-                    <div class="benefit-card">
-                        <div class="benefit-icon">🎁</div>
-                        <h4>Premium Features</h4>
-                        <p>Access to advanced tools</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Process Steps -->
-            <div class="steps-container">
-                <h3>🚀 What Happens Next</h3>
-                
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h4>Verification Review</h4>
-                        <p>Our team carefully verifies your BNI membership details and cross-checks all account information to ensure accuracy and security.</p>
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h4>Account Activation</h4>
-                        <p>Once verified, your account will be automatically activated with full access to all exclusive BNI member benefits and premium features.</p>
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h4>Confirmation & Access</h4>
-                        <p>You'll receive a detailed confirmation email with your login credentials and a complete guide to all available member features.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CTA -->
-            <div class="cta-section">
-                <p style="font-size: 20px; font-weight: 700;">While you wait, explore what Printe has to offer!</p>
-                <a href="https://printe.in/dashboard" class="cta-button">
-                    Visit Dashboard →
-                </a>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            <h3>📞 Need Assistance?</h3>
-            
-            <div class="contact-info">
-                <div class="contact-item">
-                    <strong>📧 Email Support</strong>
-                    <a href="mailto:info@printe.in">info@printe.in</a>
-                </div>
-                <div class="contact-item">
-                    <strong>📱 Customer Care</strong>
-                    <a href="tel:+919585610000">+91 95856 10000</a>
-                </div>
-                <div class="contact-item">
-                    <strong>🕒 Working Hours</strong>
-                    Mon-Sat: 09:00 AM - 07:00 PM
-                </div>
-            </div>
-
-            <div class="disclaimer">
-                <p style="font-weight: 600;">This is an automated message. Please do not reply to this email.</p>
-                <p>For support inquiries, please use the contact information above.</p>
-                <p style="margin-top: 20px;">© 2024 Printe × BNI Member Services. All rights reserved.</p>
-            </div>
-        </div>
-    </div>
 </body>
+
 </html>
