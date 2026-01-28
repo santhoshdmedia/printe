@@ -1794,7 +1794,7 @@ const ProductDetails = ({
                   : "Select a platform and enter the corresponding link (You can select up to 1 platform)"}
               </Text>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {platformOptions.map((platform) => {
                   const isSelected = selectedPlatforms.includes(platform.value);
                   const isExpanded = expandedPlatform === platform.value;
@@ -1802,7 +1802,7 @@ const ProductDetails = ({
                   return (
                     <div
                       key={platform.value}
-                      className={`flex flex-col p-3 border rounded-lg transition-all cursor-pointer ${isSelected
+                      className={`flex flex-col p-3 border rounded-lg transition-all cursor-pointer  ${isSelected
                           ? `border-[${platform.color}] bg-[${platform.bgColor}]`
                           : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                         }`}
@@ -1844,7 +1844,7 @@ const ProductDetails = ({
                           transition={{ duration: 0.2 }}
                           className="mt-3 overflow-hidden"
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-0">
                             <Input
                               placeholder={`Enter ${platform.label} link`}
                               value={platformLinks[platform.value] || ""}
@@ -1853,20 +1853,19 @@ const ProductDetails = ({
                               onFocus={(e) => e.stopPropagation()}
                               className="flex-1"
                               size="small"
-                              prefix={<span className="text-gray-400">🔗</span>}
                               autoFocus={isExpanded}
                               style={{ borderColor: platform.color }}
                             />
                             <Button
                               type="text"
-                              size="small"
+                              className="w-3"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setExpandedPlatform(null);
                               }}
                               style={{ color: platform.color }}
                             >
-                              Done
+                              ✔️
                             </Button>
                           </div>
                           <div className="text-xs text-gray-500 mt-1">

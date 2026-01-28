@@ -229,50 +229,7 @@ const LayoutContent = () => {
       </div>
 
       {/* Pongal Greeting Popup */}
-      {showGreeting && !isAuth && (
-        <div className="fixed bottom-8 left-8 z-[9999] animate-slideIn">
-          <div className="bg-gradient-to-br from-orange-400 via-yellow-400 to-orange-500 rounded-2xl shadow-2xl p-6 max-w-sm relative">
-            {/* Close Button */}
-            <button
-              onClick={closeGreeting}
-              className="absolute top-2 right-2 text-white hover:text-gray-200 transition-colors"
-              aria-label="Close"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
 
-            {/* Content */}
-            <div className="text-center">
-              <div className="text-5xl mb-3">🌾🎉</div>
-              <h3 className="text-2xl font-bold text-white mb-2">
-                Happy Pongal!
-              </h3>
-              <p className="text-white/90 mb-4 text-sm">
-                Wishing you prosperity and joy this harvest season! May your life be filled with abundance and happiness.
-              </p>
-              <button
-                onClick={() => navigate('/sign-up')}
-                className="bg-white text-orange-600 font-semibold px-6 py-2 rounded-full hover:bg-orange-50 transition-all shadow-md hover:shadow-lg transform hover:scale-105"
-              >
-                Join Us Today
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
      
       <Footer />
 
