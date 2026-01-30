@@ -395,7 +395,7 @@ const userVerifyTest = async (req, res) => {
   const emailData = {
     email: email,
     name: name || "Test User",
-    target: "BNI welcome mail",
+    target: "Verify user",
   };
   
   try {

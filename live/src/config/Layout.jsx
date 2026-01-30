@@ -118,7 +118,7 @@ const LayoutContent = () => {
       <div className="sticky top-0 z-[999] w-full overflow-hidden bg-[#f5f5f5] p-2">
         <div className="scrolling-text-container">
           <div className="scrolling-text !font-[300] whitespace-nowrap">
-           Limited Time! Pongal Offer 70% OFF on Customized QR Stands
+         Buy 2 Get upto 5%, Buy 3 Get upto 10% discounts
           </div>
         </div>
       </div>

@@ -28,6 +28,14 @@ const TemplateHelper = (value) => {
         templete: ejs.render(fs.readFileSync(path.join(__dirname, "./BNIwelcome.ejs"), "utf-8"), value),
       };
     }
+    case "Verify user": {
+      console.log(value);
+      return {
+        subject: " Verification Successful – Enjoy Your Exclusive Printe Privileges",
+        
+        templete: ejs.render(fs.readFileSync(path.join(__dirname, "./Verification.ejs"), "utf-8"), value),
+      };
+    }
     case "placed order": {
       return {
         subject: "Your Order Has Been Successfully Placed! 🎉",
@@ -40,6 +48,12 @@ const TemplateHelper = (value) => {
         template: ejs.render(fs.readFileSync(path.join(__dirname, "./orderstatus.ejs"), "utf-8"), value, console.log(value, "templates values")),
       };
     }
+    // case "Verify user": {
+    //   return {
+    //     subject: "Your account verified",
+    //     template: ejs.render(fs.readFileSync(path.join(__dirname, "./BNIwelcome.ejs"), "utf-8"), value, console.log(value, "templates values")),
+    //   };
+    // }
   }
 };
 
