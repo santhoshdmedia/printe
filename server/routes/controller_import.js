@@ -65,7 +65,7 @@ const {
   getOrderStates,
   UpdateOrderDesign,
   UpdateOrderVendor,
-  acceptOrderByVendor, completeOrderByVendor,CollectMyOrdersByEmail,ToggleOrderCancellation
+  acceptOrderByVendor, completeOrderByVendor, CollectMyOrdersByEmail, ToggleOrderCancellation
 } = require("../controller/order.controller");
 const { getAllDashbardCounts } = require("../controller/dashboard.controller");
 const {
@@ -74,6 +74,10 @@ const {
   editBanner,
   getAllBanners,
   deleteBanner,
+  reorderBanners,
+  getBannerStats,
+  getVisibleBanners,
+  toggleBannerVisibility
 } = require("../controller/banner.controller");
 const {
   addTextBanners,
@@ -243,7 +247,11 @@ module.exports = {
   addBanners,
   editBanner,
   getAllBanners,
-  deleteBanner,
+  deleteBanner, 
+  reorderBanners,
+    getBannerStats,
+  getVisibleBanners,
+  toggleBannerVisibility,
 
   // bannear text
   getBannersText,

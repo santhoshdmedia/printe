@@ -12,7 +12,6 @@ import slideOne from "../../assets/mockup/slides/slide_1.png";
 import slideTwo from "../../assets/mockup/slides/slide_2.png";
 import slideThree from "../../assets/mockup/slides/slide_3.png";
 import slideFour from "../../assets/mockup/slides/slide_4.png";
-import Test from "../../assets/mockup/testimonial.png";
 
 const CarouselBanner = () => {
   const dispatch = useDispatch();
@@ -31,11 +30,35 @@ const CarouselBanner = () => {
     dispatch({ type: "GET_BANNERS" });
   }, [dispatch]);
 
+  // Filter and sort banners
+  const visibleBanners = banners
+    ? banners
+        .filter((banner) => {
+          // Filter out non-visible banners
+          if (banner.is_visible === false) return false;
+          
+          // Filter out expired banners (client-side check as backup)
+          if (banner.expiry_date) {
+            const expiryDate = new Date(banner.expiry_date);
+            const now = new Date();
+            if (expiryDate <= now) return false;
+          }
+          
+          return true;
+        })
+        .sort((a, b) => {
+          // Sort by position
+          const posA = a.position ?? 999;
+          const posB = b.position ?? 999;
+          return posA - posB;
+        })
+    : [];
+
   if (isGettingBanners) {
     return <BannerLoadingSkeleton />;
   }
 
-  if (!banners || banners.length === 0) {
+  if (!visibleBanners || visibleBanners.length === 0) {
     return null;
   }
 
@@ -53,7 +76,14 @@ const CarouselBanner = () => {
 
   const renderAnimatedTitle = (title) => {
     const defaultTitle = "Premium Printing Solutions";
-    return (title || defaultTitle).split("  ").map((word, i) => (
+    const displayTitle = title || defaultTitle;
+    
+    // Split by double spaces if they exist, otherwise split by single space
+    const words = displayTitle.includes("  ") 
+      ? displayTitle.split("  ") 
+      : displayTitle.split(" ");
+    
+    return words.map((word, i) => (
       <motion.span
         key={i}
         className="inline-block"
@@ -73,8 +103,28 @@ const CarouselBanner = () => {
     ));
   };
 
+  // Helper function to determine button text
+  const getButtonText = (banner) => {
+    if (banner.is_reward) return "Claim Reward";
+    if (banner.tag?.toLowerCase().includes("exclusive") || 
+        banner.tag?.toLowerCase().includes("launch")) {
+      return "Claim Now";
+    }
+    return "Shop Now";
+  };
+
+  // Helper function to get banner link
+  const getBannerLink = (banner) => {
+    // If it's a reward and user is not logged in, redirect to login
+    if (banner.is_reward && (!user || !user.name)) {
+      return "/login";
+    }
+    // Use banner_slug if available, otherwise fallback to empty string
+    return `/${banner.banner_slug || ""}`;
+  };
+
   return (
-    <div className="lg:w-[85%]  bg-transparent h-[100%] pt-6 lg:py-2  mx-auto relative translate-x-[5%]">
+    <div className="lg:w-[85%] bg-transparent h-[100%] pt-6 lg:py-2 mx-auto relative translate-x-[5%]">
       <div className="px-0 pt-10 flex justify-center">
         <Swiper
           modules={[Autoplay, EffectFade, Navigation]}
@@ -91,11 +141,11 @@ const CarouselBanner = () => {
             pauseOnHover: true,
           }}
           speed={2000}
-          className="w-full  relative"
+          className="w-full relative"
           onSlideChange={handleSlideChange}
           onSwiper={handleSwiperInit}
         >
-          {banners.map((banner, index) => (
+          {visibleBanners.map((banner, index) => (
             <SwiperSlide key={banner._id}>
               <div className="flex flex-col lg:flex-row-reverse items-start gap-0 lg:gap-16 overflow-visible">
                 {/* Image Section */}
@@ -142,7 +192,7 @@ const CarouselBanner = () => {
                     className="absolute top-[-10px] left-[-10px] h-full z-10"
                   >
                     <Link
-                       to={banner.is_reward && (!user || !user.name) ? "/login" : `/${banner.banner_slug}`}
+                      to={getBannerLink(banner)}
                       className="block h-full w-full group"
                     >
                       <motion.img
@@ -179,33 +229,35 @@ const CarouselBanner = () => {
                         className="flex flex-col justify-start gap-10 md:gap-8"
                       >
                         {/* Badge/tag with enhanced animation */}
-                        <motion.div
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#f2c41a]/20 rounded-full w-fit"
-                          variants={{
-                            hidden: { opacity: 0, y: 20, scale: 0.8 },
-                            visible: {
-                              opacity: 1,
-                              y: 0,
-                              scale: 1,
-                              transition: {
-                                duration: 0.6,
-                                ease: [0.16, 1, 0.3, 1],
-                                delay: 0.2,
+                        {banner.tag && (
+                          <motion.div
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#f2c41a]/20 rounded-full w-fit"
+                            variants={{
+                              hidden: { opacity: 0, y: 20, scale: 0.8 },
+                              visible: {
+                                opacity: 1,
+                                y: 0,
+                                scale: 1,
+                                transition: {
+                                  duration: 0.6,
+                                  ease: [0.16, 1, 0.3, 1],
+                                  delay: 0.2,
+                                },
                               },
-                            },
-                          }}
-                          whileHover={{ scale: 1.05 }}
-                        >
-                          <motion.span
-                            className="h-2 w-2 rounded-full bg-[#f2c41a]"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.3 }}
-                          />
-                          <span className="text-sm font-medium text-[#f2c41a]">
-                            {banner.tag || "Limited Time Offer"}
-                          </span>
-                        </motion.div>
+                            }}
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            <motion.span
+                              className="h-2 w-2 rounded-full bg-[#f2c41a]"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: 0.3 }}
+                            />
+                            <span className="text-sm font-medium text-[#f2c41a]">
+                              {banner.tag}
+                            </span>
+                          </motion.div>
+                        )}
 
                         {/* Typing-like animation for heading */}
                         <motion.h1
@@ -227,126 +279,102 @@ const CarouselBanner = () => {
                         </motion.h1>
 
                         {/* Features list with enhanced animations */}
-                        <motion.ul
-                          className="grid grid-cols-2 gap-3"
-                          variants={{
-                            hidden: { opacity: 0 },
-                            visible: {
-                              opacity: 1,
-                              transition: {
-                                staggerChildren: 0.1,
-                                delayChildren: 0.6,
-                              },
-                            },
-                          }}
-                        >
-                          {banner.feature?.map((feature, i) => (
-                            <motion.li
-                              key={i}
-                              className="flex items-center gap-2 text-gray-700"
-                              variants={{
-                                hidden: { opacity: 0, x: -10 },
-                                visible: {
-                                  opacity: 1,
-                                  x: 0,
-                                  transition: {
-                                    type: "spring",
-                                    stiffness: 100,
-                                  },
+                        {banner.feature && Array.isArray(banner.feature) && banner.feature.length > 0 && (
+                          <motion.ul
+                            className="grid grid-cols-2 gap-3"
+                            variants={{
+                              hidden: { opacity: 0 },
+                              visible: {
+                                opacity: 1,
+                                transition: {
+                                  staggerChildren: 0.1,
+                                  delayChildren: 0.6,
                                 },
-                              }}
-                              whileHover={{ x: 5 }}
-                            >
-                              <motion.svg
-                                className="w-5 h-5 text-[#f2c41a]"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                initial={{ pathLength: 0 }}
-                                animate={{ pathLength: 1 }}
-                                transition={{ delay: 0.7 + i * 0.1 }}
+                              },
+                            }}
+                          >
+                            {banner.feature.map((feature, i) => (
+                              <motion.li
+                                key={i}
+                                className="flex items-center gap-2 text-gray-700"
+                                variants={{
+                                  hidden: { opacity: 0, x: -10 },
+                                  visible: {
+                                    opacity: 1,
+                                    x: 0,
+                                    transition: {
+                                      type: "spring",
+                                      stiffness: 100,
+                                    },
+                                  },
+                                }}
+                                whileHover={{ x: 5 }}
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </motion.svg>
-                              <motion.span
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.8 + i * 0.1 }}
-                              >
-                                {feature}
-                              </motion.span>
-                            </motion.li>
-                          ))}
-                        </motion.ul>
+                                <motion.svg
+                                  className="w-5 h-5 text-[#f2c41a] flex-shrink-0"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  initial={{ pathLength: 0 }}
+                                  animate={{ pathLength: 1 }}
+                                  transition={{ delay: 0.7 + i * 0.1 }}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </motion.svg>
+                                <motion.span
+                                  className="text-sm md:text-base"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.8 + i * 0.1 }}
+                                >
+                                  {feature}
+                                </motion.span>
+                              </motion.li>
+                            ))}
+                          </motion.ul>
+                        )}
 
                         {/* Rating/trust indicators with enhanced animations */}
-                        <motion.div
-                          className="flex flex-wrap items-center gap-4 mt-4"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 1.2 }}
-                        >
+                        {banner.rating && (
                           <motion.div
-                            className="flex items-center"
-                            whileHover={{ scale: 1.05 }}
-                          >
-                            {[...Array(5)].map((_, i) => (
-                              <motion.svg
-                                key={i}
-                                className="w-5 h-5 text-yellow-400"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ delay: 1.3 + i * 0.1 }}
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </motion.svg>
-                            ))}
-                            <motion.span
-                              className="ml-2 text-sm font-medium text-gray-700"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: 1.8 }}
-                            >
-                              {banner.rating}
-                            </motion.span>
-                          </motion.div>
-
-                          <motion.div
-                            className="flex items-center gap-2"
+                            className="flex flex-wrap items-center gap-4 mt-4"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ delay: 1.9 }}
+                            transition={{ delay: 1.2 }}
                           >
-                            {/* <motion.svg
-                              className="w-5 h-5 text-gray-700"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                              animate={{
-                                rotate: [0, 10, -10, 0],
-                                transition: {
-                                  delay: 2,
-                                  duration: 0.5,
-                                },
-                              }}
+                            <motion.div
+                              className="flex items-center"
+                              whileHover={{ scale: 1.05 }}
                             >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                                clipRule="evenodd"
-                              />
-                            </motion.svg>
-                            <span className="text-sm font-medium text-gray-700">
-                              24/7 Support
-                            </span> */}
+                              {[...Array(5)].map((_, i) => (
+                                <motion.svg
+                                  key={i}
+                                  className="w-5 h-5 text-yellow-400"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ delay: 1.3 + i * 0.1 }}
+                                >
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </motion.svg>
+                              ))}
+                              <motion.span
+                                className="ml-2 text-sm font-medium text-gray-700"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 1.8 }}
+                              >
+                                {banner.rating}
+                              </motion.span>
+                            </motion.div>
                           </motion.div>
-                        </motion.div>
+                        )}
 
                         {/* Buttons with enhanced animations */}
                         <motion.div
@@ -360,7 +388,7 @@ const CarouselBanner = () => {
                             whileTap={{ scale: 0.98 }}
                           >
                             <Link
-                             to={banner.is_reward && (!user || !user.name) ? "/login" : `/${banner.banner_slug}`}
+                              to={getBannerLink(banner)}
                               className="relative flex items-center gap-1 px-5 py-3 text-[#f2c41a] font-semibold text-base rounded-full bg-transparent border-4 border-transparent shadow-[0_0_0_2px_#f2c41a] cursor-pointer overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group hover:shadow-[0_0_0_12px_transparent] hover:text-black hover:rounded-3xl active:scale-95 active:shadow-[0_0_0_4px_#f2c41a] w-fit ml-2"
                             >
                               <motion.svg
@@ -386,7 +414,7 @@ const CarouselBanner = () => {
                                   transition: { delay: 2.2 },
                                 }}
                               >
-                               {banner.tag=="exclusive offer for Launch"?"Claim Now":"Shop Now"} 
+                                {getButtonText(banner)}
                               </motion.span>
 
                               <motion.span
@@ -422,7 +450,7 @@ const CarouselBanner = () => {
                                 },
                               }}
                             >
-                              Join Our Family!
+                              {banner.is_reward ? "Exclusive Reward!" : "Join Our Family!"}
                             </motion.span>
                           </motion.div>
                         </motion.div>
@@ -436,7 +464,7 @@ const CarouselBanner = () => {
         </Swiper>
 
         {/* Navigation Buttons */}
-        {!isBeginning && (
+        {!isBeginning && visibleBanners.length > 1 && (
           <button
             className="banner-prev hidden lg:block absolute left-[-100px] top-1/2 z-10 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors"
             aria-label="Previous slide"
@@ -458,7 +486,7 @@ const CarouselBanner = () => {
           </button>
         )}
 
-        {!isEnd && (
+        {!isEnd && visibleBanners.length > 1 && (
           <button
             className="banner-next hidden lg:block absolute right-4 top-1/2 z-10 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors"
             aria-label="Next slide"

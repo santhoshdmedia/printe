@@ -44,8 +44,7 @@
 
     /* Font fallbacks for email clients that don't support Google Fonts */
     .playwrite-font {
-      font-family:
-        "Playwrite US Trad", "Comic Sans MS", cursive, Arial, sans-serif;
+      font-family: "Playwrite US Trad", "Comic Sans MS", cursive, Arial, sans-serif;
     }
 
     .lexend-font {
@@ -63,6 +62,84 @@
 
     .sec_two {
       height: 600px !important;
+    }
+
+    /* Footer styles */
+    .footer-section {
+      background: linear-gradient(135deg, #FFF9E6 0%, #FFE8B3 100%);
+      padding: 20px;
+    }
+
+    .footer-table {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .logo-cell {
+      width: 180px;
+      vertical-align: middle;
+      padding-right: 20px;
+    }
+
+    .logo-img {
+      height: 50px;
+      width: auto;
+      display: block;
+    }
+
+    .social-cell {
+      text-align: center;
+      vertical-align: middle;
+      padding: 0 15px;
+    }
+
+    .social-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #000000;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .social-icons {
+      text-align: center;
+    }
+
+    .social-icon {
+      display: inline-block;
+      margin: 0 5px;
+      vertical-align: middle;
+    }
+
+    .social-icon img {
+      width: 32px;
+      height: 32px;
+      display: inline-block;
+    }
+
+    .contact-cell {
+      text-align: right;
+      vertical-align: middle;
+      width: 220px;
+      padding-left: 20px;
+    }
+
+    .contact-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #000000;
+      margin-bottom: 8px;
+    }
+
+    .contact-info {
+      font-size: 12px;
+      color: #333333;
+      line-height: 1.8;
+    }
+
+    .contact-info a {
+      color: #333333;
+      text-decoration: none;
     }
 
     @media screen and (min-width: 320px) and (max-width: 991px) {
@@ -117,25 +194,55 @@
         width: 100% !important;
       }
 
-      /* Footer responsive styles */
-      .footer-column {
-        display: block !important;
+      /* Footer responsive styles - Keep horizontal but smaller */
+      .footer-section {
+        padding: 10px 5px !important;
+      }
+
+      .footer-table {
         width: 100% !important;
-        text-align: center !important;
-        padding: 15px 10px !important;
       }
 
-      .footer-logo {
-        margin: 0 auto 20px auto !important;
+      .logo-cell {
+        width: 80px !important;
+        padding-right: 5px !important;
       }
 
-      .social-icons {
-        justify-content: center !important;
-        margin: 10px auto !important;
+      .logo-img {
+        height: 30px !important;
       }
 
-      .footer-text {
-        text-align: center !important;
+      .social-cell {
+        padding: 0 5px !important;
+      }
+
+      .social-title {
+        font-size: 9px !important;
+        margin-bottom: 5px !important;
+      }
+
+      .social-icon {
+        margin: 0 2px !important;
+      }
+
+      .social-icon img {
+        width: 20px !important;
+        height: 20px !important;
+      }
+
+      .contact-cell {
+        width: 140px !important;
+        padding-left: 5px !important;
+      }
+
+      .contact-title {
+        font-size: 9px !important;
+        margin-bottom: 3px !important;
+      }
+
+      .contact-info {
+        font-size: 8px !important;
+        line-height: 1.4 !important;
       }
     }
 
@@ -152,19 +259,21 @@
   </style>
 </head>
 
-<body style="margin: 0; padding: 0; ">
+<body style="margin: 0; padding: 0;">
   <!-- Main Container -->
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #fff8e8">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+    style="background-color: #fff8e8">
     <tr>
       <td style="padding: 0">
-        <!-- Email Content Table (600px wide for email compatibility) -->
+        <!-- Email Content Table (800px wide for email compatibility) -->
         <table role="presentation" class="container" cellspacing="0" cellpadding="0" border="0" align="center"
           style="max-width: 800px; background-color: #fff8e8; margin: 0 auto">
+
           <!-- SECTION 1: Hero Section with Logo and Gift Set -->
           <tr>
             <td>
               <a href="https://printe.in/">
-                <img src="https://printe.s3.ap-south-1.amazonaws.com/1769748913789-e7otzrohgbb.jpeg" alt=""
+                <img src="https://printe.s3.ap-south-1.amazonaws.com/1769851842513-7or0rmowieh.jpeg" alt=""
                   style="width: 100%; height: auto;" />
               </a>
             </td>
@@ -175,29 +284,15 @@
             <td style="padding: 0">
               <!-- Container with background image -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="
-                    background-image: url(&quot;https://printe.s3.ap-south-1.amazonaws.com/1769513878219-rnk9zjtsnzf.jpeg&quot;);
+                    background-image: url(&quot;https://printe.s3.ap-south-1.amazonaws.com/1769583817697-3mo1yul8svs.jpeg&quot;);
                     background-size: cover;
                     background-position: center;
                     background-repeat: no-repeat;
                     width: 100%;
                     height: auto;
                   ">
-                  <tr>
-                    <td align="center" class="trending-padding-top" style="padding: 30px 20px 10px 20px;">
-                      <!-- Trending Heading with inline mobile-friendly sizing -->
-                      <h1 style="font-family: 'Poetsen One', 'Arial Black', Arial, sans-serif;  color: #2c2c2c; margin: 0; padding: 0; text-align: center; mso-line-height-rule: exactly; line-height: 42px;">
-                        <span class="trending-heading" >Trending Products</span>
-                      </h1>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td align="center" class="trending-padding-bottom" style="padding: 0 20px 30px 20px;">
-                      <!-- Trending Subheading with inline mobile-friendly sizing -->
-                      <p style="font-family: 'Lexend Deca', Arial, Helvetica, sans-serif; font-size: 16px; color: #555555; margin: 0; padding: 0; text-align: center; line-height: 24px; mso-line-height-rule: exactly;">
-                        <span class="trending-subheading" style="font-size: 16px;">Best-selling solutions designed to attract more customers</span>
-                      </p>
-                    </td>
-                  </tr>
+
+                <tr style="height: 30px;"></tr>
                 <tr>
                   <td align="center" class="back-text">
                     <!-- Products Container -->
@@ -251,14 +346,60 @@
                     </table>
                   </td>
                 </tr>
+                <tr style="height: 30px;"></tr>
               </table>
             </td>
           </tr>
-        
-          <!-- SECTION 4: Footer - RESPONSIVE VERSION -->
+
+          <!-- SECTION 3: Footer with Logo, Social Media & Contact -->
           <tr>
-            <td style="padding: 5px;">
-              <img src="https://printe.s3.ap-south-1.amazonaws.com/1769755740034-ch803r8mldf.png" alt="" style="width: 100%; height: auto;">
+            <td style="padding: 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+                class="footer-section">
+                <tr>
+                  <td>
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="footer-table">
+                      <tr>
+                        <!-- Logo -->
+                        <td class="logo-cell">
+                          <a href="https://printe.in" style="text-decoration: none;">
+                            <img src="https://printe.s3.ap-south-1.amazonaws.com/1769854665731-6yn72ahfffb.png" alt="Printe Logo"
+                              class="logo-img" />
+                          </a>
+                        </td>
+
+                        <!-- Social Media -->
+                        <td class="social-cell">
+                          <div class="social-title">Follow us</div>
+                          <div class="social-icons">
+                            <a href="https://www.instagram.com/printe.in/" class="social-icon">
+                              <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" alt="Instagram" />
+                            </a>
+                            <a href="https://www.facebook.com/profile.php?id=61566730986714" class="social-icon">
+                              <img src="https://cdn-icons-png.flaticon.com/512/124/124010.png" alt="Facebook" />
+                            </a>
+                            <a href="https://wa.me/919525610000" class="social-icon">
+                              <img src="https://cdn-icons-png.flaticon.com/512/124/124034.png" alt="WhatsApp" />
+                            </a>
+                            <a href="https://www.youtube.com/@PrinteDotIn" class="social-icon">
+                              <img src="https://cdn-icons-png.flaticon.com/512/174/174883.png" alt="YouTube" />
+                            </a>
+                          </div>
+                        </td>
+
+                        <!-- Contact Info -->
+                        <td class="contact-cell">
+                          <div class="contact-title">Contact info:-</div>
+                          <div class="contact-info">
+                            Email: <a href="mailto:info@printe.in">info@printe.in</a><br />
+                            Customer care: <a href="tel:+919525610000">+91 95256 10000</a>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
