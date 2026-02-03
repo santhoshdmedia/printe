@@ -116,7 +116,7 @@ const CollectAllOrder = async (req, res) => {
       // Check if dates are valid
       if (start.isValid() && end.isValid()) {
         const startOfDay = start.startOf("day").toDate();
-        const endOfDay = end.endOf("day").toDate();
+        const endOfDay = end.endOfDay("day").toDate();
         where.createdAt = { $gte: startOfDay, $lte: endOfDay };
       } else {
         console.error("Invalid date(s) in date_filter:", date_filter);
@@ -535,80 +535,181 @@ const UpdateOrderStatus = async (req, res) => {
     return errorResponse(res, "Internal server error", 500);
   }
 };
+
+/**
+ * Toggle Order Cancellation Status
+ * Allows super admin to request cancellation or remove cancellation request
+ * Also supports changing order status when toggling cancellation
+ */
 const ToggleOrderCancellation = async (req, res) => {
   try {
-    const { order_id, member_id, cancellation_reason } = req.body;
+    const { 
+      order_id, 
+      cancellation_reason, 
+      admin_id,
+      change_status, // Optional: new status to set when cancelling
+      restore_to_status // Optional: status to restore to when un-cancelling
+    } = req.body;
 
+    // Validate required fields
     if (!order_id) {
       return errorResponse(res, "Order ID is required", 400);
     }
 
+    if (!isValidObjectId(order_id)) {
+      return errorResponse(res, "Invalid order ID format", 400);
+    }
+
+    // Find the current order
     const currentOrder = await OrderDetailsSchema.findById(order_id);
     if (!currentOrder) {
       return errorResponse(res, "Order not found", 404);
     }
 
-    const newCancelledStatus = !currentOrder.Is_cancelledOrder;
+    // Check if order is already completed
+    if (currentOrder.order_status === "completed") {
+      return errorResponse(res, "Cannot cancel a completed order", 400);
+    }
+
+    // Get admin user info if admin_id is provided
+    let adminUser = null;
+    if (admin_id && isValidObjectId(admin_id)) {
+      adminUser = await AdminUsersSchema.findById(admin_id);
+      if (!adminUser) {
+        return errorResponse(res, "Admin user not found", 404);
+      }
+      
+      // Verify admin has permission (super admin only)
+      if (adminUser.role !== "super admin") {
+        return errorResponse(res, "Only super admin can toggle cancellation", 403);
+      }
+    }
+
+    // Toggle the cancellation_requested status
+    const newCancellationRequested = !currentOrder.cancellation_requested;
+    
+    // Prepare update data
     const updateData = {
-      Is_cancelledOrder: newCancelledStatus,
-      order_status: newCancelledStatus ? "cancelled" : currentOrder.order_status,
-      $set: {},
+      cancellation_requested: newCancellationRequested,
+      cancellation_requested_at: newCancellationRequested ? new Date() : null,
+      cancellation_requested_by: newCancellationRequested && adminUser ? adminUser._id : null,
+      cancellation_reason: newCancellationRequested ? (cancellation_reason || null) : null,
     };
 
-    // If cancelling, clear all team assignments
-    if (newCancelledStatus) {
-      updateData.$set = {
-        account_id: null,
-        designerId: null,
-        production_id: null,
-        vender_id: null,
-        Quality_check_id: null,
-        package_team_id: null,
-        delivery_team_id: null,
-        admin_notes: cancellation_reason 
-          ? `Order cancelled: ${cancellation_reason}`
-          : `Order cancelled at ${new Date().toISOString()}`,
+    // Store original status before cancellation
+    if (newCancellationRequested) {
+      updateData.status_before_cancellation = currentOrder.order_status;
+      
+      // If change_status is provided, update to that status
+      if (change_status) {
+        updateData.order_status = change_status;
+      } else {
+        // Default: set to "cancelled" status
+        updateData.order_status = "cancelled";
+      }
+    } else {
+      // Restoring from cancellation
+      if (restore_to_status) {
+        updateData.order_status = restore_to_status;
+      } else if (currentOrder.status_before_cancellation) {
+        // Restore to previous status before cancellation
+        updateData.order_status = currentOrder.status_before_cancellation;
+      }
+      // Clear the stored previous status
+      updateData.status_before_cancellation = null;
+    }
+
+    // Update the order
+    const updatedOrder = await OrderDetailsSchema.findByIdAndUpdate(
+      order_id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedOrder) {
+      return errorResponse(res, "Failed to update order", 500);
+    }
+
+    // Prepare timeline notes
+    let timelineNotes = "";
+    if (newCancellationRequested) {
+      timelineNotes = `Cancellation requested`;
+      if (adminUser) {
+        timelineNotes += ` by ${adminUser.name}`;
+      }
+      if (cancellation_reason) {
+        timelineNotes += `. Reason: ${cancellation_reason}`;
+      }
+      if (currentOrder.order_status !== updatedOrder.order_status) {
+        timelineNotes += `. Status changed from "${currentOrder.order_status}" to "${updatedOrder.order_status}"`;
+      }
+    } else {
+      timelineNotes = `Cancellation request removed`;
+      if (adminUser) {
+        timelineNotes += ` by ${adminUser.name}`;
+      }
+      if (currentOrder.order_status !== updatedOrder.order_status) {
+        timelineNotes += `. Status restored to "${updatedOrder.order_status}"`;
+      }
+    }
+
+    // Create timeline entry
+    const timelineData = {
+      order_id: updatedOrder._id,
+      order_status: updatedOrder.order_status,
+      action_type: newCancellationRequested ? "cancellation_requested" : "cancellation_removed",
+      notes: timelineNotes,
+      timestamp: new Date(),
+    };
+
+    // Add admin info to timeline if available
+    if (adminUser) {
+      timelineData.changed_by = adminUser._id;
+      timelineData.changed_by_name = adminUser.name;
+      timelineData.changed_by_role = adminUser.role;
+      timelineData.team_participation = {
+        "super admin": {
+          user_id: adminUser._id,
+          name: adminUser.name,
+          role: adminUser.role,
+          action: newCancellationRequested ? "cancelled" : "restored",
+          timestamp: new Date(),
+        }
       };
     }
 
-    const updatedOrder = await OrderDetailsSchema.findByIdAndUpdate(
-      order_id,
-      updateData,
-      { new: true }
-    );
+    await orderdeliverytimelineSchema.create(timelineData);
 
-    // Create timeline entry
-    // let user;
-    // if (member_id) {
-    //   user = await AdminUsersSchema.findById(member_id);
-    // }
+    // Send notification email (optional, fire and forget)
+    try {
+      await orderStatusMail({ 
+        ...updatedOrder._doc,
+        cancellation_action: newCancellationRequested ? "requested" : "removed",
+        admin_name: adminUser ? adminUser.name : "System"
+      });
+    } catch (emailError) {
+      console.error("Email notification failed:", emailError);
+      // Continue despite email failure
+    }
 
-    // await orderdeliverytimelineSchema.create({
-    //   order_id,
-    //   order_status: updatedOrder.order_status,
-    //   changed_by: member_id || null,
-    //   changed_by_name: user ? user.name : "System",
-    //   changed_by_role: user ? user.role : "System",
-    //   notes: newCancelledStatus
-    //     ? `Order cancelled. ${cancellation_reason ? `Reason: ${cancellation_reason}` : ''} All team assignments cleared.`
-    //     : `Order uncancelled and restored to previous workflow.`,
-    //   team_participation: user
-    //     ? {
-    //         [user.role]: {
-    //           user_id: user._id,
-    //           name: user.name,
-    //           role: user.role,
-    //           action: newCancelledStatus ? "cancelled" : "uncancelled",
-    //           timestamp: new Date(),
-    //         },
-    //       }
-    //     : {},
-    // });
+    // Prepare success response
+    const responseMessage = newCancellationRequested 
+      ? "Order cancellation requested successfully" 
+      : "Order cancellation request removed successfully";
 
-    return successResponse(res, `Order ${newCancelledStatus ? 'cancelled' : 'uncancelled'} successfully`, {
-      order: updatedOrder,
-      is_cancelled: updatedOrder.Is_cancelledOrder,
-    });
+    const responseData = {
+      order_id: updatedOrder._id,
+      invoice_no: updatedOrder.invoice_no,
+      cancellation_requested: updatedOrder.cancellation_requested,
+      order_status: updatedOrder.order_status,
+      previous_status: currentOrder.order_status,
+      cancellation_reason: updatedOrder.cancellation_reason,
+      cancellation_requested_at: updatedOrder.cancellation_requested_at,
+      status_before_cancellation: updatedOrder.status_before_cancellation,
+    };
+
+    return successResponse(res, responseMessage, responseData);
+
   } catch (err) {
     console.error("Error toggling order cancellation:", err);
     return errorResponse(res, "Internal server error", 500);
@@ -681,6 +782,7 @@ const UpdateOrderDesign = async (req, res) => {
     return errorResponse(res, "Internal server error", 500);
   }
 };
+
 const UpdateOrderVendor = async (req, res) => {
   try {
     const { order_id, vendor_id, member_id } = req.body;

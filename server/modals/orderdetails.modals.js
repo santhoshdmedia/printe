@@ -191,7 +191,7 @@ const order_delivery_timeline = model(
           role: String,
           action: {
             type: String,
-            enum: ["processed", "verified", "approved", "rejected"],
+            enum: ["processed", "verified", "approved", "rejected","cancelled"],
           },
           timestamp: {
             type: Date,
