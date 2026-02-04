@@ -83,7 +83,7 @@ const sendDealerPasswordMail = async (req, res) => {
       email: user.email,
       name: user.name,
       url: resetLink,
-      target: "Dealer password",
+      target: "Verify user",
     };
 
     try {
