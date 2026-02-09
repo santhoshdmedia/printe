@@ -362,7 +362,7 @@ const NavMenu = () => {
                                   })}
 
                                   {/* Add image placeholders for remaining columns - Use nav menu images from main category */}
-                                  {(() => {
+                                  {/* {(() => {
                                     const totalItems = allSubcategories.length;
                                     const remainder = totalItems % 3;
                                     const placeholdersNeeded = remainder > 0 ? 3 - remainder : 0;
@@ -406,7 +406,7 @@ const NavMenu = () => {
                                     }
 
                                     return null;
-                                  })()}
+                                  })()} */}
                                 </div>
                               ) : (
                                 <div className="text-center py-12">
