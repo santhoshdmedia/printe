@@ -35,6 +35,12 @@ const allowedOrigins = [
   "null"
 ];
 
+// Increase JSON body limit
+app.use(express.json({ limit: '500mb' }));
+
+// Increase URL-encoded body limit
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);

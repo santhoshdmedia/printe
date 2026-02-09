@@ -64,12 +64,13 @@ const NavMenu = () => {
     );
   };
 
-  // Helper function to get all subcategories (visible + non-visible)
+  // Helper function to get all subcategories (visible + non-visible) sorted by position
   const getAllSubcategories = (category) => {
     if (!category.sub_categories_details || !Array.isArray(category.sub_categories_details)) {
       return [];
     }
-    return category.sub_categories_details;
+    // Sort by position
+    return [...category.sub_categories_details].sort((a, b) => (a.position || 0) - (b.position || 0));
   };
 
   // Helper function to check if category has any visible products
@@ -86,6 +87,28 @@ const NavMenu = () => {
       return 0;
     }
     return category.product_details.filter(product => product.is_visible === true).length;
+  };
+
+  // Helper function to get nav menu image based on type and main category
+  const getNavMenuImage = (mainCategory, placeholderType) => {
+    // placeholderType: 'square' or 'horizontal'
+    
+    // Get image from main category
+    if (mainCategory) {
+      if (placeholderType === 'square' && mainCategory.nav_menu_square_image) {
+        return mainCategory.nav_menu_square_image;
+      } else if (placeholderType === 'horizontal' && mainCategory.nav_menu_horizontal_image) {
+        return mainCategory.nav_menu_horizontal_image;
+      }
+    }
+
+    // Fallback to default images
+    const fallbackImages = {
+      square: "https://printe.s3.ap-south-1.amazonaws.com/1765363921070-v9jypfz72rr.png",
+      horizontal: "https://printe.s3.ap-south-1.amazonaws.com/1762926357351-sd9qoh5lhfh.jpg"
+    };
+    
+    return fallbackImages[placeholderType] || fallbackImages.square;
   };
 
   // Close all dropdowns
@@ -338,17 +361,21 @@ const NavMenu = () => {
                                     );
                                   })}
 
-                                  {/* Add image placeholders for remaining columns */}
-                                  {placeholdersNeeded > 0 && (
-                                    <>
-                                      {/* If 2 columns empty (remainder = 1), show cat_ban */}
-                                      {placeholdersNeeded === 2 && (
+                                  {/* Add image placeholders for remaining columns - Use nav menu images from main category */}
+                                  {(() => {
+                                    const totalItems = allSubcategories.length;
+                                    const remainder = totalItems % 3;
+                                    const placeholdersNeeded = remainder > 0 ? 3 - remainder : 0;
+
+                                    if (placeholdersNeeded === 2) {
+                                      const imageToUse = getNavMenuImage(selectedCategory, 'horizontal');
+                                      return (
                                         <div
-                                          key="placeholder-cat-ban"
-                                          className="p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center"
+                                          key="placeholder-horizontal"
+                                          className="col-span-2 p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center"
                                         >
                                           <img
-                                            src={selectedCategory.cat_ban || "/placeholder-category.jpg"}
+                                            src={imageToUse}
                                             alt={`${selectedCategory.main_category_name} Banner`}
                                             className="w-full h-64 object-cover rounded-lg border border-gray-300"
                                             onError={(e) => {
@@ -356,37 +383,30 @@ const NavMenu = () => {
                                             }}
                                           />
                                         </div>
-                                      )}
+                                      );
+                                    }
 
-                                      {/* If 1 column empty (remainder = 2), show cat_img */}
-                                      {/* Or if 2 columns empty, show cat_img in second empty column */}
-                                      {placeholdersNeeded >= 1 && (
+                                    if (placeholdersNeeded === 1) {
+                                      const imageToUse = getNavMenuImage(selectedCategory, 'square');
+                                      return (
                                         <div
-                                          key="placeholder-cat-img"
-                                          className={`p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center ${placeholdersNeeded === 2 ? '' : 'col-span-1'}`}
+                                          key="placeholder-square"
+                                          className="p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center"
                                         >
                                           <img
-                                            src={selectedCategory.cat_img || "/placeholder-category.jpg"}
-                                            alt={`${selectedCategory.main_category_name}`}
+                                            src={imageToUse}
+                                            alt={`${selectedCategory.main_category_name} Image`}
                                             className="w-full h-64 object-cover rounded-lg border border-gray-300"
                                             onError={(e) => {
                                               e.target.src = "/placeholder-category.jpg";
                                             }}
                                           />
                                         </div>
-                                      )}
+                                      );
+                                    }
 
-                                      {/* If 2 columns empty and we need second image placeholder */}
-                                      {placeholdersNeeded === 2 && (
-                                        <div
-                                          key="placeholder-second"
-                                          className="hidden lg:block"
-                                        >
-                                          {/* This is just an empty div to maintain grid structure */}
-                                        </div>
-                                      )}
-                                    </>
-                                  )}
+                                    return null;
+                                  })()}
                                 </div>
                               ) : (
                                 <div className="text-center py-12">
@@ -444,7 +464,7 @@ const NavMenu = () => {
             const hasAnyProducts = hasAnyVisibleProducts(category);
 
             const showAsMegaMenu =
-              allSubCategories.length > 3 || totalProducts > 10;
+              allSubCategories.length > 2 || totalProducts > 10;
 
             // Don't show category if no subcategories at all
             if (allSubCategories.length === 0) {
@@ -603,6 +623,59 @@ const NavMenu = () => {
                               </div>
                             );
                           })}
+
+                          {/* Add placeholder images for remaining grid columns - Use nav menu images from main category */}
+                          {(() => {
+                            const totalItems = allSubCategories.length;
+                            const remainder = totalItems % 4;
+                            const placeholdersNeeded = remainder > 0 ? 4 - remainder : 0;
+
+                            // If 2 or more empty columns, show horizontal image spanning all empty columns
+                            if (placeholdersNeeded >= 2) {
+                              const imageToUse = getNavMenuImage(category, 'horizontal');
+                              return (
+                                <div
+                                  key="placeholder-horizontal"
+                                  className={`p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center ${
+                                    placeholdersNeeded === 2 ? 'col-span-2' : 
+                                    placeholdersNeeded === 3 ? 'col-span-3' : 
+                                    'col-span-4'
+                                  }`}
+                                >
+                                  <img
+                                    src={imageToUse}
+                                    alt={`${category.main_category_name} Banner`}
+                                    className="w-full h-full object-cover rounded-lg border border-gray-300"
+                                    onError={(e) => {
+                                      e.target.src = "/placeholder-category.jpg";
+                                    }}
+                                  />
+                                </div>
+                              );
+                            }
+                            
+                            // If only 1 empty column, show square image
+                            if (placeholdersNeeded === 1) {
+                              const imageToUse = getNavMenuImage(category, 'square');
+                              return (
+                                <div
+                                  key="placeholder-square"
+                                  className="p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center"
+                                >
+                                  <img
+                                    src={imageToUse}
+                                    alt={`${category.main_category_name} Image`}
+                                    className="w-full h-full object-cover rounded-lg border border-gray-300"
+                                    onError={(e) => {
+                                      e.target.src = "/placeholder-category.jpg";
+                                    }}
+                                  />
+                                </div>
+                              );
+                            }
+
+                            return null;
+                          })()}
                         </div>
                       </div>
                     </div>

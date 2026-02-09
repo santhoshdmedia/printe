@@ -27,6 +27,16 @@ const subcategorySchema = Schema(
       type: String,
       required: true,
     },
+    nav_menu_square_image: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    nav_menu_horizontal_image: {
+      type: String,
+      required: false,
+      default: "",
+    },
     show: {
       type: Boolean,
       default: true,

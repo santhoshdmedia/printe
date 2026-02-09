@@ -15,10 +15,6 @@ module.exports = new model(
           ref: "sub category",
         },
       ],
-      // position: {
-      //   type: Number,
-      //   required: true,
-      // },
       category_active_status: {
         type: Boolean,
         required: false,
@@ -27,12 +23,20 @@ module.exports = new model(
         type: Boolean,
         required: false,
       },
-        cat_imgs: {
+      cat_imgs: {
         type: String,
-        required: true,
+      },
+      nav_menu_square_image: {
+        type: String,
+        required: false,
+        default: "",
+      },
+      nav_menu_horizontal_image: {
+        type: String,
+        required: false,
+        default: "",
       },
     },
-
     {
       collection: "main category",
       timestamps: true,

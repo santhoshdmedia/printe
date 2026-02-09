@@ -66,7 +66,6 @@ export const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
-
       { path: "/:id", element: <ResetPassword /> },
       { path: "/shopping-cart", element: <ShoppingCart /> },
       { path: "/checkout", element: <NewCheckout /> },

@@ -276,17 +276,16 @@ const LayoutContent = () => {
       </div>
 
       {/* ══════════════════════════════════════════════════
-          LAYER 3 — FLOATING RED HEARTS
+          LAYER 3 — FLOATING RED HEARTS WITH GRADIENT
           ══════════════════════════════════════════════════ */}
       <div style={{ position:"fixed", inset:0, zIndex:35, pointerEvents:"none", overflow:"hidden" }}>
-        {hearts.map((h, idx) => (
+        {hearts.map((h) => (
           <div
             key={h.id}
             className="v-heart"
             style={{
               left: `${h.x}%`,
               fontSize: `${h.size}px`,
-              color: idx % 4 === 0 ? "#ef4444" : idx % 4 === 1 ? "#dc2626" : idx % 4 === 2 ? "#f87171" : "#fca5a5",
               "--drift": `${h.drift}px`,
               animationDuration: `${h.dur}s`,
               animationDelay: `${h.delay}s`,
@@ -558,18 +557,21 @@ const LayoutContent = () => {
           75%       { opacity: 0;   transform: scale(0.3) rotate(60deg);  }
         }
 
-        /* ─── FLOATING HEARTS: RED hearts rising from bottom ─── */
+        /* ─── FLOATING HEARTS: GRADIENT hearts rising from bottom ─── */
         .v-heart {
           position: absolute;
           bottom: -50px;
           opacity: 0;
           font-weight: bold;
-          text-shadow: 
-            0 0 15px rgba(239,68,68,0.8),
-            0 0 30px rgba(220,38,38,0.6),
-            0 0 45px rgba(248,113,113,0.4),
-            0 2px 4px rgba(0,0,0,0.2);
-          filter: drop-shadow(0 4px 8px rgba(239,68,68,0.3));
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 25%, #f87171 50%, #fca5a5 75%, #fee2e2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-shadow: none;
+          filter: drop-shadow(0 0 15px rgba(239,68,68,0.8)) 
+                  drop-shadow(0 0 30px rgba(220,38,38,0.6)) 
+                  drop-shadow(0 0 45px rgba(248,113,113,0.4))
+                  drop-shadow(0 2px 4px rgba(0,0,0,0.2));
           animation: heart-float linear infinite;
           will-change: transform, opacity;
         }
@@ -988,12 +990,7 @@ const LayoutContent = () => {
           }
         }
 
-        @keyframes glowing {
-          50% {
-            background: #f87171;
-            box-shadow: 0px 0px 60px rgba(239, 68, 68, 1);
-          }
-        }
+       
 
         @keyframes falling {
           20% {
