@@ -684,7 +684,7 @@ const NavMenu = () => {
                   // Compact Dropdown Version
                   activeDropdown.categories[category._id] && (
                     <div
-                      className="absolute border border-gray-200 bg-white shadow-lg min-w-[250px] z-50 py-3 top-[55px] left-0 rounded-xl overflow-hidden"
+                      className="absolute border border-gray-200 bg-white shadow-lg min-w-[250px] z-50 py-3 top-[55px] right-0 rounded-xl overflow-hidden"
                       onMouseLeave={closeAllDropdowns}
                     >
                       {allSubCategories.map((subcat) => {
