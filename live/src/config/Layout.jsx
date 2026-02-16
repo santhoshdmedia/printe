@@ -15,129 +15,7 @@ import pongal from "../assets/Pongal/PONGAL.png"
 
 const GOOGLE_CLIENT_ID = "323773820042-ube4qhfaig1dbrgvl85gchkrlvphnlv9.apps.googleusercontent.com";
 
-/* ─────────────────────────────────────────────
-   RANDOM HELPERS
-   ───────────────────────────────────────────── */
-const rand = (min, max) => min + Math.random() * (max - min);
 
-/* ─────────────────────────────────────────────
-   1. BOKEH ORBS  — large, blurred, drifting glows
-      Sit behind everything. Pure atmosphere.
-   ───────────────────────────────────────────── */
-const ORB_COUNT = 6;
-const buildOrbs = () =>
-  Array.from({ length: ORB_COUNT }, (_, i) => ({
-    id: i,
-    x: rand(5, 95),
-    y: rand(10, 90),
-    size: rand(140, 260),
-    dur: rand(12, 22),
-    delay: rand(0, 10),
-    hue: i % 2 === 0
-      ? "rgba(244,114,182,0.18)"
-      : "rgba(250,204,21,0.15)",
-  }));
-
-/* ─────────────────────────────────────────────
-   2. PETAL DRIFTERS — abstract oval shapes
-      Three depth layers for parallax feel.
-   ───────────────────────────────────────────── */
-const PETAL_LAYERS = [
-  { count: 5, dur: [22, 32], w: [6, 10],  h: [10, 16], opacity: 0.10, blur: 4, sway: [15, 40] },
-  { count: 4, dur: [14, 22], w: [8, 14],  h: [14, 22], opacity: 0.22, blur: 2, sway: [25, 55] },
-  { count: 3, dur: [8, 14],  w: [10, 18], h: [18, 28], opacity: 0.42, blur: 0, sway: [35, 70] },
-];
-
-const buildPetals = () => {
-  let id = 0;
-  return PETAL_LAYERS.flatMap((layer) =>
-    Array.from({ length: layer.count }, () => ({
-      id: id++,
-      left: rand(0, 100),
-      delay: rand(0, layer.dur[1]),
-      duration: rand(...layer.dur),
-      w: rand(...layer.w),
-      h: rand(...layer.h),
-      sway: rand(...layer.sway),
-      opacity: layer.opacity,
-      blur: layer.blur,
-      tilt: rand(-25, 25),
-    }))
-  );
-};
-
-/* ─────────────────────────────────────────────
-   3. SPARKLES — tiny ✦ that fade in & out
-   ───────────────────────────────────────────── */
-const SPARKLE_COUNT = 22;
-const buildSparkles = () =>
-  Array.from({ length: SPARKLE_COUNT }, (_, i) => ({
-    id: i,
-    x: rand(2, 98),
-    y: rand(5, 95),
-    size: rand(6, 14),
-    dur: rand(2.2, 4.5),
-    delay: rand(0, 5),
-    color: i % 3 === 0 ? "#fbbf24" : i % 3 === 1 ? "#f9a8d4" : "#fde68a",
-  }));
-
-/* ─────────────────────────────────────────────
-   4. FLOATING HEARTS — RED hearts rising from bottom
-   ───────────────────────────────────────────── */
-const HEART_COUNT = 10;
-const buildHearts = () =>
-  Array.from({ length: HEART_COUNT }, (_, i) => ({
-    id: i,
-    x: rand(10, 90),
-    size: rand(24, 42),
-    dur: rand(10, 18),
-    delay: rand(0, 10),
-    drift: rand(40, 100),
-  }));
-
-/* ─────────────────────────────────────────────
-   5. FLOATING YELLOW PARTICLES — yellow particles from bottom to top
-   ───────────────────────────────────────────── */
-const YELLOW_PARTICLE_COUNT = 12;
-const buildYellowParticles = () =>
-  Array.from({ length: YELLOW_PARTICLE_COUNT }, (_, i) => ({
-    id: i,
-    x: rand(0, 100),
-    size: rand(4, 10),
-    dur: rand(8, 16),
-    delay: rand(0, 8),
-    drift: rand(20, 60),
-  }));
-
-/* ─────────────────────────────────────────────
-   VALENTINE BANNER
-   ───────────────────────────────────────────── */
-const ValentineBanner = ({ show, onClose }) => (
-  <div
-    style={{
-      position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
-      display: "flex", justifyContent: "center",
-      transform: show ? "translateY(0)" : "translateY(-110%)",
-      opacity: show ? 1 : 0,
-      transition: "transform 0.7s cubic-bezier(.22,.68,0,1.2), opacity 0.5s ease",
-      pointerEvents: show ? "auto" : "none",
-    }}
-  >
-    <div className="vb">
-      <div className="vb__streak" />
-      <button className="vb__close" onClick={onClose}>×</button>
-      <div className="vb__body">
-        <span className="vb__icon vb__icon--l">✦</span>
-        <div className="vb__text">
-          <p className="vb__title">Happy Valentine's Day</p>
-          <p className="vb__sub">Celebrate love with something unforgettable</p>
-        </div>
-        <span className="vb__icon vb__icon--r">✦</span>
-      </div>
-      <div className="vb__shimmer" />
-    </div>
-  </div>
-);
 
 /* ─────────────────────────────────────────────
    LAYOUT
@@ -148,11 +26,6 @@ const LayoutContent = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showValentineBanner, setShowValentineBanner] = useState(true);
 
-  const orbs            = useMemo(() => buildOrbs(), []);
-  const petals          = useMemo(() => buildPetals(), []);
-  const sparkles        = useMemo(() => buildSparkles(), []);
-  const hearts          = useMemo(() => buildHearts(), []);
-  const yellowParticles = useMemo(() => buildYellowParticles(), []);
 
   const path = useHref();
   const location = useLocation();
@@ -170,12 +43,8 @@ const LayoutContent = () => {
     }
   }, [isAuth]);
 
-  useEffect(() => {
-    const t = setTimeout(() => setShowValentineBanner(false), 5500);
-    return () => clearTimeout(t);
-  }, []);
 
-  const closeGreeting = () => setShowGreeting(false);
+
 
   useGoogleOneTapLogin({
     onSuccess: async (credentialResponse) => {
@@ -209,175 +78,7 @@ const LayoutContent = () => {
   return (
     <div className="w-full mx-auto !transition-all !duration-700">
 
-      {/* ══════════════════════════════════════════════════
-          LAYER 0 — BOKEH GLOW ORBS  (behind everything)
-          ══════════════════════════════════════════════════ */}
-      <div style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none", overflow:"hidden" }}>
-        {orbs.map((o) => (
-          <div
-            key={o.id}
-            className="v-orb"
-            style={{
-              left: `${o.x}%`,
-              top: `${o.y}%`,
-              width: `${o.size}px`,
-              height: `${o.size}px`,
-              background: `radial-gradient(circle, ${o.hue} 0%, transparent 70%)`,
-              animationDuration: `${o.dur}s`,
-              animationDelay: `${o.delay}s`,
-            }}
-          />
-        ))}
-      </div>
 
-      {/* ══════════════════════════════════════════════════
-          LAYER 1 — PETAL DRIFTERS (mid depth)
-          ══════════════════════════════════════════════════ */}
-      <div style={{ position:"fixed", inset:0, zIndex:30, pointerEvents:"none", overflow:"hidden" }}>
-        {petals.map((p) => (
-          <div
-            key={p.id}
-            className="v-petal"
-            style={{
-              left: `${p.left}%`,
-              width: `${p.w}px`,
-              height: `${p.h}px`,
-              opacity: p.opacity,
-              filter: p.blur ? `blur(${p.blur}px)` : "none",
-              transform: `rotate(${p.tilt}deg)`,
-              "--sway": `${p.sway}px`,
-              animationDuration: `${p.duration}s`,
-              animationDelay: `${p.delay}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* ══════════════════════════════════════════════════
-          LAYER 2 — SPARKLES  (top, foreground)
-          ══════════════════════════════════════════════════ */}
-      <div style={{ position:"fixed", inset:0, zIndex:45, pointerEvents:"none" }}>
-        {sparkles.map((s) => (
-          <div
-            key={s.id}
-            className="v-sparkle"
-            style={{
-              left: `${s.x}%`,
-              top:  `${s.y}%`,
-              fontSize: `${s.size}px`,
-              color: s.color,
-              animationDuration: `${s.dur}s`,
-              animationDelay: `${s.delay}s`,
-            }}
-          >
-            ✦
-          </div>
-        ))}
-      </div>
-
-      {/* ══════════════════════════════════════════════════
-          LAYER 3 — FLOATING RED HEARTS WITH GRADIENT
-          ══════════════════════════════════════════════════ */}
-      <div style={{ position:"fixed", inset:0, zIndex:35, pointerEvents:"none", overflow:"hidden" }}>
-        {hearts.map((h) => (
-          <div
-            key={h.id}
-            className="v-heart"
-            style={{
-              left: `${h.x}%`,
-              fontSize: `${h.size}px`,
-              "--drift": `${h.drift}px`,
-              animationDuration: `${h.dur}s`,
-              animationDelay: `${h.delay}s`,
-            }}
-          >
-            ♥
-          </div>
-        ))}
-      </div>
-
-      {/* ══════════════════════════════════════════════════
-          LAYER 4 — YELLOW FLOATING PARTICLES FROM BOTTOM
-          ══════════════════════════════════════════════════ */}
-      <div style={{ position:"fixed", inset:0, zIndex:40, pointerEvents:"none", overflow:"hidden" }}>
-        {yellowParticles.map((yp) => (
-          <div
-            key={yp.id}
-            className="v-yellow-particle"
-            style={{
-              left: `${yp.x}%`,
-              width: `${yp.size}px`,
-              height: `${yp.size}px`,
-              "--drift": `${yp.drift}px`,
-              animationDuration: `${yp.dur}s`,
-              animationDelay: `${yp.delay}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* ══════════════════════════════════════════════════
-          DECORATIVE ANIMATED ROSE IN BOTTOM LEFT
-          ══════════════════════════════════════════════════ */}
-      <div className="rose-container">
-        <div className="glass">
-          <div className="shine"></div>
-        </div>
-        <div className="leaves">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-        <div className="petals">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-        <div className="thorns">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-        <div className="deadPetals">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-        <div className="sparkles">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-      </div>
-
-      {/* ══════════════════════════════════════════════════
-          VALENTINE BANNER POPUP
-          ══════════════════════════════════════════════════ */}
-      <ValentineBanner show={showValentineBanner} onClose={() => setShowValentineBanner(false)} />
 
       {/* ══════════════════════════════════════════════════
           SCROLLING PROMO STRIP
@@ -385,12 +86,7 @@ const LayoutContent = () => {
       <div className="sticky top-0 z-[999] w-full overflow-hidden valentine-strip">
         <div className="scrolling-text-container">
           <div className="scrolling-text valentine-strip__text whitespace-nowrap">
-            ✦&nbsp; Happy Valentine's Day &nbsp;·&nbsp; Buy 2 Get upto 5%, Buy 3 Get upto 10%
-            &nbsp;·&nbsp; 🌹 Show your love with the perfect gift &nbsp;·&nbsp;
-            Exclusive Valentine's offers inside &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            ✦&nbsp; Happy Valentine's Day &nbsp;·&nbsp; Buy 2 Get upto 5%, Buy 3 Get upto 10%
-            &nbsp;·&nbsp; 🌹 Show your love with the perfect gift &nbsp;·&nbsp;
-            Exclusive Valentine's offers inside &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+             Buy 2 Get upto 5%, Buy 3 Get upto 10%
           </div>
         </div>
       </div>

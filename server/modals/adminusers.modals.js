@@ -39,6 +39,20 @@ module.exports = model(
         ],
         required: true,
       },
+      permissions: {
+        view: {
+          type: Boolean,
+          default: true,
+        },
+        edit: {
+          type: Boolean,
+          default: false,
+        },
+        delete: {
+          type: Boolean,
+          default: false,
+        },
+      },
       available: {
         type: Boolean,
         default: true,

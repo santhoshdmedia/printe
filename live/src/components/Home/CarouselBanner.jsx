@@ -201,7 +201,7 @@ const CarouselBanner = () => {
                           slideImages[index % slideImages.length]
                         }
                         alt={banner.banner_name || "Banner image"}
-                        className="w-[100%] h-[100%] object-contain"
+                        className="w-[90%] h-[90%] object-contain"
                         loading="lazy"
                         initial={{ opacity: 0, scale: 0.95, y: -100 }}
                         animate={{
