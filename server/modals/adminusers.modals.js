@@ -1,5 +1,24 @@
 const { Schema, model } = require("mongoose");
 
+const pagePermissionSchema = new Schema({
+  pageName: {
+    type: String,
+    required: true,
+  },
+  canView: {
+    type: Boolean,
+    default: false,
+  },
+  canEdit: {
+    type: Boolean,
+    default: false,
+  },
+  canDelete: {
+    type: Boolean,
+    default: false,
+  },
+}, { _id: false });
+
 module.exports = model(
   "admin_users",
   Schema(
@@ -39,20 +58,7 @@ module.exports = model(
         ],
         required: true,
       },
-      permissions: {
-        view: {
-          type: Boolean,
-          default: true,
-        },
-        edit: {
-          type: Boolean,
-          default: false,
-        },
-        delete: {
-          type: Boolean,
-          default: false,
-        },
-      },
+      pagePermissions: [pagePermissionSchema],
       available: {
         type: Boolean,
         default: true,

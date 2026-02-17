@@ -4,22 +4,21 @@ const mongoose = require('mongoose');
 const discountTierSchema = new mongoose.Schema({
   minimumQuantity: {
     type: Number,
-    required: true,
     min: 1
   },
   Customer_discountValue: {
     type: Number,
-    required: true,
+
     min: 0
   },
   Dealer_discountValue: {
     type: Number,
-    required: true,
+
     min: 0
   },
   Corporate_discountValue: {
     type: Number,
-    required: true,
+
     min: 0
   }
 }, { _id: false });
@@ -27,7 +26,7 @@ const discountTierSchema = new mongoose.Schema({
 const couponSchema = new mongoose.Schema({
   code: {
     type: String,
-    required: true,
+
     unique: true,
     uppercase: true,
     trim: true
@@ -39,17 +38,17 @@ const couponSchema = new mongoose.Schema({
   },
 Customer_discountValue: {
     type: Number,
-    required: true,
+
     min: 0
   },
   Dealer_discountValue: {
     type: Number,
-    required: true,
+
     min: 0
   },
   Corporate_discountValue: {
     type: Number,
-    required: true,
+
     min: 0
   },
   discountTiers: [discountTierSchema],
