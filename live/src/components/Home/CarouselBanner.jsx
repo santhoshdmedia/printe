@@ -23,7 +23,7 @@ const CarouselBanner = () => {
   const [isEnd, setIsEnd] = useState(false);
   const swiperRef = useRef(null);
   const { user } = useSelector((state) => state.authSlice);
-  
+
   const slideImages = [slideOne, slideTwo, slideThree, slideFour];
 
   useEffect(() => {
@@ -33,25 +33,25 @@ const CarouselBanner = () => {
   // Filter and sort banners
   const visibleBanners = banners
     ? banners
-        .filter((banner) => {
-          // Filter out non-visible banners
-          if (banner.is_visible === false) return false;
-          
-          // Filter out expired banners (client-side check as backup)
-          if (banner.expiry_date) {
-            const expiryDate = new Date(banner.expiry_date);
-            const now = new Date();
-            if (expiryDate <= now) return false;
-          }
-          
-          return true;
-        })
-        .sort((a, b) => {
-          // Sort by position
-          const posA = a.position ?? 999;
-          const posB = b.position ?? 999;
-          return posA - posB;
-        })
+      .filter((banner) => {
+        // Filter out non-visible banners
+        if (banner.is_visible === false) return false;
+
+        // Filter out expired banners (client-side check as backup)
+        if (banner.expiry_date) {
+          const expiryDate = new Date(banner.expiry_date);
+          const now = new Date();
+          if (expiryDate <= now) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        // Sort by position
+        const posA = a.position ?? 999;
+        const posB = b.position ?? 999;
+        return posA - posB;
+      })
     : [];
 
   if (isGettingBanners) {
@@ -77,12 +77,12 @@ const CarouselBanner = () => {
   const renderAnimatedTitle = (title) => {
     const defaultTitle = "Premium Printing Solutions";
     const displayTitle = title || defaultTitle;
-    
+
     // Split by double spaces if they exist, otherwise split by single space
-    const words = displayTitle.includes("  ") 
-      ? displayTitle.split("  ") 
+    const words = displayTitle.includes("  ")
+      ? displayTitle.split("  ")
       : displayTitle.split(" ");
-    
+
     return words.map((word, i) => (
       <motion.span
         key={i}
@@ -106,8 +106,8 @@ const CarouselBanner = () => {
   // Helper function to determine button text
   const getButtonText = (banner) => {
     if (banner.is_reward) return "Claim Reward";
-    if (banner.tag?.toLowerCase().includes("exclusive") || 
-        banner.tag?.toLowerCase().includes("launch")) {
+    if (banner.tag?.toLowerCase().includes("exclusive") ||
+      banner.tag?.toLowerCase().includes("launch")) {
       return "Claim Now";
     }
     return "Shop Now";
@@ -124,7 +124,7 @@ const CarouselBanner = () => {
   };
 
   return (
-    <div className="lg:w-[85%] bg-transparent h-[100%] pt-6 lg:py-2 mx-auto relative translate-x-[5%]">
+    <div className=" lg:w-[85%] bg-transparent h-[100%] pt-6 lg:py-2 mx-auto relative translate-x-[5%]">
       <div className="px-0 pt-10 flex justify-center">
         <Swiper
           modules={[Autoplay, EffectFade, Navigation]}
@@ -513,3 +513,166 @@ const CarouselBanner = () => {
 };
 
 export default CarouselBanner;
+
+import { useNavigate } from "react-router-dom";
+import { getsubcat } from "../../helper/api_helper";
+import _ from "lodash";
+
+
+export const SubCategoryBannerCarousel = () => {
+  const [subCategories, setSubCategories] = useState([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const autoPlayRef = useRef(null);
+  const startXRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchSubCategories = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getsubcat();
+        const subcategorie = _.get(response, "data.data", []);
+        
+        // Filter only visible subcategorie with banner images
+        const filtered = (subcategorie?.data || subcategorie || []).filter(
+          (item) => item.show && item.sub_category_banner_image
+        );
+        setSubCategories(filtered);
+      } catch (error) {
+        console.error("Failed to fetch subcategories:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSubCategories();
+  }, []);
+
+  // Auto-play
+  useEffect(() => {
+    if (subCategories.length <= 1) return;
+
+    autoPlayRef.current = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % subCategories.length);
+    }, 4000);
+
+    return () => clearInterval(autoPlayRef.current);
+  }, [subCategories.length]);
+
+  const goToSlide = (index) => {
+    clearInterval(autoPlayRef.current);
+    setActiveIndex(index);
+  };
+
+  const handleBannerClick = (item) => {
+    
+    if (!isDragging) {
+      navigate(`/category/${item.main_category_details[0].slug}/${item.slug}`);
+    }
+  };
+
+  // Touch / drag handling
+  const handleTouchStart = (e) => {
+    startXRef.current = e.touches[0].clientX;
+    setIsDragging(false);
+  };
+
+  const handleTouchEnd = (e) => {
+    if (startXRef.current === null) return;
+    const diff = startXRef.current - e.changedTouches[0].clientX;
+
+    if (Math.abs(diff) > 40) {
+      setIsDragging(true);
+      clearInterval(autoPlayRef.current);
+      if (diff > 0) {
+        setActiveIndex((prev) => (prev + 1) % subCategories.length);
+      } else {
+        setActiveIndex((prev) =>
+          prev === 0 ? subCategories.length - 1 : prev - 1
+        );
+      }
+    }
+    startXRef.current = null;
+  };
+
+  if (isLoading) {
+    return (
+      <div className=" w-full">
+        <div className="w-full h-48 bg-gray-200 animate-pulse rounded-2xl mx-auto" />
+        <div className="flex justify-center gap-2 mt-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-2 w-2 rounded-full bg-gray-300 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!subCategories.length) return null;
+
+  return (
+    <div className="block lg:hidden w-full overflow-hidden">
+      {/* Carousel Container */}
+      <div
+        className="relative w-full"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeIndex}
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -60 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full"
+            onClick={() => handleBannerClick(subCategories[activeIndex])}
+          >
+            <div className="relative w-full  overflow-hidden shadow-md cursor-pointer">
+              <img
+                src={subCategories[activeIndex].sub_category_banner_image}
+                alt={subCategories[activeIndex].sub_category_name}
+                className="w-full h-48 object-contain"
+                loading="lazy"
+              />
+
+              {/* Gradient overlay + label */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
+                <span className="text-white font-semibold text-base drop-shadow">
+                  {subCategories[activeIndex].sub_category_name}
+                </span>
+                <motion.span
+                  className="text-xs text-white bg-[#f2c41a] rounded-full px-3 py-1 font-medium"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Explore →
+                </motion.span>
+              </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Dot Indicators */}
+      {subCategories.length > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-3">
+          {subCategories.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goToSlide(i)}
+              className={`rounded-full transition-all duration-300 ${i === activeIndex
+                  ? "bg-[#f2c41a] w-5 h-2"
+                  : "bg-gray-300 w-2 h-2"
+                }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+

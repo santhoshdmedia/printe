@@ -4,8 +4,7 @@ const warrantySchema = new mongoose.Schema({
     productUniqueCode: {
         type: String,
         required: true,
-        unique: true,
-        index: true
+        unique: true, // This already creates an index
     },
     productName: {
         type: String,
@@ -17,8 +16,7 @@ const warrantySchema = new mongoose.Schema({
     },
     batchNumber: {
         type: String,
-        required: true,
-        index: true
+        required: true
     },
     manufacturingDate: {
         type: Date,
@@ -90,8 +88,7 @@ const warrantySchema = new mongoose.Schema({
     }
 });
 
-// Indexes for faster queries
-warrantySchema.index({ productUniqueCode: 1 }, { unique: true });
+// Keep only the other indexes (remove productUniqueCode from here)
 warrantySchema.index({ batchNumber: 1 });
 warrantySchema.index({ isActivated: 1 });
 warrantySchema.index({ warrantyEndDate: 1 });

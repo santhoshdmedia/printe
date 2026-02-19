@@ -94,7 +94,7 @@ const LayoutContent = () => {
       {/* ══════════════════════════════════════════════════
           NAV
           ══════════════════════════════════════════════════ */}
-      <div className="sticky top-[40px] z-[999] w-full">
+      <div className="">
         <Navbar />
       </div>
       <div className="sticky top-[50px] z-[20]">
@@ -104,7 +104,7 @@ const LayoutContent = () => {
       {/* ══════════════════════════════════════════════════
           PAGE CONTENT
           ══════════════════════════════════════════════════ */}
-      <div className="lg:pt-0 pt-10 overflow-x-hidden max-w-[2000px] mx-auto">
+      <div className="lg:pt-0 pt-32 overflow-x-hidden max-w-[2000px] mx-auto">
         <Outlet />
       </div>
 

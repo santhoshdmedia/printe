@@ -84,21 +84,17 @@ const Navbar = () => {
 
       // For bottom navigation hide/show
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down - hide bottom nav
         setBottomNavVisible(false);
       } else if (currentScrollY < lastScrollY) {
-        // Scrolling up - show bottom nav
         setBottomNavVisible(true);
       }
 
       setLastScrollY(currentScrollY);
 
-      // Clear existing timeout
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
 
-      // Auto show bottom nav when scrolling stops
       scrollTimeoutRef.current = setTimeout(() => {
         setBottomNavVisible(true);
       }, 1500);
@@ -156,10 +152,8 @@ const Navbar = () => {
         searchContainerRef.current &&
         !searchContainerRef.current.contains(event.target)
       ) {
-        // Reset the flag
         isClickFromResultRef.current = false;
 
-        // Only collapse if click didn't come from result
         if (!isClickFromResultRef.current) {
           setTimeout(() => {
             if (!searchProduct) {
@@ -182,7 +176,6 @@ const Navbar = () => {
   }, []);
 
   const handleSearchBlur = useCallback(() => {
-    // Only collapse if click didn't come from result
     if (!isClickFromResultRef.current) {
       setTimeout(() => {
         if (!searchProduct) {
@@ -190,7 +183,6 @@ const Navbar = () => {
         }
       }, 200);
     }
-    // Reset the flag
     isClickFromResultRef.current = false;
   }, [searchProduct]);
 
@@ -234,17 +226,10 @@ const Navbar = () => {
   }, [handleDestination]);
 
   const handleSearchResultClick = useCallback((data) => {
-    // Set flag to indicate click came from result
     isClickFromResultRef.current = true;
-
-    // Clear search input
     setSearchProduct("");
     setIsExpanded(false);
-
-    // Navigate to product
     navigate(`/product/${data.seo_url || data._id}`);
-
-    // Close mobile search bar if open
     if (showSearchBar) {
       closeSearchBar();
     }
@@ -254,14 +239,12 @@ const Navbar = () => {
   const SearchInput = React.memo(({ isMobile = false }) => {
     const localInputRef = useRef(null);
 
-    // Focus input when expanded
     useEffect(() => {
       if (isExpanded && localInputRef.current) {
         localInputRef.current.focus();
       }
     }, [isExpanded, isMobile]);
 
-    // Focus input when mobile search bar opens
     useEffect(() => {
       if (isMobile && showSearchBar && localInputRef.current) {
         setTimeout(() => {
@@ -340,7 +323,7 @@ const Navbar = () => {
                       key={data._id}
                       className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
                       onClick={() => handleSearchResultClick(data)}
-                      onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                      onMouseDown={(e) => e.preventDefault()}
                     >
                       <div className="py-4 px-4">
                         <SearchProductCard data={data} />
@@ -838,7 +821,7 @@ const Navbar = () => {
     <div className="w-full m-0">
       {/* Desktop Navbar */}
       <div
-        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-12 sticky top-0 z-40 ${isScrolled ? "shadow-xl" : "shadow-lg"
+        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-12 sticky top-[40px] z-[999]  ${isScrolled ? "shadow-xl" : "shadow-lg"
           }`}>
         {/* Left: Logo + Search */}
         <div className="flex items-center gap-x-4 xl:gap-x-12 ">
@@ -852,7 +835,6 @@ const Navbar = () => {
           <SearchInput />
         </div>
         <div className="mr-24 w-[200px]">
-          {/* Your Button3D - Updated to proper usage */}
           {user.role == "bni_user" && <Link to="/products">
             <Button3D
               variant="gradient"
@@ -872,50 +854,72 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Top Bar */}
+      {/* ===================== */}
+      {/* Mobile Top Bar — NEW  */}
+      {/* ===================== */}
       <div
-        className={`block lg:hidden w-full fixed top-0 left-0 z-[9999] bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 ${isScrolled ? "shadow-2xl" : "shadow-lg"
-          }`}
+        className={`block lg:hidden w-full fixed top-10 left-0 z-[9999] bg-[#f2c41a] transition-all duration-500 ${isScrolled ? "shadow-2xl" : "shadow-lg"}`}
       >
-        <div className="w-full h-16 flex items-center justify-between px-4">
-          {/* Left: Menu & Logo */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMenuStatus(true)}
-              className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95 shadow-lg"
-            >
-              <IoMenu className="text-white text-xl" />
-            </button>
-            <Link
-              to="/"
-              onClick={closeSearchBar}
-              className="flex items-center gap-2"
-            >
-              <img src={Logo} alt="Logo" className="h-10 object-contain" />
-            </Link>
-            {user.role == "bni_user" && <Link to="/products">
+        {/* Main bar: 3-column layout */}
+        <div className="w-full h-16 flex items-center justify-between px-4 sticky top-[40px] z-[999] ">
 
-              <img src={BNILogo} alt="Logo" className="h-10 object-contain" />
-            </Link>}
-          </div>
-
-          {/* Right: Search */}
+        <div className="flex gap-8">
+            {/* LEFT: Hamburger menu button */}
           <button
-            onClick={() => setShowSearchBar(!showSearchBar)}
-            className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 active:scale-95 shadow-lg"
+            onClick={() => setMenuStatus(true)}
+            className="w-12 h-12 bg-yellow-300/60 rounded-full flex items-center justify-center hover:bg-yellow-300/80 active:scale-90 transition-all duration-200 shadow-md"
           >
-            {showSearchBar ? (
-              <BsXLg className="text-white text-lg" />
-            ) : (
-              <BsSearch className="text-white text-lg" />
-            )}
+            <IoMenu className="text-[#121621] text-2xl" />
           </button>
+
+          {/* CENTER: Logo (absolutely centered) */}
+          <Link
+            to="/"
+            onClick={closeSearchBar}
+            className=" flex items-center gap-2"
+          >
+            <img src={Logo} alt="Logo" className="h-10 object-contain" />
+            {user.role == "bni_user" && (
+              <img src={BNILogo} alt="BNI Logo" className="h-8 object-contain" />
+            )}
+          </Link>
         </div>
 
-        {/* Expandable Search Bar */}
+          {/* RIGHT: Person + Cart icon buttons */}
+          <div className="flex items-center gap-2">
+            {/* Person / Account */}
+            <button
+              onClick={() =>
+                isAuth
+                  ? handleDestination("/account")
+                  : handleDestination("/login")
+              }
+              className="w-10 h-10 bg-yellow-300/60 rounded-full flex items-center justify-center hover:bg-yellow-300/80 active:scale-90 transition-all duration-200 shadow-md"
+            >
+              <BsPerson className="text-[#121621] text-xl" />
+            </button>
+
+            {/* Cart */}
+            <button
+              onClick={() => {
+                fetchCartData();
+                handleDestination("/shopping-cart");
+              }}
+              className="w-10 h-10 bg-yellow-300/60 rounded-full flex items-center justify-center hover:bg-yellow-300/80 active:scale-90 transition-all duration-200 shadow-md relative"
+            >
+              <BsCart3 className="text-[#121621] text-xl" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-5 flex items-center justify-center font-bold shadow-lg">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Expandable Search Bar (triggered from bottom nav search button) */}
         <div
-          className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all duration-500 overflow-visible ${showSearchBar ? "max-h-28 py-4 border-t border-yellow-300/30" : "max-h-0 py-0"
-            }`}
+          className={`w-full absolute top-20 bg-[#f2c41a] transition-all duration-500 overflow-visible ${showSearchBar ? "max-h-28 py-4 border-t border-yellow-500/30" : "max-h-0 py-0"}`}
         >
           <div className="px-4 relative">
             <SearchInput isMobile />
@@ -924,7 +928,7 @@ const Navbar = () => {
       </div>
 
       {/* Bottom Navigation - Only on Mobile */}
-      <BottomNavigation />
+      {/* <BottomNavigation /> */}
 
       {/* Mobile Menu Drawer */}
       <CustomDrawer isOpen={menuStatus} onClose={() => setMenuStatus(false)}>

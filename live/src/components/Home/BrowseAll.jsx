@@ -15,6 +15,8 @@ const BrowseAll = () => {
       const result = await getsubcat();
       const subcategories = _.get(result, "data.data", []);
       setData(subcategories);
+      console.log(data,"subcat");
+      
     } catch (err) {
       console.log(err);
     }
@@ -126,3 +128,6 @@ const BrowseAll = () => {
 };
 
 export default BrowseAll;
+
+
+

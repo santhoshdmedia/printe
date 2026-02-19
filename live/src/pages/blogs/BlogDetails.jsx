@@ -1,290 +1,378 @@
+/* eslint-disable no-empty */
 import { useEffect, useState } from "react";
-import { getAllBlogs } from "../../helper/api_helper";
+import { Link, useParams } from "react-router-dom";
 import _ from "lodash";
-import { useHref, Link } from "react-router-dom";
-import Breadcrumbs from "../../components/cards/Breadcrumbs";
-import DividerCards from "../../components/cards/DividerCards";
+import moment from "moment";
+import { getAllBlogs } from "../../helper/api_helper";
 
-// ── Brand colours ──────────────────────────────────────────
-const YELLOW = "#F5C518";
-const CREAM  = "#FFFDE7";
-const DARK   = "#2B2B2B";
-
-// ── Static sidebar data (swap with real API calls if needed) ──
+// ─── Constants ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  "Standee",
-  "Corporate Gifts",
-  "Notebooks & Dairies",
-  "Signages",
-  "Business Cards",
-  "Stationary",
+  "Standee", "Corporate Gifts", "Notebooks & Diaries",
+  "Signages", "Business Cards", "Stationary",
 ];
 
-const SOCIAL_LINKS = [
-  { label: "Instagram", color: "#E1306C", icon: InstagramIcon },
-  { label: "Facebook",  color: "#1877F2", icon: FacebookIcon  },
-  { label: "WhatsApp",  color: "#25D366", icon: WhatsAppIcon  },
-  { label: "YouTube",   color: "#FF0000", icon: YouTubeIcon   },
+const NEW_PRODUCTS = [
+  { title: "Standee", desc: "Discover practical tips, design trends, and cost-effective print ideas that create a lasting professional impression." },
+  { title: "Standee", desc: "Discover practical tips, design trends, and cost-effective print ideas that create a lasting professional impression." },
+  { title: "Standee", desc: "Discover practical tips, design trends, and cost-effective print ideas that create a lasting professional impression." },
 ];
 
-// ── SVG Icons ──────────────────────────────────────────────
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}
-      className="w-4 h-4">
-      <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
-    </svg>
-  );
-}
-function InstagramIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
-    </svg>
-  );
-}
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-    </svg>
-  );
-}
-function WhatsAppIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
-    </svg>
-  );
-}
-function YouTubeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-      <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
-    </svg>
-  );
-}
+// ─── Breadcrumbs ──────────────────────────────────────────────────────────────
+const Breadcrumbs = ({ title }) => (
+  <nav className="breadcrumbs">
+    <Link to="/" className="bc-link">Home</Link>
+    <span className="bc-sep">›</span>
+    <Link to="/blogs" className="bc-link">Blog</Link>
+    <span className="bc-sep">›</span>
+    <span className="bc-current">{title}</span>
+  </nav>
+);
 
-// ── Blog Card (left column) ────────────────────────────────
-function BlogListCard({ res }) {
-  const title       = _.get(res, "blog_name", "");
-  const description = _.get(res, "short_description", "");
-  const image       = _.get(res, "blog_image", "");
-  const id          = _.get(res, "_id", "");
+// ─── Sidebar Recent Post Card ─────────────────────────────────────────────────
+const RecentCard = ({ blog }) => {
+  const id = _.get(blog, "_id", "");
+  const name = _.get(blog, "blog_name", "");
+  const image = _.get(blog, "blog_image", "");
+  const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
 
   return (
-    <div className="flex flex-col mb-10 bg-white rounded-sm overflow-hidden"
-      style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
-      {/* Image */}
-      <div className="w-full h-56 bg-gray-200 overflow-hidden">
-        {image ? (
-          <img src={image} alt={title}
-            className="w-full h-full object-contain transition-transform duration-500 hover:scale-105" />
-        ) : (
-          <div className="w-full h-full bg-gray-200" />
-        )}
+    <Link to={`/blog-details/${id}`} className="recent-card">
+      <div className="recent-thumb">
+        {image ? <img src={image} alt={name} /> : <div className="thumb-placeholder" />}
       </div>
+      <div className="recent-info">
+        <span className="date-tag">{date}</span>
+        <p className="recent-title">{name}</p>
+      </div>
+    </Link>
+  );
+};
 
-      {/* Text body */}
-      <div className="p-5">
-        <h2 className="text-lg font-bold mb-2 leading-snug"
-          style={{ color: DARK, fontFamily: "'Georgia', serif" }}>
-          {title}
-        </h2>
+// ─── All Blogs Grid Card ──────────────────────────────────────────────────────
+const GridCard = ({ blog }) => {
+  const id = _.get(blog, "_id", "");
+  const name = _.get(blog, "blog_name", "");
+  const image = _.get(blog, "blog_image", "");
+  const desc = _.get(blog, "short_description", "");
+  const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
 
-        <p className="text-sm leading-relaxed text-justify text-gray-600 mb-3"
-          style={{ fontFamily: "'Georgia', serif" }}>
-          {description}
-        </p>
-
-        <Link to={`/blog-details/${id}`}
-          className="text-sm font-semibold hover:underline transition-colors"
-          style={{ color: YELLOW }}>
-          Continue Reading
-        </Link>
+  return (
+    <div className="grid-card">
+      <div className="grid-card-img-wrap">
+        {image ? <img src={image} alt={name} /> : <div className="img-placeholder" />}
+      </div>
+      <div className="grid-card-body">
+        <span className="date-tag">{date}</span>
+        <h3 className="grid-card-title">{name}</h3>
+        <p className="grid-card-desc">{desc}</p>
+        <Link to={`/blog-details/${id}`} className="read-more-link">Continue Reading →</Link>
       </div>
     </div>
   );
-}
+};
 
-// ── New Product Sidebar Card ───────────────────────────────
-function NewProductCard({ res }) {
-  const title       = _.get(res, "blog_name", "Standee");
-  const description = _.get(res, "short_description", "");
-  const image       = _.get(res, "blog_image", "");
-
-  return (
-    <div className="flex gap-3 mb-4 items-start">
-      <div className="w-20 h-16 flex-shrink-0 bg-gray-200 rounded overflow-hidden">
-        {image ? (
-          <img src={image} alt={title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gray-200" />
-        )}
-      </div>
-      <div className="flex-1">
-        <p className="font-bold text-sm mb-1" style={{ color: DARK }}>{title}</p>
-        <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">{description}</p>
-      </div>
+// ─── Skeleton loaders ─────────────────────────────────────────────────────────
+const ArticleSkeleton = () => (
+  <div>
+    <div className="sk-line wide shimmer" style={{ height: 36, marginBottom: 12 }} />
+    <div className="sk-line shimmer" style={{ width: "30%", height: 12, marginBottom: 20 }} />
+    <div className="sk-line shimmer" style={{ marginBottom: 8 }} />
+    <div className="sk-line shimmer" style={{ marginBottom: 8 }} />
+    <div className="sk-line shimmer" style={{ width: "75%", marginBottom: 24 }} />
+    <div className="sk-hero-img shimmer" />
+    <div style={{ marginTop: 24 }}>
+      <div className="sk-line shimmer" style={{ width: "40%", height: 28, marginBottom: 12 }} />
+      <div className="sk-line shimmer" style={{ marginBottom: 8 }} />
+      <div className="sk-line shimmer" style={{ marginBottom: 8 }} />
+      <div className="sk-line shimmer" style={{ width: "80%" }} />
     </div>
-  );
-}
+  </div>
+);
 
-// ── Main Page ──────────────────────────────────────────────
+// ─── Main BlogDetails ─────────────────────────────────────────────────────────
 const BlogDetails = () => {
-  const [allBlogs, setAllBlogs]     = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const path = useHref();
+  const { id } = useParams();
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  const [allBlogs, setAllBlogs] = useState([]);
+  const [currentBlog, setCurrentBlog] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const result = await getAllBlogs();
-      setAllBlogs(_.get(result, "data.data", []));
-    } catch (error) {
-      console.error("Error fetching blogs:", error);
+      const blogs = _.get(result, "data.data", []);
+
+      const current = blogs.find((b) => b._id === id) || null;
+      const others = blogs.filter((b) => b._id !== id);
+
+      setCurrentBlog(current);
+      setAllBlogs(others);
+    } catch (err) {
+      console.error("Error fetching blog:", err);
+      setError("Failed to load this blog post. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    fetchData();
+  }, [id]);
 
-  const filteredBlogs = allBlogs.filter((b) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      _.get(b, "blog_name", "").toLowerCase().includes(q) ||
-      _.get(b, "short_description", "").toLowerCase().includes(q)
-    );
-  });
+  const blogName = _.get(currentBlog, "blog_name", "");
+  const blogImage = _.get(currentBlog, "blog_image", "");
+  const shortDesc = _.get(currentBlog, "short_description", "");
+  const descriptions = _.get(currentBlog, "blog_descriptions", []);
+  const createdAt = moment(_.get(currentBlog, "createdAt", "")).format("dddd, MMMM DD, YYYY");
 
   return (
-    <div className="w-full min-h-screen" style={{ backgroundColor: CREAM }}>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      {/* ── Header ── */}
-      <div className="text-center py-10 px-4">
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-2"
-          style={{ color: DARK, fontFamily: "'Georgia', serif" }}>
-          Blog
-        </h1>
-        <h2 className="text-lg md:text-xl font-bold mb-2" style={{ color: DARK }}>
-          Get Inspired with Custom Printing Ideas
-        </h2>
-        <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
-          Latest trends, product ideas, branding tips, and smart print solutions for businesses.
-        </p>
-      </div>
+        .bd-page { font-family: 'DM Sans', sans-serif; background: #FEFAE8; min-height: 100vh; color: #2b2b2b; }
 
-      {/* ── Breadcrumb ── */}
-      <div className="px-[5vw] md:px-[8vw]">
-        {path === "/" ? (
-          <DividerCards name={"All Blogs"} to="/blogs" />
-        ) : (
-          <Breadcrumbs title={"All Blogs"} />
-        )}
-      </div>
+        /* Breadcrumbs */
+        .bd-top { padding: 20px 5vw 0; }
+        .breadcrumbs { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #888; flex-wrap: wrap; }
+        .bc-link { color: #C98F00; text-decoration: none; font-weight: 500; }
+        .bc-link:hover { text-decoration: underline; }
+        .bc-sep { color: #bbb; }
+        .bc-current { color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
 
-      {/* ── Two-column layout ── */}
-      <div className="flex flex-col lg:flex-row gap-8 px-[5vw] md:px-[8vw] pb-16 pt-4">
+        /* Layout */
+        .bd-layout { display: flex; gap: 32px; padding: 24px 5vw 60px; align-items: flex-start; }
+        .bd-main { flex: 1; min-width: 0; }
+        .bd-sidebar { width: 300px; flex-shrink: 0; }
+        @media (max-width: 768px) { .bd-layout { flex-direction: column; } .bd-sidebar { width: 100%; } }
 
-        {/* ════ LEFT — Blog List ════ */}
-        <main className="flex-1 min-w-0">
-          {filteredBlogs.length === 0 ? (
-            <div className="text-center py-20 text-gray-400">
-              <p className="text-lg font-medium">No blogs found</p>
+        /* State boxes */
+        .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; gap: 16px; color: #888; font-size: 0.95rem; }
+        .error-box { color: #c0392b; }
+        .retry-btn { background: #F5C518; border: none; padding: 9px 22px; border-radius: 7px; font-weight: 600; cursor: pointer; font-size: 0.88rem; font-family: 'DM Sans', sans-serif; }
+        .retry-btn:hover { background: #e0b400; }
+
+        /* Skeleton */
+        @keyframes shimmer { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .shimmer { animation: shimmer 1.4s ease-in-out infinite; }
+        .sk-line { height: 14px; border-radius: 6px; background: #e8dfa8; margin-bottom: 0; width: 100%; }
+        .sk-hero-img { height: 400px; border-radius: 14px; background: #e8dfa8; }
+
+        /* Article */
+        .article-title { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; color: #1a1a1a; line-height: 1.25; margin-bottom: 10px; }
+        .article-date { font-size: 0.82rem; color: #C98F00; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 16px; }
+        .article-short-desc { font-size: 1rem; color: #555; line-height: 1.75; margin-bottom: 24px; text-align: justify; }
+
+        /* Hero image */
+        .hero-img-wrap { width: 100%; height: 420px; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
+        .hero-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .img-placeholder-hero { width: 100%; height: 100%; background: #d9d9d9; }
+
+        /* Divider */
+        .styled-divider { border: none; border-top: 1.5px solid #e8e0c8; margin: 28px 0; }
+
+        /* Section */
+        .section-block { margin-bottom: 12px; }
+        .section-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; }
+        .section-desc { font-size: 0.95rem; color: #555; line-height: 1.8; text-align: justify; margin-bottom: 16px; }
+        .section-images { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+        .section-img { width: 200px; height: 200px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+
+        /* Sidebar */
+        .sidebar-section-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+        .sidebar-accent { width: 44px; height: 3px; background: #F5C518; border-radius: 2px; margin-bottom: 16px; }
+
+        /* Recent card */
+        .recent-card { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #e8e0c8; text-decoration: none; transition: opacity 0.2s; }
+        .recent-card:last-child { border-bottom: none; }
+        .recent-card:hover { opacity: 0.75; }
+        .recent-thumb { width: 72px; height: 64px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: #d9d9d9; }
+        .recent-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .thumb-placeholder { width: 100%; height: 100%; background: #d9d9d9; }
+        .recent-info { flex: 1; }
+        .recent-title { font-size: 0.85rem; font-weight: 600; color: #1a1a1a; line-height: 1.4; margin-top: 2px; }
+
+        /* Shared */
+        .date-tag { font-size: 0.72rem; color: #C98F00; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+        .read-more-link { display: inline-block; margin-top: 10px; color: #C98F00; font-weight: 500; font-size: 0.82rem; text-decoration: none; }
+        .read-more-link:hover { text-decoration: underline; }
+
+        /* Categories */
+        .category-list { list-style: none; margin-bottom: 28px; }
+        .category-list li { padding: 10px 0; border-bottom: 1px solid #e8e0c8; font-size: 0.9rem; font-weight: 500; cursor: pointer; color: #2b2b2b; transition: color 0.2s; }
+        .category-list li:last-child { border-bottom: none; }
+        .category-list li:hover { color: #C98F00; }
+
+        /* Products */
+        .product-row { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px; }
+        .product-thumb { width: 72px; height: 72px; background: #d9d9d9; border-radius: 8px; flex-shrink: 0; }
+        .product-name { font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 4px; color: #1a1a1a; }
+        .product-desc { font-size: 0.78rem; color: #666; line-height: 1.5; }
+
+        /* Social */
+        .social-wrap { margin-top: 28px; }
+        .social-icons { display: flex; gap: 12px; margin-top: 12px; }
+        .social-icon { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #fff; text-decoration: none; font-weight: 700; }
+        .si-ig { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
+        .si-fb { background: #1877F2; }
+        .si-wa { background: #25D366; }
+        .si-yt { background: #FF0000; }
+
+        /* All Blogs */
+        .all-blogs-section { padding: 0 5vw 20px; }
+        .all-blogs-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+        .all-blogs-accent { width: 52px; height: 3px; background: #F5C518; border-radius: 2px; margin-bottom: 20px; }
+        .all-blogs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+
+        /* Grid card */
+        .grid-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.07); transition: transform 0.2s, box-shadow 0.2s; }
+        .grid-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .grid-card-img-wrap { height: 180px; overflow: hidden; }
+        .grid-card-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .img-placeholder { width: 100%; height: 100%; background: #d9d9d9; min-height: 180px; }
+        .grid-card-body { padding: 14px 16px 18px; }
+        .grid-card-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: #1a1a1a; margin: 4px 0 8px; line-height: 1.35; }
+        .grid-card-desc { font-size: 0.82rem; color: #666; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+   
+      `}</style>
+
+      <div className="relative">
+        {/* cloud */}
+        <div className="absolute bottom-0 left-0 !z-0 w-full">
+          <img src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png" alt="" className="!z-0 h-[500px] lg:h-[1000px] object-center w-full object-cover" />
+        </div>
+        {/* Breadcrumbs */}
+        <div className="bd-top">
+          <Breadcrumbs title={loading ? "Loading..." : (blogName || "Blog Post")} />
+        </div>
+
+        {/* Main Layout */}
+        <div className="bd-layout relative !z-100">
+
+
+          {/* ── Left: Article ── */}
+          <article className="bd-main">
+            {loading && <ArticleSkeleton />}
+
+            {!loading && error && (
+              <div className="state-box error-box">
+                <p>{error}</p>
+                <button className="retry-btn" onClick={fetchData}>Try Again</button>
+              </div>
+            )}
+
+            {!loading && !error && !currentBlog && (
+              <div className="state-box">
+                <p>Blog post not found.</p>
+                <Link to="/blogs" className="retry-btn" style={{ textDecoration: "none" }}>← Back to Blogs</Link>
+              </div>
+            )}
+
+            {!loading && !error && currentBlog && (
+              <>
+                <h1 className="article-title">{blogName}</h1>
+                <p className="article-date">{createdAt}</p>
+                <p className="article-short-desc">{shortDesc}</p>
+
+                <div className="rounded-lg overflow-hidden">
+                  {blogImage
+                    ? <img src={blogImage} alt={blogName} />
+                    : <div className="img-placeholder-hero" />
+                  }
+                </div>
+
+                <hr className="styled-divider" />
+
+                <div className="flex gap-4 flex-col md:flex-row">
+                  {descriptions.map((section, index) => (
+                    <div key={index} className="section-block">
+                      <div className="p-5 flex">
+                        {_.get(section, "images", []).map((img, i) => (
+                          <img key={i} src={img} alt={`section-${index}-img-${i}`} className="rounded-lg  h-1/2 w-1/2" />
+                        ))}
+                      </div>
+                      <h2 className="lg:text-xl text-md font-bold text-center capitalize">{_.get(section, "title", "")}</h2>
+                      <p className=" article-short-desc">{_.get(section, "description", "")}</p>
+                      <hr className="styled-divider" />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </article>
+
+          {/* ── Right: Sidebar ── */}
+          <aside className="bd-sidebar">
+            <h2 className="sidebar-section-title">Recent Posts</h2>
+            <div className="sidebar-accent" />
+            <div style={{ marginBottom: "28px" }}>
+              {loading
+                ? [1, 2, 3].map((i) => (
+                  <div key={i} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid #e8e0c8" }}>
+                    <div style={{ width: 72, height: 64, borderRadius: 8, background: "#e8dfa8" }} className="shimmer" />
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div style={{ height: 10, borderRadius: 5, background: "#e8dfa8", width: "40%" }} className="shimmer" />
+                      <div style={{ height: 12, borderRadius: 5, background: "#e8dfa8" }} className="shimmer" />
+                      <div style={{ height: 12, borderRadius: 5, background: "#e8dfa8", width: "70%" }} className="shimmer" />
+                    </div>
+                  </div>
+                ))
+                : allBlogs.slice(0, 4).map((blog) => <RecentCard key={blog._id} blog={blog} />)
+              }
             </div>
-          ) : (
-            filteredBlogs.slice(0, 6).map((res, index) => (
-              <BlogListCard key={index} res={res} />
-            ))
-          )}
-        </main>
 
-        {/* ════ RIGHT — Sidebar ════ */}
-        <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-8">
-
-          {/* Search */}
-          <div>
-            <div className="relative flex items-center">
-              <input
-                type="text"
-                placeholder="Search blogs, products & branding ideas"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-sm border border-gray-200 bg-white py-3 pl-4 pr-12 text-sm focus:outline-none focus:ring-2"
-                style={{ focusRingColor: YELLOW }}
-              />
-              <button
-                className="absolute right-0 top-0 h-full px-4 rounded-r-sm flex items-center justify-center text-white"
-                style={{ backgroundColor: YELLOW }}>
-                <SearchIcon />
-              </button>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div>
-            <h3 className="text-xl font-extrabold mb-3" style={{ color: DARK }}>
-              Categories
-            </h3>
-            {/* Yellow underline accent */}
-            <div className="w-16 h-1 mb-4 rounded" style={{ backgroundColor: YELLOW }} />
-            <ul>
-              {CATEGORIES.map((cat, i) => (
-                <li key={i}>
-                  <Link
-                    to={`/category/${cat.toLowerCase().replace(/\s+/g, "-")}`}
-                    className="block py-3 text-sm font-semibold border-b border-gray-200 hover:text-yellow-500 transition-colors"
-                    style={{ color: DARK }}>
-                    {cat}
-                  </Link>
-                </li>
-              ))}
+            <h2 className="sidebar-section-title">Categories</h2>
+            <div className="sidebar-accent" />
+            <ul className="category-list">
+              {CATEGORIES.map((cat) => <li key={cat}>{cat}</li>)}
             </ul>
-          </div>
 
-          {/* New Products */}
-          <div>
-            <h3 className="text-xl font-extrabold mb-4" style={{ color: DARK }}>
-              New Products
-            </h3>
-            {allBlogs.slice(0, 3).map((res, i) => (
-              <NewProductCard key={i} res={res} />
-            ))}
-          </div>
-
-          {/* Follow Us */}
-          <div>
-            <h3 className="text-xl font-extrabold mb-4" style={{ color: DARK }}>
-              Follow Us
-            </h3>
-            <div className="flex gap-3">
-              {SOCIAL_LINKS.map(({ label, color, icon: Icon }) => (
-                <a key={label} href="#"
-                  aria-label={label}
-                  className="w-11 h-11 rounded-full flex items-center justify-center text-white transition-transform hover:scale-110"
-                  style={{ backgroundColor: color }}>
-                  <Icon />
-                </a>
+            <h2 className="sidebar-section-title">New Products</h2>
+            <div className="sidebar-accent" />
+            <div style={{ marginBottom: "28px" }}>
+              {NEW_PRODUCTS.map((p, i) => (
+                <div key={i} className="product-row">
+                  <div className="product-thumb" />
+                  <div>
+                    <strong className="product-name">{p.title}</strong>
+                    <p className="product-desc">{p.desc}</p>
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        </aside>
-      </div>
 
-      {/* ── Cloud / Wave bottom decoration ── */}
-      <div className="relative w-full overflow-hidden" style={{ height: 120 }}>
-        {/* Yellow clouds layer */}
-        <svg viewBox="0 0 900 120" preserveAspectRatio="none"
-          className="absolute bottom-0 w-full h-full" fill={YELLOW} opacity={0.6}>
-          <path d="M0,80 C100,40 200,100 300,70 C400,40 500,90 600,60 C700,30 800,80 900,50 L900,120 L0,120 Z" />
-        </svg>
-        {/* White clouds layer */}
-        <svg viewBox="0 0 900 120" preserveAspectRatio="none"
-          className="absolute bottom-0 w-full h-full" fill="white">
-          <path d="M0,100 C150,60 300,110 450,80 C600,50 750,100 900,70 L900,120 L0,120 Z" />
-        </svg>
+            <div className="social-wrap">
+              <h2 className="sidebar-section-title">Follow Us</h2>
+              <div className="social-icons">
+                <a href="#" className="social-icon si-ig" title="Instagram">IG</a>
+                <a href="#" className="social-icon si-fb" title="Facebook">f</a>
+                <a href="#" className="social-icon si-wa" title="WhatsApp">W</a>
+                <a href="#" className="social-icon si-yt" title="YouTube">▶</a>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        {/* ── All Blogs Grid ── */}
+        {!loading && !error && allBlogs.length > 0 && (
+          <section className="all-blogs-section  relative !z-100">
+            <h2 className="all-blogs-title">All Blogs</h2>
+            <div className="all-blogs-accent" />
+            <div className="all-blogs-grid">
+              {allBlogs.map((blog) => <GridCard key={blog._id} blog={blog} />)}
+            </div>
+          </section>
+        )}
+
+
       </div>
-    </div>
+    </>
   );
 };
 
