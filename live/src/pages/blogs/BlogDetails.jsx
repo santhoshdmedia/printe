@@ -411,7 +411,7 @@ const BlogDetails = () => {
 
             <h2 className="sidebar-section-title">New Products</h2>
             <div className="sidebar-accent" />
-            <div style={{ marginBottom: "28px" }}>
+            {/* <div style={{ marginBottom: "28px" }}>
               {NEW_PRODUCTS.map((p, i) => (
                 <div key={i} className="product-row">
                   <div className="product-thumb" />
@@ -421,7 +421,7 @@ const BlogDetails = () => {
                   </div>
                 </div>
               ))}
-            </div>
+            </div> */}
 
             <div className="social-wrap">
               <h2 className="sidebar-section-title">Follow Us</h2>
