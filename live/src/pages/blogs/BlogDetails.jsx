@@ -12,12 +12,6 @@ const CATEGORIES = [
   "Signages", "Business Cards", "Stationary",
 ];
 
-const NEW_PRODUCTS = [
-  { title: "Standee", desc: "Discover practical tips, design trends, and cost-effective print ideas that create a lasting professional impression." },
-  { title: "Standee", desc: "Discover practical tips, design trends, and cost-effective print ideas that create a lasting professional impression." },
-  { title: "Standee", desc: "Discover practical tips, design trends, and cost-effective print ideas that create a lasting professional impression." },
-];
-
 // ─── Breadcrumbs ──────────────────────────────────────────────────────────────
 const Breadcrumbs = ({ title }) => (
   <nav className="breadcrumbs">
@@ -56,8 +50,6 @@ const GridCard = ({ blog }) => {
   const image = _.get(blog, "blog_image", "");
   const desc = _.get(blog, "short_description", "");
   const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
-
-  // Strip HTML tags for the card preview snippet
   const plainDesc = desc.replace(/<[^>]*>/g, "");
 
   return (
@@ -108,10 +100,8 @@ const BlogDetails = () => {
       setError(null);
       const result = await getAllBlogs();
       const blogs = _.get(result, "data.data", []);
-
       const current = blogs.find((b) => b._id === id) || null;
       const others = blogs.filter((b) => b._id !== id);
-
       setCurrentBlog(current);
       setAllBlogs(others);
     } catch (err) {
@@ -150,10 +140,39 @@ const BlogDetails = () => {
         .bc-current { color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
 
         /* Layout */
-        .bd-layout { display: flex; gap: 32px; padding: 24px 5vw 60px; align-items: flex-start; }
+        .bd-layout {
+          display: flex;
+          gap: 32px;
+          padding: 24px 5vw 60px;
+          align-items: flex-start;
+          min-height: 100%;
+        }
         .bd-main { flex: 1; min-width: 0; }
-        .bd-sidebar { width: 300px; flex-shrink: 0; }
-        @media (max-width: 768px) { .bd-layout { flex-direction: column; } .bd-sidebar { width: 100%; } }
+
+        /* Sticky Sidebar */
+        .bd-sidebar {
+          width: 300px;
+          flex-shrink: 0;
+          position: sticky;
+          top: 80px;
+          max-height: calc(100vh - 100px);
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: #e8dfa8 transparent;
+        }
+        .bd-sidebar::-webkit-scrollbar { width: 4px; }
+        .bd-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .bd-sidebar::-webkit-scrollbar-thumb { background: #e8dfa8; border-radius: 4px; }
+
+        @media (max-width: 768px) {
+          .bd-layout { flex-direction: column; }
+          .bd-sidebar {
+            width: 100%;
+            position: static;
+            max-height: none;
+            overflow-y: visible;
+          }
+        }
 
         /* State boxes */
         .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; gap: 16px; color: #888; font-size: 0.95rem; }
@@ -171,15 +190,12 @@ const BlogDetails = () => {
         .article-title { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; color: #1a1a1a; line-height: 1.25; margin-bottom: 10px; }
         .article-date { font-size: 0.82rem; color: #C98F00; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 16px; }
 
-        /* Rich text content rendered from JoditEditor */
+        /* Rich text from JoditEditor */
         .jodit-content { font-size: 1rem; color: #555; line-height: 1.75; text-align: justify; margin-bottom: 24px; }
         .jodit-content p { margin-bottom: 0.85em; }
         .jodit-content h1, .jodit-content h2, .jodit-content h3,
         .jodit-content h4, .jodit-content h5, .jodit-content h6 {
-          font-family: 'Playfair Display', serif;
-          color: #1a1a1a;
-          margin: 1.2em 0 0.4em;
-          line-height: 1.3;
+          font-family: 'Playfair Display', serif; color: #1a1a1a; margin: 1.2em 0 0.4em; line-height: 1.3;
         }
         .jodit-content ul, .jodit-content ol { padding-left: 1.4em; margin-bottom: 0.85em; }
         .jodit-content li { margin-bottom: 0.3em; }
@@ -191,15 +207,12 @@ const BlogDetails = () => {
         .jodit-content table th { background: #f7f0d8; font-weight: 600; }
         .jodit-content blockquote { border-left: 3px solid #F5C518; margin: 1em 0; padding: 8px 16px; color: #777; font-style: italic; background: #fffde8; border-radius: 0 6px 6px 0; }
 
-        /* Section description rich text */
+        /* Section rich text */
         .section-jodit-content { font-size: 0.95rem; color: #555; line-height: 1.8; text-align: justify; margin-bottom: 16px; }
         .section-jodit-content p { margin-bottom: 0.75em; }
         .section-jodit-content h1, .section-jodit-content h2, .section-jodit-content h3,
         .section-jodit-content h4, .section-jodit-content h5, .section-jodit-content h6 {
-          font-family: 'Playfair Display', serif;
-          color: #1a1a1a;
-          margin: 1em 0 0.35em;
-          line-height: 1.3;
+          font-family: 'Playfair Display', serif; color: #1a1a1a; margin: 1em 0 0.35em; line-height: 1.3;
         }
         .section-jodit-content ul, .section-jodit-content ol { padding-left: 1.4em; margin-bottom: 0.75em; }
         .section-jodit-content li { margin-bottom: 0.3em; }
@@ -212,20 +225,20 @@ const BlogDetails = () => {
         .section-jodit-content blockquote { border-left: 3px solid #F5C518; margin: 0.8em 0; padding: 6px 14px; color: #777; font-style: italic; background: #fffde8; border-radius: 0 6px 6px 0; }
 
         /* Hero image */
-        .hero-img-wrap { width: 100%; height: 420px; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
+        .hero-img-wrap { width: 100%; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
         .hero-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-        .img-placeholder-hero { width: 100%; height: 100%; background: #d9d9d9; }
+        .img-placeholder-hero { width: 100%; height: 420px; background: #d9d9d9; }
 
         /* Divider */
         .styled-divider { border: none; border-top: 1.5px solid #e8e0c8; margin: 28px 0; }
 
-        /* Section */
+        /* Sections */
         .section-block { margin-bottom: 12px; }
         .section-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; }
         .section-images { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
         .section-img { width: 200px; height: 200px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
 
-        /* Sidebar */
+        /* Sidebar titles */
         .sidebar-section-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
         .sidebar-accent { width: 44px; height: 3px; background: #F5C518; border-radius: 2px; margin-bottom: 16px; }
 
@@ -250,12 +263,6 @@ const BlogDetails = () => {
         .category-list li:last-child { border-bottom: none; }
         .category-list li:hover { color: #C98F00; }
 
-        /* Products */
-        .product-row { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px; }
-        .product-thumb { width: 72px; height: 72px; background: #d9d9d9; border-radius: 8px; flex-shrink: 0; }
-        .product-name { font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 4px; color: #1a1a1a; }
-        .product-desc { font-size: 0.78rem; color: #666; line-height: 1.5; }
-
         /* Social */
         .social-wrap { margin-top: 28px; }
         .social-icons { display: flex; gap: 12px; margin-top: 12px; }
@@ -266,7 +273,7 @@ const BlogDetails = () => {
         .si-yt { background: #FF0000; }
 
         /* All Blogs */
-        .all-blogs-section { padding: 0 5vw 20px; }
+        .all-blogs-section { padding: 0 5vw 60px; }
         .all-blogs-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
         .all-blogs-accent { width: 52px; height: 3px; background: #F5C518; border-radius: 2px; margin-bottom: 20px; }
         .all-blogs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
@@ -283,7 +290,7 @@ const BlogDetails = () => {
       `}</style>
 
       <div className="relative">
-        {/* Background cloud */}
+        {/* Background */}
         <div className="absolute bottom-0 left-0 !z-0 w-full">
           <img
             src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png"
@@ -322,33 +329,29 @@ const BlogDetails = () => {
 
             {!loading && !error && currentBlog && (
               <>
-                <h1 className="article-title">{blogName}</h1>
-                <p className="article-date">{createdAt}</p>
+                  <h1 className="article-title">{blogName}</h1>
+                  <p className="article-date">{createdAt}</p>
+                <div className="hero-img-wrap">
+                  {blogImage
+                    ? <img src={blogImage} alt={blogName} />
+                    : <div className="img-placeholder-hero" />
+                  }
+                </div>
 
-                {/* short_description — rendered as HTML from JoditEditor */}
                 <div
                   className="jodit-content"
                   dangerouslySetInnerHTML={{ __html: shortDesc }}
                 />
 
-                {/* Hero image */}
-                <div className="rounded-lg overflow-hidden">
-                  {blogImage
-                    ? <img src={blogImage} alt={blogName} className="w-full" />
-                    : <div className="img-placeholder-hero" />
-                  }
-                </div>
+              
 
                 <hr className="styled-divider" />
 
-                {/* Blog description sections */}
-                <div className="flex gap-4 flex-col md:flex-row">
+                <div className="flex gap-4 flex-col">
                   {descriptions.map((section, index) => (
-                    <div key={index} className="section-block">
-
-                      {/* Section images */}
+                    <div key={index} className="section-block flex flex-col-reverse">
                       {_.get(section, "images", []).length > 0 && (
-                        <div className="p-5  ">
+                        <div className="p-5">
                           {_.get(section, "images", []).map((img, i) => (
                             <img
                               key={i}
@@ -359,20 +362,15 @@ const BlogDetails = () => {
                           ))}
                         </div>
                       )}
-
-                      {/* Section title */}
                       <h2 className="lg:text-xl text-md font-bold text-center capitalize mb-3">
                         {_.get(section, "title", "")}
                       </h2>
-
-                      {/* Section description — rendered as HTML from JoditEditor */}
                       <div
                         className="section-jodit-content"
                         dangerouslySetInnerHTML={{
                           __html: _.get(section, "description", ""),
                         }}
                       />
-
                       <hr className="styled-divider" />
                     </div>
                   ))}
@@ -381,7 +379,7 @@ const BlogDetails = () => {
             )}
           </article>
 
-          {/* ── Right: Sidebar ── */}
+          {/* ── Right: Sticky Sidebar ── */}
           <aside className="bd-sidebar">
             <h2 className="sidebar-section-title">Recent Posts</h2>
             <div className="sidebar-accent" />
@@ -409,19 +407,7 @@ const BlogDetails = () => {
               {CATEGORIES.map((cat) => <li key={cat}>{cat}</li>)}
             </ul>
 
-            {/* <h2 className="sidebar-section-title">New Products</h2> */}
             <div className="sidebar-accent" />
-            {/* <div style={{ marginBottom: "28px" }}>
-              {NEW_PRODUCTS.map((p, i) => (
-                <div key={i} className="product-row">
-                  <div className="product-thumb" />
-                  <div>
-                    <strong className="product-name">{p.title}</strong>
-                    <p className="product-desc">{p.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div> */}
 
             <div className="social-wrap">
               <h2 className="sidebar-section-title">Follow Us</h2>
