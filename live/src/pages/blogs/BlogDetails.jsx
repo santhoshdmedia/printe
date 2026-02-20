@@ -295,7 +295,7 @@ const BlogDetails = () => {
           <img
             src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png"
             alt=""
-            className="!z-0 h-[500px] lg:h-[1000px] object-center w-full object-cover"
+            className="!z-0 h-[500px] lg:h-[1000px] object-center w-full object-cover "
           />
         </div>
 
@@ -331,7 +331,7 @@ const BlogDetails = () => {
               <>
                   <h1 className="article-title">{blogName}</h1>
                   <p className="article-date">{createdAt}</p>
-                <div className="hero-img-wrap">
+                <div className="hero-img-wrap mb-6">
                   {blogImage
                     ? <img src={blogImage} alt={blogName} />
                     : <div className="img-placeholder-hero" />
