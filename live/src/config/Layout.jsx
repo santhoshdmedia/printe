@@ -94,7 +94,7 @@ const LayoutContent = () => {
       {/* ══════════════════════════════════════════════════
           NAV
           ══════════════════════════════════════════════════ */}
-      <div className="">
+  <div className="sticky top-[40px] z-[999] w-full">
         <Navbar />
       </div>
       <div className="sticky top-[50px] z-[20]">
