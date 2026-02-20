@@ -191,12 +191,12 @@ const SwiperList = ({
   return (
     <div>
       {product_type === "2" && (
-        <div className="my-10">
+        <div className="my-10 hidden lg:block">
           <Bannear />
         </div>
       )}
       {product_type === "3" && (
-        <div className="my-20">
+        <div className="my-20 ">
           <ThreeStep />
         </div>
       )}

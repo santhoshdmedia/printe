@@ -19,10 +19,10 @@ const NEW_PRODUCTS = [
 // ─── BlogCard ─────────────────────────────────────────────────────────────────
 const BlogCard = ({ blog, featured = false }) => {
   const image = _.get(blog, "blog_image", "");
-  const name  = _.get(blog, "blog_name", "");
-  const desc  = _.get(blog, "short_description", "");
-  const date  = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
-  const id    = _.get(blog, "_id", "");
+  const name = _.get(blog, "blog_name", "");
+  const desc = _.get(blog, "short_description", "");
+  const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
+  const id = _.get(blog, "_id", "");
 
   if (featured) {
     return (
@@ -76,13 +76,15 @@ const SkeletonCard = () => (
     </div>
   </div>
 );
+import { BsInstagram,BsWhatsapp,BsYoutube,BsFacebook } from "react-icons/bs";
+
 
 // ─── Main Blog Page ───────────────────────────────────────────────────────────
 const Blog = () => {
   const [allBlogs, setAllBlogs] = useState([]);
-  const [search,   setSearch]   = useState("");
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState(null);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -198,16 +200,19 @@ const Blog = () => {
         .cloud-bar svg { position: absolute; bottom: 0; width: 100%; }
       `}</style>
 
-      <div className="blog-page">
+      <div className="blog-page relative">
+        <div className="absolute bottom-0 left-0 !z-0 w-full">
+          <img src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png" alt="" className="!z-0 h-[500px] lg:h-[1000px] object-center w-full object-cover" />
+        </div>
         {/* Hero */}
-        <div className="blog-hero">
+        <div className="blog-hero relative z-10">
           <h1>Blog</h1>
           <p className="hero-sub">Get Inspired with Custom Printing Ideas</p>
           <p className="hero-tagline">Latest trends, product ideas, branding tips, and smart print solutions for businesses.</p>
         </div>
 
         {/* Main layout */}
-        <div className="blog-layout">
+        <div className="blog-layout relative z-10">
 
           {/* Left: Blog posts */}
           <div className="blog-main">
@@ -266,22 +271,16 @@ const Blog = () => {
             <div className="follow-wrap">
               <h2 className="sidebar-section-title">Follow Us</h2>
               <div className="social-icons">
-                <a href="#" className="social-icon si-ig" title="Instagram">IG</a>
-                <a href="#" className="social-icon si-fb" title="Facebook">f</a>
-                <a href="#" className="social-icon si-wa" title="WhatsApp">W</a>
-                <a href="#" className="social-icon si-yt" title="YouTube">▶</a>
+                <a href="https://www.instagram.com/the.printe/" className="social-icon si-ig" title="Instagram"><BsInstagram/></a>
+                <a href="https://www.facebook.com/people/Printe/61578118705571/?sk=about" className="social-icon si-fb" title="Facebook"><BsFacebook/></a>
+                <a href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F" className="social-icon si-wa" title="WhatsApp"><BsWhatsapp/></a>
+                <a href="https://www.youtube.com/@PrintEOfficial" className="social-icon si-yt" title="YouTube"><BsYoutube/></a>
               </div>
             </div>
           </aside>
         </div>
 
-        {/* Cloud footer */}
-        <div className="cloud-bar">
-          <svg viewBox="0 0 900 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,60 Q50,20 100,50 Q150,80 200,50 Q250,20 300,50 Q350,80 400,50 Q450,20 500,50 Q550,80 600,50 Q650,20 700,50 Q750,80 800,50 Q850,20 900,50 L900,80 L0,80 Z" fill="#F5C518" opacity="0.5"/>
-            <path d="M0,70 Q60,40 120,60 Q180,80 240,60 Q300,40 360,60 Q420,80 480,60 Q540,40 600,60 Q660,80 720,60 Q780,40 840,60 Q870,70 900,65 L900,80 L0,80 Z" fill="#fff"/>
-          </svg>
-        </div>
+
       </div>
     </>
   );

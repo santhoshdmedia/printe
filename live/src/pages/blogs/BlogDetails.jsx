@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import _ from "lodash";
 import moment from "moment";
 import { getAllBlogs } from "../../helper/api_helper";
+import { BsInstagram, BsWhatsapp, BsYoutube, BsFacebook } from "react-icons/bs";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -56,6 +57,9 @@ const GridCard = ({ blog }) => {
   const desc = _.get(blog, "short_description", "");
   const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
 
+  // Strip HTML tags for the card preview snippet
+  const plainDesc = desc.replace(/<[^>]*>/g, "");
+
   return (
     <div className="grid-card">
       <div className="grid-card-img-wrap">
@@ -64,7 +68,7 @@ const GridCard = ({ blog }) => {
       <div className="grid-card-body">
         <span className="date-tag">{date}</span>
         <h3 className="grid-card-title">{name}</h3>
-        <p className="grid-card-desc">{desc}</p>
+        <p className="grid-card-desc">{plainDesc}</p>
         <Link to={`/blog-details/${id}`} className="read-more-link">Continue Reading →</Link>
       </div>
     </div>
@@ -166,7 +170,46 @@ const BlogDetails = () => {
         /* Article */
         .article-title { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; color: #1a1a1a; line-height: 1.25; margin-bottom: 10px; }
         .article-date { font-size: 0.82rem; color: #C98F00; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 16px; }
-        .article-short-desc { font-size: 1rem; color: #555; line-height: 1.75; margin-bottom: 24px; text-align: justify; }
+
+        /* Rich text content rendered from JoditEditor */
+        .jodit-content { font-size: 1rem; color: #555; line-height: 1.75; text-align: justify; margin-bottom: 24px; }
+        .jodit-content p { margin-bottom: 0.85em; }
+        .jodit-content h1, .jodit-content h2, .jodit-content h3,
+        .jodit-content h4, .jodit-content h5, .jodit-content h6 {
+          font-family: 'Playfair Display', serif;
+          color: #1a1a1a;
+          margin: 1.2em 0 0.4em;
+          line-height: 1.3;
+        }
+        .jodit-content ul, .jodit-content ol { padding-left: 1.4em; margin-bottom: 0.85em; }
+        .jodit-content li { margin-bottom: 0.3em; }
+        .jodit-content a { color: #C98F00; text-decoration: underline; }
+        .jodit-content strong, .jodit-content b { color: #1a1a1a; }
+        .jodit-content img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+        .jodit-content table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+        .jodit-content table td, .jodit-content table th { border: 1px solid #e0d9c0; padding: 8px 12px; font-size: 0.9rem; }
+        .jodit-content table th { background: #f7f0d8; font-weight: 600; }
+        .jodit-content blockquote { border-left: 3px solid #F5C518; margin: 1em 0; padding: 8px 16px; color: #777; font-style: italic; background: #fffde8; border-radius: 0 6px 6px 0; }
+
+        /* Section description rich text */
+        .section-jodit-content { font-size: 0.95rem; color: #555; line-height: 1.8; text-align: justify; margin-bottom: 16px; }
+        .section-jodit-content p { margin-bottom: 0.75em; }
+        .section-jodit-content h1, .section-jodit-content h2, .section-jodit-content h3,
+        .section-jodit-content h4, .section-jodit-content h5, .section-jodit-content h6 {
+          font-family: 'Playfair Display', serif;
+          color: #1a1a1a;
+          margin: 1em 0 0.35em;
+          line-height: 1.3;
+        }
+        .section-jodit-content ul, .section-jodit-content ol { padding-left: 1.4em; margin-bottom: 0.75em; }
+        .section-jodit-content li { margin-bottom: 0.3em; }
+        .section-jodit-content a { color: #C98F00; text-decoration: underline; }
+        .section-jodit-content strong, .section-jodit-content b { color: #1a1a1a; }
+        .section-jodit-content img { max-width: 100%; border-radius: 8px; margin: 6px 0; }
+        .section-jodit-content table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+        .section-jodit-content table td, .section-jodit-content table th { border: 1px solid #e0d9c0; padding: 6px 10px; font-size: 0.88rem; }
+        .section-jodit-content table th { background: #f7f0d8; font-weight: 600; }
+        .section-jodit-content blockquote { border-left: 3px solid #F5C518; margin: 0.8em 0; padding: 6px 14px; color: #777; font-style: italic; background: #fffde8; border-radius: 0 6px 6px 0; }
 
         /* Hero image */
         .hero-img-wrap { width: 100%; height: 420px; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
@@ -179,7 +222,6 @@ const BlogDetails = () => {
         /* Section */
         .section-block { margin-bottom: 12px; }
         .section-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; }
-        .section-desc { font-size: 0.95rem; color: #555; line-height: 1.8; text-align: justify; margin-bottom: 16px; }
         .section-images { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
         .section-img { width: 200px; height: 200px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
 
@@ -238,15 +280,18 @@ const BlogDetails = () => {
         .grid-card-body { padding: 14px 16px 18px; }
         .grid-card-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: #1a1a1a; margin: 4px 0 8px; line-height: 1.35; }
         .grid-card-desc { font-size: 0.82rem; color: #666; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-
-   
       `}</style>
 
       <div className="relative">
-        {/* cloud */}
+        {/* Background cloud */}
         <div className="absolute bottom-0 left-0 !z-0 w-full">
-          <img src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png" alt="" className="!z-0 h-[500px] lg:h-[1000px] object-center w-full object-cover" />
+          <img
+            src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png"
+            alt=""
+            className="!z-0 h-[500px] lg:h-[1000px] object-center w-full object-cover"
+          />
         </div>
+
         {/* Breadcrumbs */}
         <div className="bd-top">
           <Breadcrumbs title={loading ? "Loading..." : (blogName || "Blog Post")} />
@@ -254,7 +299,6 @@ const BlogDetails = () => {
 
         {/* Main Layout */}
         <div className="bd-layout relative !z-100">
-
 
           {/* ── Left: Article ── */}
           <article className="bd-main">
@@ -270,7 +314,9 @@ const BlogDetails = () => {
             {!loading && !error && !currentBlog && (
               <div className="state-box">
                 <p>Blog post not found.</p>
-                <Link to="/blogs" className="retry-btn" style={{ textDecoration: "none" }}>← Back to Blogs</Link>
+                <Link to="/blogs" className="retry-btn" style={{ textDecoration: "none" }}>
+                  ← Back to Blogs
+                </Link>
               </div>
             )}
 
@@ -278,27 +324,55 @@ const BlogDetails = () => {
               <>
                 <h1 className="article-title">{blogName}</h1>
                 <p className="article-date">{createdAt}</p>
-                <p className="article-short-desc">{shortDesc}</p>
 
+                {/* short_description — rendered as HTML from JoditEditor */}
+                <div
+                  className="jodit-content"
+                  dangerouslySetInnerHTML={{ __html: shortDesc }}
+                />
+
+                {/* Hero image */}
                 <div className="rounded-lg overflow-hidden">
                   {blogImage
-                    ? <img src={blogImage} alt={blogName} />
+                    ? <img src={blogImage} alt={blogName} className="w-full" />
                     : <div className="img-placeholder-hero" />
                   }
                 </div>
 
                 <hr className="styled-divider" />
 
+                {/* Blog description sections */}
                 <div className="flex gap-4 flex-col md:flex-row">
                   {descriptions.map((section, index) => (
                     <div key={index} className="section-block">
-                      <div className="p-5 flex">
-                        {_.get(section, "images", []).map((img, i) => (
-                          <img key={i} src={img} alt={`section-${index}-img-${i}`} className="rounded-lg  h-1/2 w-1/2" />
-                        ))}
-                      </div>
-                      <h2 className="lg:text-xl text-md font-bold text-center capitalize">{_.get(section, "title", "")}</h2>
-                      <p className=" article-short-desc">{_.get(section, "description", "")}</p>
+
+                      {/* Section images */}
+                      {_.get(section, "images", []).length > 0 && (
+                        <div className="p-5  ">
+                          {_.get(section, "images", []).map((img, i) => (
+                            <img
+                              key={i}
+                              src={img}
+                              alt={`section-${index}-img-${i}`}
+                              className="rounded-lg h-1/2 w-full object-cover"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Section title */}
+                      <h2 className="lg:text-xl text-md font-bold text-center capitalize mb-3">
+                        {_.get(section, "title", "")}
+                      </h2>
+
+                      {/* Section description — rendered as HTML from JoditEditor */}
+                      <div
+                        className="section-jodit-content"
+                        dangerouslySetInnerHTML={{
+                          __html: _.get(section, "description", ""),
+                        }}
+                      />
+
                       <hr className="styled-divider" />
                     </div>
                   ))}
@@ -323,7 +397,9 @@ const BlogDetails = () => {
                     </div>
                   </div>
                 ))
-                : allBlogs.slice(0, 4).map((blog) => <RecentCard key={blog._id} blog={blog} />)
+                : allBlogs.slice(0, 4).map((blog) => (
+                  <RecentCard key={blog._id} blog={blog} />
+                ))
               }
             </div>
 
@@ -350,10 +426,10 @@ const BlogDetails = () => {
             <div className="social-wrap">
               <h2 className="sidebar-section-title">Follow Us</h2>
               <div className="social-icons">
-                <a href="#" className="social-icon si-ig" title="Instagram">IG</a>
-                <a href="#" className="social-icon si-fb" title="Facebook">f</a>
-                <a href="#" className="social-icon si-wa" title="WhatsApp">W</a>
-                <a href="#" className="social-icon si-yt" title="YouTube">▶</a>
+                <a href="https://www.instagram.com/the.printe/" className="social-icon si-ig" title="Instagram"><BsInstagram /></a>
+                <a href="https://www.facebook.com/people/Printe/61578118705571/?sk=about" className="social-icon si-fb" title="Facebook"><BsFacebook /></a>
+                <a href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F" className="social-icon si-wa" title="WhatsApp"><BsWhatsapp /></a>
+                <a href="https://www.youtube.com/@PrintEOfficial" className="social-icon si-yt" title="YouTube"><BsYoutube /></a>
               </div>
             </div>
           </aside>
@@ -361,16 +437,16 @@ const BlogDetails = () => {
 
         {/* ── All Blogs Grid ── */}
         {!loading && !error && allBlogs.length > 0 && (
-          <section className="all-blogs-section  relative !z-100">
+          <section className="all-blogs-section relative !z-100">
             <h2 className="all-blogs-title">All Blogs</h2>
             <div className="all-blogs-accent" />
             <div className="all-blogs-grid">
-              {allBlogs.map((blog) => <GridCard key={blog._id} blog={blog} />)}
+              {allBlogs.map((blog) => (
+                <GridCard key={blog._id} blog={blog} />
+              ))}
             </div>
           </section>
         )}
-
-
       </div>
     </>
   );
