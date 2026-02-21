@@ -277,11 +277,11 @@ const Blog = () => {
               {CATEGORIES.map((cat) => <li key={cat}>{cat}</li>)}
             </ul>
 
-            <div className="new-products-wrap">
+            {/* <div className="new-products-wrap">
               <h2 className="sidebar-section-title">New Products</h2>
               <div className="sidebar-accent" />
               {NEW_PRODUCTS.map((p, i) => <ProductRow key={i} item={p} />)}
-            </div>
+            </div> */}
 
             <div className="follow-wrap">
               <h2 className="sidebar-section-title">Follow Us</h2>
