@@ -12,7 +12,10 @@ module.exports = model(
         type: String,
         required: true,
       },
-
+      blog_slug: {
+        type: String,
+        required: true,
+      },
       short_description: {
         type: String,
         required: true,

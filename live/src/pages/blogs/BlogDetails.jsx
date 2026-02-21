@@ -25,13 +25,13 @@ const Breadcrumbs = ({ title }) => (
 
 // ─── Sidebar Recent Post Card ─────────────────────────────────────────────────
 const RecentCard = ({ blog }) => {
-  const id = _.get(blog, "_id", "");
+  const slug = _.get(blog, "blog_slug", "");
   const name = _.get(blog, "blog_name", "");
   const image = _.get(blog, "blog_image", "");
   const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
 
   return (
-    <Link to={`/blog-details/${id}`} className="recent-card">
+    <Link to={`/blog-details/${slug}`} className="recent-card">
       <div className="recent-thumb">
         {image ? <img src={image} alt={name} /> : <div className="thumb-placeholder" />}
       </div>
@@ -45,7 +45,7 @@ const RecentCard = ({ blog }) => {
 
 // ─── All Blogs Grid Card ──────────────────────────────────────────────────────
 const GridCard = ({ blog }) => {
-  const id = _.get(blog, "_id", "");
+  const slug = _.get(blog, "blog_slug", "");
   const name = _.get(blog, "blog_name", "");
   const image = _.get(blog, "blog_image", "");
   const desc = _.get(blog, "short_description", "");
@@ -53,7 +53,7 @@ const GridCard = ({ blog }) => {
   const plainDesc = desc.replace(/<[^>]*>/g, "");
 
   return (
-    <div className="grid-card">
+    <div className="bg-white rounded-lg w-full overflow-hidden">
       <div className="grid-card-img-wrap">
         {image ? <img src={image} alt={name} /> : <div className="img-placeholder" />}
       </div>
@@ -61,7 +61,8 @@ const GridCard = ({ blog }) => {
         <span className="date-tag">{date}</span>
         <h3 className="grid-card-title">{name}</h3>
         <p className="grid-card-desc">{plainDesc}</p>
-        <Link to={`/blog-details/${id}`} className="read-more-link">Continue Reading →</Link>
+        
+        <Link to={`/blog-details/${slug}`} className="read-more-link">Continue Reading →</Link>
       </div>
     </div>
   );
@@ -87,7 +88,8 @@ const ArticleSkeleton = () => (
 
 // ─── Main BlogDetails ─────────────────────────────────────────────────────────
 const BlogDetails = () => {
-  const { id } = useParams();
+  // ✅ Use slug param — same pattern as Product component uses { id } from useParams
+  const { slug } = useParams();
 
   const [allBlogs, setAllBlogs] = useState([]);
   const [currentBlog, setCurrentBlog] = useState(null);
@@ -100,8 +102,11 @@ const BlogDetails = () => {
       setError(null);
       const result = await getAllBlogs();
       const blogs = _.get(result, "data.data", []);
-      const current = blogs.find((b) => b._id === id) || null;
-      const others = blogs.filter((b) => b._id !== id);
+
+      // ✅ Match by blog_slug instead of _id — same as Product matches by id/slug
+      const current = blogs.find((b) => b.blog_slug === slug) || null;
+      const others = blogs.filter((b) => b.blog_slug !== slug);
+
       setCurrentBlog(current);
       setAllBlogs(others);
     } catch (err) {
@@ -112,10 +117,11 @@ const BlogDetails = () => {
     }
   };
 
+  // ✅ Re-fetch when slug changes — same as Product re-fetches when id changes
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchData();
-  }, [id]);
+  }, [slug]);
 
   const blogName = _.get(currentBlog, "blog_name", "");
   const blogImage = _.get(currentBlog, "blog_image", "");
@@ -281,7 +287,7 @@ const BlogDetails = () => {
         /* Grid card */
         .grid-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.07); transition: transform 0.2s, box-shadow 0.2s; }
         .grid-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
-        .grid-card-img-wrap { height: 180px; overflow: hidden; }
+        .grid-card-img-wrap { height: 200px;  overflow: hidden; }
         .grid-card-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
         .img-placeholder { width: 100%; height: 100%; background: #d9d9d9; min-height: 180px; }
         .grid-card-body { padding: 14px 16px 18px; }
@@ -305,7 +311,7 @@ const BlogDetails = () => {
         </div>
 
         {/* Main Layout */}
-        <div className="bd-layout relative !z-100">
+    <div className="bd-layout relative !z-100">
 
           {/* ── Left: Article ── */}
           <article className="bd-main">
@@ -342,9 +348,7 @@ const BlogDetails = () => {
                   className="jodit-content"
                   dangerouslySetInnerHTML={{ __html: shortDesc }}
                 />
-
               
-
                 <hr className="styled-divider" />
 
                 <div className="flex gap-4 flex-col">
@@ -426,7 +430,7 @@ const BlogDetails = () => {
           <section className="all-blogs-section relative !z-100">
             <h2 className="all-blogs-title">All Blogs</h2>
             <div className="all-blogs-accent" />
-            <div className="all-blogs-grid">
+            <div className="grid grid-cols-3 gap-4">
               {allBlogs.map((blog) => (
                 <GridCard key={blog._id} blog={blog} />
               ))}

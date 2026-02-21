@@ -104,7 +104,7 @@ const LayoutContent = () => {
       {/* ══════════════════════════════════════════════════
           PAGE CONTENT
           ══════════════════════════════════════════════════ */}
-      <div className="lg:pt-0 pt-32 overflow-x-hidden max-w-[2000px] mx-auto">
+      <div className="lg:pt-0 pt-36 overflow-x-hidden max-w-[2000px] mx-auto">
         <Outlet />
       </div>
 

@@ -32,6 +32,7 @@ const allowedOrigins = [
   "https://customercare.printe.in",
   "http://customercare.printe.in",
   "https://secure.ccavenue.com",
+  "https://dev.printe.in",
   "null"
 ];
 

@@ -20,9 +20,8 @@ const NEW_PRODUCTS = [
 const BlogCard = ({ blog, featured = false }) => {
   const image = _.get(blog, "blog_image", "");
   const name = _.get(blog, "blog_name", "");
-  const desc = _.get(blog, "short_description", "");
   const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
-  const id = _.get(blog, "_id", "");
+  const slug = _.get(blog, "blog_slug", ""); // ✅ always use slug
 
   if (featured) {
     return (
@@ -33,8 +32,14 @@ const BlogCard = ({ blog, featured = false }) => {
         <div className="featured-body">
           <span className="date-tag">{date}</span>
           <h2 className="featured-title">{name}</h2>
-          <p className="featured-desc">{desc}</p>
-          <Link to={`/blog-details/${id}`} className="read-more-btn">Continue Reading →</Link>
+          
+          <div
+            className="section-jodit-content"
+            dangerouslySetInnerHTML={{
+              __html: _.get(blog, "short_description", ""),
+            }}
+          />
+          <Link to={`/blog-details/${slug}`} className="read-more-btn">Continue Reading →</Link>
         </div>
       </div>
     );
@@ -46,8 +51,13 @@ const BlogCard = ({ blog, featured = false }) => {
       <div className="card-body">
         <span className="date-tag">{date}</span>
         <h3 className="card-title">{name}</h3>
-        <p className="card-desc">{desc}</p>
-        <Link to={`/blog-details/${id}`} className="read-more-link">Continue Reading →</Link>
+        <div
+          className="section-jodit-content"
+          dangerouslySetInnerHTML={{
+            __html: _.get(blog, "short_description", ""),
+          }}
+        />
+        <Link to={`/blog-details/${slug}`} className="read-more-link">Continue Reading →</Link> {/* ✅ was id, now slug */}
       </div>
     </div>
   );
@@ -76,7 +86,7 @@ const SkeletonCard = () => (
     </div>
   </div>
 );
-import { BsInstagram,BsWhatsapp,BsYoutube,BsFacebook } from "react-icons/bs";
+import { BsInstagram, BsWhatsapp, BsYoutube, BsFacebook } from "react-icons/bs";
 
 
 // ─── Main Blog Page ───────────────────────────────────────────────────────────
@@ -198,6 +208,10 @@ const Blog = () => {
         /* Cloud */
         .cloud-bar { position: relative; height: 80px; overflow: hidden; margin-top: 20px; }
         .cloud-bar svg { position: absolute; bottom: 0; width: 100%; }
+
+        /* Rich text */
+        .section-jodit-content { font-size: 0.9rem; color: #555; line-height: 1.7; text-align: justify; }
+        .section-jodit-content p { margin-bottom: 0.6em; }
       `}</style>
 
       <div className="blog-page relative">
@@ -239,6 +253,7 @@ const Blog = () => {
                 <BlogCard blog={filtered[0]} featured />
                 {filtered.slice(1).map((blog) => (
                   <BlogCard key={blog._id} blog={blog} />
+                  
                 ))}
               </>
             )}
@@ -271,16 +286,14 @@ const Blog = () => {
             <div className="follow-wrap">
               <h2 className="sidebar-section-title">Follow Us</h2>
               <div className="social-icons">
-                <a href="https://www.instagram.com/the.printe/" className="social-icon si-ig" title="Instagram"><BsInstagram/></a>
-                <a href="https://www.facebook.com/people/Printe/61578118705571/?sk=about" className="social-icon si-fb" title="Facebook"><BsFacebook/></a>
-                <a href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F" className="social-icon si-wa" title="WhatsApp"><BsWhatsapp/></a>
-                <a href="https://www.youtube.com/@PrintEOfficial" className="social-icon si-yt" title="YouTube"><BsYoutube/></a>
+                <a href="https://www.instagram.com/the.printe/" className="social-icon si-ig" title="Instagram"><BsInstagram /></a>
+                <a href="https://www.facebook.com/people/Printe/61578118705571/?sk=about" className="social-icon si-fb" title="Facebook"><BsFacebook /></a>
+                <a href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F" className="social-icon si-wa" title="WhatsApp"><BsWhatsapp /></a>
+                <a href="https://www.youtube.com/@PrintEOfficial" className="social-icon si-yt" title="YouTube"><BsYoutube /></a>
               </div>
             </div>
           </aside>
         </div>
-
-
       </div>
     </>
   );

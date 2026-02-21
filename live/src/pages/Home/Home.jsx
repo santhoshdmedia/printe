@@ -6,7 +6,7 @@ import { Divider, Spin } from "antd";
 import _ from "lodash";
 import StepProcess from "../../components/Home/StepProcess";
 import CarouselBanner, { SubCategoryBannerCarousel } from "../../components/Home/CarouselBanner";
-import { getCustomHomeSections } from "../../helper/api_helper";
+import { getCustomHomeSections,getAllBlogs } from "../../helper/api_helper";
 import { IconHelper } from "../../helper/IconHelper";
 import SwiperList from "../../components/Lists/SwiperList";
 import HistoryProducts from "../Product/HistoryProducts";
@@ -18,6 +18,7 @@ import { Helmet } from "react-helmet-async";
 const Home = () => {
   const [loading, setLoading] = useState(true);
   const [sectionData, setSectionData] = useState([]);
+  const [blogsData, setBlogsData] = useState([]);
   const { user } = useSelector((state) => state.authSlice);
   const hasRefreshedRef = useRef(false);
   const navigate = useNavigate();
@@ -46,9 +47,16 @@ const Home = () => {
       setLoading(false);
     }
   }, []);
+  const FetchBlogs=async()=>{
+      const result = await getAllBlogs();
+      setBlogsData(_.get(result, "data.data", []));
+      console.log(blogsData,"bjhbhbj");
+      
+  }
 
   useEffect(() => {
     fetchData();
+    FetchBlogs();
   }, [fetchData, _.get(user, "_id", "")]);
 
   const getGridCount = useCallback((value) => {

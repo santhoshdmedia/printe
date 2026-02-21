@@ -1,8 +1,10 @@
 {
-  "rewrites": [
+  "headers": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/api/client_user/check_login",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, private" }
+      ]
     }
   ]
 }

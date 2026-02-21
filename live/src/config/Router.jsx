@@ -71,7 +71,7 @@ export const router = createBrowserRouter([
       { path: "/checkout", element: <NewCheckout /> },
       { path: "/blogs", element: <Blog /> },
       { path: "/all-categories", element: <AllCategory /> },
-      { path: "/blog-details/:id", element: <BlogDetails /> },
+      { path: "/blog-details/:slug", element: <BlogDetails /> },
       { path: "/", element: <Home /> },
       { path: "/product/:id", element: <Product /> },
       { path: "/category/:category/:id", element: <SubcategoryProduct /> },

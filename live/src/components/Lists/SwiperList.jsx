@@ -42,7 +42,7 @@ const SwiperList = ({
 
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -103,7 +103,7 @@ const SwiperList = ({
         default: 1,
         640: 2,
         768: 3,
-        1024: 4 ,
+        1024: 4,
         1440: 5,
       },
       gridCols: {
@@ -163,30 +163,30 @@ const SwiperList = ({
   );
 
   // Desktop Swiper View
- const DesktopSwiperView = () => (
-  <Swiper
-    spaceBetween={16}
-    slidesPerView={config.slidesPerView.default}
-    breakpoints={{
-      640: { slidesPerView: config.slidesPerView[640], spaceBetween: 14 },
-      768: { slidesPerView: config.slidesPerView[768], spaceBetween: 16 },
-      1024: { slidesPerView: config.slidesPerView[1024], spaceBetween: 18 },
-      1440: { slidesPerView: config.slidesPerView[1440], spaceBetween: 20 },
-    }}
-    className="w-full"
-    modules={[Navigation]}
-    navigation={false}
-    speed={400}
-    resistance={true}
-    resistanceRatio={0.85}
-  >
-    {products.map((product, index) => (
-      <SwiperSlide key={index}>
-        <GET_PRODUCT_DISPLAY_TYPE data={product} />
-      </SwiperSlide>
-    ))}
-  </Swiper>
-);
+  const DesktopSwiperView = () => (
+    <Swiper
+      spaceBetween={16}
+      slidesPerView={config.slidesPerView.default}
+      breakpoints={{
+        640: { slidesPerView: config.slidesPerView[640], spaceBetween: 14 },
+        768: { slidesPerView: config.slidesPerView[768], spaceBetween: 16 },
+        1024: { slidesPerView: config.slidesPerView[1024], spaceBetween: 18 },
+        1440: { slidesPerView: config.slidesPerView[1440], spaceBetween: 20 },
+      }}
+      className="w-full"
+      modules={[Navigation]}
+      navigation={false}
+      speed={400}
+      resistance={true}
+      resistanceRatio={0.85}
+    >
+      {products.map((product, index) => (
+        <SwiperSlide key={index}>
+          <GET_PRODUCT_DISPLAY_TYPE data={product} />
+        </SwiperSlide>
+      ))}
+    </Swiper>
+  );
 
   return (
     <div>
@@ -196,9 +196,30 @@ const SwiperList = ({
         </div>
       )}
       {product_type === "3" && (
-        <div className="my-20 ">
-          <ThreeStep />
-        </div>
+        <>
+          <div className="lg:hidden block">
+            <div className="pt-8 block lg:hidden">
+              <h2 className="capitalize text-center pb-5 text-2xl font-bold">
+                Special gifts for your favorite person
+              </h2>
+              <div className="flex justify-center">
+                <button
+                  className="w-1/4 rounded-xl bg-[#020202] mx-10 p-2 font-semibold capitalize text-white"
+                >
+                  Shop Now
+                </button>
+              </div>
+              <div className="p-10 ">
+                <div className="relative rounded-2xl overflow-hidden">
+                  <img src="https://printe.s3.ap-south-1.amazonaws.com/1771589215725-5hv79l6lwla.jpeg" alt="bannear" className="" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="my-20 hidden lg:block">
+            <ThreeStep />
+          </div>
+        </>
       )}
       {product_type === "1" && (
         <div className="">
