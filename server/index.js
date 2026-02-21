@@ -22,7 +22,7 @@ const allowedOrigins = [
   "https://www.printe.in",
   "https://www.admin.printe.in",
   "https://admin.printe.in",
-  "https://vendor.printe.in",  
+  "https://vendor.printe.in",
   "http://62.72.58.252",
   "https://62.72.58.252",
   "http://localhost:5173",
@@ -35,13 +35,7 @@ const allowedOrigins = [
   "https://dev.printe.in",
   "null"
 ];
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, private');
-    res.setHeader('Pragma', 'no-cache');
-  }
-  next();
-});
+
 // Increase JSON body limit
 app.use(express.json({ limit: '500mb' }));
 
@@ -54,8 +48,9 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1 || origin === "null") {
       return callback(null, true);
     } else {
-      console.log('CORS blocked:', origin);
-      return callback(new Error('CORS blocked'), false);
+      console.log('⚠️ CORS blocked origin:', origin);
+      // Return false instead of throwing Error (prevents crash)
+      return callback(null, false);
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -64,15 +59,19 @@ app.use(cors({
   maxAge: 86400,
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Security headers
+// Security + Cache-Control headers middleware (FIXED - now inside middleware)
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+
+  // Disable caching for all API routes
+  if (req.path.startsWith('/api')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, private');
+    res.setHeader('Pragma', 'no-cache');
+  }
+
   next();
 });
 
@@ -104,10 +103,9 @@ app.use("/api", router);
 // Find the correct dist folder path
 function findDistPath() {
   const possiblePaths = [
-    path.join(__dirname, '../live/dist'),      // live/server -> ../dist
-    path.join(__dirname, '../live/dist'),   // live/server -> ../../dist  
-    path.join(process.cwd(), 'dist'),     // Current directory
-    path.join(__dirname, 'dist'),         // Server directory
+    path.join(__dirname, '../live/dist'),
+    path.join(process.cwd(), 'dist'),
+    path.join(__dirname, 'dist'),
   ];
 
   for (const distPath of possiblePaths) {
@@ -117,7 +115,7 @@ function findDistPath() {
       return distPath;
     }
   }
-  
+
   console.log('❌ Dist folder not found in any location');
   return null;
 }
@@ -133,8 +131,6 @@ if (distPath) {
 
 // Function to get product image URL
 function getProductImageUrl(product) {
-  
-
   const firstImage = product.seo_img;
   let imagePath = '';
 
@@ -150,7 +146,6 @@ function getProductImageUrl(product) {
     if (imagePath.startsWith('http')) {
       return imagePath;
     } else {
-      // Remove leading slash and construct S3 URL
       const cleanPath = imagePath.replace(/^\//, '');
       return `https://printe.s3.ap-south-1.amazonaws.com/${cleanPath}`;
     }
@@ -166,14 +161,12 @@ app.get("/product/:id", async (req, res) => {
   console.log(`\n🎯 Processing product route: /product/${productId}`);
 
   try {
-    // Fetch product data from database
     const product = await ProductSchema.findOne({ seo_url: productId })
       .populate("category_details", "main_category_name")
       .populate("sub_category_details", "sub_category_name");
 
     if (!product) {
       console.log(`❌ Product not found: ${productId}`);
-      // Fallback to static file if product not found
       if (distPath) {
         return res.sendFile(path.join(distPath, 'index.html'));
       } else {
@@ -182,18 +175,14 @@ app.get("/product/:id", async (req, res) => {
     }
 
     console.log(`✅ Found product: ${product.name}`);
-    console.log(`📸 Product images:`, product.images);
 
-    // Prepare OG data
-    const ogTitle = product.seo_title ;
-    let ogDescription = product.seo_description || 
-                       'Check out this amazing product on Printe';
-    
-    // Truncate description for SEO
+    const ogTitle = product.seo_title;
+    let ogDescription = product.seo_description || 'Check out this amazing product on Printe';
+
     if (ogDescription.length > 155) {
       ogDescription = ogDescription.substring(0, 152) + '...';
     }
-    
+
     const ogImage = getProductImageUrl(product);
     const ogUrl = `https://printe.in/product/${productId}`;
     const canonicalUrl = `https://printe.in/product/${product.seo_url}`;
@@ -204,26 +193,24 @@ app.get("/product/:id", async (req, res) => {
     console.log(`   Image: ${ogImage}`);
     console.log(`   URL: ${ogUrl}`);
 
-    // Read the built index.html to get the asset paths
     let assetJs = '/assets/index.js';
     let assetCss = '/assets/index.css';
-    
+
     if (distPath) {
       try {
         const files = fs.readdirSync(path.join(distPath, 'assets'));
         const jsFile = files.find(f => f.endsWith('.js') && f.startsWith('index-'));
         const cssFile = files.find(f => f.endsWith('.css') && f.startsWith('index-'));
-        
+
         if (jsFile) assetJs = `/assets/${jsFile}`;
         if (cssFile) assetCss = `/assets/${cssFile}`;
-        
+
         console.log(`📦 Assets: JS=${assetJs}, CSS=${assetCss}`);
       } catch (err) {
         console.log('📦 Using default asset paths');
       }
     }
 
-    // Generate complete HTML with OG tags
     const html = `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -309,7 +296,6 @@ app.get("/product/:id", async (req, res) => {
   <body>
     <div id="root"></div>
     
-    <!-- Initialize React with product data -->
     <script>
       window.__INITIAL_STATE__ = {
         product: ${JSON.stringify(product)},
@@ -322,7 +308,6 @@ app.get("/product/:id", async (req, res) => {
       };
     </script>
     
-    <!-- JavaScript -->
     <script type="module" src="${assetJs}"></script>
   </body>
 </html>`;
@@ -332,8 +317,7 @@ app.get("/product/:id", async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error generating SSR HTML:', error);
-    
-    // Fallback: serve static index.html
+
     if (distPath) {
       console.log('🔄 Falling back to static file');
       res.sendFile(path.join(distPath, 'index.html'));
@@ -345,17 +329,14 @@ app.get("/product/:id", async (req, res) => {
 
 // All other routes serve the static React app
 app.get('*', (req, res) => {
-  // Skip API routes
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
 
-  // Skip product routes (handled by SSR)
   if (req.path.startsWith('/product/')) {
     return res.status(404).send('Product route error');
   }
 
-  // Serve static React app for all other routes
   if (distPath) {
     res.sendFile(path.join(distPath, 'index.html'));
   } else {
@@ -375,7 +356,6 @@ app.use((err, req, res, next) => {
 const Port = process.env.PORT || 8080;
 const Host = process.env.HOST || "0.0.0.0";
 
-// MongoDB connection and server start
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     app.listen(Port, Host, () => {
@@ -383,7 +363,7 @@ mongoose.connect(process.env.MONGODB_URI)
       console.log(`📦 MongoDB connected successfully`);
       console.log(`🔍 SSR OG tags active for /product/:id routes`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-      
+
       if (distPath) {
         console.log(`📁 Serving frontend from: ${distPath}`);
       } else {
