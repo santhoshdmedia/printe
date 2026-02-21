@@ -35,7 +35,13 @@ const allowedOrigins = [
   "https://dev.printe.in",
   "null"
 ];
-
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, private');
+    res.setHeader('Pragma', 'no-cache');
+  }
+  next();
+});
 // Increase JSON body limit
 app.use(express.json({ limit: '500mb' }));
 
