@@ -16,50 +16,22 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(morgan("dev"));
 
-// CORS configuration
-const allowedOrigins = [
-  "https://printe.in",
-  "https://www.printe.in",
-  "https://www.admin.printe.in",
-  "https://admin.printe.in",
-  "https://vendor.printe.in",
-  "http://62.72.58.252",
-  "https://62.72.58.252",
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:5175",
-  "http://localhost:8080",
-  "https://customercare.printe.in",
-  "http://customercare.printe.in",
-  "https://secure.ccavenue.com",
-  "https://dev.printe.in",
-  "null"
-];
-
 // Increase JSON body limit
 app.use(express.json({ limit: '500mb' }));
-
-// Increase URL-encoded body limit
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
+// CORS - Allow ALL origins
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin === "null") {
-      return callback(null, true);
-    } else {
-      console.log('⚠️ CORS blocked origin:', origin);
-      // Return false instead of throwing Error (prevents crash)
-      return callback(null, false);
-    }
-  },
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  credentials: true,
   maxAge: 86400,
 }));
 
-// Security + Cache-Control headers middleware (FIXED - now inside middleware)
+// Handle preflight requests
+app.options('*', cors());
+
+// Security + Cache-Control headers middleware
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -100,7 +72,6 @@ app.use("/api", router);
 
 // ==================== SSR CONFIGURATION ====================
 
-// Find the correct dist folder path
 function findDistPath() {
   const possiblePaths = [
     path.join(__dirname, '../live/dist'),
@@ -139,8 +110,6 @@ function getProductImageUrl(product) {
   } else if (typeof firstImage === 'object') {
     imagePath = firstImage.path || firstImage.url || firstImage.image_url || '';
   }
-
-  console.log('📸 Raw image path:', imagePath);
 
   if (imagePath && imagePath.trim() !== '') {
     if (imagePath.startsWith('http')) {
@@ -187,12 +156,6 @@ app.get("/product/:id", async (req, res) => {
     const ogUrl = `https://printe.in/product/${productId}`;
     const canonicalUrl = `https://printe.in/product/${product.seo_url}`;
 
-    console.log(`📊 OG Data:`);
-    console.log(`   Title: ${ogTitle}`);
-    console.log(`   Description: ${ogDescription}`);
-    console.log(`   Image: ${ogImage}`);
-    console.log(`   URL: ${ogUrl}`);
-
     let assetJs = '/assets/index.js';
     let assetCss = '/assets/index.css';
 
@@ -204,8 +167,6 @@ app.get("/product/:id", async (req, res) => {
 
         if (jsFile) assetJs = `/assets/${jsFile}`;
         if (cssFile) assetCss = `/assets/${cssFile}`;
-
-        console.log(`📦 Assets: JS=${assetJs}, CSS=${assetCss}`);
       } catch (err) {
         console.log('📦 Using default asset paths');
       }
@@ -219,12 +180,10 @@ app.get("/product/:id", async (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${ogTitle}</title>
     
-    <!-- SEO Meta Tags -->
     <meta name="description" content="${ogDescription}" />
     <meta name="keywords" content="printe, products, shopping, ${product.name}" />
     <meta name="author" content="Printe" />
     
-    <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="${ogTitle}" />
     <meta property="og:description" content="${ogDescription}" />
     <meta property="og:image" content="${ogImage}" />
@@ -235,26 +194,21 @@ app.get("/product/:id", async (req, res) => {
     <meta property="og:image:height" content="630" />
     <meta property="og:image:type" content="image/jpeg" />
     
-    <!-- Product Specific OG Tags -->
     <meta property="product:price:amount" content="${product.price || '0'}" />
     <meta property="product:price:currency" content="INR" />
     <meta property="product:availability" content="${product.stock_count > 0 ? 'in stock' : 'out of stock'}" />
     <meta property="product:category" content="${product.category_details?.main_category_name || 'Products'}" />
     
-    <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${ogTitle}" />
     <meta name="twitter:description" content="${ogDescription}" />
     <meta name="twitter:image" content="${ogImage}" />
     <meta name="twitter:site" content="@printe" />
     
-    <!-- Canonical URL -->
     <link rel="canonical" href="${canonicalUrl}" />
     
-    <!-- External Scripts -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     
-    <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -263,7 +217,6 @@ app.get("/product/:id", async (req, res) => {
       gtag('config', 'G-PHZNNT6QB8');
     </script>
 
-    <!-- Structured Data for SEO -->
     <script type="application/ld+json">
       ${JSON.stringify({
         "@context": "https://schema.org/",
@@ -272,25 +225,18 @@ app.get("/product/:id", async (req, res) => {
         "description": ogDescription,
         "image": ogImage,
         "sku": product._id?.toString() || productId,
-        "brand": {
-          "@type": "Brand",
-          "name": "Printe"
-        },
+        "brand": { "@type": "Brand", "name": "Printe" },
         "offers": {
           "@type": "Offer",
           "url": ogUrl,
           "priceCurrency": "INR",
           "price": product.price || "0",
           "availability": `https://schema.org/${product.stock_count > 0 ? "InStock" : "OutOfStock"}`,
-          "seller": {
-            "@type": "Organization",
-            "name": "Printe"
-          }
+          "seller": { "@type": "Organization", "name": "Printe" }
         }
       })}
     </script>
     
-    <!-- CSS -->
     <link rel="stylesheet" href="${assetCss}">
   </head>
   <body>
@@ -312,14 +258,11 @@ app.get("/product/:id", async (req, res) => {
   </body>
 </html>`;
 
-    console.log(`✅ SSR HTML generated successfully`);
     res.send(html);
 
   } catch (error) {
     console.error('❌ Error generating SSR HTML:', error);
-
     if (distPath) {
-      console.log('🔄 Falling back to static file');
       res.sendFile(path.join(distPath, 'index.html'));
     } else {
       res.status(500).send('Error loading page');
