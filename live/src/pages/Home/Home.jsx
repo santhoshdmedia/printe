@@ -6,13 +6,14 @@ import { Divider, Spin } from "antd";
 import _ from "lodash";
 import StepProcess from "../../components/Home/StepProcess";
 import CarouselBanner, { SubCategoryBannerCarousel } from "../../components/Home/CarouselBanner";
-import { getCustomHomeSections,getAllBlogs } from "../../helper/api_helper";
+import { getCustomHomeSections, getAllBlogs } from "../../helper/api_helper";
 import { IconHelper } from "../../helper/IconHelper";
 import SwiperList from "../../components/Lists/SwiperList";
 import HistoryProducts from "../Product/HistoryProducts";
 import BrowseAll from "../../components/Home/BrowseAll";
 import { WGDesigns } from "../../config/QuickAccess";
 import BeforeAfterSlider from "../../components/Home/BeforeAfter";
+import BlogCarousel from "../../components/Home/BlogCarousel"; // ✅ new import
 import { Helmet } from "react-helmet-async";
 
 const Home = () => {
@@ -47,12 +48,15 @@ const Home = () => {
       setLoading(false);
     }
   }, []);
-  const FetchBlogs=async()=>{
+
+  const FetchBlogs = async () => {
+    try {
       const result = await getAllBlogs();
       setBlogsData(_.get(result, "data.data", []));
-      console.log(blogsData,"bjhbhbj");
-      
-  }
+    } catch (err) {
+      console.error("Error fetching blogs:", err);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -62,22 +66,17 @@ const Home = () => {
   const getGridCount = useCallback((value) => {
     const bannerCount = _.get(value, "banner_count", 2);
     switch (bannerCount) {
-      case 1:
-        return "lg:grid-cols-1";
-      case 2:
-        return "lg:grid-cols-2";
-      case 3:
-        return "lg:grid-cols-3";
-      case 4:
-        return "lg:grid-cols-4";
-      default:
-        return "lg:grid-cols-2";
+      case 1: return "lg:grid-cols-1";
+      case 2: return "lg:grid-cols-2";
+      case 3: return "lg:grid-cols-3";
+      case 4: return "lg:grid-cols-4";
+      default: return "lg:grid-cols-2";
     }
   }, []);
 
-  const handelSignSecure=()=>{
-    navigate('/login')
-  }
+  const handelSignSecure = () => {
+    navigate('/login');
+  };
 
   const renderContent = () => (
     <>
@@ -86,30 +85,32 @@ const Home = () => {
         <meta name="description" content="Get high-quality printing services at Printe — custom business cards, flyers, posters, brochures, photo prints and more with easy online ordering and fast delivery across India. Shop professional print services now!" />
         <meta name="keywords" content="online printing services, custom printing, business cards, flyers, posters, brochures, photo prints, print delivery India, digital print services, personalized printing" />
       </Helmet>
+
       <div className="hidden lg:block">
         <CarouselBanner />
       </div>
       <div className="">
         <SubCategoryBannerCarousel />
       </div>
-     {!user?._id && (
-  <div className="pt-8 block lg:hidden">
-    <h2 className="text-center pb-5 text-2xl font-bold">
-      Sign in for the best Experience
-    </h2>
-    <div className="flex justify-center">
-      <button
-        onClick={handelSignSecure}
-        className="w-full rounded-full bg-[#ffe477] mx-10 p-2 font-semibold capitalize"
-      >
-        Sign in securely
-      </button>
-    </div>
-  </div>
-)}
+
+      {!user?._id && (
+        <div className="pt-8 block lg:hidden">
+          <h2 className="text-center pb-5 text-2xl font-bold">
+            Sign in for the best Experience
+          </h2>
+          <div className="flex justify-center">
+            <button
+              onClick={handelSignSecure}
+              className="w-full rounded-full bg-[#ffe477] mx-10 p-2 font-semibold capitalize"
+            >
+              Sign in securely
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="pb-10 mx-auto">
         <BrowseAll />
-        {/* <StepProcess /> */}
       </div>
 
       <div className="flex flex-col">
@@ -132,10 +133,10 @@ const Home = () => {
         <BeforeAfterSlider />
       </div>
 
-      <div className="mt-8">
-        {/* {_.get(user, "_id", "") && (
-          <HistoryProducts />
-        )} */}
+      {/* ✅ Blog Carousel — shows latest blog posts */}
+      <BlogCarousel blogs={blogsData} />
+
+      <div className="mt-0">
         <WGDesigns />
       </div>
     </>

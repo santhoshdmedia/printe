@@ -323,6 +323,10 @@ export const footerItems = [
         value: "Shipping & Delivery Policy",
         link: "/shipping-&-delivery-policy",
       },
+      {
+        value: "Blogs",
+        link: "/Blogs",
+      },
     ],
   },
   {

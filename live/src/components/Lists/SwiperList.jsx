@@ -123,7 +123,7 @@ const SwiperList = ({
       },
       requiresBanner: true,
       gridCols: {
-        mobile: "grid-cols-3",
+        mobile: "grid-cols-2",
         tablet: "sm:grid-cols-2",
         desktop: "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       }
