@@ -21,7 +21,7 @@ const Breadcrumbs = ({ title, title2, titleto, title2to, title3 }) => {
         </Breadcrumb.Item>
 
         <Breadcrumb.Item
-          className={`!font-primary ${titleto ? "!text-[#c09000]  cursor-pointer font-semibold" : "!text-[#f5f5f5] font-semibold"} font-light`}
+          className={`!font-primary ${titleto ? "!text-[#c09000]  cursor-pointer font-semibold" : "!text-[#000] font-semibold"} font-light`}
           onClick={() => {
             titleto && navigate(titleto);
           }}

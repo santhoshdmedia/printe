@@ -60,6 +60,7 @@ import PrivacyPolicy from "../pages/policys/PrivacyPolicy.jsx";
 import BniLogin from "../pages/Signup/BniLogin.jsx";
 import BniProduct from "../pages/CategoryProduct/BniProduct.jsx";
 import AcBNi from "../pages/CategoryProduct/AcBNi.jsx";
+import SearchProduct from "../pages/search/SearchProduct.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -88,6 +89,7 @@ export const router = createBrowserRouter([
         path: "/only-today",
         element: <Onlytoday />,
       },
+      { path: "/search", element: <SearchProduct /> },
       {
         path: "/new-product",
         element: <Newproduct />,
