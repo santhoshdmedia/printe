@@ -2,7 +2,7 @@
 import { Rate, Tooltip } from "antd";
 import { useEffect, useState, useRef } from "react";
 import _ from "lodash";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { IconHelper } from "../../helper/IconHelper";
 import ExitementTag from "../Nav/ExitementTag";
@@ -119,20 +119,20 @@ const SimpleProductCard = ({ data }) => {
       let Del_Field = getRolePriceField("Dealer")
       let cus_Field = getRolePriceField("user")
       if (data.variants_price && data.variants_price.length > 0) {
-         let Del_Price=_.get(data, `variants_price[0].${Del_Field}`, "0");
-         let cus_Price=_.get(data, `variants_price[0].${cus_Field}`, "0");
-         let bni_price=cus_Price-Math.abs((cus_Price-Del_Price)/2)
-         return bni_price
+        let Del_Price = _.get(data, `variants_price[0].${Del_Field}`, "0");
+        let cus_Price = _.get(data, `variants_price[0].${cus_Field}`, "0");
+        let bni_price = cus_Price - Math.abs((cus_Price - Del_Price) / 2)
+        return bni_price
       }
     }
     if (userRole == "bni_user") {
       let Del_Field = getRolePriceField("Dealer")
       let cus_Field = getRolePriceField("user")
       if (data.variants_price.length == 0) {
-         let Del_Price=_.get(data, `${Del_Field}`, "0");
-         let cus_Price=_.get(data, `${cus_Field}`, "0");
-         let bni_price=cus_Price-Math.abs((cus_Price-Del_Price)/2)
-         return bni_price
+        let Del_Price = _.get(data, `${Del_Field}`, "0");
+        let cus_Price = _.get(data, `${cus_Field}`, "0");
+        let bni_price = cus_Price - Math.abs((cus_Price - Del_Price) / 2)
+        return bni_price
       }
     }
 
@@ -186,49 +186,50 @@ const SimpleProductCard = ({ data }) => {
   const displayPrice = formatPrice(calculateDiscountedPrice());
 
   return (
-    <motion.div
-      ref={cardRef}
-      className={`relative w-full overflow-hidden rounded-2xl shadow-md cursor-pointer ${isSoldOut ? 'opacity-80' : ''
-        }`}
-      onClick={handleCardClick}
-      onMouseMove={!isSoldOut ? handleMouseMove : undefined}
-      onMouseEnter={() => !isSoldOut && setIsHovered(true)}
-      onMouseLeave={!isSoldOut ? handleMouseLeave : undefined}
-      style={{
-        rotateX: isSoldOut ? 0 : rotateX,
-        rotateY: isSoldOut ? 0 : rotateY,
-        transformPerspective: 1000,
-      }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-    >
-      {/* Floating background elements */}
+    <Link to={`/product/${_.get(data, "seo_url", "")}`}>
       <motion.div
-        className={`absolute inset-0 bg-gradient-to-br from-purple-100/20 to-blue-100/20 rounded-2xl ${isSoldOut ? 'from-gray-100/10 to-gray-100/10' : ''
+        ref={cardRef}
+        className={`relative w-full overflow-hidden rounded-2xl shadow-md cursor-pointer ${isSoldOut ? 'opacity-80' : ''
           }`}
-        animate={{
-          scale: isHovered && !isSoldOut ? 1.05 : 1,
-          opacity: isHovered && !isSoldOut ? 1 : 0.7,
+        onClick={handleCardClick}
+        onMouseMove={!isSoldOut ? handleMouseMove : undefined}
+        onMouseEnter={() => !isSoldOut && setIsHovered(true)}
+        onMouseLeave={!isSoldOut ? handleMouseLeave : undefined}
+        style={{
+          rotateX: isSoldOut ? 0 : rotateX,
+          rotateY: isSoldOut ? 0 : rotateY,
+          transformPerspective: 1000,
         }}
-        transition={{ duration: 0.5 }}
-      />
-
-      {/* Main card container */}
-      <div className={`relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl ${isSoldOut ? 'bg-gray-50' : ''
-        }`}>
-        {/* Image container with floating effect */}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      >
+        {/* Floating background elements */}
         <motion.div
-          className="relative lg:h-3/4 w-full overflow-hidden"
+          className={`absolute inset-0 bg-gradient-to-br from-purple-100/20 to-blue-100/20 rounded-2xl ${isSoldOut ? 'from-gray-100/10 to-gray-100/10' : ''
+            }`}
           animate={{
-            y: isHovered && !isSoldOut ? -10 : 0,
+            scale: isHovered && !isSoldOut ? 1.05 : 1,
+            opacity: isHovered && !isSoldOut ? 1 : 0.7,
           }}
-          transition={{
-            type: "spring",
-            stiffness: 300,
-            damping: 10,
-          }}
-        >
-          {/* Sold Out Overlay */}
-          {/* {isSoldOut && (
+          transition={{ duration: 0.5 }}
+        />
+
+        {/* Main card container */}
+        <div className={`relative h-full w-full flex flex-col bg-white shadow-2xl rounded-2xl ${isSoldOut ? 'bg-gray-50' : ''
+          }`}>
+          {/* Image container with floating effect */}
+          <motion.div
+            className="relative lg:h-3/4 w-full overflow-hidden"
+            animate={{
+              y: isHovered && !isSoldOut ? -10 : 0,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 10,
+            }}
+          >
+            {/* Sold Out Overlay */}
+            {/* {isSoldOut && (
             <motion.div 
               className="absolute inset-0 z-20 flex items-start justify-center"
               initial={{ opacity: 0 }}
@@ -243,51 +244,119 @@ const SimpleProductCard = ({ data }) => {
             </motion.div>
           )} */}
 
-          <motion.img
-            className={`w-full h-full object-cover ${isSoldOut ? 'filter grayscale contrast-50' : ''
-              }`}
-            src={_.get(data.images, "[0].path", "") || _.get(data.variants, "[0].options[0].image_names[0].path", "")}
-            alt={data.name}
-            animate={{
-              scale: isHovered && !isSoldOut ? 1.1 : 1,
-            }}
-            transition={{ duration: 0.5 }}
-          />
-
-          {/* Floating bubbles effect - only show if not sold out */}
-          {!isSoldOut && [1, 2, 3].map((i) => (
-            <motion.div
-              key={i}
-              className="absolute bg-white/30 rounded-full"
-              style={{
-                width: Math.random() * 40 + 20,
-                height: Math.random() * 40 + 20,
-                left: `${Math.random() * 80 + 10}%`,
-                top: `${Math.random() * 80 + 10}%`,
-              }}
-              animate={{
-                y: isHovered ? [0, -20, 0] : 0,
-                opacity: isHovered ? [0.3, 0.8, 0.3] : 0.3,
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                delay: i * 0.5,
-              }}
-            />
-          ))}
-        </motion.div>
-
-        {/* Content area */}
-        <div className={`relative h-1/4 p-4 flex flex-col justify-between bg-white z-10 ${isSoldOut ? 'bg-gray-50' : ''
-          }`}>
-          {/* Product info */}
-          <div className="overflow-hidden">
-            <motion.h3
-              className={`text-sm lg:text-lg font-bold truncate ${isSoldOut ? 'text-gray-600' : 'text-gray-900'
+            <motion.img
+              className={`w-full h-full object-cover ${isSoldOut ? 'filter grayscale contrast-50' : ''
                 }`}
+              src={_.get(data.images, "[0].path", "") || _.get(data.variants, "[0].options[0].image_names[0].path", "")}
+              alt={data.name}
               animate={{
-                x: isHovered && !isSoldOut ? [0, 5, 0] : 0,
+                scale: isHovered && !isSoldOut ? 1.1 : 1,
+              }}
+              transition={{ duration: 0.5 }}
+            />
+
+            {/* Floating bubbles effect - only show if not sold out */}
+            {!isSoldOut && [1, 2, 3].map((i) => (
+              <motion.div
+                key={i}
+                className="absolute bg-white/30 rounded-full"
+                style={{
+                  width: Math.random() * 40 + 20,
+                  height: Math.random() * 40 + 20,
+                  left: `${Math.random() * 80 + 10}%`,
+                  top: `${Math.random() * 80 + 10}%`,
+                }}
+                animate={{
+                  y: isHovered ? [0, -20, 0] : 0,
+                  opacity: isHovered ? [0.3, 0.8, 0.3] : 0.3,
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: i * 0.5,
+                }}
+              />
+            ))}
+          </motion.div>
+
+          {/* Content area */}
+          <div className={`relative h-1/4 p-4 flex flex-col justify-between bg-white z-10 ${isSoldOut ? 'bg-gray-50' : ''
+            }`}>
+            {/* Product info */}
+            <div className="overflow-hidden">
+              <motion.h3
+                className={`text-sm lg:text-lg font-bold truncate ${isSoldOut ? 'text-gray-600' : 'text-gray-900'
+                  }`}
+                animate={{
+                  x: isHovered && !isSoldOut ? [0, 5, 0] : 0,
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                }}
+              >
+                {data.name}
+              </motion.h3>
+              <div className="flex items-center mt-1">
+                <Rate
+                  disabled
+                  allowHalf
+                  className={`!text-xs ${isSoldOut ? '!text-gray-400' : '!text-yellow-400'
+                    }`}
+                  defaultValue={4.5}
+                />
+              </div>
+            </div>
+
+            {/* Price and action section */}
+            <div className="flex items-center justify-between mt-2">
+              <motion.div
+                animate={{
+                  scale: isHovered && !isSoldOut ? 1.1 : 1,
+                }}
+                transition={{ type: "spring" }}
+              >
+                <span className={`text-sm lg:text-xl font-bold ${isSoldOut ? 'text-gray-600' : 'text-primary'
+                  }`}>
+                  {displayPrice}
+                </span>
+                <span className={`text-sm lg:text-lg line-through ml-2 ${isSoldOut ? 'text-gray-500' : 'text-primary'
+                  }`}>
+                  {formatPrice(getMrpPrice())}
+                </span>
+              </motion.div>
+
+              <motion.div
+                whileTap={{ scale: isSoldOut ? 1 : 0.9 }}
+                whileHover={{ scale: isSoldOut ? 1 : 1.1 }}
+              >
+                <button
+                  className={`p-2 rounded-full shadow-md text-xs lg:text-xl ${isSoldOut
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-primary text-white hover:bg-primary-dark'
+                    }`}
+                  onClick={handleAddWishList}
+                  disabled={isSoldOut}
+                >
+                  {isFav ? (
+                    <IconHelper.HEART_ICON_FILLED className={isSoldOut ? "text-gray-500" : "text-white"} />
+                  ) : (
+                    <IconHelper.HEART_ICON className={isSoldOut ? "text-gray-500" : "text-white"} />
+                  )}
+                </button>
+              </motion.div>
+            </div>
+            {isSoldOut && <div className="absolute top-11 right-4 bg-red-600 px-4 rounded-lg PY-2 text-white text-xs md:text-md font-bold">SOLD OUT</div>}
+          </div>
+
+          {/* Excitement tag with special animation - only show if not sold out */}
+          {!isSoldOut && (
+            <motion.div
+              className="absolute top-4 left-4 z-30"
+              animate={{
+                y: isHovered ? [0, -5, 0] : 0,
+                rotate: isHovered ? [0, 10, -10, 0] : 0,
               }}
               transition={{
                 duration: 1,
@@ -295,119 +364,52 @@ const SimpleProductCard = ({ data }) => {
                 repeatType: "reverse",
               }}
             >
-              {data.name}
-            </motion.h3>
-            <div className="flex items-center mt-1">
-              <Rate
-                disabled
-                allowHalf
-                className={`!text-xs ${isSoldOut ? '!text-gray-400' : '!text-yellow-400'
-                  }`}
-                defaultValue={4.5}
-              />
-            </div>
-          </div>
+              <ExitementTag product={data} />
+            </motion.div>
+          )}
 
-          {/* Price and action section */}
-          <div className="flex items-center justify-between mt-2">
+          {/* Hover overlay effect - only show if not sold out */}
+          {!isSoldOut && (
             <motion.div
+              className="absolute inset-0 bg-black/10 pointer-events-none"
               animate={{
-                scale: isHovered && !isSoldOut ? 1.1 : 1,
+                opacity: isHovered ? 1 : 0,
               }}
-              transition={{ type: "spring" }}
-            >
-              <span className={`text-sm lg:text-xl font-bold ${isSoldOut ? 'text-gray-600' : 'text-primary'
-                }`}>
-                {displayPrice}
-              </span>
-              <span className={`text-sm lg:text-lg line-through ml-2 ${isSoldOut ? 'text-gray-500' : 'text-primary'
-                }`}>
-                {formatPrice(getMrpPrice())}
-              </span>
-            </motion.div>
-
-            <motion.div
-              whileTap={{ scale: isSoldOut ? 1 : 0.9 }}
-              whileHover={{ scale: isSoldOut ? 1 : 1.1 }}
-            >
-              <button
-                className={`p-2 rounded-full shadow-md text-xs lg:text-xl ${isSoldOut
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-primary text-white hover:bg-primary-dark'
-                  }`}
-                onClick={handleAddWishList}
-                disabled={isSoldOut}
-              >
-                {isFav ? (
-                  <IconHelper.HEART_ICON_FILLED className={isSoldOut ? "text-gray-500" : "text-white"} />
-                ) : (
-                  <IconHelper.HEART_ICON className={isSoldOut ? "text-gray-500" : "text-white"} />
-                )}
-              </button>
-            </motion.div>
-          </div>
-          {isSoldOut && <div className="absolute top-11 right-4 bg-red-600 px-4 rounded-lg PY-2 text-white text-xs md:text-md font-bold">SOLD OUT</div>}
+              transition={{ duration: 0.3 }}
+            />
+          )}
         </div>
 
-        {/* Excitement tag with special animation - only show if not sold out */}
-        {!isSoldOut && (
-          <motion.div
-            className="absolute top-4 left-4 z-30"
-            animate={{
-              y: isHovered ? [0, -5, 0] : 0,
-              rotate: isHovered ? [0, 10, -10, 0] : 0,
-            }}
-            transition={{
-              duration: 1,
-              repeat: Infinity,
-              repeatType: "reverse",
-            }}
-          >
-            <ExitementTag product={data} />
-          </motion.div>
+        {/* Floating particles on hover - only show if not sold out */}
+        {isHovered && !isSoldOut && (
+          <>
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute bg-primary/20 rounded-full pointer-events-none"
+                initial={{
+                  x: Math.random() * 100,
+                  y: Math.random() * 100,
+                  width: Math.random() * 10 + 5,
+                  height: Math.random() * 10 + 5,
+                  opacity: 0,
+                }}
+                animate={{
+                  y: [0, -100],
+                  x: [0, (Math.random() - 0.5) * 100],
+                  opacity: [0, 0.8, 0],
+                }}
+                transition={{
+                  duration: 2,
+                  delay: i * 0.1,
+                  repeat: Infinity,
+                }}
+              />
+            ))}
+          </>
         )}
-
-        {/* Hover overlay effect - only show if not sold out */}
-        {!isSoldOut && (
-          <motion.div
-            className="absolute inset-0 bg-black/10 pointer-events-none"
-            animate={{
-              opacity: isHovered ? 1 : 0,
-            }}
-            transition={{ duration: 0.3 }}
-          />
-        )}
-      </div>
-
-      {/* Floating particles on hover - only show if not sold out */}
-      {isHovered && !isSoldOut && (
-        <>
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute bg-primary/20 rounded-full pointer-events-none"
-              initial={{
-                x: Math.random() * 100,
-                y: Math.random() * 100,
-                width: Math.random() * 10 + 5,
-                height: Math.random() * 10 + 5,
-                opacity: 0,
-              }}
-              animate={{
-                y: [0, -100],
-                x: [0, (Math.random() - 0.5) * 100],
-                opacity: [0, 0.8, 0],
-              }}
-              transition={{
-                duration: 2,
-                delay: i * 0.1,
-                repeat: Infinity,
-              }}
-            />
-          ))}
-        </>
-      )}
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 };
 

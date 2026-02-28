@@ -93,11 +93,11 @@ const BlogCarousel = ({ blogs = [] }) => {
                 <span className="text-[0.7rem] text-[#E09C00] font-semibold uppercase tracking-wide mb-1.5">
                   {date}
                 </span>
-                <h3 className="font-serif text-base font-bold text-[#1a1a1a] leading-snug mb-2 line-clamp-2">
+                <h3 className=" text-base font-bold text-[#1a1a1a] leading-snug mb-2 line-clamp-2">
                   {name}
                 </h3>
                 <div
-                  className="text-[0.8rem] text-[#666] leading-relaxed line-clamp-3 flex-1 [&_p]:m-0"
+                  className="text-[0.8rem] text-[#666] leading-relaxed line-clamp-3 flex-1 [&_p]:m-0 !font-serif"
                   dangerouslySetInnerHTML={{ __html: shortDesc }}
                 />
                 <span className="mt-3 text-[0.78rem] font-semibold text-[#C98F00]">

@@ -19,6 +19,8 @@ const VendorProduct = require("../modals/vendorProduct.model");
 const BulkOrder =require('../modals/bulkOrder.model');
 const Coupen = require("../modals/coupen.modals");
 const Reward = require("../modals/reward.moda");
+const Quotation = require("../modals/Quotation.model");
+
 
 
 module.exports = {
@@ -32,6 +34,7 @@ module.exports = {
   OrderDetailsSchema: Order,
   orderdeliverytimelineSchema: order_delivery_timeline,
   BannerSchemas: bannerModals,
+  QuotationSchema:Quotation,
   BannerTextSchemas: bannerTextModals,
   ReviewSchemas: reviewModals,
   BlogSchema: blogMoidals,

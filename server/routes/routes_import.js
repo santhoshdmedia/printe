@@ -28,6 +28,7 @@ const IntroRoutes=require('./intro.routes')
 const LeadRoutes=require('./lead.routes')
 const CustomerRoutes=require('./CustomerCare.Route')
 const CustomerSettingsRoutes=require('./customercaresettings.route')
+const QuotationRoutes=require('./Quotation.routes')
 
 
 
@@ -62,5 +63,6 @@ module.exports = {
   IntroRoutes,
   LeadRoutes,
   CustomerRoutes,
-  CustomerSettingsRoutes
+  CustomerSettingsRoutes,
+  QuotationRoutes
 };
