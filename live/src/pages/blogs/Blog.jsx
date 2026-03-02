@@ -15,6 +15,14 @@ const NEW_PRODUCTS = [
   { title: "Standee", desc: "Discover practical tips, design trends, and cost-effective print ideas that create a lasting professional impression." },
   { title: "Standee", desc: "Discover practical tips, design trends, and cost-effective print ideas that create a lasting professional impression." },
 ];
+const truncateWords = (html, wordLimit = 30) => {
+  if (!html) return "";
+  // Remove HTML tags, collapse multiple spaces, and trim
+  const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const words = text.split(" ");
+  if (words.length <= wordLimit) return text;
+  return words.slice(0, wordLimit).join(" ") + "...";
+};
 
 // ─── BlogCard ─────────────────────────────────────────────────────────────────
 const BlogCard = ({ blog, featured = false }) => {
@@ -22,6 +30,10 @@ const BlogCard = ({ blog, featured = false }) => {
   const name = _.get(blog, "blog_name", "");
   const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
   const slug = _.get(blog, "blog_slug", ""); // ✅ always use slug
+  const shortDesc = _.get(blog, "short_description", ""); // ✅ always use slug
+
+  const truncatedDesc = truncateWords(shortDesc, 80); // enforce 30 words
+
 
   if (featured) {
     return (
@@ -32,13 +44,10 @@ const BlogCard = ({ blog, featured = false }) => {
         <div className="featured-body">
           <span className="date-tag">{date}</span>
           <h2 className="featured-title">{name}</h2>
-          
-          <div
-            className="section-jodit-content"
-            dangerouslySetInnerHTML={{
-              __html: _.get(blog, "short_description", ""),
-            }}
-          />
+
+          <span className="text-[0.8rem] text-[#666] leading-4 line-clamp-2 flex-1">
+            {truncatedDesc}
+          </span>
           <Link to={`/blog-details/${slug}`} className="read-more-btn">Continue Reading →</Link>
         </div>
       </div>
@@ -51,12 +60,9 @@ const BlogCard = ({ blog, featured = false }) => {
       <div className="card-body">
         <span className="date-tag">{date}</span>
         <h3 className="card-title">{name}</h3>
-        <div
-          className="section-jodit-content"
-          dangerouslySetInnerHTML={{
-            __html: _.get(blog, "short_description", ""),
-          }}
-        />
+        <span className="text-[0.8rem] text-[#666] leading-4 line-clamp-2 flex-1">
+          {truncatedDesc}
+        </span>
         <Link to={`/blog-details/${slug}`} className="read-more-link">Continue Reading →</Link> {/* ✅ was id, now slug */}
       </div>
     </div>
@@ -253,7 +259,7 @@ const Blog = () => {
                 <BlogCard blog={filtered[0]} featured />
                 {filtered.slice(1).map((blog) => (
                   <BlogCard key={blog._id} blog={blog} />
-                  
+
                 ))}
               </>
             )}

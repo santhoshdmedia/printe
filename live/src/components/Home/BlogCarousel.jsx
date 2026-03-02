@@ -3,6 +3,21 @@ import { Link } from "react-router-dom";
 import _ from "lodash";
 import moment from "moment";
 
+/**
+ * Truncates an HTML string to a given number of words, stripping all tags.
+ * @param {string} html - The HTML content to truncate.
+ * @param {number} wordLimit - Maximum number of words to keep.
+ * @returns {string} Plain text truncated to wordLimit words.
+ */
+const truncateWords = (html, wordLimit = 30) => {
+  if (!html) return "";
+  // Remove HTML tags, collapse multiple spaces, and trim
+  const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const words = text.split(" ");
+  if (words.length <= wordLimit) return text;
+  return words.slice(0, wordLimit).join(" ") + "...";
+};
+
 const BlogCarousel = ({ blogs = [] }) => {
   const trackRef = useRef(null);
 
@@ -13,7 +28,7 @@ const BlogCarousel = ({ blogs = [] }) => {
     if (!track) return;
     const card = track.querySelector(".blog-snap-card");
     const gap = 20;
-    const amount = (card ? card.offsetWidth + gap : 320);
+    const amount = card ? card.offsetWidth + gap : 320;
     track.scrollBy({ left: dir * amount, behavior: "smooth" });
   };
 
@@ -25,7 +40,7 @@ const BlogCarousel = ({ blogs = [] }) => {
           <p className="text-[0.72rem] font-bold tracking-widest uppercase text-[#C98F00] mb-1">
             From our journal
           </p>
-          <h2 className="font-serif text-2xl lg:text-[2.1rem] font-bold text-[#1a1a1a] leading-tight m-0">
+          <h2 className="text-2xl lg:text-[2.1rem] font-bold text-[#1a1a1a] leading-tight m-0">
             Latest <span className="text-[#F5C518]">Blog</span> Posts
           </h2>
         </div>
@@ -68,6 +83,7 @@ const BlogCarousel = ({ blogs = [] }) => {
           const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
           const slug = _.get(blog, "blog_slug", "");
           const shortDesc = _.get(blog, "short_description", "");
+          const truncatedDesc = truncateWords(shortDesc, 30); // enforce 30 words
 
           return (
             <Link
@@ -93,13 +109,13 @@ const BlogCarousel = ({ blogs = [] }) => {
                 <span className="text-[0.7rem] text-[#E09C00] font-semibold uppercase tracking-wide mb-1.5">
                   {date}
                 </span>
-                <h3 className=" text-base font-bold text-[#1a1a1a] leading-snug mb-2 line-clamp-2">
+                <h3 className="text-base font-bold text-[#1a1a1a] leading-snug mb-2 line-clamp-2">
                   {name}
                 </h3>
-                <div
-                  className="text-[0.8rem] text-[#666] leading-relaxed line-clamp-3 flex-1 [&_p]:m-0 !font-serif"
-                  dangerouslySetInnerHTML={{ __html: shortDesc }}
-                />
+                {/* Truncated description – plain text, no HTML */}
+                <span className="text-[0.8rem] text-[#666] leading-4 line-clamp-2 flex-1">
+                  {truncatedDesc}
+                </span>
                 <span className="mt-3 text-[0.78rem] font-semibold text-[#C98F00]">
                   Read more →
                 </span>
