@@ -54,7 +54,7 @@ const editblog = async (req, res) => {
       blog_slug,
     };
 
-    const result = await Blog.findByIdAndUpdate(id, updatedData, { new: true });
+    const result = await BlogSchema.findByIdAndUpdate(id, updatedData, { new: true });
     successResponse(res, "UPDATE_BLOG_SUCCESS");
   } catch (err) {
     console.log(err);

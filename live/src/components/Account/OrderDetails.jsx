@@ -146,14 +146,14 @@ const OrderDetails = () => {
 <div style="font-family:Arial,sans-serif;position:relative;min-height:1122px;width:794px;box-sizing:border-box;">
 
   <!-- TOP CONTENT — padding-bottom reserves space for the fixed bottom block -->
-  <div style="padding:0 0 320px 0;">
+  <div style="">
 
     <!-- Header -->
-    <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:2px;margin-bottom:4px;">
+    <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:5px;margin-bottom:4px;">
     <div style="display:flex;justify-content:center;">
-      <img src="${ImageHelper.pdf_logo}" style="width:140px;height:40px;object-fit:contain;margin-bottom:2px;"/>
+      <img src="${ImageHelper.pdf_logo}" style="width:140px;height:40px;object-fit:contain;"/>
       </div>
-      <div style="display:flex;justify-content:center;gap:20px;font-size:10px;">
+      <div style="display:flex;justify-content:center;gap:20px;font-size:10px; margin-bottom:4px;">
         <p style="margin:0;"><b>Email:</b> <a href="mailto:info@printe.in">info@printe.in</a></p>
         <p style="margin:0;"><b>Website:</b> <a href="http://www.printe.in">www.printe.in</a></p>
       </div>
@@ -173,7 +173,7 @@ const OrderDetails = () => {
       <div style="flex:1;">
         <h3 style="font-size:12px;font-weight:bold;margin:0 0 2px;border-bottom:1px solid #ddd;padding-bottom:1px;">Customer Details:</h3>
         <p style="margin:2px 0;font-size:10px;font-weight:bold;">Mr.${da.name || "Customer Name"}</p>
-        <p style="margin:2px 0;font-size:10px;line-height:1.4;width:80%;">${fullAddress}</p>
+        <p style="margin:2px 0;font-size:10px;line-height:1.4;width:80%;">${da.street}</br>${da.city},&nbsp;${da.state},&nbsp;${da.pincode ? `PINCODE: ${da.pincode}` : null}</p>
         <p style="margin:2px 0;font-size:10px;"><b>Phone:</b> ${da.mobile_number || ""}</p>
         <p style="margin:1px 0;font-size:10px;"><b>Email:</b> ${da.email || ""}</p>
       </div>
@@ -188,31 +188,31 @@ const OrderDetails = () => {
     <!-- Items Table -->
     <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:4px;">
       <thead>
-        <tr style="background:#f2c41a;color:#333;">
-          <th style="border:1px solid #ddd;padding:2px;text-align:left;width:30px;">#</th>
-          <th style="border:1px solid #ddd;padding:2px;text-align:left;">Item</th>
-          <th style="border:1px solid #ddd;padding:2px;text-align:right;width:80px;">MRP</th>
-          <th style="border:1px solid #ddd;padding:2px;text-align:center;width:60px;">Qty</th>
-          <th style="border:1px solid #ddd;padding:2px;text-align:right;width:100px;">Rate / Item</th>
-          <th style="border:1px solid #ddd;padding:2px;text-align:right;width:120px;">Tax Amount (18%)</th>
-          <th style="border:1px solid #ddd;padding:2px;text-align:right;width:100px;">Amount</th>
+        <tr style="background:#f2c41a;color:#333; ">
+          <th style="border:1px solid #ddd;padding-bottom:10px;text-align:left;width:30px; ">#</th>
+          <th style="border:1px solid #ddd;padding-bottom:10px;text-align:left;">Item</th>
+          <th style="border:1px solid #ddd;padding-bottom:10px;text-align:right;width:80px;">MRP</th>
+          <th style="border:1px solid #ddd;padding-bottom:10px;text-align:center;width:60px;">Qty</th>
+          <th style="border:1px solid #ddd;padding-bottom:10px;text-align:right;width:100px;">Rate / Item</th>
+          <th style="border:1px solid #ddd;padding-bottom:10px;text-align:right;width:120px;">Tax Amount (18%)</th>
+          <th style="border:1px solid #ddd;padding-bottom:10px;text-align:right;width:100px;">Amount</th>
         </tr>
       </thead>
       <tbody>
         ${itemDetails.map((item, idx) => `
         <tr>
-          <td style="border:1px solid #ddd;padding:2px;vertical-align:top;">${idx + 1}</td>
-          <td style="border:1px solid #ddd;padding:2px;vertical-align:top;">
+          <td style="border:1px solid #ddd;padding-bottom:10px;vertical-align:top; padding-left:5px;">${idx + 1}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px; padding-left:5px; vertical-align:top;">
             <span style="font-weight:bold;text-transform:uppercase;">${item.product_name || "Product"}</span>
             ${item.notes ? `<br/><span style="font-weight:400;text-transform:capitalize;">${item.notes}</span>` : ''}
-            ${item.size ? `<div style="font-size:9px;color:#666;">Size: ${item.size}</div>` : ''}
+            ${item.size ? `<div style="font-size:9px;color:#666; " >Size: ${item.size}</div>` : ''}
             ${item.color ? `<div style="font-size:9px;color:#666;">Color: ${item.color}</div>` : ''}
           </td>
-          <td style="border:1px solid #ddd;padding:2px;text-align:right;vertical-align:top;">₹ ${(item.mrp_price || 0).toFixed(2)}</td>
-          <td style="border:1px solid #ddd;padding:2px;text-align:center;vertical-align:top;">${item.quantity || 0}</td>
-          <td style="border:1px solid #ddd;padding:2px;text-align:right;vertical-align:top;">₹ ${item.taxableValue.toFixed(2)}</td>
-          <td style="border:1px solid #ddd;padding:2px;text-align:right;vertical-align:top;">₹ ${item.taxAmount.toFixed(2)}</td>
-          <td style="border:1px solid #ddd;padding:2px;text-align:right;vertical-align:top;font-weight:bold;">₹ ${item.amount.toFixed(2)}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top; padding-right:5px;">₹ ${(item.mrp_price || 0).toFixed(2)}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:center;vertical-align:top; padding-right:5px;">${item.quantity || 0}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top; padding-right:5px;">₹ ${item.taxableValue.toFixed(2)}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top; padding-right:5px;">₹ ${item.taxAmount.toFixed(2)}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top;font-weight:bold; padding-right:5px;">₹ ${item.amount.toFixed(2)}</td>
         </tr>`).join('')}
       </tbody>
     </table>
@@ -225,7 +225,7 @@ const OrderDetails = () => {
     <!-- QR + Totals -->
     <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
       <div style="flex:1;">
-        ${firstOrder.payment_status === "pending" && firstOrder.payment_qr_code ? `
+         ${firstOrder.payment_status === "pending" && firstOrder.payment_qr_code ? `
         <div style="border:1px solid #ddd;padding:5px;border-radius:4px;display:inline-block;text-align:center;">
           <h4 style="font-size:11px;font-weight:bold;margin:0 0 6px;">Payment QR Code</h4>
           <img src="${firstOrder.payment_qr_code}" style="width:100px;height:100px;margin-bottom:4px;"/>
@@ -257,15 +257,33 @@ const OrderDetails = () => {
 
   <!-- ═══════════════════════════════════════════════════════════
        BOTTOM-PINNED BLOCK
-       position:absolute + bottom:0 always sticks to the base
-       of the 1122px page regardless of content height above.
        ═══════════════════════════════════════════════════════════ -->
-  <div style="position:absolute;bottom:0;left:0;right:0;width:794px;background:#fff;">
+  <div style="width:794px;background:#fff;">
 
-    ${paymentStatusHTML}
+  <div style="width:794px;background:#fff; display;flex; gap:20px; justify-content:space-between;">  
+        ${paymentStatusHTML}
+    </div>
+    <!-- Terms & Conditions Section -->
+    <div style="background:#f8f9fa;padding:8px;border-radius:4px;margin-bottom:6px;border-left:3px solid #f2c41a;">
+      <p style="margin:0 0 4px;font-weight:bold;font-size:11px;">📋 TERMS & CONDITIONS:</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:9px;color:#555;">
+        <div style="flex:1;min-width:200px;">
+          <p style="margin:2px 0;">• Goods once sold will not be taken back or exchanged.</p>
+          <p style="margin:2px 0;">• All disputes are subject to Trichy jurisdiction only.</p>
+          <p style="margin:2px 0;">• Payment must be completed within 7 days of invoice.</p>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <p style="margin:2px 0;">• Notify discrepancies within 48 hours of receipt.</p>
+          <p style="margin:2px 0;">• This is a system-generated invoice.</p>
+          <p style="margin:2px 0;">• Subject to force majeure conditions.</p>
+        </div>
+      </div>
+    </div>
+
+    
 
     <!-- Seller Info + Signature -->
-    <div style="padding-top:4px;border-top:1px solid #ddd;margin-bottom:4px;">
+    <div style="padding-top:4px;margin-bottom:4px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-end;">
         <div style="flex:1;">
           <p style="margin:2px 0;font-size:10px;">Seller Information</p>
@@ -276,7 +294,7 @@ const OrderDetails = () => {
         </div>
         <div style="text-align:center;">
           <p style="font-size:6px;color:#666;margin:2px 0 0;">For PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
-          <img src="${signatureImage}" style="width:80px;height:auto;transform:rotate(30deg);margin-left:50px;"/>
+          <img src="${signatureImage}" style="width:80px;height:auto;transform:rotate(20deg);margin-left:50px;"/>
           <p style="font-size:8px;font-weight:bold;margin:0;">Authorized Signature</p>
         </div>
       </div>

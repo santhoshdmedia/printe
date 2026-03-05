@@ -1,17 +1,10 @@
-import { useRef } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import _ from "lodash";
 import moment from "moment";
 
-/**
- * Truncates an HTML string to a given number of words, stripping all tags.
- * @param {string} html - The HTML content to truncate.
- * @param {number} wordLimit - Maximum number of words to keep.
- * @returns {string} Plain text truncated to wordLimit words.
- */
-const truncateWords = (html, wordLimit = 30) => {
+const truncateWords = (html, wordLimit = 22) => {
   if (!html) return "";
-  // Remove HTML tags, collapse multiple spaces, and trim
   const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   const words = text.split(" ");
   if (words.length <= wordLimit) return text;
@@ -19,112 +12,203 @@ const truncateWords = (html, wordLimit = 30) => {
 };
 
 const BlogCarousel = ({ blogs = [] }) => {
-  const trackRef = useRef(null);
+  const [active, setActive] = useState(0);
 
   if (!blogs.length) return null;
+  const total = blogs.length;
 
-  const scroll = (dir) => {
-    const track = trackRef.current;
-    if (!track) return;
-    const card = track.querySelector(".blog-snap-card");
-    const gap = 20;
-    const amount = card ? card.offsetWidth + gap : 320;
-    track.scrollBy({ left: dir * amount, behavior: "smooth" });
-  };
+  const goTo = (idx) => { if (idx !== active) setActive(idx); };
+  const goPrev = () => goTo((active - 1 + total) % total);
+  const goNext = () => goTo((active + 1) % total);
+
+  const blog      = blogs[active];
+  const image     = _.get(blog, "blog_image", "");
+  const name      = _.get(blog, "blog_name", "");
+  const date      = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
+  const slug      = _.get(blog, "blog_slug", "");
+  const shortDesc = _.get(blog, "short_description", "");
+  const desc      = truncateWords(shortDesc, 22);
 
   return (
-    <div className="px-[5vw] py-10 bg-[#FEFAE8]">
-      {/* Header */}
-      <div className="flex items-end justify-between mb-6">
-        <div>
-          <p className="text-[0.72rem] font-bold tracking-widest uppercase text-[#C98F00] mb-1">
-            From our journal
-          </p>
-          <h2 className="text-2xl lg:text-[2.1rem] font-bold text-[#1a1a1a] leading-tight m-0">
-            Latest <span className="text-[#F5C518]">Blog</span> Posts
-          </h2>
-        </div>
+    <section className="bg-[#F2F0EC] py-12 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
 
-        <div className="flex items-center gap-4">
-          <div className="flex gap-2">
+        {/* ── Header ── */}
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-7">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-block w-5 h-px bg-[#7C6E5A]" />
+              <span className="text-[10px] font-semibold tracking-[0.3em] uppercase text-[#7C6E5A]">
+                From our journal
+              </span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1A1714] leading-tight tracking-tight">
+              Latest{" "}
+              <em className="not-italic font-light text-[#8B6F47]">Blog</em>{" "}
+              Posts
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => scroll(-1)}
+              onClick={goPrev}
               aria-label="Previous"
-              className="w-[38px] h-[38px] rounded-full border border-[#e0d080] bg-white flex items-center justify-center text-base text-[#1a1a1a] hover:bg-[#F5C518] hover:border-[#F5C518] transition-colors duration-200 cursor-pointer"
+              className="w-10 h-10 rounded-full border border-[#D4CFCA] bg-white text-[#1A1714] flex items-center justify-center text-sm shadow-sm hover:bg-[#1A1714] hover:text-[#F2F0EC] hover:border-[#1A1714] transition-all duration-200 cursor-pointer"
             >
               ←
             </button>
             <button
-              onClick={() => scroll(1)}
+              onClick={goNext}
               aria-label="Next"
-              className="w-[38px] h-[38px] rounded-full border border-[#e0d080] bg-white flex items-center justify-center text-base text-[#1a1a1a] hover:bg-[#F5C518] hover:border-[#F5C518] transition-colors duration-200 cursor-pointer"
+              className="w-10 h-10 rounded-full border border-[#D4CFCA] bg-white text-[#1A1714] flex items-center justify-center text-sm shadow-sm hover:bg-[#1A1714] hover:text-[#F2F0EC] hover:border-[#1A1714] transition-all duration-200 cursor-pointer"
             >
               →
             </button>
+            <Link
+              to="/blogs"
+              className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#1A1714] bg-white border border-[#D4CFCA] px-4 py-2.5 rounded-full shadow-sm hover:bg-[#1A1714] hover:text-[#F2F0EC] hover:border-[#1A1714] transition-all duration-200 whitespace-nowrap"
+            >
+              All posts →
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Main Card ── */}
+        <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
+
+          {/* Banner image */}
+          <div className="relative w-full aspect-[14/5] sm:aspect-[2/1] lg:aspect-[14/5] overflow-hidden bg-[#E8E4DC]">
+            {image ? (
+              <img
+                key={active}
+                src={image}
+                alt={name}
+                className="absolute inset-0 w-full h-full object-contain object-center transition-transform duration-700 hover:scale-102"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#EDE8E0] to-[#DDD7CB] text-5xl text-[#C4BDB4]">
+                ✦
+              </div>
+            )}
+            <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-white/20 to-transparent pointer-events-none" />
+            <span className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-white/90 backdrop-blur text-[#1A1714] text-[10px] font-bold tracking-[0.2em] uppercase px-3 py-1.5 rounded-full z-10 border border-white/60">
+              Article
+            </span>
           </div>
 
-          <Link
-            to="/blogs"
-            className="text-[0.82rem] font-semibold text-[#1a1a1a] no-underline border-b border-[#F5C518] pb-[2px] whitespace-nowrap hover:text-[#C98F00] transition-colors duration-200"
-          >
-            View all →
-          </Link>
-        </div>
-      </div>
+          {/* Content strip */}
+          <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6 lg:p-8">
 
-      {/* Scrollable Track */}
-      <div
-        ref={trackRef}
-        className="flex gap-5 overflow-x-auto scroll-smooth [scroll-snap-type:x_mandatory] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1"
-      >
-        {blogs.map((blog) => {
-          const image = _.get(blog, "blog_image", "");
-          const name = _.get(blog, "blog_name", "");
-          const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
-          const slug = _.get(blog, "blog_slug", "");
-          const shortDesc = _.get(blog, "short_description", "");
-          const truncatedDesc = truncateWords(shortDesc, 30); // enforce 30 words
-
-          return (
-            <Link
-              key={blog._id}
-              to={`/blog-details/${slug}`}
-              className="blog-snap-card flex-none w-[350px] lg:w-[500px] [scroll-snap-align:start] bg-white rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.07)] no-underline text-inherit flex flex-col hover:-translate-y-1 hover:shadow-[0_8px_28px_rgba(0,0,0,0.12)] transition-all duration-200"
-            >
-              {/* Image */}
-              <div className="w-full h-[160px] overflow-hidden bg-[#e8e0c0] flex-shrink-0">
-                {image ? (
-                  <img
-                    src={image}
-                    alt={name}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#d9d4b8]" />
-                )}
-              </div>
-
-              {/* Body */}
-              <div className="p-4 flex flex-col flex-1">
-                <span className="text-[0.7rem] text-[#E09C00] font-semibold uppercase tracking-wide mb-1.5">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[#8B6F47]">
                   {date}
                 </span>
-                <h3 className="text-base font-bold text-[#1a1a1a] leading-snug mb-2 line-clamp-2">
-                  {name}
-                </h3>
-                {/* Truncated description – plain text, no HTML */}
-                <span className="text-[0.8rem] text-[#666] leading-4 line-clamp-2 flex-1">
-                  {truncatedDesc}
-                </span>
-                <span className="mt-3 text-[0.78rem] font-semibold text-[#C98F00]">
-                  Read more →
-                </span>
+                <span className="w-1 h-1 rounded-full bg-[#C8C2BA] flex-shrink-0" />
+                <span className="text-[10px] text-[#A09890] tracking-wide">5 min read</span>
               </div>
-            </Link>
-          );
-        })}
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-[#1A1714] leading-snug tracking-tight mb-2 line-clamp-2 transition-colors duration-200 hover:text-[#8B6F47]">
+                {name}
+              </h3>
+              {desc && (
+                <p className="text-sm text-[#7C7068] leading-relaxed line-clamp-2 max-w-xl">
+                  {desc}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-row items-center justify-between gap-3 sm:flex-col sm:items-end flex-shrink-0">
+              <span className="text-[10px] font-medium text-[#A09890] tracking-widest whitespace-nowrap">
+                <strong className="text-[#1A1714] font-bold">
+                  {String(active + 1).padStart(2, "0")}
+                </strong>{" "}
+                / {String(total).padStart(2, "0")}
+              </span>
+              <Link
+                to={`/blog-details/${slug}`}
+                className="inline-flex items-center gap-2 bg-[#1A1714] text-[#F2F0EC] text-[10px] font-bold tracking-[0.15em] uppercase px-5 py-3 rounded-full shadow-md hover:bg-[#8B6F47] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
+              >
+                Read Article
+                <svg
+                  className="w-3 h-3 transition-transform duration-200 hover:translate-x-1"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Thumbnail Strip ── */}
+        <div className="flex gap-2 mt-4 overflow-x-auto pb-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {blogs.map((b, i) => {
+            const tImg   = _.get(b, "blog_image", "");
+            const tName  = _.get(b, "blog_name", "");
+            const isActive = i === active;
+            return (
+              <div
+                key={b._id || i}
+                onClick={() => goTo(i)}
+                className={`
+                  flex-none w-[calc(50%-4px)] sm:flex-1 sm:w-0 snap-start
+                  cursor-pointer rounded-xl overflow-hidden relative border-2
+                  transition-all duration-200
+                  ${isActive
+                    ? "border-[#1A1714] shadow-md"
+                    : "border-transparent hover:-translate-y-0.5 hover:shadow-md"
+                  }
+                `}
+              >
+                {tImg ? (
+                  <img
+                    src={tImg}
+                    alt={tName}
+                    className={`w-full aspect-[16/7] object-contain block transition-all duration-200 ${
+                      isActive ? "opacity-100" : "opacity-75 grayscale"
+                    }`}
+                  />
+                ) : (
+                  <div className="w-full aspect-[16/7] bg-gradient-to-br from-[#EDE8E0] to-[#DDD7CB] flex items-center justify-center text-[#C4BDB4] text-xl">
+                    ✦
+                  </div>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-5 bg-gradient-to-t from-black/60 to-transparent">
+                  <span className={`text-[10px] leading-tight block truncate ${isActive ? "text-white font-semibold" : "text-white/80 font-medium"}`}>
+                    {tName}
+                  </span>
+                </div>
+                {isActive && (
+                  <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Dots ── */}
+        <div className="flex justify-center items-center gap-1.5 mt-5">
+          {blogs.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              aria-label={`Slide ${i + 1}`}
+              className={`h-1.5 rounded-full border-none cursor-pointer transition-all duration-300 ${
+                i === active
+                  ? "bg-[#1A1714] w-6"
+                  : "bg-[#D4CFCA] w-1.5 hover:bg-[#A09890]"
+              }`}
+            />
+          ))}
+        </div>
+
       </div>
-    </div>
+    </section>
   );
 };
 
