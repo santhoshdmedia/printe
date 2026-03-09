@@ -1,38 +1,4 @@
-import designerAppDesImg1 from "./src/assets/online_designer_app_illu.png";
-import designerAppDesImg2 from "./src/assets/powerful_admin_illu.png";
-import img1 from "./src/assets/Acrylic Direct Print photo frame/Image 2024-12-03 at 13.24.13_33bf4915.jpg";
-import img2 from "./src/assets/Acrylic Direct Print photo frame/WhatsApp Image 2024-12-03 at 13.24.14_39c94a43.jpg";
-import img3 from "./src/assets/Acrylic Direct Print photo frame/WhatsApp Image 2024-12-03 at 13.24.15_d4801723.jpg";
-import launch_product2 from "./src/assets/Arcylic Reverse Light Boards/IMG-20241203-WA0006.jpg";
-import launch_product2_2 from "./src/assets/Arcylic Reverse Light Boards/IMG-20241203-WA0007.jpg";
-import launch_product2_3 from "./src/assets/Arcylic Reverse Light Boards/IMG-20241203-WA0008.jpg";
-import launch_product2_4 from "./src/assets/Arcylic Reverse Light Boards/IMG-20241203-WA0009.jpg";
-import launch_product3 from "./src/assets/Milled Out Board/IMG-20241203-WA0010.jpg";
-import launch_product3_2 from "./src/assets/Milled Out Board/IMG-20241203-WA0011.jpg";
-import launch_product3_3 from "./src/assets/Milled Out Board/IMG-20241203-WA0012.jpg";
-import launch_product3_4 from "./src/assets/Milled Out Board/IMG-20241203-WA0013.jpg";
-import launch_product4 from "./src/assets/Roll Up Standees/img1.jpg";
-import launch_product4_2 from "./src/assets/Roll Up Standees/img2.jpg";
-import launch_product4_3 from "./src/assets/Roll Up Standees/img3.jpg";
-import launch_product5 from "./src/assets/Table top acrylic/img1.jpg";
-import launch_product5_2 from "./src/assets/Table top acrylic/img2.jpg";
-import launch_product6 from "./src/assets/Sunboard Poster/IMG-20241203-WA0016.jpg";
-import launch_product6_2 from "./src/assets/Sunboard Poster/IMG-20241203-WA0015.jpg";
-import launch_product6_3 from "./src/assets/Sunboard Poster/IMG-20241203-WA0017.jpg";
-import launch_product6_4 from "./src/assets/Sunboard Poster/IMG-20241203-WA0018.jpg";
-import launch_product6_5 from "./src/assets/Sunboard Poster/IMG-20241203-WA0019.jpg";
-import browse_all_category1 from "./src/assets/Browse All Category/browse_all_category1.png";
-import browse_all_category2 from "./src/assets/Browse All Category/browse_all_category2.png";
-import browse_all_category3 from "./src/assets/Browse All Category/browse_all_category3.png";
-import browse_all_category4 from "./src/assets/Browse All Category/browse_all_category4.png";
-import browse_all_category5 from "./src/assets/Browse All Category/browse_all_category5.png";
-import browse_all_category6 from "./src/assets/Browse All Category/browse_all_category6.png";
-import browse_all_category7 from "./src/assets/Browse All Category/browse_all_category7.png";
-import browse_all_category8 from "./src/assets/Browse All Category/browse_all_category8.png";
-import banner_1 from "./src/assets/CarouselBanner/banner1.webp";
-import banner_2 from "./src/assets/CarouselBanner/banner2.webp";
-import banner_3 from "./src/assets/CarouselBanner/banner3.webp";
-import banner_4 from "./src/assets/CarouselBanner/banner4.webp";
+
 import { CiShoppingCart } from "react-icons/ci";
 import { MdOutlineRefresh, MdOutlineSecurity } from "react-icons/md";
 import { GoTrophy } from "react-icons/go";
@@ -136,7 +102,6 @@ export const designerAppDescription = [
   {
     id: 1,
     title: "Online Designer App",
-    img: designerAppDesImg1,
     children: [
       {
         title: "Design any kind of product",
@@ -163,8 +128,7 @@ export const designerAppDescription = [
   {
     id: 2,
     title: "Powerful Admin",
-    img: designerAppDesImg2,
-    children: [
+    img: designerAppDesImg2,    children: [
       {
         title: "Versatile Product Backend",
         description:

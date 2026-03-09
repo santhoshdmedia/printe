@@ -28,20 +28,36 @@ const RecentCard = ({ blog }) => {
   const slug = _.get(blog, "blog_slug", "");
   const name = _.get(blog, "blog_name", "");
   const image = _.get(blog, "blog_image", "");
-  const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
+  const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY").toUpperCase();
 
   return (
-    <Link to={`/blog-details/${slug}`} className="flex gap-3 items-start py-2.5 border-b border-[#e8e0c8] last:border-0 hover:opacity-75 transition">
-      <div className="w-[72px] h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-300">
-        {image ? <img src={image} alt={name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-300" />}
+    <Link
+      to={`/blog-details/${slug}`}
+      className="flex gap-3 items-start py-3 border-b border-[#e8e0c8] last:border-0 hover:opacity-80 transition-opacity"
+    >
+      <div className="w-[72px] h-[60px] rounded-md overflow-hidden flex-shrink-0 bg-gray-200">
+        {image
+          ? <img src={image} alt={name} className="w-full h-full object-cover" />
+          : <div className="w-full h-full bg-gray-300" />
+        }
       </div>
-      <div className="flex-1">
-        <span className="text-xs text-[#C98F00] font-medium uppercase tracking-wide">{date}</span>
-        <p className="text-sm font-semibold text-gray-900 leading-tight mt-0.5">{name}</p>
+      <div className="flex-1 min-w-0">
+        <span className="block text-[11px] text-[#C98F00] font-semibold uppercase tracking-wide leading-none mb-1">
+          {date}
+        </span>
+        <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{name}</p>
       </div>
     </Link>
   );
 };
+
+// ─── Sidebar Section Header ───────────────────────────────────────────────────
+const SidebarHeading = ({ children }) => (
+  <div className="mb-4">
+    <h2 className="font-serif text-xl font-bold text-gray-900 leading-tight">{children}</h2>
+    <div className="w-10 h-[3px] bg-[#F5C518] rounded-full mt-1.5" />
+  </div>
+);
 
 // ─── All Blogs Grid Card ──────────────────────────────────────────────────────
 const GridCard = ({ blog }) => {
@@ -53,15 +69,23 @@ const GridCard = ({ blog }) => {
   const plainDesc = desc.replace(/<[^>]*>/g, "");
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition hover:-translate-y-1">
+    <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
       <div className="h-48 overflow-hidden">
-        {image ? <img src={image} alt={name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-300" />}
+        {image
+          ? <img src={image} alt={name} className="w-full h-full object-cover" />
+          : <div className="w-full h-full bg-gray-200" />
+        }
       </div>
       <div className="p-4">
-        <span className="text-xs text-[#C98F00] font-medium uppercase tracking-wide">{date}</span>
-        <h3 className="font-serif text-lg font-bold text-gray-900 mt-1 mb-2 leading-tight">{name}</h3>
-        <p className="text-sm text-gray-600 line-clamp-3">{plainDesc}</p>
-        <Link to={`/blog-details/${slug}`} className="inline-block mt-2 text-[#C98F00] font-medium text-sm hover:underline">Continue Reading →</Link>
+        <span className="text-[11px] text-[#C98F00] font-semibold uppercase tracking-wide">{date}</span>
+        <h3 className="font-serif text-base font-bold text-gray-900 mt-1 mb-2 leading-snug">{name}</h3>
+        <p className="text-sm text-gray-500 line-clamp-3">{plainDesc}</p>
+        <Link
+          to={`/blog-details/${slug}`}
+          className="inline-block mt-3 text-[#C98F00] font-semibold text-sm hover:underline"
+        >
+          Continue Reading →
+        </Link>
       </div>
     </div>
   );
@@ -82,6 +106,21 @@ const ArticleSkeleton = () => (
       <div className="h-4 bg-[#e8dfa8] rounded w-full mb-2" />
       <div className="h-4 bg-[#e8dfa8] rounded w-4/5" />
     </div>
+  </div>
+);
+
+const SidebarSkeleton = () => (
+  <div className="animate-pulse space-y-3">
+    {[1, 2, 3, 4].map((i) => (
+      <div key={i} className="flex gap-3 py-3 border-b border-[#e8e0c8]">
+        <div className="w-[72px] h-[60px] rounded-md bg-[#e8dfa8] flex-shrink-0" />
+        <div className="flex-1 space-y-2 pt-1">
+          <div className="h-2.5 bg-[#e8dfa8] rounded w-2/5" />
+          <div className="h-3.5 bg-[#e8dfa8] rounded" />
+          <div className="h-3.5 bg-[#e8dfa8] rounded w-3/4" />
+        </div>
+      </div>
+    ))}
   </div>
 );
 
@@ -124,165 +163,190 @@ const BlogDetails = () => {
   const createdAt = moment(_.get(currentBlog, "createdAt", "")).format("dddd, MMMM DD, YYYY");
 
   return (
-    <>
-      <div className="relative bg-[#FEFAE8] min-h-screen font-sans text-gray-800">
-        {/* Background */}
-        <div className="absolute bottom-0 left-0 w-full -z-0">
-          <img
-            src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png"
-            alt=""
-            className="w-full h-[500px] lg:h-[1000px] object-cover object-center"
-          />
-        </div>
+    <div className="relative bg-[#FEFAE8] min-h-screen font-sans text-gray-800">
 
-        {/* Breadcrumbs */}
-        <div className="px-5 pt-5 md:px-10 lg:px-20">
-          <Breadcrumbs title={loading ? "Loading..." : (blogName || "Blog Post")} />
-        </div>
+      {/* Background image */}
+      <div className="absolute bottom-0 left-0 w-full -z-0 pointer-events-none select-none">
+        <img
+          src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png"
+          alt=""
+          className="w-full h-[500px] lg:h-[1000px] object-cover object-center"
+        />
+      </div>
 
-        {/* Main Layout */}
-        <div className="relative z-10 flex flex-col md:flex-row gap-8 px-5 py-6 md:px-10 lg:px-20">
+      {/* Breadcrumbs */}
+      <div className="relative z-10 px-4 pt-5 md:px-8 lg:px-20">
+        <Breadcrumbs title={loading ? "Loading..." : (blogName || "Blog Post")} />
+      </div>
 
-          {/* Left: Article */}
-          <article className="flex-1 min-w-0">
-            {loading && <ArticleSkeleton />}
+      {/* ── Main Layout: Article + Sidebar ── */}
+      <div className="relative z-10 flex flex-col lg:flex-row gap-8 px-4 py-6 md:px-8 lg:px-20 lg:items-start">
 
-            {!loading && error && (
-              <div className="flex flex-col items-center justify-center min-h-[260px] gap-4 text-[#c0392b]">
-                <p>{error}</p>
-                <button className="bg-[#F5C518] hover:bg-[#e0b400] px-5 py-2 rounded-lg font-semibold text-sm" onClick={fetchData}>
-                  Try Again
-                </button>
-              </div>
-            )}
+        {/* ── Left: Article ── */}
+        <article className="flex-1 min-w-0">
+          {loading && <ArticleSkeleton />}
 
-            {!loading && !error && !currentBlog && (
-              <div className="flex flex-col items-center justify-center min-h-[260px] gap-4 text-gray-500">
-                <p>Blog post not found.</p>
-                <Link to="/blogs" className="bg-[#F5C518] hover:bg-[#e0b400] px-5 py-2 rounded-lg font-semibold text-sm no-underline">
-                  ← Back to Blogs
-                </Link>
-              </div>
-            )}
-
-            {!loading && !error && currentBlog && (
-              <>
-                <h1 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-2">
-                  {blogName}
-                </h1>
-                <p className="text-xs text-[#C98F00] font-medium uppercase tracking-wide mb-4">
-                  {createdAt}
-                </p>
-
-                <div className="rounded-lg overflow-hidden shadow-md mb-6">
-                  {blogImage
-                    ? <img src={blogImage} alt={blogName} className="w-full h-auto object-cover" />
-                    : <div className="w-full h-[420px] bg-gray-300" />
-                  }
-                </div>
-
-                {/* Main content rich text */}
-                <div
-                  className="prose prose-stone prose-headings:font-serif prose-headings:text-gray-900 prose-a:text-[#C98F00] prose-strong:text-gray-900 prose-blockquote:border-l-[#F5C518] prose-blockquote:bg-[#fffde8] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg max-w-none"
-                  dangerouslySetInnerHTML={{ __html: shortDesc }}
-                />
-
-                <hr className="border-t-2 border-[#e8e0c8] my-7" />
-
-                {/* Sections */}
-                <div className="flex flex-col gap-4">
-                  {descriptions.map((section, index) => (
-                    <div key={index} className="flex flex-col-reverse">
-                      {_.get(section, "images", []).length > 0 && (
-                        <div className="p-5">
-                          {_.get(section, "images", []).map((img, i) => (
-                            <img
-                              key={i}
-                              src={img}
-                              alt={`section-${index}-img-${i}`}
-                              className="rounded-lg w-full h-auto object-cover"
-                            />
-                          ))}
-                        </div>
-                      )}
-                      <h2 className="lg:text-xl text-md font-bold text-center capitalize mb-3 font-serif text-gray-900">
-                        {_.get(section, "title", "")}
-                      </h2>
-                      <div
-                        className="prose prose-stone prose-sm prose-headings:font-serif prose-headings:text-gray-900 prose-a:text-[#C98F00] prose-strong:text-gray-900 prose-blockquote:border-l-[#F5C518] prose-blockquote:bg-[#fffde8] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg max-w-none"
-                        dangerouslySetInnerHTML={{
-                          __html: _.get(section, "description", ""),
-                        }}
-                      />
-                      <hr className="border-t-2 border-[#e8e0c8] my-4" />
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </article>
-
-          {/* Right: Sticky Sidebar */}
-          <aside className="w-full md:w-80 flex-shrink-0 md:sticky md:top-20 md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
-            <h2 className="font-serif text-2xl font-bold text-gray-900 mb-1">Recent Posts</h2>
-            <div className="w-11 h-0.5 bg-[#F5C518] rounded mb-4" />
-
-            <div className="mb-7">
-              {loading
-                ? [1, 2, 3].map((i) => (
-                    <div key={i} className="flex gap-3 py-2.5 border-b border-[#e8e0c8] animate-pulse">
-                      <div className="w-[72px] h-16 rounded-lg bg-[#e8dfa8]" />
-                      <div className="flex-1 space-y-1.5">
-                        <div className="h-2.5 bg-[#e8dfa8] rounded w-2/5" />
-                        <div className="h-3 bg-[#e8dfa8] rounded" />
-                        <div className="h-3 bg-[#e8dfa8] rounded w-3/4" />
-                      </div>
-                    </div>
-                  ))
-                : allBlogs.slice(0, 4).map((blog) => (
-                    <RecentCard key={blog._id} blog={blog} />
-                  ))
-              }
+          {!loading && error && (
+            <div className="flex flex-col items-center justify-center min-h-[260px] gap-4 text-red-600">
+              <p>{error}</p>
+              <button
+                className="bg-[#F5C518] hover:bg-[#e0b400] px-5 py-2 rounded-lg font-semibold text-sm transition-colors"
+                onClick={fetchData}
+              >
+                Try Again
+              </button>
             </div>
+          )}
 
-            <h2 className="font-serif text-2xl font-bold text-gray-900 mb-1">Categories</h2>
-            <div className="w-11 h-0.5 bg-[#F5C518] rounded mb-4" />
-            <ul className="list-none mb-7">
+          {!loading && !error && !currentBlog && (
+            <div className="flex flex-col items-center justify-center min-h-[260px] gap-4 text-gray-500">
+              <p>Blog post not found.</p>
+              <Link
+                to="/blogs"
+                className="bg-[#F5C518] hover:bg-[#e0b400] px-5 py-2 rounded-lg font-semibold text-sm no-underline transition-colors"
+              >
+                ← Back to Blogs
+              </Link>
+            </div>
+          )}
+
+          {!loading && !error && currentBlog && (
+            <>
+              <h1 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-2">
+                {blogName}
+              </h1>
+              <p className="text-xs text-[#C98F00] font-semibold uppercase tracking-wide mb-5">
+                {createdAt}
+              </p>
+
+              <div className="rounded-xl overflow-hidden shadow-md mb-6">
+                {blogImage
+                  ? <img src={blogImage} alt={blogName} className="w-full h-auto object-cover" />
+                  : <div className="w-full h-[420px] bg-gray-300" />
+                }
+              </div>
+
+              {/* Rich text intro */}
+              <div
+                className="prose prose-stone prose-headings:font-serif prose-headings:text-gray-900 prose-a:text-[#C98F00] prose-strong:text-gray-900 prose-blockquote:border-l-[#F5C518] prose-blockquote:bg-[#fffde8] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg max-w-none"
+                dangerouslySetInnerHTML={{ __html: shortDesc }}
+              />
+
+              <hr className="border-t-2 border-[#e8e0c8] my-7" />
+
+              {/* Sections */}
+              <div className="flex flex-col gap-4">
+                {descriptions.map((section, index) => (
+                  <div key={index} className="flex flex-col-reverse">
+                    {_.get(section, "images", []).length > 0 && (
+                      <div className="p-5">
+                        {_.get(section, "images", []).map((img, i) => (
+                          <img
+                            key={i}
+                            src={img}
+                            alt={`section-${index}-img-${i}`}
+                            className="rounded-xl w-full h-auto object-cover"
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <h2 className="lg:text-xl text-md font-bold text-center capitalize mb-3 font-serif text-gray-900">
+                      {_.get(section, "title", "")}
+                    </h2>
+                    <div
+                      className="prose prose-stone prose-sm prose-headings:font-serif prose-headings:text-gray-900 prose-a:text-[#C98F00] prose-strong:text-gray-900 prose-blockquote:border-l-[#F5C518] prose-blockquote:bg-[#fffde8] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg max-w-none"
+                      dangerouslySetInnerHTML={{ __html: _.get(section, "description", "") }}
+                    />
+                    <hr className="border-t-2 border-[#e8e0c8] my-4" />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </article>
+
+        {/* ── Right: Sidebar ── */}
+        <aside className="w-full lg:w-[300px] xl:w-[320px] flex-shrink-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+
+          {/* Recent Posts */}
+          <div className="mb-8">
+            <SidebarHeading>Recent Posts</SidebarHeading>
+            {loading
+              ? <SidebarSkeleton />
+              : allBlogs.slice(0, 4).map((blog) => (
+                  <RecentCard key={blog._id} blog={blog} />
+                ))
+            }
+          </div>
+
+          {/* Categories */}
+          <div className="mb-8">
+            <SidebarHeading>Categories</SidebarHeading>
+            <ul className="divide-y divide-[#e8e0c8]">
               {CATEGORIES.map((cat) => (
-                <li key={cat} className="py-2.5 border-b border-[#e8e0c8] last:border-0 text-sm font-medium text-gray-700 hover:text-[#C98F00] cursor-pointer">
+                <li
+                  key={cat}
+                  className="py-2.5 text-sm font-medium text-gray-700 hover:text-[#C98F00] cursor-pointer transition-colors"
+                >
                   {cat}
                 </li>
               ))}
             </ul>
+          </div>
 
-            <div className="w-11 h-0.5 bg-[#F5C518] rounded mb-4" />
+          {/* Divider */}
+          <div className="w-10 h-[3px] bg-[#F5C518] rounded-full mb-6" />
 
-            <div className="mt-7">
-              <h2 className="font-serif text-2xl font-bold text-gray-900 mb-1">Follow Us</h2>
-              <div className="flex gap-3 mt-3">
-                <a href="https://www.instagram.com/the.printe/" className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#bc1888]" title="Instagram"><BsInstagram /></a>
-                <a href="https://www.facebook.com/people/Printe/61578118705571/?sk=about" className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-[#1877F2]" title="Facebook"><BsFacebook /></a>
-                <a href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F" className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-[#25D366]" title="WhatsApp"><BsWhatsapp /></a>
-                <a href="https://www.youtube.com/@PrintEOfficial" className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-[#FF0000]" title="YouTube"><BsYoutube /></a>
-              </div>
+          {/* Follow Us */}
+          <div>
+            <SidebarHeading>Follow Us</SidebarHeading>
+            <div className="flex gap-3">
+              <a
+                href="https://www.instagram.com/the.printe/"
+                title="Instagram"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#bc1888] hover:scale-110 transition-transform"
+              >
+                <BsInstagram size={18} />
+              </a>
+              <a
+                href="https://www.facebook.com/people/Printe/61578118705571/?sk=about"
+                title="Facebook"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-[#1877F2] hover:scale-110 transition-transform"
+              >
+                <BsFacebook size={18} />
+              </a>
+              <a
+                href="https://wa.me/919585610000?text=Hello%2C%20I%20need%20assistance%20regarding%20a%20service.%20Can%20you%20help%20me%3F"
+                title="WhatsApp"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-[#25D366] hover:scale-110 transition-transform"
+              >
+                <BsWhatsapp size={18} />
+              </a>
+              <a
+                href="https://www.youtube.com/@PrintEOfficial"
+                title="YouTube"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-[#FF0000] hover:scale-110 transition-transform"
+              >
+                <BsYoutube size={18} />
+              </a>
             </div>
-          </aside>
-        </div>
-
-        {/* All Blogs Grid */}
-        {!loading && !error && allBlogs.length > 0 && (
-          <section className="relative z-10 px-5 py-12 md:px-10 lg:px-20">
-            <h2 className="font-serif text-3xl font-bold text-gray-900 mb-1">All Blogs</h2>
-            <div className="w-12 h-0.5 bg-[#F5C518] rounded mb-5" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allBlogs.map((blog) => (
-                <GridCard key={blog._id} blog={blog} />
-              ))}
-            </div>
-          </section>
-        )}
+          </div>
+        </aside>
       </div>
-    </>
+
+      {/* ── All Blogs Grid ── */}
+      {!loading && !error && allBlogs.length > 0 && (
+        <section className="relative z-10 px-4 py-12 md:px-8 lg:px-20">
+          <h2 className="font-serif text-3xl font-bold text-gray-900 mb-1">All Blogs</h2>
+          <div className="w-12 h-[3px] bg-[#F5C518] rounded-full mb-6" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {allBlogs.map((blog) => (
+              <GridCard key={blog._id} blog={blog} />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
   );
 };
 

@@ -8,10 +8,7 @@ import BannerLoadingSkeleton from "../LoadingSkeletons/BannerLoadingSkeleton";
 import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/navigation";
-import slideOne from "../../assets/mockup/slides/slide_1.png";
-import slideTwo from "../../assets/mockup/slides/slide_2.png";
-import slideThree from "../../assets/mockup/slides/slide_3.png";
-import slideFour from "../../assets/mockup/slides/slide_4.png";
+
 
 const CarouselBanner = () => {
   const dispatch = useDispatch();

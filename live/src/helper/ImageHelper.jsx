@@ -1,11 +1,11 @@
-import orderSuccess from "../assets/Launch Products/order_success.png";
-import bannerimage1 from "../assets/CarouselBanner/IMG-20250108-WA0001.jpg";
-import bannerimage2 from "../assets/CarouselBanner/IMG-20250108-WA0003.jpg";
-import bannerimage3 from "../assets/CarouselBanner/IMG-20250108-WA0004.jpg";
-import bannerimage4 from "../assets/CarouselBanner/IMG-20250108-WA0005.jpg";
-import img1 from "../assets/Acrylic Direct Print photo frame/Image 2024-12-03 at 13.24.13_33bf4915.jpg";
-import about_us_img1 from "../assets/About_Us/location.png";
-import about_us_img2 from "../assets/About_Us/brand.png";
+// import orderSuccess from "../assets/Launch Products/order_success.png";
+// import bannerimage1 from "../assets/CarouselBanner/IMG-20250108-WA0001.jpg";
+// import bannerimage2 from "../assets/CarouselBanner/IMG-20250108-WA0003.jpg";
+// import bannerimage3 from "../assets/CarouselBanner/IMG-20250108-WA0004.jpg";
+// import bannerimage4 from "../assets/CarouselBanner/IMG-20250108-WA0005.jpg";
+// import img1 from "../assets/Acrylic Direct Print photo frame/Image 2024-12-03 at 13.24.13_33bf4915.jpg";
+// import about_us_img1 from "../assets/About_Us/location.png";
+// import about_us_img2 from "../assets/About_Us/brand.png";
 import about_us_img3 from "../assets/About_Us/custom.jpg";
 import whatsapp_img from "../assets/About_Us/whatsapp.webp";
 import logo from "../assets/logo/color/logo.png";
@@ -31,15 +31,15 @@ export const ImageHelper = {
   COLOR_LOGO4: color4,
   COLOR_LOGO5: color5,
   COLOR_LOGO6: color6,
-  ORDER_SUCCESS: orderSuccess,
-  BANNER_IMG1: bannerimage1,
-  BANNER_IMG2: bannerimage2,
-  BANNER_IMG3: bannerimage3,
-  BANNER_IMG4: bannerimage4,
-  DEMO_IMG: img1,
-  ABOUT_US_IMG1: about_us_img1,
-  ABOUT_US_IMG2: about_us_img2,
-  ABOUT_US_IMG3: about_us_img3,
+  // ORDER_SUCCESS: orderSuccess,
+  // BANNER_IMG1: bannerimage1,
+  // BANNER_IMG2: bannerimage2,
+  // BANNER_IMG3: bannerimage3,
+  // BANNER_IMG4: bannerimage4,
+  // DEMO_IMG: img1,
+  // ABOUT_US_IMG1: about_us_img1,
+  // ABOUT_US_IMG2: about_us_img2,
+  // ABOUT_US_IMG3: about_us_img3,
   WHATSAPP_IMG: whatsapp_img,
   EmptyCard: EmptyCard,
   BOTTOM_IMAGE: bottomimage,
