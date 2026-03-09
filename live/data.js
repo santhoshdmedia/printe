@@ -12,7 +12,6 @@ export const SimilarProduct = {
     {
       name: "Calendars & Diaries",
       key: "submenu1-setting1",
-      img: img1,
       color: "red",
       label: "",
       price: 200,
@@ -20,7 +19,6 @@ export const SimilarProduct = {
     {
       name: "Crew Neck Sweatshirt",
       key: "submenu1-setting2",
-      img: launch_product2,
       color: "blue",
       label: "new",
       price: 234,
@@ -28,7 +26,6 @@ export const SimilarProduct = {
     {
       name: "Rigid Boxes",
       key: "submenu1-setting3",
-      img: launch_product3,
       color: "pink",
       label: "",
       price: 134,
@@ -36,7 +33,6 @@ export const SimilarProduct = {
     {
       name: "Mono Carton Boxes",
       key: "submenu1-setting4",
-      img: launch_product4,
       color: "yellow",
       label: "",
       price: 234,
@@ -44,7 +40,6 @@ export const SimilarProduct = {
     {
       name: "Promotional Drinkware",
       key: "submenu1-setting5",
-      img: launch_product5,
       color: "green",
       label: "popular",
       price: 284,
@@ -52,7 +47,6 @@ export const SimilarProduct = {
     {
       name: "M&S T-Shirts",
       key: "submenu1-setting5",
-      img: launch_product6,
       color: "blue",
       label: "popular",
       price: 344,
@@ -65,35 +59,27 @@ export const browse_all_category = {
   children: [
     {
       name: "Business Card",
-      img: browse_all_category2,
     },
     {
       name: "Stationary",
-      img: browse_all_category3,
     },
     {
       name: "Corporate Gift",
-      img: browse_all_category4,
     },
     {
       name: "Apparel",
-      img: browse_all_category1,
     },
     {
       name: "Photo gift",
-      img: browse_all_category5,
     },
     {
       name: "Sticker Label",
-      img: browse_all_category6,
     },
     {
       name: "Packaging",
-      img: browse_all_category7,
     },
     {
       name: "Signages",
-      img: browse_all_category8,
     },
   ],
 };
@@ -128,7 +114,7 @@ export const designerAppDescription = [
   {
     id: 2,
     title: "Powerful Admin",
-    img: designerAppDesImg2,    children: [
+        children: [
       {
         title: "Versatile Product Backend",
         description:
@@ -486,7 +472,6 @@ We are committed to providing high-quality products and services. If you encount
 export const aboutUs = [
   {
     title: "About Us",
-    img: ImageHelper.ABOUT_US_IMG1,
     desc: `This signifies that Printe.in operates with structured processes, expert knowledge, and a corporate ethos. It's not a small-scale, ad-hoc operation. This implies reliability, consistent quality, and professional customer service. As an "online provider," they leverage digital platforms for order management, customer interaction, and workflow automation. This offers convenience, 24/7 accessibility, and often, a more streamlined and efficient process than traditional brick-and-mortar printers.
 
     This is non-negotiable. It encompasses superior print clarity, color accuracy, use of premium materials (paper, ink, laminates), and excellent finishing (cutting, binding, etc.). The end product must reflect well on the client's brand.They don't just offer a standard catalog. They provide tailored services to meet specific client needs. This could involve unique sizes, special materials, custom finishes (e.g., spot UV, foiling), or creating entirely bespoke packaging solutions.
@@ -496,17 +481,14 @@ export const aboutUs = [
     children: [
       {
         title: "Our Facilities & Reach",
-        img: ImageHelper.ABOUT_US_IMG1,
         desc: `Headquartered in Tamil Nadu, Printe operates from a sprawling 12,000 square feet production facility. With seven retail stores across major cities, we have built a strong presence to serve customers both near and far. Our dedicated team of over 65 professionals ensures that we continue to deliver excellence, no matter the project size.`,
       },
       {
         title: "Expanding Horizons",
-        img: ImageHelper.ABOUT_US_IMG2,
         desc: `In response to the world’s evolving digital landscape, Printe has embraced digital displays to keep pace with the modern, technology-driven world. This expansion allows us to offer our customers even more creative possibilities for their branding and marketing needs.`,
       },
       {
         title: "Custom Design & Printing Under One Roof",
-        img: ImageHelper.ABOUT_US_IMG3,
         desc: `Printe offers an extensive array of printing services all under one roof. Whether you're looking for individual items or business solutions, we’ve got you covered. From letterheads, brochures, pamphlets, and invitations to flex prints, banners, vinyl stickers, business cards, custom gifts, and more – we can create anything and everything.
 
 We strive to make the process as seamless as possible, with easy door-to-door delivery at great prices. No matter what you need, Printe is here to turn your ideas into reality, with high-quality prints delivered right to your doorstep.
@@ -521,15 +503,12 @@ Explore our range of services and let us help bring your ideas to life today!
 export const carouselBanner = [
   {
     id: 3,
-    img: ImageHelper.BANNER_IMG2,
   },
   {
     id: 4,
-    img: ImageHelper.BANNER_IMG3,
   },
   {
     id: 5,
-    img: ImageHelper.BANNER_IMG4,
   },
 ];
 
@@ -538,7 +517,6 @@ export const reviewData = [
     _id: "1",
     user: {
       name: "Pradeepkumar",
-      picture: img1,
     },
     rating: 3,
     review:
@@ -549,7 +527,6 @@ export const reviewData = [
     _id: "2",
     user: {
       name: "Krish",
-      picture: img2,
     },
     rating: 2,
     review:
@@ -560,7 +537,6 @@ export const reviewData = [
     _id: "3",
     user: {
       name: "chanse",
-      picture: img1,
     },
     rating: 4.2,
     review:
@@ -571,7 +547,6 @@ export const reviewData = [
     _id: "4",
     user: {
       name: "ramesh",
-      picture: img3,
     },
     rating: 3.6,
     review:
@@ -582,7 +557,6 @@ export const reviewData = [
     _id: "5",
     user: {
       name: "Mounika",
-      picture: img1,
     },
     rating: 5,
     review:
@@ -593,7 +567,6 @@ export const reviewData = [
     _id: "6",
     user: {
       name: "Ranjeeth",
-      picture: img1,
     },
     rating: 5,
     review: "",
@@ -603,7 +576,6 @@ export const reviewData = [
     _id: "7",
     user: {
       name: "Kumar",
-      picture: img1,
     },
     rating: 5,
     review: "",
@@ -613,7 +585,6 @@ export const reviewData = [
     _id: "8",
     user: {
       name: "pradeep",
-      picture: img1,
     },
     rating: 1,
     review: "",

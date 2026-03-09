@@ -11,7 +11,6 @@ import NavMenu from "../components/Nav/NavMenu.jsx";
 import { Toaster } from "react-hot-toast";
 import { GoogleOAuthProvider, useGoogleOneTapLogin } from '@react-oauth/google';
 import { handleGoogleLoginSuccess } from "../utils/googleAuthHelper";
-import pongal from "../assets/Pongal/PONGAL.png"
 
 const GOOGLE_CLIENT_ID = "323773820042-ube4qhfaig1dbrgvl85gchkrlvphnlv9.apps.googleusercontent.com";
 

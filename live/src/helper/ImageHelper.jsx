@@ -10,12 +10,12 @@ import about_us_img3 from "../assets/About_Us/custom.jpg";
 import whatsapp_img from "../assets/About_Us/whatsapp.webp";
 import logo from "../assets/logo/color/logo.png";
 import EmptyCard from "../assets/logo/color/empty card.gif";
-import color1 from "../assets/logo/color/dynamic/1e40af.png";
-import color2 from "../assets/logo/color/dynamic/5b21b6.png";
-import color3 from "../assets/logo/color/dynamic/9f1239.png";
-import color4 from "../assets/logo/color/dynamic/3f6212.png";
-import color5 from "../assets/logo/color/dynamic/9a3412.png";
-import color6 from "../assets/logo/color/dynamic/292524.png";
+// import color1 from "../assets/logo/color/dynamic/1e40af.png";
+// import color2 from "../assets/logo/color/dynamic/5b21b6.png";
+// import color3 from "../assets/logo/color/dynamic/9f1239.png";
+// import color4 from "../assets/logo/color/dynamic/3f6212.png";
+// import color5 from "../assets/logo/color/dynamic/9a3412.png";
+// import color6 from "../assets/logo/color/dynamic/292524.png";
 import pdf_logo from "../assets/logo/logo.png";
 import without_bg from "../assets/logo/without_bg.png";
 import bottomimage from "../assets/About_Us/bottom_image.avif";
@@ -25,12 +25,12 @@ import { VscArrowCircleUp } from "react-icons/vsc";
 
 export const ImageHelper = {
   logo: logo,
-  COLOR_LOGO1: color1,
-  COLOR_LOGO2: color2,
-  COLOR_LOGO3: color3,
-  COLOR_LOGO4: color4,
-  COLOR_LOGO5: color5,
-  COLOR_LOGO6: color6,
+  // COLOR_LOGO1: color1,
+  // COLOR_LOGO2: color2,
+  // COLOR_LOGO3: color3,
+  // COLOR_LOGO4: color4,
+  // COLOR_LOGO5: color5,
+  // COLOR_LOGO6: color6,
   // ORDER_SUCCESS: orderSuccess,
   // BANNER_IMG1: bannerimage1,
   // BANNER_IMG2: bannerimage2,

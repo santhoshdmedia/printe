@@ -21,7 +21,7 @@ const CarouselBanner = () => {
   const swiperRef = useRef(null);
   const { user } = useSelector((state) => state.authSlice);
 
-  const slideImages = [slideOne, slideTwo, slideThree, slideFour];
+  // const slideImages = [slideOne, slideTwo, slideThree, slideFour];
 
   useEffect(() => {
     dispatch({ type: "GET_BANNERS" });
