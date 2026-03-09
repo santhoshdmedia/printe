@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import abc from "../../assets/logo/ABC.jpg";
+import abc from "../../assets/logo/ABC.webp";
 import logo from "../../assets/logo/without_bg.png";
 import { googleLogin, mergeCart } from "../../helper/api_helper";
 import { saveTokenToLocalStorage } from "../../redux/middleware";

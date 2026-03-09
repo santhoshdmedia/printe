@@ -5,7 +5,7 @@ import { resetPassword, sendForgetPassowrdMail } from "../../helper/api_helper";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { MailOutlined, ArrowLeftOutlined } from "@ant-design/icons";
-import abc from "../../assets/logo/ABC.jpg";
+import abc from "../../assets/logo/ABC.webp";
 import logo from "../../assets/logo/without_bg.png"
 
 const Forgetpassword = () => {

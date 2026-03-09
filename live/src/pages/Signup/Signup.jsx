@@ -6,7 +6,7 @@ import { MdHelpOutline } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { EnvHelper } from "../../helper/EnvHelper";
-import abc from "../../assets/logo/ABC.jpg";
+import abc from "../../assets/logo/ABC.webp";
 import logo from "../../assets/logo/without_bg.png";
 import axios from "axios";
 import { sendOtp, verifyOtp, resendOtp } from "../../helper/api_helper";
