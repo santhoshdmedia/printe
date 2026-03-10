@@ -59,6 +59,43 @@ const normaliseImage = (img) => {
   };
 };
 
+/**
+ * Extract a clean og:image URL from a product object.
+ * Strips query strings so WhatsApp / Facebook crawlers resolve it correctly.
+ */
+const getOgImageUrl = (productData) => {
+  const candidates = [
+    productData?.seo_img,
+    productData?.images?.[0]?.url,
+    productData?.images?.[0]?.path,
+  ];
+
+  for (const src of candidates) {
+    const raw =
+      typeof src === "string"
+        ? src.trim()
+        : src
+        ? (src.url || src.path || "").trim()
+        : "";
+
+    if (!raw) continue;
+
+    // Strip query strings — crawlers can reject URLs with params
+    const clean = raw.split("?")[0];
+
+    if (clean.startsWith("https://")) return clean;
+    if (clean.startsWith("http://"))
+      return clean.replace("http://", "https://");
+
+    return `https://printe.s3.ap-south-1.amazonaws.com/${clean.replace(
+      /^\//,
+      ""
+    )}`;
+  }
+
+  return "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
+};
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 const Product = () => {
@@ -77,13 +114,12 @@ const Product = () => {
   const [variantImages, setVariantImages] = useState({});
   const [isPageLoading, setIsPageLoading] = useState(true);
 
-  // ── Refs (do NOT drive rendering) ─────────────────────────────────────
+  // ── Refs ───────────────────────────────────────────────────────────────
   const hasAddedToHistory = useRef(false);
   const processedProductId = useRef(null);
 
   // ── Derived data ───────────────────────────────────────────────────────
-  // Prefer SSR data on first load; fall back to Redux.
-  const productData = window.__INITIAL_STATE__?.product || product;
+  const productData = product;
 
   const hasVariants = useMemo(
     () =>
@@ -123,35 +159,63 @@ const Product = () => {
     [getProductValue]
   );
 
-  // ── Effect 1: Reset state whenever the product ID changes ──────────────
-  // `id` from useParams() is the single source of truth for "which product".
-  // No need to diff location.pathname manually.
+  // ── SEO values ─────────────────────────────────────────────────────────
+  const seoTitle = useMemo(
+    () => productData?.seo_title || productData?.name || "Printe Product",
+    [productData]
+  );
+
+  const seoDescription = useMemo(() => {
+    const desc =
+      productData?.seo_description ||
+      "Check out this amazing product on Printe";
+    return desc.length > 155 ? desc.substring(0, 152) + "..." : desc;
+  }, [productData]);
+
+  const seoKeywords = useMemo(() => {
+    const kw = productData?.seo_keywords;
+    if (!kw) return "";
+    return Array.isArray(kw) ? kw.join(", ") : kw;
+  }, [productData]);
+
+  const ogImage = useMemo(() => getOgImageUrl(productData), [productData]);
+
+  const ogUrl = useMemo(
+    () =>
+      productData?.seo_url
+        ? `https://printe.in/product/${productData.seo_url}`
+        : typeof window !== "undefined"
+        ? window.location.href
+        : "",
+    [productData]
+  );
+
+  const canonicalUrl = useMemo(
+    () =>
+      productData?.seo_url
+        ? `https://printe.in/product/${productData.seo_url}`
+        : ogUrl,
+    [productData, ogUrl]
+  );
+
+  const productPrice = useMemo(
+    () => productData?.customer_product_price || productData?.price || "0",
+    [productData]
+  );
+
+  // ── Effect 1: Reset state on route change ──────────────────────────────
   useEffect(() => {
     setSelectedVariants({});
     setVariantImages({});
     setIsPageLoading(true);
     hasAddedToHistory.current = false;
     processedProductId.current = null;
-
-    // Clear stale SSR state so the next product doesn't flash the old one.
-    if (window.__INITIAL_STATE__?.product) {
-      window.__INITIAL_STATE__.product = null;
-    }
-
     dispatch({ type: "CLEAR_CURRENT_PRODUCT" });
   }, [id, dispatch]);
 
-  // ── Effect 2: Fetch product data whenever ID changes ───────────────────
+  // ── Effect 2: Fetch product data ───────────────────────────────────────
   useEffect(() => {
     if (!id) return;
-
-    const hasSSRData =
-      window.__INITIAL_STATE__?.product?._id === id;
-
-    if (hasSSRData) {
-      setIsPageLoading(false);
-      return;
-    }
 
     let cancelled = false;
 
@@ -170,7 +234,6 @@ const Product = () => {
         console.error("Failed to fetch product data:", err);
       } finally {
         if (!cancelled) {
-          // Small delay ensures a smooth skeleton → content transition.
           setTimeout(() => setIsPageLoading(false), 300);
         }
       }
@@ -183,7 +246,7 @@ const Product = () => {
     };
   }, [id, dispatch]);
 
-  // ── Effect 3: Process variant images once per product ──────────────────
+  // ── Effect 3: Process variant images ──────────────────────────────────
   useEffect(() => {
     if (!productData?.variants || processedProductId.current === productId) {
       return;
@@ -209,7 +272,7 @@ const Product = () => {
     processedProductId.current = productId;
   }, [productData, productId]);
 
-  // ── Effect 4: Add to browsing history once per product + user ──────────
+  // ── Effect 4: Add to browsing history ─────────────────────────────────
   useEffect(() => {
     if (!productId || !userId || hasAddedToHistory.current) return;
 
@@ -259,9 +322,41 @@ const Product = () => {
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
       <Helmet>
-        <title>{productData.seo_title}</title>
-        <meta name="description" content={productData.seo_description} />
-        <meta name="keywords" content={productData.seo_keywords} />
+        {/* Primary */}
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <meta name="keywords" content={seoKeywords} />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={canonicalUrl} />
+
+        {/* Open Graph — WhatsApp, Facebook, LinkedIn, Telegram */}
+        <meta property="og:type" content="product" />
+        <meta property="og:site_name" content="Printe" />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={ogUrl} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:secure_url" content={ogImage} />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={seoTitle} />
+
+        {/* Product-specific OG */}
+        <meta property="product:price:amount" content={productPrice} />
+        <meta property="product:price:currency" content="INR" />
+        <meta
+          property="product:availability"
+          content={productData.stock_count > 0 ? "in stock" : "out of stock"}
+        />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@printe" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={ogImage} />
+        <meta name="twitter:image:alt" content={seoTitle} />
       </Helmet>
 
       {/* Breadcrumbs */}
