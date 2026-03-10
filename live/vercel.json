@@ -1,10 +1,12 @@
 {
-  "headers": [
+  "rewrites": [
     {
-      "source": "/api/client_user/check_login",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, private" }
-      ]
+      "source": "/product/:id",
+      "destination": "https://api.printe.in/product/:id"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://api.printe.in/api/:path*"
     }
   ]
 }
