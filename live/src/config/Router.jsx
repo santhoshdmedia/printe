@@ -15,8 +15,7 @@ import Settings from "../components/Account/Settings.jsx";
 import UserOrders from "../components/Account/UserOrders.jsx";
 import WishList from "../components/Account/WishList.jsx";
 import CategoryProduct from "../pages/CategoryProduct/CategoryProduct.jsx";
-import CheckOut from "../pages/CheckOut/CheckOut.jsx";
-import OrderDetails from "../components/Account/OrderDetails.jsx";
+import CheckOut from "../pages/CheckOut/CheckOut.jsx";import OrderDetails from "../components/Account/OrderDetails.jsx";
 import BannerProduct from "../pages/BannerProduct/BannerProduct.jsx";
 import Help from "../components/Home/Help.jsx";
 import Careers from "../components/Home/Careers.jsx";
@@ -80,8 +79,7 @@ export const router = createBrowserRouter([
       { path: "/category/:id", element: <CategoryProduct /> },
       { path: "/contact-us", element: <Contact /> },
       { path: "/see-more/:section_name/:id", element: <SectionExplore /> },
-      { path: "/check-out", element: <CheckOut /> },
-      { path: "/banner-product/:id", element: <BannerProduct /> },
+      { path: "/check-out", element: <CheckOut /> },      { path: "/banner-product/:id", element: <BannerProduct /> },
       { path: "/help", element: <Help /> },
       { path: "/careers", element: <Careers /> },
       { path: "/recent-Products", element: <HistoryExplore /> },

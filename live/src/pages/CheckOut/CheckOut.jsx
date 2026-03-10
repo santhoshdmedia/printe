@@ -12,7 +12,7 @@ import Confetti from "react-confetti";
 import { setCreatingOrderSuccessModal } from "../../redux/slices/publicSlice";
 import AddressModal from "../../components/Account/AddressModal";
 import { EnvHelper } from "../../helper/EnvHelper";
-import Razorpay from "react-razorpay/dist/razorpay";
+// import Razorpay from "react-razorpay/dist/razorpay";
 import { craeteOrderId } from "../../helper/api_helper";
 import _ from "lodash";
 
