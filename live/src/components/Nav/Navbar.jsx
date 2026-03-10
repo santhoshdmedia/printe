@@ -318,18 +318,22 @@ const Navbar = () => {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
-                  {searchingProducts.map((data) => (
-                    <div
-                      key={data._id}
-                      className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
-                      onClick={() => handleSearchResultClick(data)}
-                      onMouseDown={(e) => e.preventDefault()}
-                    >
-                      <div className="py-4 px-4">
-                        <SearchProductCard data={data} />
+                  {searchingProducts
+                    .flat()
+                    .filter((res) => res.is_visible === true)
+                    .map((data) => (
+                      <div
+                        key={data._id}
+                        className="cursor-pointer transition-all duration-200 hover:bg-yellow-50 active:bg-yellow-100"
+                        onClick={() => handleSearchResultClick(data)}
+                        onMouseDown={(e) => e.preventDefault()}
+                      >
+                        <div className="py-4 px-4">
+                          <SearchProductCard data={data} />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  }
                 </div>
               )}
             </div>
@@ -828,10 +832,10 @@ const Navbar = () => {
           <Link to="/">
             <img src={Logo} alt="logo" className="h-16 w-full object-contain" />
           </Link>
-              {user.role == "bni_user" && <Link to="/products">
+          {user.role == "bni_user" && <Link to="/products">
 
-              <img src={BNILogo} alt="Logo" className="h-16 object-contain" />
-            </Link>}
+            <img src={BNILogo} alt="Logo" className="h-16 object-contain" />
+          </Link>}
           <SearchInput />
         </div>
         <div className="mr-24 w-[200px]">
@@ -863,27 +867,27 @@ const Navbar = () => {
         {/* Main bar: 3-column layout */}
         <div className="w-full h-16 flex items-center justify-between px-4 sticky top-[40px] z-[999] ">
 
-        <div className="flex gap-8">
+          <div className="flex gap-8">
             {/* LEFT: Hamburger menu button */}
-          <button
-            onClick={() => setMenuStatus(true)}
-            className="w-12 h-12 bg-yellow-300/60 rounded-full flex items-center justify-center hover:bg-yellow-300/80 active:scale-90 transition-all duration-200 shadow-md"
-          >
-            <IoMenu className="text-[#121621] text-2xl" />
-          </button>
+            <button
+              onClick={() => setMenuStatus(true)}
+              className="w-12 h-12 bg-yellow-300/60 rounded-full flex items-center justify-center hover:bg-yellow-300/80 active:scale-90 transition-all duration-200 shadow-md"
+            >
+              <IoMenu className="text-[#121621] text-2xl" />
+            </button>
 
-          {/* CENTER: Logo (absolutely centered) */}
-          <Link
-            to="/"
-            onClick={closeSearchBar}
-            className=" flex items-center gap-2"
-          >
-            <img src={Logo} alt="Logo" className="h-10 object-contain" />
-            {user.role == "bni_user" && (
-              <img src={BNILogo} alt="BNI Logo" className="h-8 object-contain" />
-            )}
-          </Link>
-        </div>
+            {/* CENTER: Logo (absolutely centered) */}
+            <Link
+              to="/"
+              onClick={closeSearchBar}
+              className=" flex items-center gap-2"
+            >
+              <img src={Logo} alt="Logo" className="h-10 object-contain" />
+              {user.role == "bni_user" && (
+                <img src={BNILogo} alt="BNI Logo" className="h-8 object-contain" />
+              )}
+            </Link>
+          </div>
 
           {/* RIGHT: Person + Cart icon buttons */}
           <div className="flex items-center gap-2">
