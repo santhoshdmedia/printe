@@ -28,7 +28,8 @@ const SwiperList = ({
   left = true,
   product_type,
 }) => {
-  const products = data;
+  const products = data.filter((res)=>res.is_visible==true);
+  
   const swiperRef = useRef(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
