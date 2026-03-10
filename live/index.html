@@ -3,55 +3,92 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="./src/assets/logo/fav.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PRINTE</title>
+  <link rel="icon" type="image/png" href="/assets/logo/fav.png" />
 
-  <!-- DNS prefetch for faster 3rd party loads -->
-  <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+  <!-- Critical inline CSS: paints instantly, zero network wait -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Poppins', sans-serif; background: #ffffff; color: #111827; -webkit-font-smoothing: antialiased; }
+    #root { min-height: 100vh; }
+    /* Spinner shown before React hydrates - prevents blank white screen */
+    .app-loader { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .app-loader-spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #0369a1; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+
+  <!-- Preconnect: opens TCP early for critical domains -->
+  <link rel="preconnect" href="https://www.googletagmanager.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- DNS prefetch: non-critical 3rd parties -->
   <link rel="dns-prefetch" href="https://connect.facebook.net" />
   <link rel="dns-prefetch" href="https://analytics.ahrefs.com" />
 
-  <!-- Google Tag Manager (load async, non-blocking) -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-T9CVVFZC');</script>
+  <!-- Google Fonts: non-blocking (media=print trick) -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </noscript>
+
+  <!-- GTM must stay in head -->
+  <script>
+    (function(w,d,s,l,i){
+      w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
+      var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+      j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+      f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T9CVVFZC');
+  </script>
 </head>
 
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T9CVVFZC"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- GTM noscript -->
+  <noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T9CVVFZC"
+      height="0" width="0" style="display:none;visibility:hidden"></iframe>
+  </noscript>
 
   <!-- Meta Pixel noscript -->
-  <noscript><img height="1" width="1" style="display:none"
-  src="https://www.facebook.com/tr?id=1295094495708988&ev=PageView&noscript=1" /></noscript>
+  <noscript>
+    <img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=1295094495708988&ev=PageView&noscript=1" />
+  </noscript>
 
-  <div id="root"></div>
+  <!-- Spinner visible instantly before React loads -->
+  <div id="root">
+    <div class="app-loader">
+      <div class="app-loader-spinner"></div>
+    </div>
+  </div>
+
+  <!-- App bundle (type=module = auto deferred) -->
   <script type="module" src="/src/main.jsx"></script>
 
-  <!-- Move ALL tracking scripts to bottom (non-blocking) -->
+  <!-- All tracking at bottom = zero render blocking -->
 
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"></script>
   <script>
-    window.dataLayer = window.dataLayer || [];
+    window.dataLayer=window.dataLayer||[];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-PHZNNT6QB8');
+    gtag('js',new Date());
+    gtag('config','G-PHZNNT6QB8',{send_page_view:false});
   </script>
 
   <!-- Meta Pixel -->
   <script>
-    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)
-    }(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init','1295094495708988');
-    fbq('track','PageView');
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){
+    n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];
+    t=b.createElement(e);t.async=!0;t.src=v;
+    s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+    (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init','1295094495708988');fbq('track','PageView');
   </script>
 
   <!-- Ahrefs Analytics -->
