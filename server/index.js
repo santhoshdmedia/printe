@@ -111,48 +111,33 @@ app.get("/product/:id", async (req, res) => {
 
   console.log(`\n🎯 /product/${productId} — UA: ${userAgent}`);
 
-  // Detect crawlers
   const isCrawler = /facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebot|ia_archiver|discordbot|applebot/i.test(userAgent);
 
-  // Real users — redirect to Vercel frontend
-  if (!isCrawler) {
-    console.log(`👤 Real user — redirecting to Vercel`);
-    return res.redirect(302, `${process.env.FRONTEND_URL}/product/${productId}`);
-  }
-
-  console.log(`🤖 Crawler detected — serving OG HTML`);
+  const frontendUrl = process.env.FRONTEND_URL || "https://printe.in";
 
   try {
     const product = await ProductSchema.findOne({ seo_url: productId })
       .populate("category_details", "main_category_name")
       .populate("sub_category_details", "sub_category_name");
 
-    if (!product) {
-      console.log(`❌ Product not found: ${productId}`);
-      return res.redirect(302, `${process.env.FRONTEND_URL}/product/${productId}`);
-    }
-
-    console.log(`✅ Injecting OG tags for: ${product.name}`);
-
-    const rawTitle = product.seo_title || product.name || "Printe Product";
-
+    // ── Build meta values (used by both crawler & user HTML) ──
+    const rawTitle = product?.seo_title || product?.name || "Printe Product";
     const rawDesc = (() => {
-      const d = product.seo_description || "Check out this amazing product on Printe";
+      const d = product?.seo_description || "Check out this amazing product on Printe";
       return d.length > 155 ? d.substring(0, 152) + "..." : d;
     })();
-
     const ogTitle   = escapeHtml(rawTitle);
     const ogDesc    = escapeHtml(rawDesc);
-    const ogImage   = getProductImageUrl(product);
+    const ogImage   = product ? getProductImageUrl(product) : "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
     const ogUrl     = `https://printe.in/product/${productId}`;
-    const canonical = `https://printe.in/product/${product.seo_url || productId}`;
-    const price     = product.customer_product_price || product.price || "0";
-    const inStock   = product.stock_count > 0;
-    const category  = escapeHtml(product.category_details?.main_category_name || "Products");
+    const canonical = `https://printe.in/product/${product?.seo_url || productId}`;
+    const price     = product?.customer_product_price || product?.price || "0";
+    const inStock   = (product?.stock_count || 0) > 0;
+    const category  = escapeHtml(product?.category_details?.main_category_name || "Products");
     const keywords  = escapeHtml(
-      Array.isArray(product.seo_keywords)
+      Array.isArray(product?.seo_keywords)
         ? product.seo_keywords.join(", ")
-        : product.seo_keywords || ""
+        : product?.seo_keywords || ""
     );
 
     const schemaOrg = JSON.stringify({
@@ -161,7 +146,7 @@ app.get("/product/:id", async (req, res) => {
       name: rawTitle,
       description: rawDesc,
       image: ogImage,
-      sku: product._id?.toString() || productId,
+      sku: product?._id?.toString() || productId,
       brand: { "@type": "Brand", name: "Printe" },
       offers: {
         "@type": "Offer",
@@ -173,13 +158,14 @@ app.get("/product/:id", async (req, res) => {
       },
     }).replace(/<\/script>/gi, "<\\/script>");
 
+    // ── Always serve HTML — never redirect ──
     const html = `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="${frontendUrl}/favicon.ico" />
 
-    <!-- Primary -->
     <title>${ogTitle}</title>
     <meta name="description" content="${ogDesc}" />
     <meta name="keywords" content="${keywords}" />
@@ -216,9 +202,48 @@ app.get("/product/:id", async (req, res) => {
 
     <!-- Schema.org -->
     <script type="application/ld+json">${schemaOrg}</script>
+
+    <!-- Razorpay -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-PHZNNT6QB8');
+    </script>
   </head>
   <body>
-    <p>${ogTitle} — ${ogDesc}</p>
+    <div id="root"></div>
+    <script>
+      // Load the React app from Vercel
+      fetch('${frontendUrl}')
+        .then(r => r.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+
+          // Inject all scripts from Vercel index.html
+          doc.querySelectorAll('script[src]').forEach(s => {
+            const el = document.createElement('script');
+            el.type = s.type || 'text/javascript';
+            el.src = s.src.startsWith('/') ? '${frontendUrl}' + s.src : s.src;
+            if (s.type === 'module') el.type = 'module';
+            document.body.appendChild(el);
+          });
+
+          // Inject CSS
+          doc.querySelectorAll('link[rel="stylesheet"]').forEach(l => {
+            const el = document.createElement('link');
+            el.rel = 'stylesheet';
+            el.href = l.href.startsWith('/') ? '${frontendUrl}' + l.href : l.href;
+            document.head.appendChild(el);
+          });
+        })
+        .catch(console.error);
+    </script>
   </body>
 </html>`;
 
@@ -227,7 +252,29 @@ app.get("/product/:id", async (req, res) => {
 
   } catch (err) {
     console.error("❌ SSR error:", err);
-    return res.redirect(302, `${process.env.FRONTEND_URL}/product/${productId}`);
+    // Even on error — serve a basic HTML page, never redirect
+    res.setHeader("Content-Type", "text/html");
+    res.send(`<!DOCTYPE html>
+<html><head><title>Printe</title></head>
+<body><div id="root"></div>
+<script>
+  fetch('${frontendUrl}').then(r=>r.text()).then(html=>{
+    const doc = new DOMParser().parseFromString(html,'text/html');
+    doc.querySelectorAll('script[src]').forEach(s=>{
+      const el=document.createElement('script');
+      el.src=s.src.startsWith('/')?'${frontendUrl}'+s.src:s.src;
+      el.type=s.type||'text/javascript';
+      document.body.appendChild(el);
+    });
+    doc.querySelectorAll('link[rel="stylesheet"]').forEach(l=>{
+      const el=document.createElement('link');
+      el.rel='stylesheet';
+      el.href=l.href.startsWith('/')?'${frontendUrl}'+l.href:l.href;
+      document.head.appendChild(el);
+    });
+  });
+</script>
+</body></html>`);
   }
 });
 
