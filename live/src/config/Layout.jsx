@@ -85,7 +85,7 @@ const LayoutContent = () => {
       <div className="sticky top-0 z-[999] w-full overflow-hidden valentine-strip">
         <div className="scrolling-text-container">
           <div className="scrolling-text valentine-strip__text whitespace-nowrap">
-             Buy 2 Get upto 5%, Buy 3 Get upto 10%
+             Special Offer: Buy 2 Products – Get Up to 5% OFF • Buy 3 Products – Get Up to 10% OFF • Add More Items to Your Cart & Save More!
           </div>
         </div>
       </div>
