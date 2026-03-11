@@ -74,10 +74,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   const getSeoData = useCallback(() => {
     const productName = data?.name || "Amazing Product";
     const productDescription = data?.seo_description || data?.short_description || "Check out this amazing product";
-    const producUrl = window.location.href;
-    const productUrl = producUrl.replace("www.", "");
-    console.log(productUrl,"og url");
-    console.log(productUrl.replace("www.", ""),"url");
+    const productUrl = window.location.href;
     
     const productImage = getMainProductImage();
 
@@ -142,26 +139,27 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   }, [seoData]);
 
   // Get product details for sharing
-  const getProductShareDetails = useCallback(() => {
-    const productName = data?.name || "Amazing Product";
-    const productDescription = data?.seo_description || data?.short_description || "Check out this product";
-    const productPrice = data?.price || data?.customer_product_price || "";
-    const productUrl = window.location.href;
-    const productImage = getAbsoluteImageUrl(currentImage);
-    
-    const formattedPrice = productPrice ? `₹${productPrice}` : "";
-    
-    const formattedMessage = `❖ **${productName}** ❖\n\n${productDescription}\n\n❖ Price: ${formattedPrice}\n\n❖ ${productUrl}`;
-    
-    return {
-      productName,
-      productDescription,
-      productPrice: formattedPrice,
-      productUrl,
-      productImage,
-      formattedMessage
-    };
-  }, [data, currentImage, getAbsoluteImageUrl]);
+const getProductShareDetails = useCallback(() => {
+  const productName = data?.name || "Amazing Product";
+  const productDescription = data?.seo_description || data?.short_description || "Check out this product";
+  const productPrice = data?.price || data?.customer_product_price || "";
+  
+  // ✅ Strip www. here too
+  const productUrl = window.location.href.replace("www.", "");
+  
+  const productImage = getAbsoluteImageUrl(currentImage);
+  const formattedPrice = productPrice ? `₹${productPrice}` : "";
+  const formattedMessage = `❖ **${productName}** ❖\n\n${productDescription}\n\n❖ Price: ${formattedPrice}\n\n❖ ${productUrl}`;
+  
+  return {
+    productName,
+    productDescription,
+    productPrice: formattedPrice,
+    productUrl,        // ✅ now www-free
+    productImage,
+    formattedMessage   // ✅ also www-free since it uses productUrl
+  };
+}, [data, currentImage, getAbsoluteImageUrl]);
 
   // Effects
   useEffect(() => {
