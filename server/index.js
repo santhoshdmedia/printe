@@ -104,80 +104,31 @@ function getProductImageUrl(product) {
 
 app.get("/product/:id", async (req, res) => {
   const productId = req.params.id;
-  const userAgent = req.headers["user-agent"] || "";
   const frontendUrl = process.env.FRONTEND_URL || "https://printe.in";
-
-  console.log(`\n🎯 /product/${productId}`);
-  console.log(`   UA: ${userAgent}`);
-
-  const isCrawler = /facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebot|ia_archiver|discordbot|applebot|Slackbot|vkShare|W3C_Validator/i.test(userAgent);
-
-  // Real user — serve a self-contained HTML page that loads React from Vercel
-  // We CANNOT redirect (causes loop) and CANNOT fetch/iframe (CORS/X-Frame blocked)
-  // Solution: use window.history to fix the URL, load Vercel's index.html via JS
-  if (!isCrawler) {
-    console.log(`👤 Real user — serving React loader`);
-    return res.send(`<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Printe</title>
-    <style>
-      body { margin: 0; background: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; }
-      .loader { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #333; border-radius: 50%; animation: spin 0.8s linear infinite; }
-      @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-  </head>
-  <body>
-    <div class="loader"></div>
-    <script>
-      // Navigate to the Vercel frontend preserving the path
-      // Use replace so back button works correctly
-      window.location.replace('${frontendUrl}' + window.location.pathname + window.location.search + window.location.hash);
-    </script>
-  </body>
-</html>`);
-  }
-
-  // Crawler — serve full OG HTML
-  console.log(`🤖 Crawler — serving OG HTML`);
 
   try {
     const product = await ProductSchema.findOne({ seo_url: productId })
       .populate("category_details", "main_category_name")
       .populate("sub_category_details", "sub_category_name");
 
-    if (!product) {
-      console.log(`❌ Product not found: ${productId}`);
-      return res.status(404).send(`<html><head><title>Not Found</title></head><body><p>Product not found</p></body></html>`);
-    }
-
-    console.log(`✅ Product: ${product.name}`);
-    console.log(`🖼️  seo_img: ${product.seo_img}`);
-    console.log(`🖼️  images[0]: ${JSON.stringify(product.images?.[0])}`);
-
-    const rawTitle = product.seo_title || product.name || "Printe Product";
-    const rawDesc = (() => {
-      const d = product.seo_description || "Check out this amazing product on Printe";
+    const rawTitle = product?.seo_title || product?.name || "Printe Product";
+    const rawDesc  = (() => {
+      const d = product?.seo_description || "Check out this amazing product on Printe";
       return d.length > 155 ? d.substring(0, 152) + "..." : d;
     })();
-
-    const ogTitle   = escapeHtml(rawTitle);
-    const ogDesc    = escapeHtml(rawDesc);
-    const ogImage   = getProductImageUrl(product);
-    const ogUrl     = `https://printe.in/product/${productId}`;
-    const canonical = `https://printe.in/product/${product.seo_url || productId}`;
-    const price     = product.customer_product_price || product.price || "0";
-    const inStock   = (product.stock_count || 0) > 0;
-    const category  = escapeHtml(product.category_details?.main_category_name || "Products");
-    const keywords  = escapeHtml(
-      Array.isArray(product.seo_keywords)
+    const ogTitle  = escapeHtml(rawTitle);
+    const ogDesc   = escapeHtml(rawDesc);
+    const ogImage  = product ? getProductImageUrl(product) : "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
+    const ogUrl    = `https://printe.in/product/${productId}`;
+    const canonical = `https://printe.in/product/${product?.seo_url || productId}`;
+    const price    = product?.customer_product_price || product?.price || "0";
+    const inStock  = (product?.stock_count || 0) > 0;
+    const category = escapeHtml(product?.category_details?.main_category_name || "Products");
+    const keywords = escapeHtml(
+      Array.isArray(product?.seo_keywords)
         ? product.seo_keywords.join(", ")
-        : product.seo_keywords || ""
+        : product?.seo_keywords || ""
     );
-
-    console.log(`🖼️  resolved ogImage: ${ogImage}`);
 
     const schemaOrg = JSON.stringify({
       "@context": "https://schema.org/",
@@ -185,7 +136,7 @@ app.get("/product/:id", async (req, res) => {
       name: rawTitle,
       description: rawDesc,
       image: ogImage,
-      sku: product._id?.toString() || productId,
+      sku: product?._id?.toString() || productId,
       brand: { "@type": "Brand", name: "Printe" },
       offers: {
         "@type": "Offer",
@@ -197,62 +148,50 @@ app.get("/product/:id", async (req, res) => {
       },
     }).replace(/<\/script>/gi, "<\\/script>");
 
-    const html = `<!DOCTYPE html>
+    res.setHeader("Content-Type", "text/html");
+    res.send(`<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>${ogTitle}</title>
-    <meta name="description" content="${ogDesc}" />
-    <meta name="keywords" content="${keywords}" />
-    <meta name="author" content="Printe" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="${canonical}" />
+    <meta name="description" content="${ogDesc}"/>
+    <meta name="keywords" content="${keywords}"/>
+    <meta name="robots" content="index, follow"/>
+    <link rel="canonical" href="${canonical}"/>
 
-    <!-- Open Graph -->
-    <meta property="og:type" content="product" />
-    <meta property="og:site_name" content="Printe" />
-    <meta property="og:title" content="${ogTitle}" />
-    <meta property="og:description" content="${ogDesc}" />
-    <meta property="og:url" content="${ogUrl}" />
-    <meta property="og:image" content="${ogImage}" />
-    <meta property="og:image:secure_url" content="${ogImage}" />
-    <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="${ogTitle}" />
-
-    <!-- Product OG -->
-    <meta property="product:price:amount" content="${escapeHtml(String(price))}" />
-    <meta property="product:price:currency" content="INR" />
-    <meta property="product:availability" content="${inStock ? "in stock" : "out of stock"}" />
-    <meta property="product:category" content="${category}" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@printe" />
-    <meta name="twitter:title" content="${ogTitle}" />
-    <meta name="twitter:description" content="${ogDesc}" />
-    <meta name="twitter:image" content="${ogImage}" />
-    <meta name="twitter:image:alt" content="${ogTitle}" />
-
-    <!-- Schema.org -->
+    <meta property="og:type" content="product"/>
+    <meta property="og:site_name" content="Printe"/>
+    <meta property="og:title" content="${ogTitle}"/>
+    <meta property="og:description" content="${ogDesc}"/>
+    <meta property="og:url" content="${ogUrl}"/>
+    <meta property="og:image" content="${ogImage}"/>
+    <meta property="og:image:secure_url" content="${ogImage}"/>
+    <meta property="og:image:width" content="1200"/>
+    <meta property="og:image:height" content="630"/>
+    <meta property="og:image:alt" content="${ogTitle}"/>
+    <meta property="product:price:amount" content="${escapeHtml(String(price))}"/>
+    <meta property="product:price:currency" content="INR"/>
+    <meta property="product:availability" content="${inStock ? "in stock" : "out of stock"}"/>
+    <meta property="product:category" content="${category}"/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" content="${ogTitle}"/>
+    <meta name="twitter:description" content="${ogDesc}"/>
+    <meta name="twitter:image" content="${ogImage}"/>
     <script type="application/ld+json">${schemaOrg}</script>
+
+    <!-- Instantly sends real users to Vercel. Crawlers ignore this. -->
+    <meta http-equiv="refresh" content="0;url=${frontendUrl}/product/${productId}"/>
   </head>
   <body>
-    <h1>${ogTitle}</h1>
-    <p>${ogDesc}</p>
-    <img src="${ogImage}" alt="${ogTitle}" />
-    <a href="${ogUrl}">View Product</a>
+    <p><a href="${frontendUrl}/product/${productId}">${ogTitle}</a></p>
+    <img src="${ogImage}" alt="${ogTitle}"/>
   </body>
-</html>`;
-
-    res.setHeader("Content-Type", "text/html");
-    res.send(html);
+</html>`);
 
   } catch (err) {
     console.error("❌ SSR error:", err);
-    res.status(500).send(`<html><body><p>Error loading product</p></body></html>`);
+    res.send(`<html><head><meta http-equiv="refresh" content="0;url=${frontendUrl}/product/${productId}"/></head><body></body></html>`);
   }
 });
 
