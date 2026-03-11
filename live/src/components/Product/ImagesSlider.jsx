@@ -74,7 +74,11 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   const getSeoData = useCallback(() => {
     const productName = data?.name || "Amazing Product";
     const productDescription = data?.seo_description || data?.short_description || "Check out this amazing product";
-    const productUrl = window.location.href;
+    const producUrl = window.location.href;
+    const productUrl = producUrl.replace("www.", "");
+    console.log(productUrl,"og url");
+    console.log(productUrl.replace("www.", ""),"url");
+    
     const productImage = getMainProductImage();
 
     return {
