@@ -371,7 +371,7 @@ const Product = () => {
           {/* Images + Details */}
           <div className="flex flex-col lg:flex-row gap-8 lg:py-4 rounded-xl py-2">
             {/* Image slider */}
-            <div className="w-full lg:w-1/2 relative z-20">
+            <div className="w-full lg:w-1/2 relative z-10">
               <React.Suspense fallback={<div>Loading images...</div>}>
                 {hasVariants ? (
                   <ImagesliderVarient
