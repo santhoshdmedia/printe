@@ -66,9 +66,14 @@ function escapeHtml(str) {
 
 function getProductImageUrl(product) {
   const candidates = [
-    product.seo_img,
-    product.images?.[0]?.url,
-    product.images?.[0]?.path,
+    product?.seo_img,
+    product?.images?.[0]?.url,
+    product?.images?.[0]?.path,
+    product?.images?.[0]?.image,
+    product?.images?.[0],          // sometimes it's just a string directly
+    product?.thumbnail,
+    product?.image,
+    product?.main_image,
   ];
 
   for (const src of candidates) {
@@ -76,16 +81,16 @@ function getProductImageUrl(product) {
       typeof src === "string"
         ? src.trim()
         : src && typeof src === "object"
-        ? (src.url || src.path || "").trim()
+        ? (src.url || src.path || src.image || src.src || "").trim()
         : "";
 
     if (!raw) continue;
 
-    const clean = raw.split("?")[0]; // strip query string — crawlers reject URLs with params
+    const clean = raw.split("?")[0];
 
     if (clean.startsWith("https://")) return clean;
     if (clean.startsWith("http://")) return clean.replace("http://", "https://");
-    return `https://printe.s3.ap-south-1.amazonaws.com/${clean.replace(/^\//, "")}`;
+    if (clean.length > 5) return `https://printe.s3.ap-south-1.amazonaws.com/${clean.replace(/^\//, "")}`;
   }
 
   return "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
