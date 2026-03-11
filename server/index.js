@@ -15,23 +15,25 @@ app.use(morgan("dev"));
 app.use(express.json({ limit: "500mb" }));
 app.use(express.urlencoded({ limit: "500mb", extended: true }));
 
-// CORS — allow Vercel frontend domain + all origins for API
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    maxAge: 86400,
-  })
-);
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: "*",
+  maxAge: 86400,
+}));
 
 app.options("*", cors());
 
 app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+  res.setHeader("Access-Control-Allow-Headers", "*");
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  // NOTE: X-Frame-Options REMOVED — was causing iframe issues
+
+  if (req.method === "OPTIONS") return res.sendStatus(204);
 
   if (req.path.startsWith("/api")) {
     res.setHeader("Cache-Control", "no-store, no-cache, private");
@@ -41,7 +43,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check
+// ==================== HEALTH CHECK ====================
+
 app.get("/", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -50,7 +53,8 @@ app.get("/", (req, res) => {
   });
 });
 
-// All API routes
+// ==================== API ROUTES ====================
+
 app.use("/api", router);
 
 // ==================== HELPERS ====================
@@ -70,7 +74,7 @@ function getProductImageUrl(product) {
     product?.images?.[0]?.url,
     product?.images?.[0]?.path,
     product?.images?.[0]?.image,
-    product?.images?.[0],          // sometimes it's just a string directly
+    product?.images?.[0],
     product?.thumbnail,
     product?.image,
     product?.main_image,
@@ -97,17 +101,47 @@ function getProductImageUrl(product) {
 }
 
 // ==================== SSR — OG TAG INJECTION ====================
-//
-// Vercel rewrites /product/:id → this VPS route.
-// WhatsApp / Facebook / Telegram crawlers hit this URL, get back HTML
-// with pre-filled OG meta tags, and show the correct image + title.
-// Regular users also hit this route via the Vercel rewrite proxy —
-// they get the same HTML and the React app boots normally inside it.
 
 app.get("/product/:id", async (req, res) => {
   const productId = req.params.id;
+  const userAgent = req.headers["user-agent"] || "";
+  const frontendUrl = process.env.FRONTEND_URL || "https://printe.in";
 
-  console.log(`\n🎯 SSR OG inject: /product/${productId}`);
+  console.log(`\n🎯 /product/${productId}`);
+  console.log(`   UA: ${userAgent}`);
+
+  const isCrawler = /facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebot|ia_archiver|discordbot|applebot|Slackbot|vkShare|W3C_Validator/i.test(userAgent);
+
+  // Real user — serve a self-contained HTML page that loads React from Vercel
+  // We CANNOT redirect (causes loop) and CANNOT fetch/iframe (CORS/X-Frame blocked)
+  // Solution: use window.history to fix the URL, load Vercel's index.html via JS
+  if (!isCrawler) {
+    console.log(`👤 Real user — serving React loader`);
+    return res.send(`<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Printe</title>
+    <style>
+      body { margin: 0; background: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; }
+      .loader { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #333; border-radius: 50%; animation: spin 0.8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div class="loader"></div>
+    <script>
+      // Navigate to the Vercel frontend preserving the path
+      // Use replace so back button works correctly
+      window.location.replace('${frontendUrl}' + window.location.pathname + window.location.search + window.location.hash);
+    </script>
+  </body>
+</html>`);
+  }
+
+  // Crawler — serve full OG HTML
+  console.log(`🤖 Crawler — serving OG HTML`);
 
   try {
     const product = await ProductSchema.findOne({ seo_url: productId })
@@ -116,36 +150,34 @@ app.get("/product/:id", async (req, res) => {
 
     if (!product) {
       console.log(`❌ Product not found: ${productId}`);
-      // Redirect back to Vercel frontend — it will handle the 404 in React
-      return res.redirect(302, `${process.env.FRONTEND_URL}/product/${productId}`);
+      return res.status(404).send(`<html><head><title>Not Found</title></head><body><p>Product not found</p></body></html>`);
     }
 
-    console.log(`✅ Injecting OG tags for: ${product.name}`);
+    console.log(`✅ Product: ${product.name}`);
+    console.log(`🖼️  seo_img: ${product.seo_img}`);
+    console.log(`🖼️  images[0]: ${JSON.stringify(product.images?.[0])}`);
 
-    // ── Meta values ──────────────────────────────────────────────────────
     const rawTitle = product.seo_title || product.name || "Printe Product";
-
     const rawDesc = (() => {
       const d = product.seo_description || "Check out this amazing product on Printe";
       return d.length > 155 ? d.substring(0, 152) + "..." : d;
     })();
 
-    const ogTitle    = escapeHtml(rawTitle);
-    const ogDesc     = escapeHtml(rawDesc);
-    const ogImage    = getProductImageUrl(product);
-    const ogUrl      = `https://printe.in/product/${productId}`;
-    const canonical  = `https://printe.in/product/${product.seo_url || productId}`;
-    const price      = product.customer_product_price || product.price || "0";
-    const inStock    = product.stock_count > 0;
-    const category   = escapeHtml(product.category_details?.main_category_name || "Products");
-    const keywords   = escapeHtml(
+    const ogTitle   = escapeHtml(rawTitle);
+    const ogDesc    = escapeHtml(rawDesc);
+    const ogImage   = getProductImageUrl(product);
+    const ogUrl     = `https://printe.in/product/${productId}`;
+    const canonical = `https://printe.in/product/${product.seo_url || productId}`;
+    const price     = product.customer_product_price || product.price || "0";
+    const inStock   = (product.stock_count || 0) > 0;
+    const category  = escapeHtml(product.category_details?.main_category_name || "Products");
+    const keywords  = escapeHtml(
       Array.isArray(product.seo_keywords)
         ? product.seo_keywords.join(", ")
         : product.seo_keywords || ""
     );
 
-    // The Vercel-hosted JS/CSS assets — loaded from Vercel CDN, not this VPS
-    const frontendUrl = process.env.FRONTEND_URL || "https://printe.in";
+    console.log(`🖼️  resolved ogImage: ${ogImage}`);
 
     const schemaOrg = JSON.stringify({
       "@context": "https://schema.org/",
@@ -159,23 +191,17 @@ app.get("/product/:id", async (req, res) => {
         "@type": "Offer",
         url: ogUrl,
         priceCurrency: "INR",
-        price: price,
+        price: String(price),
         availability: `https://schema.org/${inStock ? "InStock" : "OutOfStock"}`,
         seller: { "@type": "Organization", name: "Printe" },
       },
     }).replace(/<\/script>/gi, "<\\/script>");
 
-    // ── HTML ─────────────────────────────────────────────────────────────
-    // This is a minimal shell — just enough for crawlers to read OG tags.
-    // The actual React app is loaded from Vercel via the script tag below.
     const html = `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="${frontendUrl}/favicon.ico" />
-
-    <!-- Primary -->
     <title>${ogTitle}</title>
     <meta name="description" content="${ogDesc}" />
     <meta name="keywords" content="${keywords}" />
@@ -183,7 +209,7 @@ app.get("/product/:id", async (req, res) => {
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="${canonical}" />
 
-    <!-- Open Graph (WhatsApp, Facebook, LinkedIn, Telegram) -->
+    <!-- Open Graph -->
     <meta property="og:type" content="product" />
     <meta property="og:site_name" content="Printe" />
     <meta property="og:title" content="${ogTitle}" />
@@ -196,8 +222,8 @@ app.get("/product/:id", async (req, res) => {
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="${ogTitle}" />
 
-    <!-- Product Open Graph -->
-    <meta property="product:price:amount" content="${escapeHtml(price)}" />
+    <!-- Product OG -->
+    <meta property="product:price:amount" content="${escapeHtml(String(price))}" />
     <meta property="product:price:currency" content="INR" />
     <meta property="product:availability" content="${inStock ? "in stock" : "out of stock"}" />
     <meta property="product:category" content="${category}" />
@@ -212,49 +238,21 @@ app.get("/product/:id", async (req, res) => {
 
     <!-- Schema.org -->
     <script type="application/ld+json">${schemaOrg}</script>
-
-    <!-- Razorpay -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
-      gtag('js', new Date());
-      gtag('config', 'G-PHZNNT6QB8');
-    </script>
   </head>
   <body>
-    <div id="root"></div>
-
-    <!--
-      Load the React app from Vercel.
-      This makes the page fully interactive after the crawler reads the OG tags.
-      The script src points to your Vercel deployment so assets are always fresh.
-    -->
-    <script type="module">
-      // Dynamically load the Vercel-hosted entry point
-      // so this SSR shell always uses the latest frontend build.
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.src = '${frontendUrl}/assets/index.js'; // Vercel will serve the correct hashed filename
-      document.body.appendChild(script);
-
-      // Load CSS
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = '${frontendUrl}/assets/index.css';
-      document.head.appendChild(link);
-    </script>
+    <h1>${ogTitle}</h1>
+    <p>${ogDesc}</p>
+    <img src="${ogImage}" alt="${ogTitle}" />
+    <a href="${ogUrl}">View Product</a>
   </body>
 </html>`;
 
+    res.setHeader("Content-Type", "text/html");
     res.send(html);
+
   } catch (err) {
     console.error("❌ SSR error:", err);
-    // On error redirect to Vercel — users still see the page
-    return res.redirect(302, `${process.env.FRONTEND_URL}/product/${productId}`);
+    res.status(500).send(`<html><body><p>Error loading product</p></body></html>`);
   }
 });
 
@@ -264,8 +262,7 @@ app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({
     error: "Internal Server Error",
-    message:
-      process.env.NODE_ENV === "production" ? "Something went wrong!" : err.message,
+    message: process.env.NODE_ENV === "production" ? "Something went wrong!" : err.message,
   });
 });
 

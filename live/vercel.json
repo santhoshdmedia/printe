@@ -5,6 +5,10 @@
       "destination": "https://api.printe.in/api/:path*"
     },
     {
+      "source": "/product/:path*",
+      "destination": "https://api.printe.in/product/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
