@@ -106,27 +106,26 @@ function getProductImageUrl(product) {
 
 app.get("/product/:id", async (req, res) => {
   const productId = req.params.id;
-  const frontendUrl = process.env.FRONTEND_URL || "https://printe.in";
 
   try {
     const product = await ProductSchema.findOne({ seo_url: productId })
       .populate("category_details", "main_category_name")
       .populate("sub_category_details", "sub_category_name");
 
-    const rawTitle = product?.seo_title || product?.name || "Printe Product";
-    const rawDesc = (() => {
+    const rawTitle  = product?.seo_title || product?.name || "Printe Product";
+    const rawDesc   = (() => {
       const d = product?.seo_description || "Check out this amazing product on Printe";
       return d.length > 155 ? d.substring(0, 152) + "..." : d;
     })();
-    const ogTitle  = escapeHtml(rawTitle);
-    const ogDesc   = escapeHtml(rawDesc);
-    const ogImage  = product ? getProductImageUrl(product) : "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
-    const ogUrl    = `https://printe.in/product/${productId}`;
+    const ogTitle   = escapeHtml(rawTitle);
+    const ogDesc    = escapeHtml(rawDesc);
+    const ogImage   = product ? getProductImageUrl(product) : "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
+    const ogUrl     = `https://printe.in/product/${productId}`;
     const canonical = `https://printe.in/product/${product?.seo_url || productId}`;
-    const price    = product?.customer_product_price || product?.price || "0";
-    const inStock  = (product?.stock_count || 0) > 0;
-    const category = escapeHtml(product?.category_details?.main_category_name || "Products");
-    const keywords = escapeHtml(
+    const price     = product?.customer_product_price || product?.price || "0";
+    const inStock   = (product?.stock_count || 0) > 0;
+    const category  = escapeHtml(product?.category_details?.main_category_name || "Products");
+    const keywords  = escapeHtml(
       Array.isArray(product?.seo_keywords)
         ? product.seo_keywords.join(", ")
         : product?.seo_keywords || ""
@@ -155,16 +154,12 @@ app.get("/product/:id", async (req, res) => {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="${frontendUrl}/favicon.ico" />
-
     <title>${ogTitle}</title>
     <meta name="description" content="${ogDesc}" />
     <meta name="keywords" content="${keywords}" />
-    <meta name="author" content="Printe" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="${canonical}" />
 
-    <!-- Open Graph -->
     <meta property="og:type" content="product" />
     <meta property="og:site_name" content="Printe" />
     <meta property="og:title" content="${ogTitle}" />
@@ -172,69 +167,28 @@ app.get("/product/:id", async (req, res) => {
     <meta property="og:url" content="${ogUrl}" />
     <meta property="og:image" content="${ogImage}" />
     <meta property="og:image:secure_url" content="${ogImage}" />
-    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="${ogTitle}" />
 
-    <!-- Product OG -->
     <meta property="product:price:amount" content="${escapeHtml(String(price))}" />
     <meta property="product:price:currency" content="INR" />
     <meta property="product:availability" content="${inStock ? "in stock" : "out of stock"}" />
     <meta property="product:category" content="${category}" />
 
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@printe" />
     <meta name="twitter:title" content="${ogTitle}" />
     <meta name="twitter:description" content="${ogDesc}" />
     <meta name="twitter:image" content="${ogImage}" />
-    <meta name="twitter:image:alt" content="${ogTitle}" />
 
-    <!-- Schema.org -->
     <script type="application/ld+json">${schemaOrg}</script>
-
-    <!-- Razorpay -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHZNNT6QB8"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){ dataLayer.push(arguments); }
-      gtag('js', new Date());
-      gtag('config', 'G-PHZNNT6QB8');
-    </script>
-
-    <!--
-      Load CSS from Vercel.
-      The base href trick makes all relative asset paths resolve to Vercel.
-    -->
-    <base href="${frontendUrl}/" />
   </head>
   <body>
-    <div id="root"></div>
-
-    <!--
-      Instead of fetching Vercel's index.html (blocked by CORS),
-      we use window.location to load the full Vercel page in-place.
-      This preserves the current URL in the browser while loading
-      the React app cleanly from Vercel.
-    -->
+    <!-- Redirect real users to Vercel frontend -->
     <script>
-      // Replace the current document with Vercel's full React app
-      // without changing the URL shown in the browser address bar.
-      (function () {
-        const url = '${frontendUrl}' + window.location.pathname + window.location.search + window.location.hash;
-        const iframe = document.createElement('iframe');
-        iframe.src = url;
-        iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;z-index:9999;';
-        document.body.appendChild(iframe);
-
-        // Hide the root div since iframe covers it
-        document.getElementById('root').style.display = 'none';
-      })();
+      window.location.replace("https://printe.in/product/${productId}");
     </script>
+    <p><a href="https://printe.in/product/${productId}">${ogTitle}</a></p>
   </body>
 </html>`;
 
@@ -244,23 +198,7 @@ app.get("/product/:id", async (req, res) => {
   } catch (err) {
     console.error("❌ SSR error:", err);
     res.setHeader("Content-Type", "text/html");
-    res.send(`<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8"/>
-    <title>Printe</title>
-    <base href="${frontendUrl}/" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script>
-      const iframe = document.createElement('iframe');
-      iframe.src = '${frontendUrl}' + window.location.pathname;
-      iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:9999;';
-      document.body.appendChild(iframe);
-    </script>
-  </body>
-</html>`);
+    res.send(`<html><body><script>window.location.replace("https://printe.in/product/${productId}");</script></body></html>`);
   }
 });
 
