@@ -8,6 +8,10 @@
       "source": "/product/:path*",
       "destination": "https://api.printe.in/product/:path*"
     },
+     {
+      "source": "/product/:id",
+      "destination": "https://api.printe.in/product/:id"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
