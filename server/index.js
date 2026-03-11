@@ -107,12 +107,6 @@ function getProductImageUrl(product) {
 
 app.get("/product/:id", async (req, res) => {
   const productId = req.params.id;
-  const userAgent = req.headers["user-agent"] || "";
-
-  console.log(`\n🎯 /product/${productId} — UA: ${userAgent}`);
-
-  const isCrawler = /facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebot|ia_archiver|discordbot|applebot/i.test(userAgent);
-
   const frontendUrl = process.env.FRONTEND_URL || "https://printe.in";
 
   try {
@@ -120,21 +114,20 @@ app.get("/product/:id", async (req, res) => {
       .populate("category_details", "main_category_name")
       .populate("sub_category_details", "sub_category_name");
 
-    // ── Build meta values (used by both crawler & user HTML) ──
     const rawTitle = product?.seo_title || product?.name || "Printe Product";
     const rawDesc = (() => {
       const d = product?.seo_description || "Check out this amazing product on Printe";
       return d.length > 155 ? d.substring(0, 152) + "..." : d;
     })();
-    const ogTitle   = escapeHtml(rawTitle);
-    const ogDesc    = escapeHtml(rawDesc);
-    const ogImage   = product ? getProductImageUrl(product) : "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
-    const ogUrl     = `https://printe.in/product/${productId}`;
+    const ogTitle  = escapeHtml(rawTitle);
+    const ogDesc   = escapeHtml(rawDesc);
+    const ogImage  = product ? getProductImageUrl(product) : "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
+    const ogUrl    = `https://printe.in/product/${productId}`;
     const canonical = `https://printe.in/product/${product?.seo_url || productId}`;
-    const price     = product?.customer_product_price || product?.price || "0";
-    const inStock   = (product?.stock_count || 0) > 0;
-    const category  = escapeHtml(product?.category_details?.main_category_name || "Products");
-    const keywords  = escapeHtml(
+    const price    = product?.customer_product_price || product?.price || "0";
+    const inStock  = (product?.stock_count || 0) > 0;
+    const category = escapeHtml(product?.category_details?.main_category_name || "Products");
+    const keywords = escapeHtml(
       Array.isArray(product?.seo_keywords)
         ? product.seo_keywords.join(", ")
         : product?.seo_keywords || ""
@@ -152,13 +145,12 @@ app.get("/product/:id", async (req, res) => {
         "@type": "Offer",
         url: ogUrl,
         priceCurrency: "INR",
-        price: price,
+        price: String(price),
         availability: `https://schema.org/${inStock ? "InStock" : "OutOfStock"}`,
         seller: { "@type": "Organization", name: "Printe" },
       },
     }).replace(/<\/script>/gi, "<\\/script>");
 
-    // ── Always serve HTML — never redirect ──
     const html = `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -214,35 +206,35 @@ app.get("/product/:id", async (req, res) => {
       gtag('js', new Date());
       gtag('config', 'G-PHZNNT6QB8');
     </script>
+
+    <!--
+      Load CSS from Vercel.
+      The base href trick makes all relative asset paths resolve to Vercel.
+    -->
+    <base href="${frontendUrl}/" />
   </head>
   <body>
     <div id="root"></div>
+
+    <!--
+      Instead of fetching Vercel's index.html (blocked by CORS),
+      we use window.location to load the full Vercel page in-place.
+      This preserves the current URL in the browser while loading
+      the React app cleanly from Vercel.
+    -->
     <script>
-      // Load the React app from Vercel
-      fetch('${frontendUrl}')
-        .then(r => r.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
+      // Replace the current document with Vercel's full React app
+      // without changing the URL shown in the browser address bar.
+      (function () {
+        const url = '${frontendUrl}' + window.location.pathname + window.location.search + window.location.hash;
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;z-index:9999;';
+        document.body.appendChild(iframe);
 
-          // Inject all scripts from Vercel index.html
-          doc.querySelectorAll('script[src]').forEach(s => {
-            const el = document.createElement('script');
-            el.type = s.type || 'text/javascript';
-            el.src = s.src.startsWith('/') ? '${frontendUrl}' + s.src : s.src;
-            if (s.type === 'module') el.type = 'module';
-            document.body.appendChild(el);
-          });
-
-          // Inject CSS
-          doc.querySelectorAll('link[rel="stylesheet"]').forEach(l => {
-            const el = document.createElement('link');
-            el.rel = 'stylesheet';
-            el.href = l.href.startsWith('/') ? '${frontendUrl}' + l.href : l.href;
-            document.head.appendChild(el);
-          });
-        })
-        .catch(console.error);
+        // Hide the root div since iframe covers it
+        document.getElementById('root').style.display = 'none';
+      })();
     </script>
   </body>
 </html>`;
@@ -252,29 +244,24 @@ app.get("/product/:id", async (req, res) => {
 
   } catch (err) {
     console.error("❌ SSR error:", err);
-    // Even on error — serve a basic HTML page, never redirect
     res.setHeader("Content-Type", "text/html");
     res.send(`<!DOCTYPE html>
-<html><head><title>Printe</title></head>
-<body><div id="root"></div>
-<script>
-  fetch('${frontendUrl}').then(r=>r.text()).then(html=>{
-    const doc = new DOMParser().parseFromString(html,'text/html');
-    doc.querySelectorAll('script[src]').forEach(s=>{
-      const el=document.createElement('script');
-      el.src=s.src.startsWith('/')?'${frontendUrl}'+s.src:s.src;
-      el.type=s.type||'text/javascript';
-      document.body.appendChild(el);
-    });
-    doc.querySelectorAll('link[rel="stylesheet"]').forEach(l=>{
-      const el=document.createElement('link');
-      el.rel='stylesheet';
-      el.href=l.href.startsWith('/')?'${frontendUrl}'+l.href:l.href;
-      document.head.appendChild(el);
-    });
-  });
-</script>
-</body></html>`);
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <title>Printe</title>
+    <base href="${frontendUrl}/" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const iframe = document.createElement('iframe');
+      iframe.src = '${frontendUrl}' + window.location.pathname;
+      iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:9999;';
+      document.body.appendChild(iframe);
+    </script>
+  </body>
+</html>`);
   }
 });
 
