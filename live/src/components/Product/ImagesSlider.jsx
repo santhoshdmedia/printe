@@ -13,6 +13,7 @@ import {
   PictureOutlined,
   PlayCircleOutlined,
   PauseCircleOutlined,
+  LinkOutlined,
 } from "@ant-design/icons";
 import { IoShareSocial } from "react-icons/io5";
 
@@ -30,6 +31,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isFav, setIsFav] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Refs
   const transitionTimeoutRef = useRef(null);
@@ -73,6 +75,11 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   const getCleanUrl = useCallback(() => {
     return window.location.href.replace("www.", "");
   }, []);
+
+  // Get share URL
+  const getShareUrl = useCallback(() => {
+    return getCleanUrl();
+  }, [getCleanUrl]);
 
   // Get SEO data for meta tags
   const getSeoData = useCallback(() => {
@@ -128,11 +135,6 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     canonicalLink.setAttribute('href', seoData.url);
   }, [seoData]);
 
-  // Get product URL for sharing (only URL, no message)
-  const getShareUrl = useCallback(() => {
-    return getCleanUrl();
-  }, [getCleanUrl]);
-
   // Effects
   useEffect(() => {
     setIsFav(user?.wish_list?.includes(data?.seo_url) ?? false);
@@ -179,38 +181,27 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     };
   }, [isAutoPlaying, hasMultipleImages, handleNext]);
 
-  // Share handler - URL only
-  const handleShareClick = useCallback(async () => {
-    const productUrl = getShareUrl();
-    const wasAutoPlaying = isAutoPlaying;
-    if (wasAutoPlaying) setIsAutoPlaying(false);
+  // Share handlers
+  const handleShareClick = useCallback(() => {
+    setShowShareModal(true);
+  }, []);
 
+  const handleCopyLink = useCallback(async () => {
     try {
-      if (navigator.share) {
-        await navigator.share({ url: productUrl });
-      } else {
-        // Clipboard fallback
-        try {
-          await navigator.clipboard.writeText(productUrl);
-          message.success('Link copied to clipboard! 📋');
-        } catch {
-          const textArea = document.createElement('textarea');
-          textArea.value = productUrl;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-          message.success('Link copied to clipboard! 📋');
-        }
-      }
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        message.info('Share cancelled');
-      }
-    } finally {
-      if (wasAutoPlaying) setIsAutoPlaying(true);
+      await navigator.clipboard.writeText(getShareUrl());
+      message.success('Link copied! 🔗');
+      setShowShareModal(false);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = getShareUrl();
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      message.success('Link copied! 🔗');
+      setShowShareModal(false);
     }
-  }, [getShareUrl, isAutoPlaying]);
+  }, [getShareUrl]);
 
   // Wishlist handler
   const handleAddWishList = useCallback(() => {
@@ -261,8 +252,107 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     </div>
   );
 
+  // Share Modal
+  const renderShareModal = () => (
+    showShareModal && (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+        onClick={() => setShowShareModal(false)}
+      >
+        <div
+          className="bg-white rounded-xl p-5 w-72 shadow-xl"
+          onClick={e => e.stopPropagation()}
+        >
+          <h3 className="text-lg font-semibold mb-4 text-center">Share Product</h3>
+          <div className="grid grid-cols-3 gap-3">
+
+            {/* WhatsApp */}
+            <button
+              onClick={() => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(getShareUrl())}`, "_blank");
+                setShowShareModal(false);
+              }}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
+            >
+              <img src="https://cdn-icons-png.flaticon.com/32/733/733585.png" className="w-8 h-8" alt="WhatsApp" />
+              <span className="text-xs">WhatsApp</span>
+            </button>
+
+            {/* Facebook */}
+            <button
+              onClick={() => {
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`, "_blank", "width=600,height=400");
+                setShowShareModal(false);
+              }}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
+            >
+              <img src="https://cdn-icons-png.flaticon.com/32/733/733547.png" className="w-8 h-8" alt="Facebook" />
+              <span className="text-xs">Facebook</span>
+            </button>
+
+            {/* Twitter/X */}
+            <button
+              onClick={() => {
+                window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(getShareUrl())}`, "_blank", "width=550,height=420");
+                setShowShareModal(false);
+              }}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
+            >
+              <img src="https://cdn-icons-png.flaticon.com/32/5968/5968830.png" className="w-8 h-8" alt="Twitter" />
+              <span className="text-xs">Twitter</span>
+            </button>
+
+            {/* Telegram */}
+            <button
+              onClick={() => {
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(getShareUrl())}`, "_blank");
+                setShowShareModal(false);
+              }}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
+            >
+              <img src="https://cdn-icons-png.flaticon.com/32/2111/2111646.png" className="w-8 h-8" alt="Telegram" />
+              <span className="text-xs">Telegram</span>
+            </button>
+
+            {/* Email */}
+            <button
+              onClick={() => {
+                window.location.href = `mailto:?subject=${encodeURIComponent(data?.name || 'Product')}&body=${encodeURIComponent(getShareUrl())}`;
+                setShowShareModal(false);
+              }}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
+            >
+              <img src="https://cdn-icons-png.flaticon.com/32/732/732200.png" className="w-8 h-8" alt="Email" />
+              <span className="text-xs">Email</span>
+            </button>
+
+            {/* Copy Link */}
+            <button
+              onClick={handleCopyLink}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
+            >
+              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <LinkOutlined />
+              </div>
+              <span className="text-xs">Copy Link</span>
+            </button>
+
+          </div>
+
+          <button
+            onClick={() => setShowShareModal(false)}
+            className="mt-4 w-full py-2 text-sm text-gray-500 hover:text-gray-700"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    )
+  );
+
   return (
     <div className="!sticky !top-24 w-full h-full">
+
       {/* SEO Meta Tags */}
       <Helmet>
         <title>{seoData.title}</title>
@@ -293,6 +383,9 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={seoData.url} />
       </Helmet>
+
+      {/* Share Modal */}
+      {renderShareModal()}
 
       <div className="lg:hidden block">
         <DividerCards name={data?.name} />
@@ -405,30 +498,6 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               />
             </button>
           ))}
-        </div>
-      )}
-
-      {/* Fallback Share - only on browsers without native share */}
-      {!navigator.share && (
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600 mb-2">Quick share:</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(getShareUrl())}`, "_blank")}
-              className="flex-1 bg-green-500 text-white py-2 px-3 rounded text-sm hover:bg-green-600 transition-colors"
-            >
-              WhatsApp
-            </button>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(getShareUrl());
-                message.success('Link copied! 🔗');
-              }}
-              className="flex-1 bg-blue-500 text-white py-2 px-3 rounded text-sm hover:bg-blue-600 transition-colors"
-            >
-              Copy Link
-            </button>
-          </div>
         </div>
       )}
     </div>
