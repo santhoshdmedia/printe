@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Image, Tooltip, message } from "antd";
+import { Tooltip, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Helmet } from "react-helmet-async";
-import _ from "lodash";
 
 // Icons
 import {
@@ -70,96 +69,69 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
     return `${absoluteUrl}?v=${Date.now()}`;
   }, [processedImages, currentImage, getAbsoluteImageUrl]);
 
+  // Clean URL - strip www.
+  const getCleanUrl = useCallback(() => {
+    return window.location.href.replace("www.", "");
+  }, []);
+
   // Get SEO data for meta tags
   const getSeoData = useCallback(() => {
-    const productName = data?.name || "Amazing Product";
-    const productDescription = data?.seo_description || data?.short_description || "Check out this amazing product";
-    const productUrl = window.location.href;
-    
-    const productImage = getMainProductImage();
-
     return {
-      title: productName,
-      description: productDescription,
-      url: productUrl,
-      image: productImage,
+      title: data?.name || "Amazing Product",
+      description: data?.seo_description || data?.short_description || "Check out this amazing product",
+      url: getCleanUrl(),
+      image: getMainProductImage(),
       keywords: data?.keywords || "product, shopping, ecommerce",
     };
-  }, [data, getMainProductImage]);
+  }, [data, getMainProductImage, getCleanUrl]);
 
   const seoData = getSeoData();
 
   // Update meta tags dynamically
   useEffect(() => {
-    const updateMetaTags = () => {
-      if (!seoData.image) return;
+    if (!seoData.image) return;
 
-      const metaTags = [
-        { property: 'og:title', content: seoData.title },
-        { property: 'og:description', content: seoData.description },
-        { property: 'og:image', content: seoData.image },
-        { property: 'og:url', content: seoData.url },
-        { property: 'og:type', content: 'product' },
-        { property: 'og:site_name', content: 'Prine' },
-        { property: 'og:image:width', content: '1200' },
-        { property: 'og:image:height', content: '630' },
-        { property: 'og:image:type', content: 'image/jpeg' },
-        { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: seoData.title },
-        { name: 'twitter:description', content: seoData.description },
-        { name: 'twitter:image', content: seoData.image },
-      ];
+    const metaTags = [
+      { property: 'og:title', content: seoData.title },
+      { property: 'og:description', content: seoData.description },
+      { property: 'og:image', content: seoData.image },
+      { property: 'og:url', content: seoData.url },
+      { property: 'og:type', content: 'product' },
+      { property: 'og:site_name', content: 'Prine' },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
+      { property: 'og:image:type', content: 'image/jpeg' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: seoData.title },
+      { name: 'twitter:description', content: seoData.description },
+      { name: 'twitter:image', content: seoData.image },
+    ];
 
-      metaTags.forEach(({ property, name, content }) => {
-        const selector = property ? `meta[property="${property}"]` : `meta[name="${name}"]`;
-        let metaTag = document.querySelector(selector);
-        
-        if (!metaTag) {
-          metaTag = document.createElement('meta');
-          if (property) {
-            metaTag.setAttribute('property', property);
-          } else {
-            metaTag.setAttribute('name', name);
-          }
-          document.head.appendChild(metaTag);
-        }
-        metaTag.setAttribute('content', content);
-      });
-
-      let canonicalLink = document.querySelector('link[rel="canonical"]');
-      if (!canonicalLink) {
-        canonicalLink = document.createElement('link');
-        canonicalLink.setAttribute('rel', 'canonical');
-        document.head.appendChild(canonicalLink);
+    metaTags.forEach(({ property, name, content }) => {
+      const selector = property ? `meta[property="${property}"]` : `meta[name="${name}"]`;
+      let metaTag = document.querySelector(selector);
+      if (!metaTag) {
+        metaTag = document.createElement('meta');
+        if (property) metaTag.setAttribute('property', property);
+        else metaTag.setAttribute('name', name);
+        document.head.appendChild(metaTag);
       }
-      canonicalLink.setAttribute('href', seoData.url);
-    };
+      metaTag.setAttribute('content', content);
+    });
 
-    updateMetaTags();
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', seoData.url);
   }, [seoData]);
 
-  // Get product details for sharing
-const getProductShareDetails = useCallback(() => {
-  const productName = data?.name || "Amazing Product";
-  const productDescription = data?.seo_description || data?.short_description || "Check out this product";
-  const productPrice = data?.price || data?.customer_product_price || "";
-  
-  // ✅ Strip www. here too
-  const productUrl = window.location.href.replace("www.", "");
-  
-  const productImage = getAbsoluteImageUrl(currentImage);
-  const formattedPrice = productPrice ? `₹${productPrice}` : "";
-  const formattedMessage = `❖ **${productName}** ❖\n\n${productDescription}\n\n❖ Price: ${formattedPrice}\n\n❖ ${productUrl}`;
-  
-  return {
-    productName,
-    productDescription,
-    productPrice: formattedPrice,
-    productUrl,        // ✅ now www-free
-    productImage,
-    formattedMessage   // ✅ also www-free since it uses productUrl
-  };
-}, [data, currentImage, getAbsoluteImageUrl]);
+  // Get product URL for sharing (only URL, no message)
+  const getShareUrl = useCallback(() => {
+    return getCleanUrl();
+  }, [getCleanUrl]);
 
   // Effects
   useEffect(() => {
@@ -168,12 +140,8 @@ const getProductShareDetails = useCallback(() => {
 
   useEffect(() => {
     return () => {
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-      }
-      if (autoPlayIntervalRef.current) {
-        clearInterval(autoPlayIntervalRef.current);
-      }
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+      if (autoPlayIntervalRef.current) clearInterval(autoPlayIntervalRef.current);
     };
   }, []);
 
@@ -181,36 +149,28 @@ const getProductShareDetails = useCallback(() => {
   const handleImageTransition = useCallback((newIndex) => {
     setIsTransitioning(true);
     setActiveIndex(newIndex);
-
-    transitionTimeoutRef.current = setTimeout(() => {
-      setIsTransitioning(false);
-    }, 300);
+    transitionTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 300);
   }, []);
 
   const handleNext = useCallback(() => {
     if (!hasMultipleImages) return;
-    const nextIndex = (activeIndex + 1) % processedImages.length;
-    handleImageTransition(nextIndex);
+    handleImageTransition((activeIndex + 1) % processedImages.length);
   }, [hasMultipleImages, activeIndex, processedImages.length, handleImageTransition]);
 
   const handlePrevious = useCallback(() => {
     if (!hasMultipleImages) return;
-    const prevIndex = (activeIndex - 1 + processedImages.length) % processedImages.length;
-    handleImageTransition(prevIndex);
+    handleImageTransition((activeIndex - 1 + processedImages.length) % processedImages.length);
   }, [hasMultipleImages, activeIndex, processedImages.length, handleImageTransition]);
 
   // Auto-play with proper cleanup
   useEffect(() => {
-    // Clear any existing interval
     if (autoPlayIntervalRef.current) {
       clearInterval(autoPlayIntervalRef.current);
       autoPlayIntervalRef.current = null;
     }
-
     if (isAutoPlaying && hasMultipleImages) {
       autoPlayIntervalRef.current = setInterval(handleNext, 3000);
     }
-
     return () => {
       if (autoPlayIntervalRef.current) {
         clearInterval(autoPlayIntervalRef.current);
@@ -219,192 +179,66 @@ const getProductShareDetails = useCallback(() => {
     };
   }, [isAutoPlaying, hasMultipleImages, handleNext]);
 
-  // Enhanced Native Share Functionality
-  const handleNativeShare = useCallback(async () => {
-    const {
-      productName,
-      productDescription,
-      productPrice,
-      productUrl,
-      productImage
-    } = getProductShareDetails();
-
-    // Pause auto-play when sharing starts
+  // Share handler - URL only
+  const handleShareClick = useCallback(async () => {
+    const productUrl = getShareUrl();
     const wasAutoPlaying = isAutoPlaying;
-    if (wasAutoPlaying) {
-      setIsAutoPlaying(false);
-    }
+    if (wasAutoPlaying) setIsAutoPlaying(false);
 
     try {
-      // Check if Web Share API is available
       if (navigator.share) {
-        const shareData = {
-          title: productName,
-          text: `${productDescription}${productPrice ? ` | ${productPrice}` : ''}`,
-          url: productUrl,
-        };
-
-        // Add image to share data if available
-        if (productImage) {
-          try {
-            // Convert image to blob for sharing
-            const response = await fetch(productImage);
-            const blob = await response.blob();
-            const file = new File([blob], 'product-image.jpg', { type: blob.type });
-            shareData.files = [file];
-          } catch (error) {
-            console.warn('Could not attach image to share:', error);
-            // Continue without image attachment
-          }
-        }
-
-        await navigator.share(shareData);
-        
-        message.success('Product shared successfully! 🚀');
+        await navigator.share({ url: productUrl });
       } else {
-        // Fallback: Copy to clipboard with enhanced message
-        const shareText = `${productName}\n\n${productDescription}\n${productPrice ? `Price: ${productPrice}\n` : ''}${productUrl}`;
-        
+        // Clipboard fallback
         try {
-          await navigator.clipboard.writeText(shareText);
-          message.success('Product details copied to clipboard! 📋\nPaste it anywhere to share.');
-        } catch (err) {
-          // Fallback for older browsers
+          await navigator.clipboard.writeText(productUrl);
+          message.success('Link copied to clipboard! 📋');
+        } catch {
           const textArea = document.createElement('textarea');
-          textArea.value = shareText;
+          textArea.value = productUrl;
           document.body.appendChild(textArea);
           textArea.select();
           document.execCommand('copy');
           document.body.removeChild(textArea);
-          message.success('Product details copied to clipboard! 📋\nPaste it anywhere to share.');
+          message.success('Link copied to clipboard! 📋');
         }
       }
     } catch (error) {
-      // User cancelled share or error occurred
       if (error.name !== 'AbortError') {
-        console.error('Sharing failed:', error);
-        message.info('Share cancelled or not supported');
+        message.info('Share cancelled');
       }
     } finally {
-      // Resume auto-play if it was playing before share
-      if (wasAutoPlaying) {
-        setIsAutoPlaying(true);
-      }
+      if (wasAutoPlaying) setIsAutoPlaying(true);
     }
-  }, [getProductShareDetails, isAutoPlaying]);
+  }, [getShareUrl, isAutoPlaying]);
 
-  // Alternative share methods for specific platforms
-  const handlePlatformShare = useCallback((platform) => {
-    const {
-      productName,
-      productDescription,
-      productPrice,
-      productUrl,
-      formattedMessage
-    } = getProductShareDetails();
-
-    // Pause auto-play when sharing starts
-    const wasAutoPlaying = isAutoPlaying;
-    if (wasAutoPlaying) {
-      setIsAutoPlaying(false);
-    }
-
-    try {
-      switch (platform) {
-        case "whatsapp":
-          window.open(
-            `https://wa.me/?text=${encodeURIComponent(formattedMessage)}`,
-            "_blank"
-          );
-          break;
-
-        case "facebook":
-          window.open(
-            `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}&quote=${encodeURIComponent(productName)}`,
-            "_blank",
-            "width=600,height=400"
-          );
-          break;
-
-        case "twitter":
-          const twitterMessage = `Check out: ${productName} - ${productDescription}${productPrice ? ` | ${productPrice}` : ''}`;
-          window.open(
-            `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterMessage)}&url=${encodeURIComponent(productUrl)}`,
-            "_blank",
-            "width=550,height=420"
-          );
-          break;
-
-        case "email":
-          const emailSubject = `Check out: ${productName}`;
-          const emailBody = formattedMessage;
-          window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-          break;
-
-        case "copy-link":
-          navigator.clipboard.writeText(productUrl);
-          message.success('Product link copied to clipboard! 🔗');
-          break;
-
-        default:
-          break;
-      }
-    } catch (error) {
-      console.error("Sharing failed:", error);
-      message.error('Failed to share product');
-    } finally {
-      // Resume auto-play if it was playing before share
-      if (wasAutoPlaying) {
-        setTimeout(() => setIsAutoPlaying(true), 1000);
-      }
-    }
-  }, [getProductShareDetails, isAutoPlaying]);
-
-  // Main share handler - tries native first, then falls back to platform-specific
-  const handleShareClick = useCallback(async () => {
-    // Always try native share first
-    await handleNativeShare();
-  }, [handleNativeShare]);
-
-  // Other event handlers
+  // Wishlist handler
   const handleAddWishList = useCallback(() => {
     if (!data?.seo_url) return;
-
     if (!isAuth) {
       navigate("/login");
       return;
     }
 
-    const updateWishList = () => {
-      if (isFav) {
-        return { wish_list: user.wish_list.filter(product => product !== data.seo_url) };
-      } else {
-        return { wish_list: [...(user.wish_list || []), data.seo_url] };
-      }
-    };
-
-    const form = updateWishList();
-    const successMessage = isFav ? "Remove from WishList" : "Added to WishList";
+    const form = isFav
+      ? { wish_list: user.wish_list.filter(p => p !== data.seo_url) }
+      : { wish_list: [...(user.wish_list || []), data.seo_url] };
 
     dispatch({
       type: "UPDATE_USER",
-      data: { form, type: "custom", message: successMessage },
+      data: { form, type: "custom", message: isFav ? "Remove from WishList" : "Added to WishList" },
     });
 
     setIsFav(!isFav);
   }, [data?.seo_url, isAuth, isFav, user, dispatch, navigate]);
 
-  const toggleAutoPlay = useCallback(() => {
-    setIsAutoPlaying(prev => !prev);
-  }, []);
+  const toggleAutoPlay = useCallback(() => setIsAutoPlaying(prev => !prev), []);
 
   const handleThumbnailClick = useCallback((index) => {
-    if (index !== activeIndex) {
-      handleImageTransition(index);
-    }
+    if (index !== activeIndex) handleImageTransition(index);
   }, [activeIndex, handleImageTransition]);
 
-  // Render methods
+  // Render main image
   const renderMainImage = () => (
     <div className="absolute inset-0 w-full h-full">
       {currentImage ? (
@@ -414,10 +248,7 @@ const getProductShareDetails = useCallback(() => {
             isTransitioning ? "opacity-70 scale-105" : "opacity-100 scale-100"
           } hover:scale-105`}
           alt={data?.name || "product"}
-          onError={(e) => {
-            console.error('Failed to load image:', currentImage);
-            e.target.style.display = 'none';
-          }}
+          onError={(e) => { e.target.style.display = 'none'; }}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl">
@@ -432,26 +263,20 @@ const getProductShareDetails = useCallback(() => {
 
   return (
     <div className="!sticky !top-24 w-full h-full">
-      {/* Dynamic Meta Tags for Social Sharing */}
+      {/* SEO Meta Tags */}
       <Helmet>
         <title>{seoData.title}</title>
         <meta name="description" content={seoData.description} />
         <meta name="keywords" content={seoData.keywords} />
-        
-        {/* Open Graph Meta Tags */}
         <meta property="og:title" content={seoData.title} />
         <meta property="og:description" content={seoData.description} />
         <meta property="og:image" content={seoData.image} />
         <meta property="og:url" content={seoData.url} />
         <meta property="og:type" content="product" />
         <meta property="og:site_name" content="Prine" />
-        
-        {/* Additional OG Tags for Better Sharing */}
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/jpeg" />
-                     
-        {/* Product Specific OG Tags */}
         {data?.price && (
           <>
             <meta property="product:price:amount" content={data.price} />
@@ -459,18 +284,12 @@ const getProductShareDetails = useCallback(() => {
           </>
         )}
         <meta property="product:availability" content={(data?.stock_count || 0) > 0 ? "in stock" : "out of stock"} />
-        {data?.category && (
-          <meta property="product:category" content={data.category} />
-        )}
-        
-        {/* Twitter Card Meta Tags */}
+        {data?.category && <meta property="product:category" content={data.category} />}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={seoData.title} />
         <meta name="twitter:description" content={seoData.description} />
         <meta name="twitter:image" content={seoData.image} />
         <meta name="twitter:site" content="@prine" />
-        
-        {/* Additional Meta Tags */}
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={seoData.url} />
       </Helmet>
@@ -548,7 +367,7 @@ const getProductShareDetails = useCallback(() => {
             </button>
           </Tooltip>
 
-          {/* Share Button - Uses Native Share API */}
+          {/* Share Button */}
           <Tooltip title="Share this product" placement="left">
             <button
               onClick={handleShareClick}
@@ -582,29 +401,29 @@ const getProductShareDetails = useCallback(() => {
                 className="w-full h-full object-cover"
                 alt={`Thumbnail ${index + 1}`}
                 loading="lazy"
-                onError={(e) => {
-                  console.error('Failed to load thumbnail:', imageUrl);
-                  e.target.style.display = 'none';
-                }}
+                onError={(e) => { e.target.style.display = 'none'; }}
               />
             </button>
           ))}
         </div>
       )}
 
-      {/* Fallback Share Options - Only shown if needed */}
+      {/* Fallback Share - only on browsers without native share */}
       {!navigator.share && (
         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-600 mb-2">Quick share:</p>
           <div className="flex gap-2">
             <button
-              onClick={() => handlePlatformShare("whatsapp")}
+              onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(getShareUrl())}`, "_blank")}
               className="flex-1 bg-green-500 text-white py-2 px-3 rounded text-sm hover:bg-green-600 transition-colors"
             >
               WhatsApp
             </button>
             <button
-              onClick={() => handlePlatformShare("copy-link")}
+              onClick={() => {
+                navigator.clipboard.writeText(getShareUrl());
+                message.success('Link copied! 🔗');
+              }}
               className="flex-1 bg-blue-500 text-white py-2 px-3 rounded text-sm hover:bg-blue-600 transition-colors"
             >
               Copy Link
