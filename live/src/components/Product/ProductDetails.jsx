@@ -1609,7 +1609,7 @@ const ProductDetails = ({
                                   }`}
                                 style={{ width: "50px", height: "50px" }}
                               >
-                                <img   fetchpriority="high" loading="lazy"
+                                <img   fetchpriority="high" loading="eager"
                                   src={option.image_name}
                                   className="w-full h-full object-contain"
                                   alt={option.value}
@@ -2155,7 +2155,7 @@ const ProductDetails = ({
             topPosition=""
           >
             <div className="flex justify-center">
-              <img   fetchpriority="high" loading="lazy"
+              <img   fetchpriority="high" loading="eager"
                 src={checkOutState.product_design_file}
                 alt="Design Preview"
                 style={{ maxHeight: "400px" }}

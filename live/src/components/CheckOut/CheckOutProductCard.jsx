@@ -20,7 +20,7 @@ const CheckOutProductCard = ({ data }) => {
   return (
     <div className='flex gap-4 bg-purple-50 justify-center items-center shadow-md border rounded-md py-5'>
       <div className='w-[15rem]'>
-        <img   fetchpriority="high" loading="lazy"
+        <img   fetchpriority="high" loading="eager"
           src={_.get(data, "product_image", "")}
           alt=''
         />

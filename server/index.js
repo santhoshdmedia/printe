@@ -185,7 +185,7 @@ app.get("/product/:id", async (req, res) => {
   </head>
   <body>
     <p><a href="${frontendUrl}/product/${productId}">${ogTitle}</a></p>
-    <img   fetchpriority="high" loading="lazy" src="${ogImage}" alt="${ogTitle}"/>
+    <img   fetchpriority="high" loading="eager" src="${ogImage}" alt="${ogTitle}"/>
   </body>
 </html>`);
 

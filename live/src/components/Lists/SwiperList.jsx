@@ -212,7 +212,7 @@ const SwiperList = ({
               </div>
               <div className="p-10 ">
                 <div className="relative rounded-2xl overflow-hidden">
-                  <img   fetchpriority="high" loading="lazy" src="https://printe.s3.ap-south-1.amazonaws.com/1771589215725-5hv79l6lwla.jpeg" alt="bannear" className="" />
+                  <img   fetchpriority="high" loading="eager" src="https://printe.s3.ap-south-1.amazonaws.com/1771589215725-5hv79l6lwla.jpeg" alt="bannear" className="" />
                 </div>
               </div>
             </div>

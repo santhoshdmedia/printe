@@ -311,7 +311,7 @@ const NavMenu = () => {
                                                   }}
                                                 >
                                                   <div className="w-8 h-8 rounded border border-gray-200  flex-shrink-0">
-                                                    <img   fetchpriority="high" loading="lazy"
+                                                    <img   fetchpriority="high" loading="eager"
                                                       src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
                                                         product,
                                                         "images[0].path",
@@ -374,7 +374,7 @@ const NavMenu = () => {
                                           key="placeholder-horizontal"
                                           className="col-span-2 p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center"
                                         >
-                                          <img   fetchpriority="high" loading="lazy"
+                                          <img   fetchpriority="high" loading="eager"
                                             src={imageToUse}
                                             alt={`${selectedCategory.main_category_name} Banner`}
                                             className="w-full h-64 object-cover rounded-lg border border-gray-300"
@@ -393,7 +393,7 @@ const NavMenu = () => {
                                           key="placeholder-square"
                                           className="p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center"
                                         >
-                                          <img   fetchpriority="high" loading="lazy"
+                                          <img   fetchpriority="high" loading="eager"
                                             src={imageToUse}
                                             alt={`${selectedCategory.main_category_name} Image`}
                                             className="w-full h-64 object-cover rounded-lg border border-gray-300"
@@ -580,7 +580,7 @@ const NavMenu = () => {
                                           }}
                                         >
                                           <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gray-200 group-hover/product:border-yellow-300 transition-all">
-                                            <img   fetchpriority="high" loading="lazy"
+                                            <img   fetchpriority="high" loading="eager"
                                               src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
                                                 product,
                                                 "images[0].path",
@@ -642,7 +642,7 @@ const NavMenu = () => {
                                     'col-span-4'
                                   }`}
                                 >
-                                  <img   fetchpriority="high" loading="lazy"
+                                  <img   fetchpriority="high" loading="eager"
                                     src={imageToUse}
                                     alt={`${category.main_category_name} Banner`}
                                     className="w-full h-full object-cover rounded-lg border border-gray-300"
@@ -662,7 +662,7 @@ const NavMenu = () => {
                                   key="placeholder-square"
                                   className="p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center"
                                 >
-                                  <img   fetchpriority="high" loading="lazy"
+                                  <img   fetchpriority="high" loading="eager"
                                     src={imageToUse}
                                     alt={`${category.main_category_name} Image`}
                                     className="w-full h-full object-cover rounded-lg border border-gray-300"
@@ -726,7 +726,7 @@ const NavMenu = () => {
                                       onClick={closeAllDropdowns}
                                     >
                                       <div className="">
-                                        <img   fetchpriority="high" loading="lazy"
+                                        <img   fetchpriority="high" loading="eager"
                                           src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
                                             product,
                                             "images[0].path",

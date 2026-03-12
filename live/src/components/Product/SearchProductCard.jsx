@@ -216,7 +216,7 @@ const SearchProductCard = ({ data, className = "", onClick, index }) => {
                       <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
                     )}
                     
-                    <img   fetchpriority="high" loading="lazy"
+                    <img   fetchpriority="high" loading="eager"
                       src={productImage}
                       alt={productName}
                       className={`w-full h-full object-cover transition-transform duration-700 

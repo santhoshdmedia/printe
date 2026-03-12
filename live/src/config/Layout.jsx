@@ -147,7 +147,7 @@ const LayoutContent = () => {
             className="relative block bg-green-500 rounded-full lg:p-4 p-3 shadow-lg hover:shadow-2xl transform hover:scale-110 transition-all duration-300"
           >
             <div className="absolute inset-0 bg-green-300 rounded-full opacity-0 group-hover:opacity-60 blur-md transition-opacity duration-300" />
-            <img   fetchpriority="high" loading="lazy" src={ImageHelper.WHATSAPP_IMG} alt="WhatsApp Icon" className="w-7 h-7 relative z-10" />
+            <img   fetchpriority="high" loading="eager" src={ImageHelper.WHATSAPP_IMG} alt="WhatsApp Icon" className="w-7 h-7 relative z-10" />
           </a>
           <div className="absolute bottom-full right-0 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
             Chat with us!

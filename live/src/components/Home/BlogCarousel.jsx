@@ -118,7 +118,7 @@ const BlogCarousel = ({ blogs = [] }) => {
           {/* Banner image */}
           <div className="relative w-full aspect-[14/5] sm:aspect-[2/1] lg:aspect-[14/5] overflow-hidden bg-[#E8E4DC]">
             {image ? (
-              <img   fetchpriority="high" loading="lazy"
+              <img   fetchpriority="high" loading="eager"
                 key={active}
                 src={image}
                 alt={name}
@@ -215,7 +215,7 @@ const BlogCarousel = ({ blogs = [] }) => {
                     `}
                   >
                     {tImg ? (
-                      <img   fetchpriority="high" loading="lazy"
+                      <img   fetchpriority="high" loading="eager"
                         src={tImg}
                         alt={tName}
                         className={`w-full aspect-[16/7] object-contain block transition-all duration-200 ${

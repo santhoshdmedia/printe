@@ -89,7 +89,7 @@ const BeforeAfterSlider = () => {
             >
               {/* Before Image */}
               <div className="absolute w-full h-full overflow-hidden">
-                <img   fetchpriority="high" loading="lazy"
+                <img   fetchpriority="high" loading="eager"
                   src={before}
                   alt="Before"
                   className="w-full h-full object-cover"
@@ -101,7 +101,7 @@ const BeforeAfterSlider = () => {
                 className="absolute w-full h-full overflow-hidden"
                 style={{ clipPath: `inset(0px 0px 0px ${sliderValue}%)` }}
               >
-                <img   fetchpriority="high" loading="lazy"
+                <img   fetchpriority="high" loading="eager"
                   src={after}
                   alt="After"
                   className="w-full h-full object-cover"

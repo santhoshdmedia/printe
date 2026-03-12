@@ -63,7 +63,7 @@ const ThreeStep = () => {
               <div className="absolute hidden lg:block h-[450px] w-[450px] rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0">
                 <div className="absolute inset-0 bg-[#ffe97a] h-full w-full rotation_container rounded-full backdrop-blur-sm flex items-center justify-center ">
           {/* <RotatingTextCircle/> */}
-                  <img   fetchpriority="high" loading="lazy"
+                  <img   fetchpriority="high" loading="eager"
                 src={fav}
                 alt="PrintBe Banner"
                 className="  h-full w-full bg-cover z-10 transition-transform spinning "
@@ -72,7 +72,7 @@ const ThreeStep = () => {
                 {/* <div className="absolute inset-0 bg-[#f2c41a]/10 rounded-full animate-pulse-slow"></div> */}
                 {/* <div className="absolute inset-0 rounded-full shadow-[0_0_30px_10px_rgba(249,193,20,0.3)] animate-glow"></div> */}
               </div>
-              <img   fetchpriority="high" loading="lazy"
+              <img   fetchpriority="high" loading="eager"
                 src={banner}
                 alt="PrintBe Banner"
                 className="h-auto w-full max-w-[550px] mx-auto object-contain relative z-10 transition-transform duration-500 hover:scale-105"

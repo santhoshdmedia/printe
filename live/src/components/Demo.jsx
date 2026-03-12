@@ -1011,7 +1011,7 @@ export  function DomeGallery({
                       cursor: "default",
                     }}
                   >
-                    <img   fetchpriority="high" loading="lazy"
+                    <img   fetchpriority="high" loading="eager"
                       src={it.src}
                       draggable={false}
                       alt={it.alt}
@@ -1065,7 +1065,7 @@ export  function DomeGallery({
                 {/* Front side - Main Content */}
                 <div className="front">
                   <div className="brand-logo">
-                    <img   fetchpriority="high" loading="lazy" src={printeLogo} alt="Brand Logo" />
+                    <img   fetchpriority="high" loading="eager" src={printeLogo} alt="Brand Logo" />
                   </div>
                   <h1 className="coming-soon-text">
                     Something Amazing is Coming !

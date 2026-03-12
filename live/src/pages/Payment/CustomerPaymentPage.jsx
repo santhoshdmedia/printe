@@ -217,7 +217,7 @@ const CustomerPaymentPage = () => {
                     <div key={index} className="flex items-center justify-between bg-gray-50 rounded-xl p-5 hover:shadow-md transition">
                       <div className="flex items-center flex-1">
                         {item.image && (
-                          <img   fetchpriority="high" loading="lazy" 
+                          <img   fetchpriority="high" loading="eager" 
                             src={item.image} 
                             alt={item.product_name}
                             className="w-20 h-20 object-cover rounded-lg mr-5 border-2 border-gray-200"
@@ -294,7 +294,7 @@ const CustomerPaymentPage = () => {
                   {showQR && (
                     <div className="text-center">
                       <div className="bg-white p-6 rounded-2xl inline-block shadow-lg mb-6">
-                        <img   fetchpriority="high" loading="lazy" 
+                        <img   fetchpriority="high" loading="eager" 
                           src={orderData.qr_code} 
                           alt="Payment QR Code"
                           className="w-64 h-64 mx-auto"

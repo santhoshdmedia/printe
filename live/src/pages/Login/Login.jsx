@@ -103,7 +103,7 @@ const Login = () => {
         {/* Logo in top right corner with gold background */}
         <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50">
           <Link to={"/"} className="p-2 md:p-3 bg-yellow-400 flex items-center justify-center rounded-md cursor-pointer">
-            <img   fetchpriority="high" loading="lazy" 
+            <img   fetchpriority="high" loading="eager" 
               src={logo} 
               alt="Logo" 
               className="h-6 md:h-8 w-auto object-contain"

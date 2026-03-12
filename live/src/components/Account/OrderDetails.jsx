@@ -151,7 +151,7 @@ const OrderDetails = () => {
     <!-- Header -->
     <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:5px;margin-bottom:4px;">
     <div style="display:flex;justify-content:center;">
-      <img   fetchpriority="high" loading="lazy" src="${ImageHelper.pdf_logo}" style="width:140px;height:40px;object-fit:contain;"/>
+      <img   fetchpriority="high" loading="eager" src="${ImageHelper.pdf_logo}" style="width:140px;height:40px;object-fit:contain;"/>
       </div>
       <div style="display:flex;justify-content:center;gap:20px;font-size:10px; margin-bottom:4px;">
         <p style="margin:0;"><b>Email:</b> <a href="mailto:info@printe.in">info@printe.in</a></p>
@@ -228,7 +228,7 @@ const OrderDetails = () => {
          ${firstOrder.payment_status === "pending" && firstOrder.payment_qr_code ? `
         <div style="border:1px solid #ddd;padding:5px;border-radius:4px;display:inline-block;text-align:center;">
           <h4 style="font-size:11px;font-weight:bold;margin:0 0 6px;">Payment QR Code</h4>
-          <img   fetchpriority="high" loading="lazy" src="${firstOrder.payment_qr_code}" style="width:100px;height:100px;margin-bottom:4px;"/>
+          <img   fetchpriority="high" loading="eager" src="${firstOrder.payment_qr_code}" style="width:100px;height:100px;margin-bottom:4px;"/>
           <p style="margin:0;font-size:9px;font-weight:bold;">Scan to Pay</p>
           <p style="margin:3px 0 0;font-size:8px;color:#666;">Use any UPI app to scan</p>
         </div>`: ''}
@@ -294,7 +294,7 @@ const OrderDetails = () => {
         </div>
         <div style="text-align:center;">
           <p style="font-size:6px;color:#666;margin:2px 0 0;">For PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
-          <img   fetchpriority="high" loading="lazy" src="${signatureImage}" style="width:80px;height:auto;transform:rotate(20deg);margin-left:50px;"/>
+          <img   fetchpriority="high" loading="eager" src="${signatureImage}" style="width:80px;height:auto;transform:rotate(20deg);margin-left:50px;"/>
           <p style="font-size:8px;font-weight:bold;margin:0;">Authorized Signature</p>
         </div>
       </div>
@@ -353,7 +353,7 @@ const OrderDetails = () => {
 
           {/* Header */}
           <div className="text-center mb-4 pb-3 border-b-2 border-gray-800">
-            <img   fetchpriority="high" loading="lazy" src={ImageHelper.pdf_logo} alt="Logo" className="w-36 mx-auto object-contain mb-2" />
+            <img   fetchpriority="high" loading="eager" src={ImageHelper.pdf_logo} alt="Logo" className="w-36 mx-auto object-contain mb-2" />
             <div className="flex justify-center gap-6 text-sm text-gray-600">
               <p><span className="font-semibold">Email:</span> info@printe.in</p>
               <p><span className="font-semibold">Website:</span> www.printe.in</p>
@@ -443,7 +443,7 @@ const OrderDetails = () => {
                 <div className="mt-4">
                   <div className="border border-gray-300 rounded-lg p-4 inline-block">
                     <h4 className="font-semibold text-gray-800 mb-3 text-center">Payment QR Code</h4>
-                    <img   fetchpriority="high" loading="lazy" src={firstOrder.payment_qr_code} alt="Payment QR Code" className="w-48 h-48 mx-auto mb-3" />
+                    <img   fetchpriority="high" loading="eager" src={firstOrder.payment_qr_code} alt="Payment QR Code" className="w-48 h-48 mx-auto mb-3" />
                     <p className="text-sm font-semibold text-center">Scan to Pay</p>
                     <p className="text-xs text-gray-500 text-center mt-1">Use any UPI app to scan</p>
                   </div>
@@ -504,7 +504,7 @@ const OrderDetails = () => {
               </div>
               <div className="text-center">
                 <p className="text-[10px] w-[90%] text-gray-600">For PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
-                <img   fetchpriority="high" loading="lazy" src={signatureImage} alt="Authorized Signature" className="w-24 mx-auto rotate-12" />
+                <img   fetchpriority="high" loading="eager" src={signatureImage} alt="Authorized Signature" className="w-24 mx-auto rotate-12" />
                 <p className="font-semibold text-gray-800">Authorized Signature</p>
               </div>
             </div>

@@ -233,7 +233,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   const renderMainImage = () => (
     <div className="absolute inset-0 w-full h-full">
       {currentImage ? (
-        <img   fetchpriority="high" loading="lazy"
+        <img   fetchpriority="high" loading="eager"
           src={currentImage}
           className={`absolute inset-0 w-full h-full object-cover rounded-xl transition-all duration-300 ${
             isTransitioning ? "opacity-70 scale-105" : "opacity-100 scale-100"
@@ -274,7 +274,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               }}
               className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
             >
-              <img   fetchpriority="high" loading="lazy" src="https://cdn-icons-png.flaticon.com/32/733/733585.png" className="w-8 h-8" alt="WhatsApp" />
+              <img   fetchpriority="high" loading="eager" src="https://cdn-icons-png.flaticon.com/32/733/733585.png" className="w-8 h-8" alt="WhatsApp" />
               <span className="text-xs">WhatsApp</span>
             </button>
 
@@ -286,7 +286,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               }}
               className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
             >
-              <img   fetchpriority="high" loading="lazy" src="https://cdn-icons-png.flaticon.com/32/733/733547.png" className="w-8 h-8" alt="Facebook" />
+              <img   fetchpriority="high" loading="eager" src="https://cdn-icons-png.flaticon.com/32/733/733547.png" className="w-8 h-8" alt="Facebook" />
               <span className="text-xs">Facebook</span>
             </button>
 
@@ -298,7 +298,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               }}
               className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
             >
-              <img   fetchpriority="high" loading="lazy" src="https://cdn-icons-png.flaticon.com/32/5968/5968830.png" className="w-8 h-8" alt="Twitter" />
+              <img   fetchpriority="high" loading="eager" src="https://cdn-icons-png.flaticon.com/32/5968/5968830.png" className="w-8 h-8" alt="Twitter" />
               <span className="text-xs">Twitter</span>
             </button>
 
@@ -310,7 +310,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               }}
               className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
             >
-              <img   fetchpriority="high" loading="lazy" src="https://cdn-icons-png.flaticon.com/32/2111/2111646.png" className="w-8 h-8" alt="Telegram" />
+              <img   fetchpriority="high" loading="eager" src="https://cdn-icons-png.flaticon.com/32/2111/2111646.png" className="w-8 h-8" alt="Telegram" />
               <span className="text-xs">Telegram</span>
             </button>
 
@@ -322,7 +322,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               }}
               className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
             >
-              <img   fetchpriority="high" loading="lazy" src="https://cdn-icons-png.flaticon.com/32/732/732200.png" className="w-8 h-8" alt="Email" />
+              <img   fetchpriority="high" loading="eager" src="https://cdn-icons-png.flaticon.com/32/732/732200.png" className="w-8 h-8" alt="Email" />
               <span className="text-xs">Email</span>
             </button>
 
@@ -489,7 +489,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
               aria-label={`View image ${index + 1}`}
               aria-selected={activeIndex === index}
             >
-              <img   fetchpriority="high" loading="lazy"
+              <img   fetchpriority="high" loading="eager"
                 src={imageUrl}
                 className="w-full h-full object-cover"
                 alt={`Thumbnail ${index + 1}`}

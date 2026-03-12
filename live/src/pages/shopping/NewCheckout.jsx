@@ -633,7 +633,7 @@ const NewCheckout = () => {
               <div className="space-y-4 mb-6">
                 {cartData.map((item) => (
                   <div key={item._id} className="flex items-center gap-4 py-3 border-b border-gray-200">
-                    <img   fetchpriority="high" loading="lazy" src={item.product_image} alt={item.product_name} className="w-16 h-16 object-cover rounded-lg" onError={(e) => { e.target.src = '/placeholder-product.jpg'; }} />
+                    <img   fetchpriority="high" loading="eager" src={item.product_image} alt={item.product_name} className="w-16 h-16 object-cover rounded-lg" onError={(e) => { e.target.src = '/placeholder-product.jpg'; }} />
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900 line-clamp-1">{item.product_name}</h3>
                       <p className="text-sm text-gray-600">Qty: {item.product_quantity || 1}</p>

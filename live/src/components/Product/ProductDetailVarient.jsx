@@ -789,7 +789,7 @@ const ProductDetailVarient = ({
                       }`}
                     style={{ width: "60px", height: "60px" }}
                   >
-                    <img   fetchpriority="high" loading="lazy"
+                    <img   fetchpriority="high" loading="eager"
                       src={option.image_names?.[0]?.path || option.image_names?.[0]}
                       className="w-full h-full object-contain"
                       alt={option.value}
@@ -1711,7 +1711,7 @@ const ProductDetailVarient = ({
             topPosition=""
           >
             <div className="flex justify-center">
-              <img   fetchpriority="high" loading="lazy"
+              <img   fetchpriority="high" loading="eager"
                 src={checkOutState.product_design_file}
                 alt="Design Preview"
                 style={{ maxHeight: "400px" }}

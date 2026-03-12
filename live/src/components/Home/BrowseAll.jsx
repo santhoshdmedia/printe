@@ -82,7 +82,7 @@ const BrowseAll = () => {
                 w-[110px] h-[110px] sm:w-[140px] sm:h-[140px] md:w-[180px] md:h-[180px] 
                 group-hover:scale-110 transition-all duration-500 shadow-[0_0_10px_rgba(0,0,0,0.1)]"
               >
-                <img   fetchpriority="high" loading="lazy"
+                <img   fetchpriority="high" loading="eager"
                   src={category.sub_category_image}
                   alt={category.sub_category_name}
                   className="w-full h-full object-cover rounded-full transition-transform duration-700 group-hover:scale-100"

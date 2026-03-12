@@ -80,7 +80,7 @@ const ThreeDSlider = () => {
                       'drop-shadow(0 10px 15px rgba(0,0,0,0.1))'
                   }}
                 >
-                  <img   fetchpriority="high" loading="lazy"
+                  <img   fetchpriority="high" loading="eager"
                     src={slide.image}
                     className="w-full h-full object-contain"
                     alt={slide.img_title}
