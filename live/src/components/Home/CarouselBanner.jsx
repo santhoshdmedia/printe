@@ -199,7 +199,7 @@ const CarouselBanner = () => {
                         }
                         alt={banner.banner_name || "Banner image"}
                         className="w-[90%] h-[90%] object-contain"
-                        loading="lazy"
+
                         initial={{ opacity: 0, scale: 0.95, y: -100 }}
                         animate={{
                           opacity: 1,
@@ -531,7 +531,7 @@ export const SubCategoryBannerCarousel = () => {
         setIsLoading(true);
         const response = await getsubcat();
         const subcategorie = _.get(response, "data.data", []);
-        
+
         // Filter only visible subcategorie with banner images
         const filtered = (subcategorie?.data || subcategorie || []).filter(
           (item) => item.show && item.sub_category_banner_image
@@ -564,7 +564,7 @@ export const SubCategoryBannerCarousel = () => {
   };
 
   const handleBannerClick = (item) => {
-    
+
     if (!isDragging) {
       navigate(`/category/${item.main_category_details[0].slug}/${item.slug}`);
     }
@@ -628,11 +628,11 @@ export const SubCategoryBannerCarousel = () => {
             onClick={() => handleBannerClick(subCategories[activeIndex])}
           >
             <div className="relative w-full  overflow-hidden shadow-md cursor-pointer">
-              <img   fetchpriority="high" loading="eager"
+              <img fetchpriority="high" loading="eager"
                 src={subCategories[activeIndex].sub_category_banner_image}
                 alt={subCategories[activeIndex].sub_category_name}
                 className="w-full h-48 object-contain"
-                loading="lazy"
+
               />
 
               {/* Gradient overlay + label */}
@@ -661,8 +661,8 @@ export const SubCategoryBannerCarousel = () => {
               key={i}
               onClick={() => goToSlide(i)}
               className={`rounded-full transition-all duration-300 ${i === activeIndex
-                  ? "bg-[#f2c41a] w-5 h-2"
-                  : "bg-gray-300 w-2 h-2"
+                ? "bg-[#f2c41a] w-5 h-2"
+                : "bg-gray-300 w-2 h-2"
                 }`}
               aria-label={`Go to slide ${i + 1}`}
             />
