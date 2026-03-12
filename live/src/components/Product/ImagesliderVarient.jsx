@@ -296,7 +296,7 @@ const ImagesliderVarient = ({
   const renderMainImage = () => (
     <div className="absolute inset-0 w-full h-full">
       {currentImage ? (
-        <img
+        <img   fetchpriority="high" loading="lazy"
           src={currentImage}
           className={`absolute inset-0 w-full h-full object-cover rounded-xl transition-all duration-300 ${isTransitioning ? "opacity-70 scale-105" : "opacity-100 scale-100"
             } hover:scale-105`}
@@ -452,7 +452,7 @@ const ImagesliderVarient = ({
               aria-selected={activeIndex === index}
               aria-label={`View image ${index + 1}`}
             >
-              <img
+              <img   fetchpriority="high" loading="lazy"
                 src={imageUrl}
                 className="w-full h-full object-cover"
                 alt={`Thumbnail ${index + 1}`}

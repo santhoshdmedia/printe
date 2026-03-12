@@ -72,7 +72,7 @@ const otpMail = async (values) => {
   
     <!-- Logo -->
     <div style="text-align: center; margin-bottom: 25px;">
-      <img src="https://printe.in/assets/logo-BQbty1hL.png" alt="Printe Logo" style="max-height: 70px; width: auto; display: block; margin: 0 auto;" />
+      <img   fetchpriority="high" loading="lazy" src="https://printe.in/assets/logo-BQbty1hL.png" alt="Printe Logo" style="max-height: 70px; width: auto; display: block; margin: 0 auto;" />
     </div>
     
     <!-- OTP Content -->

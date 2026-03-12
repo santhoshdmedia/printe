@@ -39,7 +39,7 @@ const BlogCard = ({ blog, featured = false }) => {
     return (
       <div className="featured-card">
         <div className="featured-image-wrap">
-          {image ? <img src={image} alt={name} className="featured-image" /> : <div className="image-placeholder" />}
+          {image ? <img   fetchpriority="high" loading="lazy" src={image} alt={name} className="featured-image" /> : <div className="image-placeholder" />}
         </div>
         <div className="featured-body">
           <span className="date-tag">{date}</span>
@@ -56,7 +56,7 @@ const BlogCard = ({ blog, featured = false }) => {
 
   return (
     <div className="blog-card">
-      {image ? <img src={image} alt={name} className="card-image" /> : <div className="image-placeholder" />}
+      {image ? <img   fetchpriority="high" loading="lazy" src={image} alt={name} className="card-image" /> : <div className="image-placeholder" />}
       <div className="card-body">
         <span className="date-tag">{date}</span>
         <h3 className="card-title">{name}</h3>
@@ -222,7 +222,7 @@ const Blog = () => {
 
       <div className="blog-page relative">
         <div className="absolute bottom-0 left-0 !z-0 w-full">
-          <img src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png" alt="" className="!z-0 h-[500px] lg:h-[1000px] object-center w-full object-cover" />
+          <img   fetchpriority="high" loading="lazy" src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png" alt="" className="!z-0 h-[500px] lg:h-[1000px] object-center w-full object-cover" />
         </div>
         {/* Hero */}
         <div className="blog-hero relative z-10">

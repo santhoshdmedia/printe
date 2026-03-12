@@ -290,7 +290,7 @@ const CheckOut = () => {
       <Modal open={creatingOrderSuccessModal} footer={false} closable={false}>
         <div className="flex flex-col items-center justify-center space-y-6 p-6 bg-gray-50">
           <div className="h-80 w-80">
-            <img src={ImageHelper.ORDER_SUCCESS} alt="Order Successful Illustration" className="h-full w-full object-contain" />
+            <img   fetchpriority="high" loading="lazy" src={ImageHelper.ORDER_SUCCESS} alt="Order Successful Illustration" className="h-full w-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-primary">Thank You for Your Order!</h1>
           <p className="text-center text-gray-600">We appreciate your business. Your order has been placed successfully. A confirmation email will be sent shortly.</p>

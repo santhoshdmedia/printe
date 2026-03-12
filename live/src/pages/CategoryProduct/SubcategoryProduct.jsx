@@ -81,7 +81,7 @@ const SubcategoryProduct = () => {
         {bannearDatas && (
           <div className="">
             <div className=" overflow-hidden shadow-lg bg-gray-200 flex items-center justify-center max-h-[600px]  max-w-[1800px] mx-auto">
-              <img 
+              <img   fetchpriority="high" loading="lazy" 
                 src={bannearDatas} 
                 className="w-full h-auto  object-[100%]" 
                 alt={_.get(params, "subcategory", "")}

@@ -37,7 +37,7 @@ const RecentCard = ({ blog }) => {
     >
       <div className="w-[72px] h-[60px] rounded-md overflow-hidden flex-shrink-0 bg-gray-200">
         {image
-          ? <img src={image} alt={name} className="w-full h-full object-cover" />
+          ? <img   fetchpriority="high" loading="lazy" src={image} alt={name} className="w-full h-full object-cover" />
           : <div className="w-full h-full bg-gray-300" />
         }
       </div>
@@ -72,7 +72,7 @@ const GridCard = ({ blog }) => {
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
       <div className="h-48 overflow-hidden">
         {image
-          ? <img src={image} alt={name} className="w-full h-full object-cover" />
+          ? <img   fetchpriority="high" loading="lazy" src={image} alt={name} className="w-full h-full object-cover" />
           : <div className="w-full h-full bg-gray-200" />
         }
       </div>
@@ -167,7 +167,7 @@ const BlogDetails = () => {
 
       {/* Background image */}
       <div className="absolute bottom-0 left-0 w-full -z-0 pointer-events-none select-none">
-        <img
+        <img   fetchpriority="high" loading="lazy"
           src="https://printe.s3.ap-south-1.amazonaws.com/1771389440794-gm1nqlp6ood.png"
           alt=""
           className="w-full h-[500px] lg:h-[1000px] object-cover object-center"
@@ -221,7 +221,7 @@ const BlogDetails = () => {
 
               <div className="rounded-xl overflow-hidden shadow-md mb-6">
                 {blogImage
-                  ? <img src={blogImage} alt={blogName} className="w-full h-auto object-cover" />
+                  ? <img   fetchpriority="high" loading="lazy" src={blogImage} alt={blogName} className="w-full h-auto object-cover" />
                   : <div className="w-full h-[420px] bg-gray-300" />
                 }
               </div>
@@ -241,7 +241,7 @@ const BlogDetails = () => {
                     {_.get(section, "images", []).length > 0 && (
                       <div className="p-5">
                         {_.get(section, "images", []).map((img, i) => (
-                          <img
+                          <img   fetchpriority="high" loading="lazy"
                             key={i}
                             src={img}
                             alt={`section-${index}-img-${i}`}

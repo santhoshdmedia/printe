@@ -131,7 +131,7 @@ const WishList = () => {
             <Empty 
               image={
                 <div className="flex justify-center">
-                  <img 
+                  <img   fetchpriority="high" loading="lazy" 
                     src={wishlist} 
                     alt="Empty wishlist" 
                     className="w-20 h-28 object-contain" 
@@ -172,7 +172,7 @@ const WishList = () => {
                 >
                   <div className="flex flex-col md:flex-row">
                     <div className="md:w-32 h-40 md:h-auto bg-gray-100 flex items-center justify-center overflow-hidden">
-                      <img 
+                      <img   fetchpriority="high" loading="lazy" 
                         src={img} 
                         alt={productName} 
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"

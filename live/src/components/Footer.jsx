@@ -33,7 +33,7 @@ const Footer = () => {
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#f2c41a] rounded-lg shadow-lg p-3 border border-gray-800 transform hover:scale-105 transition-transform duration-300 group">
         <Link to="/" className="font-bold text-xl rounded uppercase cursor-pointer">
           <div className="flex flex-row items-center justify-center p-1">
-            <img src={Logo} alt="Printe Logo" className="w-auto h-12 bg-center bg-cover group-hover:brightness-110 transition-all" />
+            <img   fetchpriority="high" loading="lazy" src={Logo}  alt="Printe Logo" className="w-auto h-12 bg-center bg-cover group-hover:brightness-110 transition-all" />
           </div>
         </Link>
       </div>
@@ -139,28 +139,28 @@ const Footer = () => {
             <h3 className="text-lg font-semibold text-[#f2c41a] mb-2">100% SECURE PAYMENTS</h3>
             <div className="flex gap-2">
               <div className="">
-                <img src={Gpay} alt="Gpay" />
+                <img   fetchpriority="high" loading="lazy" src={Gpay} alt="Gpay" />
               </div>
               <div className="">
-                <img src={Phonepay} alt="Phonepay" />
+                <img   fetchpriority="high" loading="lazy" src={Phonepay} alt="Phonepay" />
               </div>
               <div className="">
-                <img src={Paytm} alt="Paytm" />
+                <img   fetchpriority="high" loading="lazy" src={Paytm} alt="Paytm" />
               </div>
               <div className="">
-                <img src={Bhimupi} alt="Bhim UPI" />
+                <img   fetchpriority="high" loading="lazy" src={Bhimupi} alt="Bhim UPI" />
               </div>
               <div className="">
-                <img src={visa} alt="visa" />
+                <img   fetchpriority="high" loading="lazy" src={visa} alt="visa" />
               </div>
               <div className="">
-                <img src={visaelectron} alt="visa Electron" />
+                <img   fetchpriority="high" loading="lazy" src={visaelectron} alt="visa Electron" />
               </div>
               <div className="">
-                <img src={Mastro} alt="Mastro" />
+                <img   fetchpriority="high" loading="lazy" src={Mastro} alt="Mastro" />
               </div>
               <div className="">
-                <img src={Master} alt="Master" />
+                <img   fetchpriority="high" loading="lazy" src={Master} alt="Master" />
               </div>
             </div>
             

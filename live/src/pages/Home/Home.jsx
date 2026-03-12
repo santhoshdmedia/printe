@@ -13,7 +13,7 @@ import HistoryProducts from "../Product/HistoryProducts";
 import BrowseAll from "../../components/Home/BrowseAll";
 import { WGDesigns } from "../../config/QuickAccess";
 import BeforeAfterSlider from "../../components/Home/BeforeAfter";
-import BlogCarousel from "../../components/Home/BlogCarousel"; // ✅ new import
+import BlogCarousel from "../../components/Home/BlogCarousel"; 
 import { Helmet } from "react-helmet-async";
 
 const Home = () => {

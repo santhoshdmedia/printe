@@ -628,7 +628,7 @@ export const SubCategoryBannerCarousel = () => {
             onClick={() => handleBannerClick(subCategories[activeIndex])}
           >
             <div className="relative w-full  overflow-hidden shadow-md cursor-pointer">
-              <img
+              <img   fetchpriority="high" loading="lazy"
                 src={subCategories[activeIndex].sub_category_banner_image}
                 alt={subCategories[activeIndex].sub_category_name}
                 className="w-full h-48 object-contain"

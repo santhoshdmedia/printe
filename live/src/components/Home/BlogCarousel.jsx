@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import _ from "lodash";
 import moment from "moment";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
 
 const truncateWords = (html, wordLimit = 22) => {
   if (!html) return "";
@@ -13,13 +16,46 @@ const truncateWords = (html, wordLimit = 22) => {
 
 const BlogCarousel = ({ blogs = [] }) => {
   const [active, setActive] = useState(0);
+  const thumbSwiperRef = useRef(null);
+  const timerRef = useRef(null);
 
-  if (!blogs.length) return null;
   const total = blogs.length;
 
-  const goTo = (idx) => { if (idx !== active) setActive(idx); };
-  const goPrev = () => goTo((active - 1 + total) % total);
-  const goNext = () => goTo((active + 1) % total);
+  const goTo = useCallback((idx) => {
+    setActive(idx);
+    if (thumbSwiperRef.current) {
+      thumbSwiperRef.current.slideTo(idx);
+    }
+  }, []);
+
+  const startAutoplay = useCallback(() => {
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setActive((prev) => {
+        const next = (prev + 1) % total;
+        if (thumbSwiperRef.current) thumbSwiperRef.current.slideTo(next);
+        return next;
+      });
+    }, 3000);
+  }, [total]);
+
+  const stopAutoplay = useCallback(() => clearInterval(timerRef.current), []);
+
+  useEffect(() => {
+    if (!total) return;
+    startAutoplay();
+    return () => clearInterval(timerRef.current);
+  }, [startAutoplay, total]);
+
+  const handleGoTo = useCallback((idx) => {
+    goTo(idx);
+    startAutoplay();
+  }, [goTo, startAutoplay]);
+
+  const goPrev = useCallback(() => handleGoTo((active - 1 + total) % total), [active, total, handleGoTo]);
+  const goNext = useCallback(() => handleGoTo((active + 1) % total), [active, total, handleGoTo]);
+
+  if (!total) return null;
 
   const blog      = blogs[active];
   const image     = _.get(blog, "blog_image", "");
@@ -30,10 +66,14 @@ const BlogCarousel = ({ blogs = [] }) => {
   const desc      = truncateWords(shortDesc, 22);
 
   return (
-    <section className="bg-[#F2F0EC] py-12 md:py-16">
+    <section
+      className="bg-[#F2F0EC] py-12 md:py-16"
+      onMouseEnter={stopAutoplay}
+      onMouseLeave={startAutoplay}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex flex-wrap items-end justify-between gap-4 mb-7">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -73,17 +113,16 @@ const BlogCarousel = ({ blogs = [] }) => {
           </div>
         </div>
 
-        {/* ── Main Card ── */}
+        {/* Main Card */}
         <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
-
           {/* Banner image */}
           <div className="relative w-full aspect-[14/5] sm:aspect-[2/1] lg:aspect-[14/5] overflow-hidden bg-[#E8E4DC]">
             {image ? (
-              <img
+              <img   fetchpriority="high" loading="lazy"
                 key={active}
                 src={image}
                 alt={name}
-                className="absolute inset-0 w-full h-full object-contain object-center transition-transform duration-700 hover:scale-102"
+                className="absolute inset-0 w-full h-full object-contain object-center transition-transform duration-700"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#EDE8E0] to-[#DDD7CB] text-5xl text-[#C4BDB4]">
@@ -98,7 +137,6 @@ const BlogCarousel = ({ blogs = [] }) => {
 
           {/* Content strip */}
           <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6 lg:p-8">
-
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[#8B6F47]">
@@ -130,7 +168,7 @@ const BlogCarousel = ({ blogs = [] }) => {
               >
                 Read Article
                 <svg
-                  className="w-3 h-3 transition-transform duration-200 hover:translate-x-1"
+                  className="w-3 h-3"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -145,58 +183,71 @@ const BlogCarousel = ({ blogs = [] }) => {
           </div>
         </div>
 
-        {/* ── Thumbnail Strip ── */}
-        <div className="flex gap-2 mt-4 overflow-x-auto pb-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {blogs.map((b, i) => {
-            const tImg   = _.get(b, "blog_image", "");
-            const tName  = _.get(b, "blog_name", "");
-            const isActive = i === active;
-            return (
-              <div
-                key={b._id || i}
-                onClick={() => goTo(i)}
-                className={`
-                  flex-none w-[calc(50%-4px)] sm:flex-1 sm:w-0 snap-start
-                  cursor-pointer rounded-xl overflow-hidden relative border-2
-                  transition-all duration-200
-                  ${isActive
-                    ? "border-[#1A1714] shadow-md"
-                    : "border-transparent hover:-translate-y-0.5 hover:shadow-md"
-                  }
-                `}
-              >
-                {tImg ? (
-                  <img
-                    src={tImg}
-                    alt={tName}
-                    className={`w-full aspect-[16/7] object-contain block transition-all duration-200 ${
-                      isActive ? "opacity-100" : "opacity-75 grayscale"
-                    }`}
-                  />
-                ) : (
-                  <div className="w-full aspect-[16/7] bg-gradient-to-br from-[#EDE8E0] to-[#DDD7CB] flex items-center justify-center text-[#C4BDB4] text-xl">
-                    ✦
+        {/* Thumbnail Strip — Swiper controlled by main slide */}
+        <div className="mt-4">
+          <Swiper
+            modules={[Navigation]}
+            onSwiper={(swiper) => { thumbSwiperRef.current = swiper; }}
+            slidesPerView={1}
+            spaceBetween={8}
+            breakpoints={{
+              640: { slidesPerView: 4, spaceBetween: 8 },
+            }}
+            allowTouchMove={true}
+            centeredSlides={false}
+            watchSlidesProgress
+          >
+            {blogs.map((b, i) => {
+              const tImg     = _.get(b, "blog_image", "");
+              const tName    = _.get(b, "blog_name", "");
+              const isActive = i === active;
+              return (
+                <SwiperSlide key={b._id || i}>
+                  <div
+                    onClick={() => handleGoTo(i)}
+                    className={`
+                      cursor-pointer rounded-xl overflow-hidden relative border-2
+                      transition-all duration-200
+                      ${isActive
+                        ? "border-[#1A1714] shadow-md"
+                        : "border-transparent hover:-translate-y-0.5 hover:shadow-md"
+                      }
+                    `}
+                  >
+                    {tImg ? (
+                      <img   fetchpriority="high" loading="lazy"
+                        src={tImg}
+                        alt={tName}
+                        className={`w-full aspect-[16/7] object-contain block transition-all duration-200 ${
+                          isActive ? "opacity-100" : "opacity-75"
+                        }`}
+                      />
+                    ) : (
+                      <div className="w-full aspect-[16/7] bg-gradient-to-br from-[#EDE8E0] to-[#DDD7CB] flex items-center justify-center text-[#C4BDB4] text-xl">
+                        ✦
+                      </div>
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-5 bg-gradient-to-t from-black/60 to-transparent">
+                      <span className={`text-[10px] leading-tight block truncate ${isActive ? "text-white font-semibold" : "text-white/80 font-medium"}`}>
+                        {tName}
+                      </span>
+                    </div>
+                    {isActive && (
+                      <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
                   </div>
-                )}
-                <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-5 bg-gradient-to-t from-black/60 to-transparent">
-                  <span className={`text-[10px] leading-tight block truncate ${isActive ? "text-white font-semibold" : "text-white/80 font-medium"}`}>
-                    {tName}
-                  </span>
-                </div>
-                {isActive && (
-                  <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-white" />
-                )}
-              </div>
-            );
-          })}
+                </SwiperSlide>
+              );
+            })}
+          </Swiper>
         </div>
 
-        {/* ── Dots ── */}
+        {/* Dots */}
         <div className="flex justify-center items-center gap-1.5 mt-5">
           {blogs.map((_, i) => (
             <button
               key={i}
-              onClick={() => goTo(i)}
+              onClick={() => handleGoTo(i)}
               aria-label={`Slide ${i + 1}`}
               className={`h-1.5 rounded-full border-none cursor-pointer transition-all duration-300 ${
                 i === active

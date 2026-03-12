@@ -85,7 +85,7 @@ const ShoppingCart = () => {
       render: (image, record) => (
         <div className="flex items-start gap-4">
           <Link to={`/product/${_.get(record, "product_seo_url", "")}`} target="_blank">
-            <img src={image} alt={record.product_name} className="w-20 h-20 object-contain" />
+            <img   fetchpriority="high" loading="lazy" src={image} alt={record.product_name} className="w-20 h-20 object-contain" />
           </Link>
           <div className="flex-1">
             <Link to={`/product/${_.get(record, "product_seo_url", "")}`} className="text-blue-600 hover:text-blue-800 text-base">
@@ -160,7 +160,7 @@ const ShoppingCart = () => {
     <Spin spinning={loading} indicator={<IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />}>
       {_.isEmpty(cardData) ? (
         <div className="min-h-screen center_div flex-col">
-          <img className="size-[300px] object-contain" src={ImageHelper.EmptyCard} alt="" />
+          <img   fetchpriority="high" loading="lazy" className="size-[300px] object-contain" src={ImageHelper.EmptyCard} alt="" />
           <h1 className="w-[300px] text-center pb-2">Your cart is empty! Start adding amazing products now and enjoy a seamless shopping experience.</h1>
           <div className="center_div">
             <Link to="/" className="!text-primary !font-medium">
@@ -219,7 +219,7 @@ const ShoppingCart = () => {
       >
         {selectedProduct && (
           <div className="flex flex-col items-center">
-            <img
+            <img   fetchpriority="high" loading="lazy"
               src={selectedProduct.product_design_file}
               alt="Design Preview"
               className="max-w-full max-h-[70vh] object-contain"

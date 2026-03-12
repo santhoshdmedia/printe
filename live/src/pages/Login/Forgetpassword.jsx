@@ -46,7 +46,7 @@ const Forgetpassword = () => {
         {/* Logo in top left corner */}
         <div className="absolute top-6 left-6">
           <div className=" p-3 bg-yellow-400 flex items-center justify-center rounded-md">
-            <img 
+            <img   fetchpriority="high" loading="lazy" 
               src={logo} 
               alt="Logo" 
               className="h-8 w-auto object-contain"

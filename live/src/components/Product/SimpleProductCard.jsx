@@ -236,7 +236,7 @@ const SimpleProductCard = ({ data }) => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <img 
+              <img   fetchpriority="high" loading="lazy" 
                 src={Soldout} 
                 alt="Sold Out" 
                 className="w-3/4 object-cover absolute top-0 h-20 overflow-visible" 

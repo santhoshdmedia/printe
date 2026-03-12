@@ -30,7 +30,7 @@ const MixedProductDescripton = ({ res }) => {
               <div key={index}>
                 <h1>{_.get(datas, "content", "")}</h1>
                 {_.get(datas, "images", []).map((images_data, index) => {
-                  return <img key={index} src={images_data} className="!object-cover size-[200px]" />;
+                  return <img   fetchpriority="high" loading="lazy" key={index} src={images_data} className="!object-cover size-[200px]" />;
                 })}
               </div>
             );

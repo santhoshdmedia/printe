@@ -482,7 +482,7 @@ const Signup = () => {
               href="/"
               data-discover="true"
             >
-              <img
+              <img   fetchpriority="high" loading="lazy"
                 src={logo}
                 alt="Logo"
                 className="h-6 md:h-8 w-auto object-contain"

@@ -193,7 +193,7 @@ const GlamorousProductCard = ({ data }) => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <img 
+                <img   fetchpriority="high" loading="lazy" 
                   src={Soldout} 
                   alt="Sold Out" 
                   className="w-12 h-12 object-contain" 

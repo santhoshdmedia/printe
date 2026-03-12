@@ -521,7 +521,7 @@ const Navbar = () => {
         <div className="p-6 bg-gradient-to-r from-yellow-400 to-yellow-500 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={Logo} alt="Logo" className="h-12 w-full object-contain" />
+              <img   fetchpriority="high" loading="lazy" src={Logo} alt="Logo" className="h-12 w-full object-contain" />
               <span className="text-white font-bold text-lg">Menu</span>
             </div>
             <button
@@ -830,11 +830,11 @@ const Navbar = () => {
         {/* Left: Logo + Search */}
         <div className="flex items-center gap-x-4 xl:gap-x-12 ">
           <Link to="/">
-            <img src={Logo} alt="logo" className="h-16 w-full object-contain" />
+            <img   fetchpriority="high" loading="lazy" src={Logo} alt="logo" className="h-16 w-full object-contain" />
           </Link>
           {user.role == "bni_user" && <Link to="/products">
 
-            <img src={BNILogo} alt="Logo" className="h-16 object-contain" />
+            <img   fetchpriority="high" loading="lazy" src={BNILogo} alt="Logo" className="h-16 object-contain" />
           </Link>}
           <SearchInput />
         </div>
@@ -882,9 +882,9 @@ const Navbar = () => {
               onClick={closeSearchBar}
               className=" flex items-center gap-2"
             >
-              <img src={Logo} alt="Logo" className="h-10 object-contain" />
+              <img   fetchpriority="high" loading="lazy" src={Logo} alt="Logo" className="h-10 object-contain" />
               {user.role == "bni_user" && (
-                <img src={BNILogo} alt="BNI Logo" className="h-8 object-contain" />
+                <img   fetchpriority="high" loading="lazy" src={BNILogo} alt="BNI Logo" className="h-8 object-contain" />
               )}
             </Link>
           </div>

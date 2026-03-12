@@ -497,20 +497,20 @@ const BniLogin = () => {
                 style={{ clipPath: "ellipse(50% 40% at 50% 50%)" }}
               ></div>
 
-              <img src={logo} alt="Logo" className="h-16 sm:h-24 drop-shadow-md" />
+              <img   fetchpriority="high" loading="lazy" src={logo} alt="Logo" className="h-16 sm:h-24 drop-shadow-md" />
             </div>
             <h1 className="text-2xl  sm:text-3xl font-bold text-gray-900 mb-2">
               <span className="text-red-600">BNI</span> Privilege Login
             </h1>
             <div className="flex justify-center my-4">
-              <img src={Bnilogo} alt="BNI Logo" className="h-20 sm:h-24 drop-shadow-md" />
+              <img   fetchpriority="high" loading="lazy" src={Bnilogo} alt="BNI Logo" className="h-20 sm:h-24 drop-shadow-md" />
             </div>
 
           </div>
 
           {/* Desktop Logo */}
           <div className="hidden lg:flex mb-6 justify-center">
-            <img src={Bnilogo} alt="BNI Logo" className="h-24 lg:h-28 drop-shadow-md" />
+            <img   fetchpriority="high" loading="lazy" src={Bnilogo} alt="BNI Logo" className="h-24 lg:h-28 drop-shadow-md" />
           </div>
 
           <div className="px-4">
@@ -995,7 +995,7 @@ const BniLogin = () => {
       >
         <div className="max-w-[90%] xl:max-w-[80%] relative z-10 text-center flex flex-col justify-between gap-10 h-[80vh]">
           <div className="w-full flex flex-col justify-center items-center">
-            <img src={logo} alt="logo" className="w-[60%] lg:w-[70%] xl:w-[80%] h-fit z-20" />
+            <img   fetchpriority="high" loading="lazy" src={logo} alt="logo" className="w-[60%] lg:w-[70%] xl:w-[80%] h-fit z-20" />
             <h1 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-black mt-4 lg:mt-6 text-center">
               <span className="text-red-600">BNI</span> Privilege Login
             </h1>
