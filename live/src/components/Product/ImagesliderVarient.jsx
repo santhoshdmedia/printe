@@ -456,7 +456,6 @@ const ImagesliderVarient = ({
                 src={imageUrl}
                 className="w-full h-full object-cover"
                 alt={`Thumbnail ${index + 1}`}
-                loading="lazy"
                 onError={() => handleImageError(imageUrl)}
               />
             </button>

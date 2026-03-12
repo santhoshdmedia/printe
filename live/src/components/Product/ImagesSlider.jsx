@@ -493,7 +493,6 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
                 src={imageUrl}
                 className="w-full h-full object-cover"
                 alt={`Thumbnail ${index + 1}`}
-                loading="lazy"
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
             </button>
