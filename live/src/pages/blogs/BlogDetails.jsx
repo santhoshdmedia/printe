@@ -54,7 +54,7 @@ const RecentCard = ({ blog }) => {
 // ─── Sidebar Section Header ───────────────────────────────────────────────────
 const SidebarHeading = ({ children }) => (
   <div className="mb-4">
-    <h2 className="font-serif text-xl font-bold text-gray-900 leading-tight">{children}</h2>
+    <h2 className=" text-xl font-bold text-gray-900 leading-tight">{children}</h2>
     <div className="w-10 h-[3px] bg-[#F5C518] rounded-full mt-1.5" />
   </div>
 );
@@ -78,7 +78,7 @@ const GridCard = ({ blog }) => {
       </div>
       <div className="p-4">
         <span className="text-[11px] text-[#C98F00] font-semibold uppercase tracking-wide">{date}</span>
-        <h3 className="font-serif text-base font-bold text-gray-900 mt-1 mb-2 leading-snug">{name}</h3>
+        <h3 className=" text-base font-bold text-gray-900 mt-1 mb-2 leading-snug">{name}</h3>
         <p className="text-sm text-gray-500 line-clamp-3">{plainDesc}</p>
         <Link
           to={`/blog-details/${slug}`}
@@ -212,7 +212,7 @@ const BlogDetails = () => {
 
           {!loading && !error && currentBlog && (
             <>
-              <h1 className="font-serif text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-2">
+              <h1 className=" text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-2">
                 {blogName}
               </h1>
               <p className="text-xs text-[#C98F00] font-semibold uppercase tracking-wide mb-5">
@@ -228,7 +228,7 @@ const BlogDetails = () => {
 
               {/* Rich text intro */}
               <div
-                className="prose prose-stone prose-headings:font-serif prose-headings:text-gray-900 prose-a:text-[#C98F00] prose-strong:text-gray-900 prose-blockquote:border-l-[#F5C518] prose-blockquote:bg-[#fffde8] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg max-w-none"
+                className="prose prose-stone text-gray-900 prose-a:text-[#C98F00] prose-strong:text-gray-900 prose-blockquote:border-l-[#F5C518] prose-blockquote:bg-[#fffde8] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg max-w-none"
                 dangerouslySetInnerHTML={{ __html: shortDesc }}
               />
 
@@ -250,11 +250,11 @@ const BlogDetails = () => {
                         ))}
                       </div>
                     )}
-                    <h2 className="lg:text-xl text-md font-bold text-center capitalize mb-3 font-serif text-gray-900">
+                    <h2 className="lg:text-xl text-md font-bold text-center capitalize mb-3  text-gray-900">
                       {_.get(section, "title", "")}
                     </h2>
                     <div
-                      className="prose prose-stone prose-sm prose-headings:font-serif prose-headings:text-gray-900 prose-a:text-[#C98F00] prose-strong:text-gray-900 prose-blockquote:border-l-[#F5C518] prose-blockquote:bg-[#fffde8] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg max-w-none"
+                      className="prose prose-stone prose-sm prose-headings: prose-headings:text-gray-900 prose-a:text-[#C98F00] prose-strong:text-gray-900 prose-blockquote:border-l-[#F5C518] prose-blockquote:bg-[#fffde8] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg max-w-none"
                       dangerouslySetInnerHTML={{ __html: _.get(section, "description", "") }}
                     />
                     <hr className="border-t-2 border-[#e8e0c8] my-4" />
@@ -337,7 +337,7 @@ const BlogDetails = () => {
       {/* ── All Blogs Grid ── */}
       {!loading && !error && allBlogs.length > 0 && (
         <section className="relative z-10 px-4 py-12 md:px-8 lg:px-20">
-          <h2 className="font-serif text-3xl font-bold text-gray-900 mb-1">All Blogs</h2>
+          <h2 className=" text-3xl font-bold text-gray-900 mb-1">All Blogs</h2>
           <div className="w-12 h-[3px] bg-[#F5C518] rounded-full mb-6" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {allBlogs.map((blog) => (

@@ -5,7 +5,7 @@ const optionSchema = new mongoose.Schema(
     value: { type: String },
     _id: { type: String },
     variant_type: { type: String },
-   image_names: { type: Array }
+    image_names: { type: Array }
   },
   { _id: false }
 );
@@ -14,8 +14,8 @@ const variantSchema = new mongoose.Schema(
   {
     variant_name: { type: String },
     variant_type: { type: String },
-    
-    options: {type: Array},
+
+    options: { type: Array },
     _id: { type: Number },
   },
   { _id: false }
@@ -23,20 +23,54 @@ const variantSchema = new mongoose.Schema(
 
 const stockInfoSchema = new mongoose.Schema(
   {
-    date: { 
-      type: Date, 
+    date: {
+      type: Date,
       required: true,
-      default: Date.now 
+      default: Date.now
     },
-    add_stock: { 
-      type: Number, 
-      required: true 
+    add_stock: {
+      type: Number,
+      required: true
     },
-    invoice: { 
-      type: String 
+    buy_price: { type: String },
+    invoice: {
+      type: String
     },
-    notes: { 
-      type: String 
+    handler_name: {
+      type: String
+    },
+    location: {
+      type: String
+    },
+    stock_images: { type: Array },
+    notes: {
+      type: String
+    },
+  },
+  { _id: false }
+);
+const stockOfflineSchema = new mongoose.Schema(
+  {
+    date: {
+      type: Date,
+      required: true,
+      default: Date.now
+    },
+    stock: {
+      type: Number,
+      required: true
+    },
+    customer_details: {
+      type: String
+    },
+    handler_name: {
+      type: String
+    },
+    location: {
+      type: String
+    },
+    notes: {
+      type: String
     },
   },
   { _id: false }
@@ -60,7 +94,7 @@ module.exports = mongoose.model(
       },
       product_card_color: {
         type: String,
-      },    
+      },
       type: {
         type: String,
         enum: ["Stand Alone Product", "Variable Product"],
@@ -68,9 +102,9 @@ module.exports = mongoose.model(
       },
       product_type: {
         type: String,
-        enum: ["own Product","vendor Product"],
+        enum: ["own Product", "vendor Product"],
         required: true,
-        default:"own Product"
+        default: "own Product"
       },
       HSNcode_time: {
         type: String,
@@ -152,6 +186,7 @@ module.exports = mongoose.model(
       recommended_product: { type: Boolean, require: true },
       popular_product: { type: Boolean, require: true },
       MRP_price: { type: String, require: true },
+
       customer_product_price: { type: String, require: true },
       Deler_product_price: { type: String, require: true },
       corporate_product_price: { type: String, require: true },
@@ -159,6 +194,7 @@ module.exports = mongoose.model(
         type: String,
       },
       stock_info: [stockInfoSchema],
+      stock_offline: [stockOfflineSchema],
       is_cloned: {
         type: Boolean,
         default: false,
