@@ -25,12 +25,10 @@ const stockInfoSchema = new mongoose.Schema(
   {
     date: {
       type: Date,
-      required: true,
       default: Date.now
     },
     add_stock: {
       type: Number,
-      required: true
     },
     buy_price: { type: String },
     invoice: {
@@ -53,12 +51,10 @@ const stockOfflineSchema = new mongoose.Schema(
   {
     date: {
       type: Date,
-      required: true,
       default: Date.now
     },
     stock: {
       type: Number,
-      required: true
     },
     customer_details: {
       type: String
@@ -98,36 +94,29 @@ module.exports = mongoose.model(
       type: {
         type: String,
         enum: ["Stand Alone Product", "Variable Product"],
-        required: true,
       },
       product_type: {
         type: String,
         enum: ["own Product", "vendor Product"],
-        required: true,
         default: "own Product"
       },
       HSNcode_time: {
         type: String,
-        required: true,
       },
       product_codeS_NO: {
         type: String,
-        // required: true,
       },
       Vendor_Code: {
         type: String,
-        required: true,
       },
       product_Lock: {
         type: Boolean,
       },
       Production_time: {
         type: String,
-        required: true,
       },
       Stock_Arrangement_time: {
         type: String,
-        required: true,
       },
       GST: {
         type: String,
