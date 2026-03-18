@@ -128,14 +128,11 @@ const Blog = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .blog-page { font-family: 'DM Sans', sans-serif; background: #FEFAE8; min-height: 100vh; color: #2b2b2b; }
 
         /* Hero */
         .blog-hero { text-align: center; padding: 52px 5vw 36px; }
-        .blog-hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; color: #1a1a1a; letter-spacing: -0.5px; }
+        .blog-hero h1 {  font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; color: #1a1a1a; letter-spacing: -0.5px; }
         .blog-hero .hero-sub { font-size: 1.05rem; font-weight: 500; color: #1a1a1a; margin: 6px 0 10px; }
         .blog-hero .hero-tagline { font-size: 0.95rem; color: #555; font-weight: 300; }
 
@@ -148,7 +145,7 @@ const Blog = () => {
         /* State boxes */
         .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; gap: 16px; color: #888; font-size: 0.95rem; }
         .error-box { color: #c0392b; }
-        .retry-btn { background: #F5C518; border: none; padding: 9px 22px; border-radius: 7px; font-weight: 600; cursor: pointer; font-size: 0.88rem; font-family: 'DM Sans', sans-serif; }
+        .retry-btn { background: #F5C518; border: none; padding: 9px 22px; border-radius: 7px; font-weight: 600; cursor: pointer; font-size: 0.88rem;  }
         .retry-btn:hover { background: #e0b400; }
 
         /* Spinner */
@@ -170,14 +167,14 @@ const Blog = () => {
         .featured-image-wrap { width: 100%; height: 280px; overflow: hidden; }
         .featured-image { width: 100%; height: 100%; object-fit: cover; }
         .featured-body { padding: 20px 24px 24px; }
-        .featured-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; margin: 6px 0 10px; color: #1a1a1a; line-height: 1.3; }
+        .featured-title { font-size: 1.5rem; font-weight: 700; margin: 6px 0 10px; color: #1a1a1a; line-height: 1.3; }
         .featured-desc { font-size: 0.9rem; color: #555; line-height: 1.65; text-align: justify; }
 
         /* Blog card */
         .blog-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.07); margin-bottom: 28px; }
         .card-image { width: 100%; height: 220px; object-fit: cover; }
         .card-body { padding: 16px 20px 20px; }
-        .card-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; margin: 4px 0 8px; color: #1a1a1a; }
+        .card-title {  font-size: 1.2rem; font-weight: 700; margin: 4px 0 8px; color: #1a1a1a; }
         .card-desc { font-size: 0.875rem; color: #555; line-height: 1.65; text-align: justify; }
 
         /* Shared */
@@ -190,9 +187,9 @@ const Blog = () => {
 
         /* Sidebar */
         .sidebar-search { display: flex; align-items: center; background: #fff; border: 1.5px solid #ddd; border-radius: 8px; padding: 8px 12px; gap: 8px; margin-bottom: 28px; }
-        .sidebar-search input { border: none; outline: none; font-size: 0.875rem; flex: 1; background: transparent; font-family: 'DM Sans', sans-serif; color: #2b2b2b; }
+        .sidebar-search input { border: none; outline: none; font-size: 0.875rem; flex: 1; background: transparent; color: #2b2b2b; }
         .sidebar-search button { background: #F5C518; border: none; cursor: pointer; border-radius: 6px; padding: 6px 10px; font-size: 1rem; }
-        .sidebar-section-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+        .sidebar-section-title {  font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
         .sidebar-accent { width: 48px; height: 3px; background: #F5C518; border-radius: 2px; margin-bottom: 16px; }
         .category-list { list-style: none; }
         .category-list li { padding: 10px 0; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; font-weight: 500; cursor: pointer; color: #2b2b2b; transition: color 0.2s; }

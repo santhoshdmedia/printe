@@ -163,7 +163,7 @@ const BlogDetails = () => {
   const createdAt = moment(_.get(currentBlog, "createdAt", "")).format("dddd, MMMM DD, YYYY");
 
   return (
-    <div className="relative bg-[#FEFAE8] min-h-screen font-sans text-gray-800">
+    <div className="relative bg-[#FEFAE8] min-h-screen  text-gray-800">
 
       {/* Background image */}
       <div className="absolute bottom-0 left-0 w-full -z-0 pointer-events-none select-none">
