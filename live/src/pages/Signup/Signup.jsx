@@ -301,7 +301,7 @@ const Signup = () => {
 
     setIsSendingOtp(true);
     try {
-      const response = await sendWhatsAppOtp({ phoneNumber: form.phone });
+      const response = await sendWhatsAppOtp({ phoneNumber: `91${form.phone}` });
 
       if (response.data.success) {
         message.success("OTP sent to your WhatsApp!");
@@ -315,8 +315,8 @@ const Signup = () => {
     } catch (error) {
       message.error(
         error.response?.data?.error ||
-          error.response?.data?.message ||
-          "Failed to send OTP. Please try again."
+        error.response?.data?.message ||
+        "Failed to send OTP. Please try again."
       );
     } finally {
       setIsSendingOtp(false);
@@ -335,7 +335,7 @@ const Signup = () => {
     setIsVerifyingOtp(true);
     try {
       const response = await verifyWhatsAppOtp({
-        phoneNumber: form.phone,
+        phoneNumber: `91${form.phone}`,
         otp: form.otp,
       });
 
@@ -348,8 +348,8 @@ const Signup = () => {
     } catch (error) {
       message.error(
         error.response?.data?.error ||
-          error.response?.data?.message ||
-          "Failed to verify OTP"
+        error.response?.data?.message ||
+        "Failed to verify OTP"
       );
     } finally {
       setIsVerifyingOtp(false);
@@ -378,8 +378,8 @@ const Signup = () => {
     } catch (error) {
       message.error(
         error.response?.data?.error ||
-          error.response?.data?.message ||
-          "Failed to resend OTP"
+        error.response?.data?.message ||
+        "Failed to resend OTP"
       );
     }
   };
@@ -423,23 +423,21 @@ const Signup = () => {
 
   return (
     <div
-      className={`w-full min-h-screen flex !font-primary transition-all duration-500 ${
-        isMounted
-          ? isExiting
-            ? "exit-animation"
-            : "enter-animation"
-          : "opacity-0"
-      }`}
+      className={`w-full min-h-screen flex !font-primary transition-all duration-500 ${isMounted
+        ? isExiting
+          ? "exit-animation"
+          : "enter-animation"
+        : "opacity-0"
+        }`}
     >
       {/* Left Section - Signup Form */}
       <div
-        className={`w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8 overflow-auto relative transition-all duration-500 ${
-          isMounted
-            ? isExiting
-              ? "translate-x-full opacity-0"
-              : "translate-x-0 opacity-100"
-            : "translate-x-full opacity-0"
-        }`}
+        className={`w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8 overflow-auto relative transition-all duration-500 ${isMounted
+          ? isExiting
+            ? "translate-x-full opacity-0"
+            : "translate-x-0 opacity-100"
+          : "translate-x-full opacity-0"
+          }`}
       >
         {/* Logo */}
         <div className="absolute top-4 md:top-6 left-4 md:left-6">
@@ -505,10 +503,12 @@ const Signup = () => {
                     required
                     name="phone"
                     onChange={handleOnChange}
-                    placeholder="Enter your phone number (with country code)"
+                    placeholder="Enter your 10-digit number"
                     style={{ fontSize: "14px", height: "44px", borderRadius: "8px" }}
                     className="w-full border-gray-300 hover:border-gray-400 focus:border-yellow-400"
                     type="tel"
+                    addonBefore="+91"
+                    maxLength={10}
                   />
                   {errorMessage.phone && (
                     <p className="text-red-500 text-xs mt-1">{errorMessage.phone}</p>
@@ -807,13 +807,12 @@ const Signup = () => {
 
       {/* Right Section - Illustration */}
       <div
-        className={`hidden lg:flex lg:w-1/2 items-center justify-center p-8 fixed right-0 top-0 h-full transition-all duration-500 ${
-          isMounted
-            ? isExiting
-              ? "-translate-x-full opacity-0"
-              : "translate-x-0 opacity-100"
-            : "-translate-x-full opacity-0"
-        }`}
+        className={`hidden lg:flex lg:w-1/2 items-center justify-center p-8 fixed right-0 top-0 h-full transition-all duration-500 ${isMounted
+          ? isExiting
+            ? "-translate-x-full opacity-0"
+            : "translate-x-0 opacity-100"
+          : "-translate-x-full opacity-0"
+          }`}
         style={{
           backgroundImage: `url(${abc})`,
           backgroundSize: "cover",
