@@ -193,7 +193,7 @@ const Signup = () => {
     const isValid = value.length >= 10 && value.length <= 15;
     setErrorMessage((prev) => ({
       ...prev,
-      phone: isValid ? "" : "Phone number must be 10-15 digits.",
+      phone: isValid ? "" : "Phone number must be 10 digits.",
     }));
     return isValid;
   };
