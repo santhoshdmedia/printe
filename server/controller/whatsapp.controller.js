@@ -2,17 +2,28 @@ const axios = require("axios");
 
 // ─────────────────────────────────────────────
 // Digitell Configuration
-// Add this to your .env file:
-//   DIGITELL_TOKEN=your_api_token
-//   OTP_TEMPLATE_NAME=your_approved_template_name
-//   OTP_TEMPLATE_LANGUAGE=en_us
 // ─────────────────────────────────────────────
 const DIGITELL_BASE_URL = "https://official.digitellagency.in/api";
 const DIGITELL_VENDOR_UID = "ef46f737-df5f-4f12-bfe6-0bb3b8aa2bda";
 const DIGITELL_TOKEN = "JLVPyHpuyOP1vDfi99Uoe9JdjtsYFlRQK4blX96HlHAw38ryIOfzzT29qq6fjFII";
 
+const DEFAULT_TEMPLATE_NAME = "user_auth_code";
+const DEFAULT_TEMPLATE_LANGUAGE = "en";
+
 // In-memory OTP storage (replace with Redis in production)
 const otpStorage = new Map();
+
+// ─────────────────────────────────────────────
+// Debug Logger
+// ─────────────────────────────────────────────
+
+const debug = (section, data) => {
+  console.log("\n========================================");
+  console.log(`[Digitell DEBUG] ${section}`);
+  console.log("----------------------------------------");
+  console.log(JSON.stringify(data, null, 2));
+  console.log("========================================\n");
+};
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -23,10 +34,6 @@ const generateOTP = () =>
 
 const cleanPhoneNumber = (phone) => String(phone).replace(/\D/g, "");
 
-/**
- * Builds the full Digitell endpoint URL.
- * Token is passed both as query param and Bearer Token for compatibility.
- */
 const digitellUrl = (path) =>
   `${DIGITELL_BASE_URL}/${DIGITELL_VENDOR_UID}/${path}?token=${DIGITELL_TOKEN}`;
 
@@ -36,22 +43,61 @@ const digitellHeaders = () => ({
 });
 
 // ─────────────────────────────────────────────
-// Core: Send a Template Message via Digitell
+// Core: Send Authentication Template (OTP)
 // ─────────────────────────────────────────────
 
-/**
- * Sends a WhatsApp template message via Digitell.
- *
- * @param {string} phoneNumber - Recipient phone (digits only, with country code e.g. 919876543210)
- * @param {string} templateName - Approved template name in Digitell / Meta
- * @param {string} templateLanguage - e.g. "en_us"
- * @param {Object} fields - Body variables: { field_1, field_2, ... } mapped to {{1}}, {{2}} …
- * @param {Object|null} contact - Optional: auto-create contact if it doesn't exist
- */
+const sendOtpTemplateMessage = async (phoneNumber, otp) => {
+  const templateName = process.env.OTP_TEMPLATE_NAME || DEFAULT_TEMPLATE_NAME;
+  const templateLanguage = process.env.OTP_TEMPLATE_LANGUAGE || DEFAULT_TEMPLATE_LANGUAGE;
+  const url = digitellUrl("contact/send-template-message");
+
+const payload = {
+  phone_number: phoneNumber,
+  template_name: templateName,
+  template_language: templateLanguage,
+  field_1: otp,       // OTP in message body {{1}}
+  button_0: otp,      // ← ADD THIS: OTP in Copy Code button
+};
+
+  // 🔍 DEBUG: Log everything being sent to Digitell
+  debug("REQUEST → Digitell", {
+    url,
+    headers: digitellHeaders(),
+    payload,
+  });
+
+  try {
+    const response = await axios.post(url, payload, { headers: digitellHeaders() });
+
+    // 🔍 DEBUG: Log full Digitell response
+    debug("RESPONSE ← Digitell", {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+    });
+
+    return response.data;
+  } catch (error) {
+    // 🔍 DEBUG: Log full error from Digitell
+    debug("ERROR ← Digitell", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      responseData: error.response?.data,
+      requestPayload: payload,
+    });
+    throw error;
+  }
+};
+
+// ─────────────────────────────────────────────
+// Core: Send Any Template Message via Digitell
+// ─────────────────────────────────────────────
+
 const sendTemplateMessage = async (
   phoneNumber,
   templateName,
-  templateLanguage = "en_us",
+  templateLanguage = DEFAULT_TEMPLATE_LANGUAGE,
   fields = {},
   contact = null
 ) => {
@@ -66,35 +112,41 @@ const sendTemplateMessage = async (
     payload.contact = contact;
   }
 
-  const response = await axios.post(
-    digitellUrl("contact/send-template-message"),
-    payload,
-    { headers: digitellHeaders() }
-  );
+  debug("REQUEST → Digitell (Generic Template)", { payload });
 
-  return response.data;
+  try {
+    const response = await axios.post(
+      digitellUrl("contact/send-template-message"),
+      payload,
+      { headers: digitellHeaders() }
+    );
+
+    debug("RESPONSE ← Digitell (Generic Template)", {
+      status: response.status,
+      data: response.data,
+    });
+
+    return response.data;
+  } catch (error) {
+    debug("ERROR ← Digitell (Generic Template)", {
+      message: error.message,
+      status: error.response?.status,
+      responseData: error.response?.data,
+    });
+    throw error;
+  }
 };
 
 // ─────────────────────────────────────────────
 // Core: Send a Plain Text Message via Digitell
 // ─────────────────────────────────────────────
 
-/**
- * Sends a free-form text message (only allowed within 24-hour session window).
- *
- * @param {string} phoneNumber - Recipient phone (digits only)
- * @param {string} message - Text content to send
- */
 const sendTextMessage = async (phoneNumber, message) => {
   const response = await axios.post(
     digitellUrl("contact/send-message"),
-    {
-      phone_number: phoneNumber,
-      message,
-    },
+    { phone_number: phoneNumber, message },
     { headers: digitellHeaders() }
   );
-
   return response.data;
 };
 
@@ -102,54 +154,43 @@ const sendTextMessage = async (phoneNumber, message) => {
 // OTP Handlers
 // ─────────────────────────────────────────────
 
-/**
- * Send OTP via WhatsApp.
- *
- * Uses a Digitell/Meta approved template where {{1}} = OTP code.
- * Set OTP_TEMPLATE_NAME in .env (e.g. "otp_verification").
- *
- * Example template body:
- *   "Your OTP is {{1}}. Valid for 5 minutes. Do not share this code."
- *
- * Request body: { "phoneNumber": "919876543210" }
- */
 const sendWhatsAppOtpHandler = async (req, res) => {
   try {
     const { phoneNumber } = req.body;
+
+    debug("INCOMING REQUEST → sendWhatsAppOtp", { body: req.body });
 
     if (!phoneNumber) {
       return res.status(400).json({ success: false, error: "Phone number is required" });
     }
 
     const cleanPhone = cleanPhoneNumber(phoneNumber);
+    debug("PHONE CLEANED", { original: phoneNumber, cleaned: cleanPhone, length: cleanPhone.length });
 
     if (cleanPhone.length < 10) {
       return res.status(400).json({ success: false, error: "Invalid phone number" });
     }
 
     const otp = generateOTP();
+    debug("OTP GENERATED", { otp, phone: cleanPhone });
 
-    // Store OTP with 5-minute expiry
     otpStorage.set(cleanPhone, {
       otp,
       expiresAt: Date.now() + 5 * 60 * 1000,
     });
 
-    await sendTemplateMessage(
-      cleanPhone,
-      process.env.OTP_TEMPLATE_NAME || "otp_verification",
-      process.env.OTP_TEMPLATE_LANGUAGE || "en_us",
-      { field_1: otp }  // field_1 maps to {{1}} in your Meta-approved template
-    );
+    const result = await sendOtpTemplateMessage(cleanPhone, otp);
 
-    console.log(`[Digitell] OTP sent to ${cleanPhone}`);
+    debug("OTP SEND RESULT", { result });
+
+    console.log(`[Digitell] ✅ OTP sent to ${cleanPhone}`);
 
     return res.json({
       success: true,
       message: "OTP sent via WhatsApp successfully",
     });
   } catch (error) {
-    console.error("[Digitell] sendWhatsAppOtpHandler error:", error.response?.data || error.message);
+    console.error("[Digitell] ❌ sendWhatsAppOtpHandler error:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
       error: error.response?.data?.message || error.message || "Internal server error",
@@ -159,14 +200,11 @@ const sendWhatsAppOtpHandler = async (req, res) => {
 
 // ─────────────────────────────────────────────
 
-/**
- * Verify OTP submitted by the user.
- *
- * Request body: { "phoneNumber": "919876543210", "otp": "123456" }
- */
 const verifyWhatsAppOtpHandler = async (req, res) => {
   try {
     const { phoneNumber, otp } = req.body;
+
+    debug("INCOMING REQUEST → verifyWhatsAppOtp", { body: req.body });
 
     if (!phoneNumber || !otp) {
       return res.status(400).json({ success: false, error: "Phone number and OTP are required" });
@@ -174,6 +212,14 @@ const verifyWhatsAppOtpHandler = async (req, res) => {
 
     const cleanPhone = cleanPhoneNumber(phoneNumber);
     const stored = otpStorage.get(cleanPhone);
+
+    debug("OTP LOOKUP", {
+      phone: cleanPhone,
+      storedOtp: stored?.otp || "NOT FOUND",
+      expiresAt: stored?.expiresAt ? new Date(stored.expiresAt).toISOString() : "N/A",
+      now: new Date().toISOString(),
+      expired: stored ? Date.now() > stored.expiresAt : "N/A",
+    });
 
     if (!stored) {
       return res.status(400).json({ success: false, error: "OTP not found or already used" });
@@ -185,28 +231,27 @@ const verifyWhatsAppOtpHandler = async (req, res) => {
     }
 
     if (stored.otp !== otp) {
+      debug("OTP MISMATCH", { expected: stored.otp, received: otp });
       return res.status(400).json({ success: false, error: "Invalid OTP" });
     }
 
     otpStorage.delete(cleanPhone);
+    debug("OTP VERIFIED ✅", { phone: cleanPhone });
 
     return res.json({ success: true, message: "OTP verified successfully" });
   } catch (error) {
-    console.error("[Digitell] verifyWhatsAppOtpHandler error:", error.message);
+    console.error("[Digitell] ❌ verifyWhatsAppOtpHandler error:", error.message);
     return res.status(500).json({ success: false, error: "Internal server error" });
   }
 };
 
 // ─────────────────────────────────────────────
 
-/**
- * Resend a fresh OTP to the same number.
- *
- * Request body: { "phoneNumber": "919876543210" }
- */
 const resendWhatsAppOtpHandler = async (req, res) => {
   try {
     const { phoneNumber } = req.body;
+
+    debug("INCOMING REQUEST → resendWhatsAppOtp", { body: req.body });
 
     if (!phoneNumber) {
       return res.status(400).json({ success: false, error: "Phone number is required" });
@@ -214,29 +259,28 @@ const resendWhatsAppOtpHandler = async (req, res) => {
 
     const cleanPhone = cleanPhoneNumber(phoneNumber);
 
-    otpStorage.delete(cleanPhone); // clear old OTP
+    otpStorage.delete(cleanPhone);
     const otp = generateOTP();
+
+    debug("NEW OTP GENERATED FOR RESEND", { otp, phone: cleanPhone });
 
     otpStorage.set(cleanPhone, {
       otp,
       expiresAt: Date.now() + 5 * 60 * 1000,
     });
 
-    await sendTemplateMessage(
-      cleanPhone,
-      process.env.OTP_TEMPLATE_NAME || "otp_verification",
-      process.env.OTP_TEMPLATE_LANGUAGE || "en_us",
-      { field_1: otp }
-    );
+    const result = await sendOtpTemplateMessage(cleanPhone, otp);
 
-    console.log(`[Digitell] OTP resent to ${cleanPhone}`);
+    debug("RESEND RESULT", { result });
+
+    console.log(`[Digitell] ✅ OTP resent to ${cleanPhone}`);
 
     return res.json({
       success: true,
       message: "New OTP sent via WhatsApp successfully",
     });
   } catch (error) {
-    console.error("[Digitell] resendWhatsAppOtpHandler error:", error.response?.data || error.message);
+    console.error("[Digitell] ❌ resendWhatsAppOtpHandler error:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
       error: error.response?.data?.message || error.message || "Internal server error",
@@ -248,28 +292,12 @@ const resendWhatsAppOtpHandler = async (req, res) => {
 // Generic Template Message Handler
 // ─────────────────────────────────────────────
 
-/**
- * Send any approved template message.
- *
- * Request body:
- * {
- *   "phoneNumber": "919876543210",
- *   "templateName": "order_confirmation",
- *   "templateLanguage": "en_us",
- *   "fields": { "field_1": "John", "field_2": "#ORD123" },
- *   "contact": {
- *     "first_name": "John", "last_name": "Doe",
- *     "email": "john@example.com", "country": "india",
- *     "language_code": "en", "groups": "group1,group2"
- *   }
- * }
- */
 const sendTemplateMessageHandler = async (req, res) => {
   try {
     const {
       phoneNumber,
       templateName,
-      templateLanguage = "en_us",
+      templateLanguage = DEFAULT_TEMPLATE_LANGUAGE,
       fields = {},
       contact = null,
     } = req.body;
@@ -297,7 +325,7 @@ const sendTemplateMessageHandler = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("[Digitell] sendTemplateMessageHandler error:", error.response?.data || error.message);
+    console.error("[Digitell] ❌ sendTemplateMessageHandler error:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
       error: error.response?.data?.message || error.message || "Internal server error",
@@ -309,10 +337,6 @@ const sendTemplateMessageHandler = async (req, res) => {
 // Contact Lookup
 // ─────────────────────────────────────────────
 
-/**
- * Look up a contact by phone number or email.
- * Query param: ?phoneNumber=919876543210
- */
 const getContactHandler = async (req, res) => {
   try {
     const { phoneNumber } = req.query;
@@ -326,9 +350,11 @@ const getContactHandler = async (req, res) => {
       params: { phone_number_or_email: phoneNumber },
     });
 
+    debug("CONTACT LOOKUP RESULT", { data: response.data });
+
     return res.json({ success: true, data: response.data });
   } catch (error) {
-    console.error("[Digitell] getContactHandler error:", error.response?.data || error.message);
+    console.error("[Digitell] ❌ getContactHandler error:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
       error: error.response?.data?.message || error.message || "Internal server error",

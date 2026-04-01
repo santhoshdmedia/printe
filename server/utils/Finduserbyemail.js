@@ -52,7 +52,6 @@ try {
  * @returns {Promise<mongoose.Types.ObjectId|null>}
  */
 const findUserIdByEmail = async (email) => {
-  // ── Guard: nothing to look up ─────────────────────────────────────────────
   if (!email || typeof email !== 'string') {
     console.log('[findUserByEmail] skipped — no email provided');
     return null;
