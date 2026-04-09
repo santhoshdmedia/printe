@@ -50,9 +50,6 @@ const DEFAULT_TITLE = "Printe Product";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/**
- * Get absolute image URL
- */
 const getAbsoluteImageUrl = (imagePath) => {
   if (!imagePath) return "";
   if (imagePath.startsWith("http")) return imagePath;
@@ -62,9 +59,6 @@ const getAbsoluteImageUrl = (imagePath) => {
   return `${window.location.origin}${cleanPath}`;
 };
 
-/**
- * Normalize image object
- */
 const normaliseImage = (img) => {
   const raw = typeof img === "string" ? img : img?.path || img?.url || "";
   return {
@@ -74,10 +68,6 @@ const normaliseImage = (img) => {
   };
 };
 
-/**
- * Extract clean og:image URL from product object.
- * Strips query strings so WhatsApp / Facebook crawlers resolve correctly.
- */
 const getOgImageUrl = (productData) => {
   if (!productData) return DEFAULT_OG_IMAGE;
 
@@ -97,7 +87,6 @@ const getOgImageUrl = (productData) => {
 
     if (!raw) continue;
 
-    // Strip query strings — crawlers can reject URLs with params
     const clean = raw.split("?")[0];
 
     if (clean.startsWith("https://")) return clean;
@@ -127,10 +116,12 @@ const Product = () => {
   const [selectedVariants, setSelectedVariants] = useState({});
   const [variantImages, setVariantImages] = useState({});
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [metaReady, setMetaReady] = useState(false); // ← NEW
 
   // ── Refs ───────────────────────────────────────────────────────────────
   const hasAddedToHistory = useRef(false);
   const processedProductId = useRef(null);
+  const metaTimerRef = useRef(null); // ← NEW
 
   // ── Derived data ───────────────────────────────────────────────────────
   const productData = product;
@@ -181,21 +172,15 @@ const Product = () => {
 
   const seoDescription = useMemo(() => {
     if (!productData) return DEFAULT_DESCRIPTION;
-
-    const desc =
-      productData?.seo_description || DEFAULT_DESCRIPTION;
-
+    const desc = productData?.seo_description || DEFAULT_DESCRIPTION;
     if (!desc) return DEFAULT_DESCRIPTION;
-
     return desc.length > 155 ? desc.substring(0, 152) + "..." : desc;
   }, [productData]);
 
   const seoKeywords = useMemo(() => {
     if (!productData) return DEFAULT_KEYWORDS;
-
     const kw = productData?.seo_keywords;
     if (!kw) return DEFAULT_KEYWORDS;
-
     return Array.isArray(kw) ? kw.join(", ") : String(kw);
   }, [productData]);
 
@@ -231,8 +216,15 @@ const Product = () => {
     setSelectedVariants({});
     setVariantImages({});
     setIsPageLoading(true);
+    setMetaReady(false); // ← RESET meta on route change
     hasAddedToHistory.current = false;
     processedProductId.current = null;
+
+    // Clear any existing meta timer
+    if (metaTimerRef.current) {
+      clearTimeout(metaTimerRef.current);
+    }
+
     dispatch({ type: "CLEAR_CURRENT_PRODUCT" });
   }, [id, dispatch]);
 
@@ -269,7 +261,23 @@ const Product = () => {
     };
   }, [id, dispatch]);
 
-  // ── Effect 3: Process variant images ──────────────────────────────────
+  // ── Effect 3: Delay meta tags by 4 seconds after page load ────────────
+  useEffect(() => {
+    // Clear any previous timer
+    if (metaTimerRef.current) {
+      clearTimeout(metaTimerRef.current);
+    }
+
+    metaTimerRef.current = setTimeout(() => {
+      setMetaReady(true);
+    }, 4000);
+
+    return () => {
+      clearTimeout(metaTimerRef.current);
+    };
+  }, [id]); // Re-runs on route change (new product page)
+
+  // ── Effect 4: Process variant images ──────────────────────────────────
   useEffect(() => {
     if (!productData?.variants || processedProductId.current === productId) {
       return;
@@ -295,7 +303,7 @@ const Product = () => {
     processedProductId.current = productId;
   }, [productData, productId]);
 
-  // ── Effect 4: Add to browsing history ─────────────────────────────────
+  // ── Effect 5: Add to browsing history ─────────────────────────────────
   useEffect(() => {
     if (!productId || !userId || hasAddedToHistory.current) return;
 
@@ -360,77 +368,78 @@ const Product = () => {
   // ── Render: product page ───────────────────────────────────────────────
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
-      {/* ──── SEO Meta Tags ──── */}
-      <Helmet>
-        {/* Primary Meta Tags */}
-        <title>{seoTitle}</title>
-        <meta name="description" content={seoDescription} />
-        <meta name="keywords" content={seoKeywords} />
-        <meta name="robots" content="index, follow" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="canonical" href={canonicalUrl} />
 
-        {/* Open Graph Tags — WhatsApp, Facebook, LinkedIn, Telegram */}
-        <meta property="og:type" content="product" />
-        <meta property="og:site_name" content="Printe" />
-        <meta property="og:title" content={seoTitle} />
-        <meta property="og:description" content={seoDescription} />
-        <meta property="og:url" content={ogUrl} />
-        <meta property="og:image" content={ogImage} />
-        <meta property="og:image:secure_url" content={ogImage} />
-        <meta property="og:image:type" content="image/jpeg" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={seoTitle} />
+      {/* ──── SEO Meta Tags — injected only after 4 s ──── */}
+      {metaReady && (
+        <Helmet>
+          {/* Primary Meta Tags */}
+          <title>{seoTitle}</title>
+          <meta name="description" content={seoDescription} />
+          <meta name="keywords" content={seoKeywords} />
+          <meta name="robots" content="index, follow" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <link rel="canonical" href={canonicalUrl} />
 
-        {/* Product-Specific OG Tags */}
-        <meta property="product:price:amount" content={productPrice} />
-        <meta property="product:price:currency" content="INR" />
-        <meta property="product:availability" content={stockStatus} />
+          {/* Open Graph Tags — WhatsApp, Facebook, LinkedIn, Telegram */}
+          <meta property="og:type" content="product" />
+          <meta property="og:site_name" content="Printe" />
+          <meta property="og:title" content={seoTitle} />
+          <meta property="og:description" content={seoDescription} />
+          <meta property="og:url" content={ogUrl} />
+          <meta property="og:image" content={ogImage} />
+          <meta property="og:image:secure_url" content={ogImage} />
+          <meta property="og:image:type" content="image/jpeg" />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content={seoTitle} />
 
-        {/* Twitter Card Tags */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@printe" />
-        <meta name="twitter:title" content={seoTitle} />
-        <meta name="twitter:description" content={seoDescription} />
-        <meta name="twitter:image" content={ogImage} />
-        <meta name="twitter:image:alt" content={seoTitle} />
+          {/* Product-Specific OG Tags */}
+          <meta property="product:price:amount" content={productPrice} />
+          <meta property="product:price:currency" content="INR" />
+          <meta property="product:availability" content={stockStatus} />
 
-        {/* Schema.org Structured Data */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org/",
-            "@type": "Product",
-            name: productData?.name || DEFAULT_TITLE,
-            description: seoDescription,
-            image: ogImage,
-            brand: {
-              "@type": "Brand",
-              name: "Printe",
-            },
-            offers: {
-              "@type": "Offer",
-              url: ogUrl,
-              priceCurrency: "INR",
-              price: productPrice,
-              availability: `https://schema.org/${
-                stockStatus === "in stock"
-                  ? "InStock"
-                  : "OutOfStock"
-              }`,
-              seller: {
-                "@type": "Organization",
+          {/* Twitter Card Tags */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:site" content="@printe" />
+          <meta name="twitter:title" content={seoTitle} />
+          <meta name="twitter:description" content={seoDescription} />
+          <meta name="twitter:image" content={ogImage} />
+          <meta name="twitter:image:alt" content={seoTitle} />
+
+          {/* Schema.org Structured Data */}
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org/",
+              "@type": "Product",
+              name: productData?.name || DEFAULT_TITLE,
+              description: seoDescription,
+              image: ogImage,
+              brand: {
+                "@type": "Brand",
                 name: "Printe",
               },
-            },
-            aggregateRating: productData?.rating && {
-              "@type": "AggregateRating",
-              ratingValue: productData.rating,
-              reviewCount: productData.reviews_count || 0,
-            },
-          })}
-        </script>
-      </Helmet>
+              offers: {
+                "@type": "Offer",
+                url: ogUrl,
+                priceCurrency: "INR",
+                price: productPrice,
+                availability: `https://schema.org/${
+                  stockStatus === "in stock" ? "InStock" : "OutOfStock"
+                }`,
+                seller: {
+                  "@type": "Organization",
+                  name: "Printe",
+                },
+              },
+              aggregateRating: productData?.rating && {
+                "@type": "AggregateRating",
+                ratingValue: productData.rating,
+                reviewCount: productData.reviews_count || 0,
+              },
+            })}
+          </script>
+        </Helmet>
+      )}
 
       {/* Breadcrumbs */}
       <div className="pt-5 pb-0">
@@ -516,5 +525,4 @@ const Product = () => {
   );
 };
 
-// Export without memo to allow meta tag updates
 export default Product;
