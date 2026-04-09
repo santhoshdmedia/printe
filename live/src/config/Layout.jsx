@@ -112,7 +112,7 @@ const LayoutContent = () => {
           ══════════════════════════════════════════════════ */}
       <div
         className={`${showIcon ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}
-          fixed  right-5 bottom-28 lg:right-20 cursor-pointer z-50 transition-all duration-300`}
+        fixed  right-5 bottom-28 lg:right-20 cursor-pointer z-50 transition-all duration-300`}
       >
         <div className="relative group" onClick={scrollToTop}>
           <svg className="w-14 h-14 transform -rotate-90">
@@ -130,13 +130,14 @@ const LayoutContent = () => {
           <div className="absolute inset-0 bg-yellow-400 rounded-full opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300" />
         </div>
       </div>
+      
 
       {/* ══════════════════════════════════════════════════
           WHATSAPP BUTTON
           ══════════════════════════════════════════════════ */}
       <div
         className={`${showIcon ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}
-          fixed bottom-10 right-5 lg:right-20 cursor-pointer z-50 transition-all duration-300`}
+        fixed bottom-10 right-5 lg:right-20 cursor-pointer z-50 transition-all duration-300`}
       >
         <div className="relative group">
           <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75" />

@@ -39,8 +39,20 @@ const HistoryProducts = React.lazy(() => import("./HistoryProducts"));
 // API
 import { addTohistory } from "../../helper/api_helper";
 
+// ─── Constants ──────────────────────────────────────────────────────────────
+const DEFAULT_OG_IMAGE =
+  "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
+const DOMAIN = "https://printe.in";
+const S3_BUCKET = "https://printe.s3.ap-south-1.amazonaws.com";
+const DEFAULT_KEYWORDS = "Printe, products, online shopping";
+const DEFAULT_DESCRIPTION = "Check out this amazing product on Printe";
+const DEFAULT_TITLE = "Printe Product";
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+/**
+ * Get absolute image URL
+ */
 const getAbsoluteImageUrl = (imagePath) => {
   if (!imagePath) return "";
   if (imagePath.startsWith("http")) return imagePath;
@@ -50,6 +62,9 @@ const getAbsoluteImageUrl = (imagePath) => {
   return `${window.location.origin}${cleanPath}`;
 };
 
+/**
+ * Normalize image object
+ */
 const normaliseImage = (img) => {
   const raw = typeof img === "string" ? img : img?.path || img?.url || "";
   return {
@@ -60,10 +75,12 @@ const normaliseImage = (img) => {
 };
 
 /**
- * Extract a clean og:image URL from a product object.
- * Strips query strings so WhatsApp / Facebook crawlers resolve it correctly.
+ * Extract clean og:image URL from product object.
+ * Strips query strings so WhatsApp / Facebook crawlers resolve correctly.
  */
 const getOgImageUrl = (productData) => {
+  if (!productData) return DEFAULT_OG_IMAGE;
+
   const candidates = [
     productData?.seo_img,
     productData?.images?.[0]?.url,
@@ -87,13 +104,10 @@ const getOgImageUrl = (productData) => {
     if (clean.startsWith("http://"))
       return clean.replace("http://", "https://");
 
-    return `https://printe.s3.ap-south-1.amazonaws.com/${clean.replace(
-      /^\//,
-      ""
-    )}`;
+    return `${S3_BUCKET}/${clean.replace(/^\//, "")}`;
   }
 
-  return "https://printe.s3.ap-south-1.amazonaws.com/1763971587472-qf92jdbjm4.jpg";
+  return DEFAULT_OG_IMAGE;
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -159,49 +173,58 @@ const Product = () => {
     [getProductValue]
   );
 
-  // ── SEO values ─────────────────────────────────────────────────────────
-  const seoTitle = useMemo(
-    () => productData?.seo_title || productData?.name || "Printe Product",
-    [productData]
-  );
+  // ── SEO values (with safe defaults) ────────────────────────────────────
+  const seoTitle = useMemo(() => {
+    if (!productData) return DEFAULT_TITLE;
+    return productData?.seo_title || productData?.name || DEFAULT_TITLE;
+  }, [productData]);
 
   const seoDescription = useMemo(() => {
+    if (!productData) return DEFAULT_DESCRIPTION;
+
     const desc =
-      productData?.seo_description ||
-      "Check out this amazing product on Printe";
+      productData?.seo_description || DEFAULT_DESCRIPTION;
+
+    if (!desc) return DEFAULT_DESCRIPTION;
+
     return desc.length > 155 ? desc.substring(0, 152) + "..." : desc;
   }, [productData]);
 
   const seoKeywords = useMemo(() => {
+    if (!productData) return DEFAULT_KEYWORDS;
+
     const kw = productData?.seo_keywords;
-    if (!kw) return "";
-    return Array.isArray(kw) ? kw.join(", ") : kw;
+    if (!kw) return DEFAULT_KEYWORDS;
+
+    return Array.isArray(kw) ? kw.join(", ") : String(kw);
   }, [productData]);
 
-  const ogImage = useMemo(() => getOgImageUrl(productData), [productData]);
+  const ogImage = useMemo(() => {
+    if (!productData) return DEFAULT_OG_IMAGE;
+    return getOgImageUrl(productData);
+  }, [productData]);
 
-  const ogUrl = useMemo(
-    () =>
-      productData?.seo_url
-        ? `https://printe.in/product/${productData.seo_url}`
-        : typeof window !== "undefined"
-        ? window.location.href
-        : "",
-    [productData]
-  );
+  const ogUrl = useMemo(() => {
+    if (!productData?.seo_url) {
+      return typeof window !== "undefined" ? window.location.href : DOMAIN;
+    }
+    return `${DOMAIN}/product/${productData.seo_url}`;
+  }, [productData]);
 
-  const canonicalUrl = useMemo(
-    () =>
-      productData?.seo_url
-        ? `https://printe.in/product/${productData.seo_url}`
-        : ogUrl,
-    [productData, ogUrl]
-  );
+  const canonicalUrl = useMemo(() => {
+    if (!productData?.seo_url) return ogUrl;
+    return `${DOMAIN}/product/${productData.seo_url}`;
+  }, [productData, ogUrl]);
 
-  const productPrice = useMemo(
-    () => productData?.customer_product_price || productData?.price || "0",
-    [productData]
-  );
+  const productPrice = useMemo(() => {
+    if (!productData) return "0";
+    return productData?.customer_product_price || productData?.price || "0";
+  }, [productData]);
+
+  const stockStatus = useMemo(() => {
+    if (!productData) return "out of stock";
+    return productData.stock_count > 0 ? "in stock" : "out of stock";
+  }, [productData]);
 
   // ── Effect 1: Reset state on route change ──────────────────────────────
   useEffect(() => {
@@ -296,40 +319,58 @@ const Product = () => {
   // ── Render: loading ────────────────────────────────────────────────────
   if (isPageLoading || (isGettingProduct && !productData)) {
     return (
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <ProductPageLoadingSkeleton />
-      </React.Suspense>
+      <>
+        <Helmet>
+          <title>Loading... | Printe</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <ProductPageLoadingSkeleton />
+        </React.Suspense>
+      </>
     );
   }
 
   // ── Render: not found ──────────────────────────────────────────────────
   if (!productData) {
     return (
-      <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0 py-8">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-semibold text-gray-700">
-            Product Not Found
-          </h2>
-          <p className="text-gray-500 mt-2">
-            The product you're looking for doesn't exist or has been removed.
-          </p>
+      <>
+        <Helmet>
+          <title>Product Not Found | Printe</title>
+          <meta
+            name="description"
+            content="The product you're looking for doesn't exist or has been removed."
+          />
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0 py-8">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-semibold text-gray-700">
+              Product Not Found
+            </h2>
+            <p className="text-gray-500 mt-2">
+              The product you're looking for doesn't exist or has been removed.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   // ── Render: product page ───────────────────────────────────────────────
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[90%] mx-auto my-0">
+      {/* ──── SEO Meta Tags ──── */}
       <Helmet>
-        {/* Primary */}
+        {/* Primary Meta Tags */}
         <title>{seoTitle}</title>
         <meta name="description" content={seoDescription} />
         <meta name="keywords" content={seoKeywords} />
         <meta name="robots" content="index, follow" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="canonical" href={canonicalUrl} />
 
-        {/* Open Graph — WhatsApp, Facebook, LinkedIn, Telegram */}
+        {/* Open Graph Tags — WhatsApp, Facebook, LinkedIn, Telegram */}
         <meta property="og:type" content="product" />
         <meta property="og:site_name" content="Printe" />
         <meta property="og:title" content={seoTitle} />
@@ -342,21 +383,53 @@ const Product = () => {
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content={seoTitle} />
 
-        {/* Product-specific OG */}
+        {/* Product-Specific OG Tags */}
         <meta property="product:price:amount" content={productPrice} />
         <meta property="product:price:currency" content="INR" />
-        <meta
-          property="product:availability"
-          content={productData.stock_count > 0 ? "in stock" : "out of stock"}
-        />
+        <meta property="product:availability" content={stockStatus} />
 
-        {/* Twitter Card */}
+        {/* Twitter Card Tags */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@printe" />
         <meta name="twitter:title" content={seoTitle} />
         <meta name="twitter:description" content={seoDescription} />
         <meta name="twitter:image" content={ogImage} />
         <meta name="twitter:image:alt" content={seoTitle} />
+
+        {/* Schema.org Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            name: productData?.name || DEFAULT_TITLE,
+            description: seoDescription,
+            image: ogImage,
+            brand: {
+              "@type": "Brand",
+              name: "Printe",
+            },
+            offers: {
+              "@type": "Offer",
+              url: ogUrl,
+              priceCurrency: "INR",
+              price: productPrice,
+              availability: `https://schema.org/${
+                stockStatus === "in stock"
+                  ? "InStock"
+                  : "OutOfStock"
+              }`,
+              seller: {
+                "@type": "Organization",
+                name: "Printe",
+              },
+            },
+            aggregateRating: productData?.rating && {
+              "@type": "AggregateRating",
+              ratingValue: productData.rating,
+              reviewCount: productData.reviews_count || 0,
+            },
+          })}
+        </script>
       </Helmet>
 
       {/* Breadcrumbs */}
@@ -443,4 +516,5 @@ const Product = () => {
   );
 };
 
-export default React.memo(Product);
+// Export without memo to allow meta tag updates
+export default Product;

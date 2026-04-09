@@ -8,12 +8,15 @@ import React from "react";
 import App from "./App.jsx";
 import { HelmetProvider } from "react-helmet-async";
 
-createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+const root = createRoot(document.getElementById("root"));
+
+root.render(
+  <StrictMode>
+    {/* HelmetProvider must be the outermost provider */}
     <HelmetProvider>
       <Provider store={store}>
         <App />
       </Provider>
     </HelmetProvider>
-  </React.StrictMode>
+  </StrictMode>
 );

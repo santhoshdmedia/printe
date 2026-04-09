@@ -3,11 +3,12 @@ const axios = require("axios");
 // ─────────────────────────────────────────────
 // Digitell Configuration
 // ─────────────────────────────────────────────
-const DIGITELL_BASE_URL = "https://official.digitellagency.in/api";
-const DIGITELL_VENDOR_UID = "ef46f737-df5f-4f12-bfe6-0bb3b8aa2bda";
-const DIGITELL_TOKEN = "JLVPyHpuyOP1vDfi99Uoe9JdjtsYFlRQK4blX96HlHAw38ryIOfzzT29qq6fjFII";
 
-const DEFAULT_TEMPLATE_NAME = "user_auth_code";
+const DIGITELL_BASE_URL  = "https://official.digitellagency.in/api";
+const DIGITELL_VENDOR_UID = "ef46f737-df5f-4f12-bfe6-0bb3b8aa2bda";
+const DIGITELL_TOKEN      = "JLVPyHpuyOP1vDfi99Uoe9JdjtsYFlRQK4blX96HlHAw38ryIOfzzT29qq6fjFII";
+
+const DEFAULT_TEMPLATE_NAME     = "user_auth_code";
 const DEFAULT_TEMPLATE_LANGUAGE = "en";
 
 // In-memory OTP storage (replace with Redis in production)
@@ -38,8 +39,8 @@ const digitellUrl = (path) =>
   `${DIGITELL_BASE_URL}/${DIGITELL_VENDOR_UID}/${path}?token=${DIGITELL_TOKEN}`;
 
 const digitellHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${DIGITELL_TOKEN}`,
+  "Content-Type":  "application/json",
+  Authorization:   `Bearer ${DIGITELL_TOKEN}`,
 });
 
 // ─────────────────────────────────────────────
@@ -47,43 +48,41 @@ const digitellHeaders = () => ({
 // ─────────────────────────────────────────────
 
 const sendOtpTemplateMessage = async (phoneNumber, otp) => {
-  const templateName = process.env.OTP_TEMPLATE_NAME || DEFAULT_TEMPLATE_NAME;
+  const templateName     = process.env.OTP_TEMPLATE_NAME     || DEFAULT_TEMPLATE_NAME;
   const templateLanguage = process.env.OTP_TEMPLATE_LANGUAGE || DEFAULT_TEMPLATE_LANGUAGE;
   const url = digitellUrl("contact/send-template-message");
 
-const payload = {
-  phone_number: phoneNumber,
-  template_name: templateName,
-  template_language: templateLanguage,
-  field_1: otp,       // OTP in message body {{1}}
-  button_0: otp,      // ← ADD THIS: OTP in Copy Code button
-};
+  const payload = {
+    phone_number:      phoneNumber,
+    template_name:     templateName,
+    template_language: templateLanguage,
+    field_1:           otp,
+    button_0:          otp,
+  };
 
-  // 🔍 DEBUG: Log everything being sent to Digitell
-  debug("REQUEST → Digitell", {
-    url,
-    headers: digitellHeaders(),
-    payload,
-  });
+  debug("REQUEST → Digitell", { url, headers: digitellHeaders(), payload });
 
   try {
     const response = await axios.post(url, payload, { headers: digitellHeaders() });
 
-    // 🔍 DEBUG: Log full Digitell response
     debug("RESPONSE ← Digitell", {
-      status: response.status,
+      status:     response.status,
       statusText: response.statusText,
-      data: response.data,
+      data:       response.data,
     });
+
+    // Digitell sometimes returns HTTP 200 with { status: "error" }
+    if (response.data && response.data.status === "error") {
+      throw new Error(response.data.message || "Digitell returned error status");
+    }
 
     return response.data;
   } catch (error) {
-    // 🔍 DEBUG: Log full error from Digitell
     debug("ERROR ← Digitell", {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      responseData: error.response?.data,
+      message:        error.message,
+      status:         error.response?.status,
+      statusText:     error.response?.statusText,
+      responseData:   error.response?.data,
       requestPayload: payload,
     });
     throw error;
@@ -92,19 +91,22 @@ const payload = {
 
 // ─────────────────────────────────────────────
 // Core: Send Any Template Message via Digitell
+//
+// ⚠ THROWS on failure — callers must handle the error.
+// Digitell may return HTTP 200 with { status: "error" } — this is also thrown.
 // ─────────────────────────────────────────────
 
 const sendTemplateMessage = async (
   phoneNumber,
-  templateName,
+  templateName="cart_abandonment_reminder",
   templateLanguage = DEFAULT_TEMPLATE_LANGUAGE,
-  fields = {},
-  contact = null
+  fields           = {},
+  contact          = null
 ) => {
   const payload = {
-    phone_number: phoneNumber,
-    template_name: templateName,
-    template_language: templateLanguage,
+    phone_number:      phoneNumber,
+    template_name:     "cart_abandonment_reminder",
+    template_language: "en_US",
     ...fields,
   };
 
@@ -123,17 +125,22 @@ const sendTemplateMessage = async (
 
     debug("RESPONSE ← Digitell (Generic Template)", {
       status: response.status,
-      data: response.data,
+      data:   response.data,
     });
+
+    // Treat Digitell-level errors as real errors so callers can catch them
+    if (response.data && response.data.status === "error") {
+      throw new Error(response.data.message || "Digitell returned error status");
+    }
 
     return response.data;
   } catch (error) {
     debug("ERROR ← Digitell (Generic Template)", {
-      message: error.message,
-      status: error.response?.status,
+      message:      error.message,
+      status:       error.response?.status,
       responseData: error.response?.data,
     });
-    throw error;
+    throw error; // always re-throw so the cron fallback can trigger
   }
 };
 
@@ -180,20 +187,16 @@ const sendWhatsAppOtpHandler = async (req, res) => {
     });
 
     const result = await sendOtpTemplateMessage(cleanPhone, otp);
-
     debug("OTP SEND RESULT", { result });
 
     console.log(`[Digitell] ✅ OTP sent to ${cleanPhone}`);
 
-    return res.json({
-      success: true,
-      message: "OTP sent via WhatsApp successfully",
-    });
+    return res.json({ success: true, message: "OTP sent via WhatsApp successfully" });
   } catch (error) {
     console.error("[Digitell] ❌ sendWhatsAppOtpHandler error:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
-      error: error.response?.data?.message || error.message || "Internal server error",
+      error:   error.response?.data?.message || error.message || "Internal server error",
     });
   }
 };
@@ -211,14 +214,14 @@ const verifyWhatsAppOtpHandler = async (req, res) => {
     }
 
     const cleanPhone = cleanPhoneNumber(phoneNumber);
-    const stored = otpStorage.get(cleanPhone);
+    const stored     = otpStorage.get(cleanPhone);
 
     debug("OTP LOOKUP", {
-      phone: cleanPhone,
+      phone:     cleanPhone,
       storedOtp: stored?.otp || "NOT FOUND",
       expiresAt: stored?.expiresAt ? new Date(stored.expiresAt).toISOString() : "N/A",
-      now: new Date().toISOString(),
-      expired: stored ? Date.now() > stored.expiresAt : "N/A",
+      now:       new Date().toISOString(),
+      expired:   stored ? Date.now() > stored.expiresAt : "N/A",
     });
 
     if (!stored) {
@@ -270,20 +273,16 @@ const resendWhatsAppOtpHandler = async (req, res) => {
     });
 
     const result = await sendOtpTemplateMessage(cleanPhone, otp);
-
     debug("RESEND RESULT", { result });
 
     console.log(`[Digitell] ✅ OTP resent to ${cleanPhone}`);
 
-    return res.json({
-      success: true,
-      message: "New OTP sent via WhatsApp successfully",
-    });
+    return res.json({ success: true, message: "New OTP sent via WhatsApp successfully" });
   } catch (error) {
     console.error("[Digitell] ❌ resendWhatsAppOtpHandler error:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
-      error: error.response?.data?.message || error.message || "Internal server error",
+      error:   error.response?.data?.message || error.message || "Internal server error",
     });
   }
 };
@@ -298,14 +297,14 @@ const sendTemplateMessageHandler = async (req, res) => {
       phoneNumber,
       templateName,
       templateLanguage = DEFAULT_TEMPLATE_LANGUAGE,
-      fields = {},
-      contact = null,
+      fields           = {},
+      contact          = null,
     } = req.body;
 
     if (!phoneNumber || !templateName) {
       return res.status(400).json({
         success: false,
-        error: "phoneNumber and templateName are required",
+        error:   "phoneNumber and templateName are required",
       });
     }
 
@@ -322,13 +321,13 @@ const sendTemplateMessageHandler = async (req, res) => {
     return res.json({
       success: true,
       message: "Template message sent successfully",
-      data: result,
+      data:    result,
     });
   } catch (error) {
     console.error("[Digitell] ❌ sendTemplateMessageHandler error:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
-      error: error.response?.data?.message || error.message || "Internal server error",
+      error:   error.response?.data?.message || error.message || "Internal server error",
     });
   }
 };
@@ -347,7 +346,7 @@ const getContactHandler = async (req, res) => {
 
     const response = await axios.get(digitellUrl("contact"), {
       headers: digitellHeaders(),
-      params: { phone_number_or_email: phoneNumber },
+      params:  { phone_number_or_email: phoneNumber },
     });
 
     debug("CONTACT LOOKUP RESULT", { data: response.data });
@@ -357,11 +356,13 @@ const getContactHandler = async (req, res) => {
     console.error("[Digitell] ❌ getContactHandler error:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
-      error: error.response?.data?.message || error.message || "Internal server error",
+      error:   error.response?.data?.message || error.message || "Internal server error",
     });
   }
 };
 
+// ─────────────────────────────────────────────
+// Exports
 // ─────────────────────────────────────────────
 
 module.exports = {
@@ -370,4 +371,5 @@ module.exports = {
   resendWhatsAppOtpHandler,
   sendTemplateMessageHandler,
   getContactHandler,
+  sendTemplateMessage,
 };

@@ -3,6 +3,7 @@ const { ADD_BLOG_SUCCESS, BLOG_ADD_FAILED, BLOG_EDITED_SUCCESS, BLOG_EDITED_FAIL
 const { errorResponse, successResponse } = require("../helper/response.helper");
 const { BlogSchema } = require("./models_import");
 const { slugify, generateUniqueSlug } = require("../utils/slugify");
+const mongoose = require("mongoose");
 
 const addblog = async (req, res) => {
   try {
@@ -39,18 +40,25 @@ const getblog = async (req, res) => {
 const editblog = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return errorResponse(res, "Invalid blog ID");
+    }
+   
     const existing = await BlogSchema.findById(id);
     if (!existing) return errorResponse(res, "Blog not found");
 
-    // If blog_name changed, regenerate slug
     let blog_slug = existing.blog_slug;
     if (req.body.blog_name && req.body.blog_name !== existing.blog_name) {
       const baseSlug = slugify(req.body.blog_name);
-      blog_slug = await generateUniqueSlug(Blog, baseSlug, id);
+      blog_slug = await generateUniqueSlug(BlogSchema, baseSlug, id);
     }
 
+    // ✅ Destructure out _id so it never gets passed to the update
+    const { _id, ...safeBody } = req.body;
+
     const updatedData = {
-      ...req.body,
+      ...safeBody,
       blog_slug,
     };
 

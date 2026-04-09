@@ -4,7 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const morgan = require("morgan");
-
+const { startCartReminderCron } = require("./controller/Cartabandonmentreminder");
 const { ProductSchema } = require("./controller/models_import");
 
 const app = express();
@@ -213,6 +213,7 @@ const Host = process.env.HOST || "0.0.0.0";
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
+      startCartReminderCron();
     app.listen(Port, Host, () => {
       console.log(`\n🚀 VPS server running on http://${Host}:${Port}`);
       console.log(`📦 MongoDB connected`);
