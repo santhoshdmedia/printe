@@ -49,7 +49,7 @@ const Navbar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchProduct, setSearchProduct] = useState("");
   const [menuStatus, setMenuStatus] = useState(false);
-  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false); // hidden by default
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -81,6 +81,12 @@ const Navbar = () => {
 
       // For top navbar shadow
       setIsScrolled(currentScrollY > 10);
+
+      // Hide search bar when scrolling down on mobile
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setShowSearchBar(false);
+        setIsExpanded(false);
+      }
 
       // For bottom navigation hide/show
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -206,6 +212,14 @@ const Navbar = () => {
     setSearchProduct("");
   }, []);
 
+  const toggleSearchBar = useCallback(() => {
+    setShowSearchBar((prev) => !prev);
+    if (showSearchBar) {
+      setIsExpanded(false);
+      setSearchProduct("");
+    }
+  }, [showSearchBar]);
+
   const logout = useCallback(() => {
     dispatch({ type: "LOGOUT" });
     navigate("/");
@@ -256,8 +270,7 @@ const Navbar = () => {
     return (
       <div
         ref={searchContainerRef}
-        className={`relative ${isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[30vw]"
-          }`}
+        className={`relative ${isMobile ? "w-full" : "w-full md:w-[35vw] lg:w-[30vw]"}`}
       >
         <form onSubmit={handleSearchSubmit}>
           <div className="relative">
@@ -269,8 +282,7 @@ const Navbar = () => {
               onChange={handleSearchChange}
               onFocus={handleSearchFocus}
               onBlur={handleSearchBlur}
-              className={`w-full px-5 py-4 rounded-2xl border-2 border-transparent focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 transition-all duration-300 ${isMobile ? "pr-12 text-base" : "pr-12"
-                }`}
+              className={`w-full px-5 py-4 rounded-2xl border-2 border-transparent focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 placeholder-gray-500 transition-all duration-300 ${isMobile ? "pr-12 text-base" : "pr-12"}`}
               autoComplete="off"
             />
             <button
@@ -309,12 +321,8 @@ const Navbar = () => {
                   <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
                     <BsSearch className="text-2xl text-yellow-600" />
                   </div>
-                  <p className="font-medium text-gray-700 mb-1">
-                    No products found
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Try different keywords
-                  </p>
+                  <p className="font-medium text-gray-700 mb-1">No products found</p>
+                  <p className="text-sm text-gray-500">Try different keywords</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
@@ -332,8 +340,7 @@ const Navbar = () => {
                           <SearchProductCard data={data} />
                         </div>
                       </div>
-                    ))
-                  }
+                    ))}
                 </div>
               )}
             </div>
@@ -371,9 +378,7 @@ const Navbar = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-100/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
         <span className="relative z-10 flex items-center gap-2 font-semibold text-sm">
           <BsPerson className="text-lg group-hover:scale-110 transition-transform duration-300" />
-          <span className="group-hover:translate-x-0.5 transition-transform duration-300">
-            Login
-          </span>
+          <span className="group-hover:translate-x-0.5 transition-transform duration-300">Login</span>
         </span>
       </Link>
     </div>
@@ -382,11 +387,7 @@ const Navbar = () => {
   // Desktop User Menu Component
   const UserMenu = React.memo(() => (
     <div className="flex items-center justify-end gap-4">
-      <Link
-        to="/account/wishlist"
-        className="p-2 relative"
-        onClick={closeSearchBar}
-      >
+      <Link to="/account/wishlist" className="p-2 relative" onClick={closeSearchBar}>
         {heartCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium shadow-sm">
             {heartCount}
@@ -501,27 +502,24 @@ const Navbar = () => {
   // Custom Drawer (Mobile Menu)
   const CustomDrawer = React.memo(({ isOpen, onClose, children }) => (
     <div
-      className={`fixed inset-0 z-[10000] transition-all duration-500 ${isOpen ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
+      className={`fixed inset-0 z-[10000] transition-all duration-500 ${isOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}
     >
       {/* Overlay */}
       <div
-        className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${isOpen ? "opacity-100" : "opacity-0"
-          }`}
+        className={`absolute inset-0 bg-black/50 transition-opacity duration-500 ${isOpen ? "opacity-100" : "opacity-0"}`}
         onClick={onClose}
       ></div>
 
       {/* Drawer Panel */}
       <div
-        className={`absolute left-0 top-0 h-screen w-full bg-gradient-to-b from-white to-yellow-50 shadow-2xl transform transition-transform duration-500 ${isOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className={`absolute left-0 top-0 h-screen w-full bg-gradient-to-b from-white to-yellow-50 shadow-2xl transform transition-transform duration-500 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
         style={{ zIndex: 10001 }}
       >
         {/* Header */}
         <div className="p-6 bg-gradient-to-r from-yellow-400 to-yellow-500 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img   fetchpriority="high" loading="eager" src={Logo} alt="Logo" className="h-12 w-full object-contain" />
+              <img fetchpriority="high" loading="eager" src={Logo} alt="Logo" className="h-12 w-full object-contain" />
               <span className="text-white font-bold text-lg">Menu</span>
             </div>
             <button
@@ -655,9 +653,7 @@ const Navbar = () => {
               {_.get(res, "sub_categories_details", []).map((sub, j) => (
                 <div
                   key={j}
-                  onClick={() =>
-                    handleCategoryClick(res.slug, sub.slug)
-                  }
+                  onClick={() => handleCategoryClick(res.slug, sub.slug)}
                   className="px-3 py-2.5 text-sm text-gray-600 rounded-lg hover:bg-yellow-50 cursor-pointer transition-colors duration-200 ml-2"
                 >
                   {sub.sub_category_name}
@@ -692,8 +688,7 @@ const Navbar = () => {
 
   // Bottom Navigation Component
   const BottomNavigation = React.memo(() => (
-    <div className={`fixed bottom-0 left-0 right-0 z-[9998] w-screen block lg:hidden transition-transform duration-500 ${bottomNavVisible ? 'translate-y-0' : 'translate-y-full'
-      }`}>
+    <div className={`fixed bottom-0 left-0 right-0 z-[9998] w-screen block lg:hidden transition-transform duration-500 ${bottomNavVisible ? "translate-y-0" : "translate-y-full"}`}>
       <div className="bg-white/95 backdrop-blur-xl rounded-t-2xl shadow-2xl border-t border-white/20 p-2 mx-2">
         <div className="flex items-center justify-around">
           {/* Home */}
@@ -701,8 +696,7 @@ const Navbar = () => {
             onClick={() => handleDestination("/")}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeNav === "home"
               ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
-              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-              }`}
+              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"}`}
           >
             <BsHouse className={`text-xl ${activeNav === "home" ? "scale-110" : ""}`} />
             <span className="text-xs mt-1 font-medium">Home</span>
@@ -713,8 +707,7 @@ const Navbar = () => {
             onClick={() => setMenuStatus(true)}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeNav === "categories"
               ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
-              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-              }`}
+              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"}`}
           >
             <BsGrid className={`text-xl ${activeNav === "categories" ? "scale-110" : ""}`} />
             <span className="text-xs mt-1 font-medium">Menu</span>
@@ -722,11 +715,13 @@ const Navbar = () => {
 
           {/* Search */}
           <button
-            onClick={() => setShowSearchBar(!showSearchBar)}
-            className="flex flex-col items-center justify-center p-3 rounded-xl text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-300"
+            onClick={toggleSearchBar}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${showSearchBar
+              ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
+              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"}`}
           >
             <div className="relative">
-              <BsSearch className="text-xl" />
+              {showSearchBar ? <BsXLg className="text-xl" /> : <BsSearch className="text-xl" />}
             </div>
             <span className="text-xs mt-1 font-medium">Search</span>
           </button>
@@ -739,8 +734,7 @@ const Navbar = () => {
             }}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 relative ${activeNav === "cart"
               ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
-              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-              }`}
+              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"}`}
           >
             <div className="relative">
               <BsCart3 className={`text-xl ${activeNav === "cart" ? "scale-110" : ""}`} />
@@ -758,8 +752,7 @@ const Navbar = () => {
             onClick={() => isAuth ? setShowUserDropdown(!showUserDropdown) : handleDestination("/login")}
             className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeNav === "account"
               ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg scale-110"
-              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"
-              }`}
+              : "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50"}`}
           >
             <BsPerson className={`text-xl ${activeNav === "account" ? "scale-110" : ""}`} />
             <span className="text-xs mt-1 font-medium">Me</span>
@@ -823,31 +816,32 @@ const Navbar = () => {
 
   return (
     <div className="w-full m-0">
-      {/* Desktop Navbar */}
+      {/* ======================== */}
+      {/* Desktop Navbar           */}
+      {/* ======================== */}
       <div
-        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-12 sticky top-[40px] z-[999]  ${isScrolled ? "shadow-xl" : "shadow-lg"
-          }`}>
+        className={`w-full hidden lg:flex h-20 gap-x-10 bg-[#f2c41a] justify-between items-center px-4 lg:px-8 xl:px-12 sticky top-[40px] z-[999] ${isScrolled ? "shadow-xl" : "shadow-lg"}`}
+      >
         {/* Left: Logo + Search */}
-        <div className="flex items-center gap-x-4 xl:gap-x-12 ">
+        <div className="flex items-center gap-x-4 xl:gap-x-12">
           <Link to="/">
-            <img   fetchpriority="high" loading="eager" src={Logo} alt="logo" className="h-16 w-full object-contain" />
+            <img fetchpriority="high" loading="eager" src={Logo} alt="logo" className="h-16 w-full object-contain" />
           </Link>
-          {user.role == "bni_user" && <Link to="/products">
-
-            <img   fetchpriority="high" loading="eager" src={BNILogo} alt="Logo" className="h-16 object-contain" />
-          </Link>}
+          {user.role === "bni_user" && (
+            <Link to="/products">
+              <img fetchpriority="high" loading="eager" src={BNILogo} alt="Logo" className="h-16 object-contain" />
+            </Link>
+          )}
           <SearchInput />
         </div>
         <div className="mr-24 w-[200px]">
-          {user.role == "bni_user" && <Link to="/products">
-            <Button3D
-              variant="gradient"
-              size="sm"
-              onClick={() => handleDestination("/products")}
-            >
-              BNI Privilage
-            </Button3D>
-          </Link>}
+          {user.role === "bni_user" && (
+            <Link to="/products">
+              <Button3D variant="gradient" size="sm" onClick={() => handleDestination("/products")}>
+                BNI Privilage
+              </Button3D>
+            </Link>
+          )}
         </div>
 
         {/* Right: User Section */}
@@ -858,39 +852,48 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* ===================== */}
-      {/* Mobile Top Bar — NEW  */}
-      {/* ===================== */}
+      {/* ======================== */}
+      {/* Mobile Top Bar           */}
+      {/* ======================== */}
       <div
         className={`block lg:hidden w-full fixed top-10 left-0 z-[9999] bg-[#f2c41a] transition-all duration-500 ${isScrolled ? "shadow-2xl" : "shadow-lg"}`}
       >
         {/* Main bar: 3-column layout */}
-        <div className="w-full h-16 flex items-center justify-between px-4 sticky top-[40px] z-[999] ">
+        <div className="w-full h-16 flex items-center justify-between px-4">
 
-          <div className="flex gap-8">
-            {/* LEFT: Hamburger menu button */}
+          {/* LEFT: Hamburger + Logo */}
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setMenuStatus(true)}
-              className="w-12 h-12 bg-yellow-300/60 rounded-full flex items-center justify-center hover:bg-yellow-300/80 active:scale-90 transition-all duration-200 shadow-md"
+              className="w-10 h-10 bg-yellow-300/60 rounded-full flex items-center justify-center hover:bg-yellow-300/80 active:scale-90 transition-all duration-200 shadow-md"
             >
               <IoMenu className="text-[#121621] text-2xl" />
             </button>
 
-            {/* CENTER: Logo (absolutely centered) */}
-            <Link
-              to="/"
-              onClick={closeSearchBar}
-              className=" flex items-center gap-2"
-            >
-              <img   fetchpriority="high" loading="eager" src={Logo} alt="Logo" className="h-10 object-contain" />
-              {user.role == "bni_user" && (
-                <img   fetchpriority="high" loading="eager" src={BNILogo} alt="BNI Logo" className="h-8 object-contain" />
+            <Link to="/" onClick={closeSearchBar} className="flex items-center gap-2">
+              <img fetchpriority="high" loading="eager" src={Logo} alt="Logo" className="h-10 object-contain" />
+              {user.role === "bni_user" && (
+                <img fetchpriority="high" loading="eager" src={BNILogo} alt="BNI Logo" className="h-8 object-contain" />
               )}
             </Link>
           </div>
 
-          {/* RIGHT: Person + Cart icon buttons */}
+          {/* RIGHT: Search toggle + Person + Cart */}
           <div className="flex items-center gap-2">
+
+            {/* Search Toggle Button */}
+            <button
+              onClick={toggleSearchBar}
+              className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all duration-200 shadow-md ${showSearchBar
+                ? "bg-[#121621] text-yellow-400"
+                : "bg-yellow-300/60 hover:bg-yellow-300/80 text-[#121621]"}`}
+            >
+              {showSearchBar
+                ? <BsXLg className="text-lg" />
+                : <BsSearch className="text-xl" />
+              }
+            </button>
+
             {/* Person / Account */}
             <button
               onClick={() =>
@@ -921,18 +924,17 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Expandable Search Bar (triggered from bottom nav search button) */}
+        {/* Expandable Search Bar — hidden by default, shown on toggle, hidden on scroll down */}
         <div
-          className={`w-full absolute top-20 bg-[#f2c41a] transition-all duration-500 overflow-visible ${showSearchBar ? "max-h-28 py-4 border-t border-yellow-500/30" : "max-h-0 py-0"}`}
+          className={`w-full bg-[#f2c41a] transition-all duration-300 ease-in-out overflow-visible ${showSearchBar
+            ? "max-h-28 py-3 border-t border-yellow-500/30 opacity-100"
+            : "max-h-0 py-0 opacity-0 pointer-events-none"}`}
         >
           <div className="px-4 relative">
             <SearchInput isMobile />
           </div>
         </div>
       </div>
-
-      {/* Bottom Navigation - Only on Mobile */}
-      {/* <BottomNavigation /> */}
 
       {/* Mobile Menu Drawer */}
       <CustomDrawer isOpen={menuStatus} onClose={() => setMenuStatus(false)}>
