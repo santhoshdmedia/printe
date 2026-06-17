@@ -5,33 +5,20 @@ const { ShoppingCardSchema } = require("./models_import");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: resolve phone + email for a logged-in user
-//
-// Priority order:
-//   1. req.body (frontend explicitly sent it — fastest, no DB hit)
-//   2. req.userData JWT payload
-//   3. Database lookup (fallback)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const resolveUserContact = async (userData, bodyOverrides = {}) => {
-  // 1️⃣ Accept whatever the frontend sent directly
   let phone = bodyOverrides.phone_number || bodyOverrides.phone || null;
   let email = bodyOverrides.email        || null;
 
-  // 2️⃣ Fill gaps from JWT payload
   if (!phone) phone = userData.phone || userData.phoneNumber || userData.mobile || null;
   if (!email) email = userData.email  || null;
 
-  // 3️⃣ DB lookup if still missing
   if (!phone || !email) {
     try {
-      // ⚠ Adjust path to your actual User model location
-      // Common locations: ../models/user.model  OR  ../modals/user.modal
       let User;
-      try {
-        User = require("../models/user.model");
-      } catch {
-        User = require("../modals/user.modal");
-      }
+      try { User = require("../models/user.model"); }
+      catch { User = require("../modals/user.modal"); }
 
       const user = await User.findById(userData.id)
         .select("phone phoneNumber mobile email")
@@ -42,18 +29,45 @@ const resolveUserContact = async (userData, bodyOverrides = {}) => {
         if (!email) email = user.email || null;
       }
     } catch (err) {
-      // Non-fatal — cart still saves, just without contact info
       console.warn("[Cart] Could not fetch user contact info:", err.message);
     }
   }
 
-  // Normalize phone: strip non-digits, ensure 91 country prefix
   if (phone) {
     phone = String(phone).replace(/\D/g, "");
     if (phone.length === 10) phone = "91" + phone;
   }
 
   return { phone: phone || null, email: email || null };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: recalculate price fields when quantity changes
+//
+// We derive the unit prices from the existing item, then multiply by new qty.
+// All the per-unit values are stored when the item is first added, so we just
+// back-calculate unit cost and scale up.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const recalcPriceFields = (existingItem, newQty) => {
+  const oldQty = existingItem.quantity || existingItem.product_quantity || 1;
+
+  // Derive per-unit amounts from the stored totals
+  const unitFinalTotal           = oldQty > 0 ? (existingItem.final_total            || 0) / oldQty : 0;
+  const unitFinalTotalWithoutGst = oldQty > 0 ? (existingItem.final_total_withoutGst || 0) / oldQty : 0;
+  const unitCgst                 = oldQty > 0 ? (existingItem.cgst                   || 0) / oldQty : 0;
+  const unitSgst                 = oldQty > 0 ? (existingItem.sgst                   || 0) / oldQty : 0;
+  const unitMrpSavings           = oldQty > 0 ? (existingItem.MRP_savings            || 0) / oldQty : 0;
+  const unitTotalSavings         = oldQty > 0 ? (existingItem.TotalSavings           || 0) / oldQty : 0;
+
+  return {
+    final_total:            parseFloat((unitFinalTotal           * newQty).toFixed(2)),
+    final_total_withoutGst: parseFloat((unitFinalTotalWithoutGst * newQty).toFixed(2)),
+    cgst:                   parseFloat((unitCgst                 * newQty).toFixed(2)),
+    sgst:                   parseFloat((unitSgst                 * newQty).toFixed(2)),
+    MRP_savings:            parseFloat((unitMrpSavings           * newQty).toFixed(2)),
+    TotalSavings:           parseFloat((unitTotalSavings         * newQty).toFixed(2)),
+  };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -69,17 +83,13 @@ const addToShoppingCart = async (req, res) => {
     let email = null;
 
     if (req.userData && req.userData.id) {
-      // ── Logged-in user ───────────────────────────────────────────────────
       userIdentifier  = req.userData.id;
       identifierField = "user_id";
 
-      // Resolve contact: body override → JWT → DB
       const contact = await resolveUserContact(req.userData, req.body);
       phone = contact.phone;
       email = contact.email;
-
     } else {
-      // ── Guest user ───────────────────────────────────────────────────────
       userIdentifier  = req.body.guestId || req.body.GuestId;
       identifierField = "guest_id";
 
@@ -87,7 +97,6 @@ const addToShoppingCart = async (req, res) => {
         return errorResponse(res, "Guest ID is required for guest users");
       }
 
-      // Guests must send phone/email from the frontend
       phone = req.body.phone_number || req.body.phone || null;
       if (phone) {
         phone = String(phone).replace(/\D/g, "");
@@ -100,7 +109,7 @@ const addToShoppingCart = async (req, res) => {
       return errorResponse(res, "Product ID is required");
     }
 
-    // ── Check for existing item (same product + variant) ──────────────────────
+    // ── Check for existing item (same product + variant) ─────────────────────
     const existingItemQuery = {
       [identifierField]: userIdentifier,
       product_id: new mongoose.Types.ObjectId(req.body.product_id),
@@ -114,23 +123,32 @@ const addToShoppingCart = async (req, res) => {
 
     if (existingItem) {
       // ── Update existing cart item ─────────────────────────────────────────
-      existingItem.quantity         += req.body.product_quantity || req.body.quantity || 1;
-      existingItem.product_quantity  = existingItem.quantity;
-      existingItem.updated_at        = new Date();
-      existingItem.reminder_sent     = false;
-      existingItem.reminder_sent_at  = null;
+      const addedQty = parseInt(req.body.product_quantity || req.body.quantity) || 1;
+      const newQty   = existingItem.quantity + addedQty;
 
-      // Always refresh contact info (phone/email may have been missing before)
+      // ✅ FIX 1: recalculate all price fields proportionally for the new qty
+      const recalculated = recalcPriceFields(existingItem, newQty);
+
+      existingItem.quantity              = newQty;
+      existingItem.product_quantity      = newQty;
+      existingItem.final_total           = recalculated.final_total;
+      existingItem.final_total_withoutGst= recalculated.final_total_withoutGst;
+      existingItem.cgst                  = recalculated.cgst;
+      existingItem.sgst                  = recalculated.sgst;
+      existingItem.MRP_savings           = recalculated.MRP_savings;
+      existingItem.TotalSavings          = recalculated.TotalSavings;
+      existingItem.updated_at            = new Date();
+      existingItem.reminder_count        = 0;
+      existingItem.last_reminder_sent_at = null;
+
       if (phone) existingItem.phone_number = phone;
       if (email) existingItem.email        = email;
 
-      // Refresh platform links if re-adding a QR product
-      if (req.body.selected_platforms) {
-        existingItem.selected_platforms = req.body.selected_platforms;
-      }
-      if (req.body.platform_links) {
-        existingItem.platform_links = req.body.platform_links;
-      }
+      if (req.body.selected_platforms) existingItem.selected_platforms = req.body.selected_platforms;
+      if (req.body.platform_links)     existingItem.platform_links     = req.body.platform_links;
+
+      if (req.body.is_photo_frame !== undefined) existingItem.is_photo_frame     = req.body.is_photo_frame;
+      if (req.body.photo_frame_details)          existingItem.photo_frame_details = req.body.photo_frame_details;
 
       result = await existingItem.save();
 
@@ -139,8 +157,8 @@ const addToShoppingCart = async (req, res) => {
       const cartItem = {
         [identifierField]:        userIdentifier,
         product_id:               new mongoose.Types.ObjectId(req.body.product_id),
-        quantity:                 req.body.product_quantity       || req.body.quantity || 1,
-        product_quantity:         req.body.product_quantity       || req.body.quantity || 1,
+        quantity:                 parseInt(req.body.product_quantity || req.body.quantity) || 1,
+        product_quantity:         parseInt(req.body.product_quantity || req.body.quantity) || 1,
         product_price:            req.body.product_price          || 0,
         product_name:             req.body.product_name           || "Product",
         product_image:            req.body.product_image          || "",
@@ -160,18 +178,18 @@ const addToShoppingCart = async (req, res) => {
         is_qr_product:            req.body.is_qr_product          || false,
         selected_platforms:       req.body.selected_platforms     || [],
         platform_links:           req.body.platform_links         || {},
+        is_photo_frame:           req.body.is_photo_frame         || false,
+        photo_frame_details:      req.body.photo_frame_details    || {},
         ...(req.body.size             && { size:             req.body.size }),
         ...(req.body.color            && { color:            req.body.color }),
         ...(req.body.instructions     && { instructions:     req.body.instructions }),
         ...(req.body.product_variants && { product_variants: req.body.product_variants }),
-        // ✅ Contact info — resolved above
-        phone_number:     phone,
-        email:            email,
-        // Reminder tracking
-        reminder_sent:    false,
-        reminder_sent_at: null,
-        created_at:       new Date(),
-        updated_at:       new Date(),
+        phone_number:             phone,
+        email:                    email,
+        reminder_count:           0,
+        last_reminder_sent_at:    null,
+        created_at:               new Date(),
+        updated_at:               new Date(),
       };
 
       result = await ShoppingCardSchema.create(cartItem);
@@ -259,6 +277,8 @@ const getMyShoppingCart = async (req, res) => {
           is_qr_product:          1,
           selected_platforms:     1,
           platform_links:         1,
+          is_photo_frame:         1,
+          photo_frame_details:    1,
           phone_number:           1,
           email:                  1,
           createdAt:              "$created_at",
@@ -296,6 +316,8 @@ const getMyShoppingCart = async (req, res) => {
       is_qr_product:          item.is_qr_product           || false,
       selected_platforms:     item.selected_platforms      || [],
       platform_links:         item.platform_links          || {},
+      is_photo_frame:         item.is_photo_frame          || false,
+      photo_frame_details:    item.photo_frame_details     || {},
       phone_number:           item.phone_number            || null,
       email:                  item.email                   || null,
       createdAt:              item.createdAt,
@@ -303,16 +325,11 @@ const getMyShoppingCart = async (req, res) => {
       __v:                    item.__v || 0,
     }));
 
-    return res.status(200).json({
-      message: "",
-      data:    transformedResult,
-    });
+    return res.status(200).json({ message: "", data: transformedResult });
+
   } catch (err) {
     console.error("Get cart error:", err);
-    return res.status(500).json({
-      message: "Error fetching shopping cart",
-      data:    [],
-    });
+    return res.status(500).json({ message: "Error fetching shopping cart", data: [] });
   }
 };
 
@@ -338,9 +355,7 @@ const removeMyShoppingCart = async (req, res) => {
       userIdentifier  = guestId;
       identifierField = "guest_id";
 
-      if (!userIdentifier) {
-        return errorResponse(res, "Guest ID is required for guest users");
-      }
+      if (!userIdentifier) return errorResponse(res, "Guest ID is required for guest users");
     }
 
     await ShoppingCardSchema.deleteMany({
@@ -348,16 +363,11 @@ const removeMyShoppingCart = async (req, res) => {
       [identifierField]: userIdentifier,
     });
 
-    return res.status(200).json({
-      message: "Products removed from shopping cart",
-      data:    [],
-    });
+    return res.status(200).json({ message: "Products removed from shopping cart", data: [] });
+
   } catch (err) {
     console.error("Remove cart error:", err);
-    return res.status(500).json({
-      message: "Failed to remove products from shopping cart",
-      data:    [],
-    });
+    return res.status(500).json({ message: "Failed to remove products from shopping cart", data: [] });
   }
 };
 
@@ -370,10 +380,7 @@ const updateCartItemQuantity = async (req, res) => {
     const { itemId, quantity, guestId } = req.body;
 
     if (!itemId || quantity === undefined) {
-      return res.status(400).json({
-        message: "Item ID and quantity are required",
-        data:    [],
-      });
+      return res.status(400).json({ message: "Item ID and quantity are required", data: [] });
     }
 
     let userIdentifier;
@@ -387,10 +394,7 @@ const updateCartItemQuantity = async (req, res) => {
       identifierField = "guest_id";
 
       if (!userIdentifier) {
-        return res.status(400).json({
-          message: "Guest ID is required for guest users",
-          data:    [],
-        });
+        return res.status(400).json({ message: "Guest ID is required for guest users", data: [] });
       }
     }
 
@@ -403,30 +407,38 @@ const updateCartItemQuantity = async (req, res) => {
       return res.status(200).json({ message: "Item removed from cart", data: [] });
     }
 
-    const updatedItem = await ShoppingCardSchema.findOneAndUpdate(
+    // ✅ FIX 1 (also here): recalculate prices when quantity is updated manually
+    const cartItem = await ShoppingCardSchema.findOne({
+      _id:               new mongoose.Types.ObjectId(itemId),
+      [identifierField]: userIdentifier,
+    });
+
+    if (!cartItem) {
+      return res.status(404).json({ message: "Cart item not found", data: [] });
+    }
+
+    const safeQty      = Math.max(1, quantity);
+    const recalculated = recalcPriceFields(cartItem, safeQty);
+
+    const updatedItem = await ShoppingCardSchema.findByIdAndUpdate(
+      cartItem._id,
       {
-        _id:               new mongoose.Types.ObjectId(itemId),
-        [identifierField]: userIdentifier,
-      },
-      {
-        quantity:         Math.max(1, quantity),
-        product_quantity: Math.max(1, quantity),
-        updated_at:       new Date(),
-        // Reset reminder so the 5-min / 1-hour window restarts
-        reminder_sent:    false,
-        reminder_sent_at: null,
+        quantity:               safeQty,
+        product_quantity:       safeQty,
+        final_total:            recalculated.final_total,
+        final_total_withoutGst: recalculated.final_total_withoutGst,
+        cgst:                   recalculated.cgst,
+        sgst:                   recalculated.sgst,
+        MRP_savings:            recalculated.MRP_savings,
+        TotalSavings:           recalculated.TotalSavings,
+        reminder_count:         0,
+        last_reminder_sent_at:  null,
       },
       { new: true }
     );
 
-    if (!updatedItem) {
-      return res.status(404).json({ message: "Cart item not found", data: [] });
-    }
+    return res.status(200).json({ message: "Cart item updated successfully", data: [updatedItem] });
 
-    return res.status(200).json({
-      message: "Cart item updated successfully",
-      data:    [updatedItem],
-    });
   } catch (err) {
     console.error("Update cart error:", err);
     return res.status(500).json({ message: "Error updating cart item", data: [] });
@@ -435,7 +447,6 @@ const updateCartItemQuantity = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Merge Guest Cart → User Cart (after login)
-// Also backfills phone/email on migrated items
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mergeCartsAfterLogin = async (req, res) => {
@@ -446,50 +457,56 @@ const mergeCartsAfterLogin = async (req, res) => {
     if (!userId)  return res.status(400).json({ message: "User ID is required",  data: [] });
     if (!guestId) return res.status(400).json({ message: "Guest ID is required", data: [] });
 
-    // Resolve contact info to backfill merged items
-    const contact = await resolveUserContact(req.userData, req.body);
-
+    const contact        = await resolveUserContact(req.userData, req.body);
     const guestCartItems = await ShoppingCardSchema.find({ guest_id: guestId });
 
     for (const guestItem of guestCartItems) {
-      const existingQuery = {
-        user_id:    userId,
-        product_id: guestItem.product_id,
-      };
+      const existingQuery = { user_id: userId, product_id: guestItem.product_id };
       if (guestItem.size)  existingQuery.size  = guestItem.size;
       if (guestItem.color) existingQuery.color = guestItem.color;
 
       const existingUserItem = await ShoppingCardSchema.findOne(existingQuery);
 
       if (existingUserItem) {
-        existingUserItem.quantity         += guestItem.quantity;
-        existingUserItem.product_quantity  = existingUserItem.quantity;
-        existingUserItem.updated_at        = new Date();
-        existingUserItem.reminder_sent     = false;
-        existingUserItem.reminder_sent_at  = null;
+        const newQty       = existingUserItem.quantity + guestItem.quantity;
+        const recalculated = recalcPriceFields(existingUserItem, newQty);
+
+        existingUserItem.quantity              = newQty;
+        existingUserItem.product_quantity      = newQty;
+        existingUserItem.final_total           = recalculated.final_total;
+        existingUserItem.final_total_withoutGst= recalculated.final_total_withoutGst;
+        existingUserItem.cgst                  = recalculated.cgst;
+        existingUserItem.sgst                  = recalculated.sgst;
+        existingUserItem.MRP_savings           = recalculated.MRP_savings;
+        existingUserItem.TotalSavings          = recalculated.TotalSavings;
+        existingUserItem.updated_at            = new Date();
+        existingUserItem.reminder_count        = 0;
+        existingUserItem.last_reminder_sent_at = null;
+
         if (contact.phone) existingUserItem.phone_number = contact.phone;
         if (contact.email) existingUserItem.email        = contact.email;
+
+        if (guestItem.is_photo_frame)     existingUserItem.is_photo_frame     = guestItem.is_photo_frame;
+        if (guestItem.photo_frame_details)existingUserItem.photo_frame_details = guestItem.photo_frame_details;
+
         await existingUserItem.save();
         await ShoppingCardSchema.findByIdAndDelete(guestItem._id);
       } else {
         await ShoppingCardSchema.findByIdAndUpdate(guestItem._id, {
-          user_id:          userId,
-          guest_id:         null,
-          phone_number:     contact.phone || guestItem.phone_number,
-          email:            contact.email || guestItem.email,
-          updated_at:       new Date(),
-          reminder_sent:    false,
-          reminder_sent_at: null,
+          user_id:               userId,
+          guest_id:              null,
+          phone_number:          contact.phone || guestItem.phone_number,
+          email:                 contact.email || guestItem.email,
+          updated_at:            new Date(),
+          reminder_count:        0,
+          last_reminder_sent_at: null,
         });
       }
     }
 
     const updatedCart = await ShoppingCardSchema.find({ user_id: userId });
+    return res.status(200).json({ message: "Cart merged successfully", data: updatedCart });
 
-    return res.status(200).json({
-      message: "Cart merged successfully",
-      data:    updatedCart,
-    });
   } catch (err) {
     console.error("Merge cart error:", err);
     return res.status(500).json({ message: "Error merging carts", data: [] });
@@ -498,19 +515,14 @@ const mergeCartsAfterLogin = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Backfill missing phone/email on existing cart items
-// Call this as a one-time migration route: POST /cart/backfill-contacts
 // ─────────────────────────────────────────────────────────────────────────────
 
 const backfillCartContacts = async (req, res) => {
   try {
     let User;
-    try {
-      User = require("../models/user.model");
-    } catch {
-      User = require("../modals/user.modal");
-    }
+    try { User = require("../models/user.model"); }
+    catch { User = require("../modals/user.modal"); }
 
-    // Find all logged-in carts missing phone or email
     const itemsMissingContact = await ShoppingCardSchema.find({
       user_id: { $ne: null },
       $or: [
@@ -523,16 +535,12 @@ const backfillCartContacts = async (req, res) => {
 
     console.log(`[Backfill] Found ${itemsMissingContact.length} cart items missing contact info`);
 
-    // Group by user_id to avoid redundant DB lookups
     const userIds = [...new Set(itemsMissingContact.map(i => String(i.user_id)))];
     let updated = 0;
 
     for (const userId of userIds) {
       try {
-        const user = await User.findById(userId)
-          .select("phone phoneNumber mobile email")
-          .lean();
-
+        const user = await User.findById(userId).select("phone phoneNumber mobile email").lean();
         if (!user) continue;
 
         let phone = user.phone || user.phoneNumber || user.mobile || null;
@@ -564,6 +572,7 @@ const backfillCartContacts = async (req, res) => {
       message: `Backfill complete. Updated ${updated} cart items across ${userIds.length} users.`,
       data:    { updated, usersProcessed: userIds.length },
     });
+
   } catch (err) {
     console.error("[Backfill] Error:", err);
     return res.status(500).json({ message: "Backfill failed", data: [] });
@@ -576,10 +585,7 @@ const backfillCartContacts = async (req, res) => {
 
 const validateGuestId = (req, res, next) => {
   if (!req.userData && !req.body.guestId && !req.query.guestId) {
-    return res.status(400).json({
-      message: "Guest ID is required for guest operations",
-      data:    [],
-    });
+    return res.status(400).json({ message: "Guest ID is required for guest operations", data: [] });
   }
   next();
 };

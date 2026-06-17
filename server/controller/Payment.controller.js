@@ -2,20 +2,17 @@
 // File: controller/Payment.controller.js
 
 const { errorResponse, successResponse } = require("../helper/response.helper");
-const { SOMETHING_WENT_WRONG } = require("../helper/message.helper");
-const CCAvenue = require("../utils/ccavenue");
-const { OrderDetailsSchema,user } = require("./models_import");
-const { findUserIdByEmail } = require('../utils/Finduserbyemail');
-
-// ── Import User model directly to avoid models_import aliasing issues ──────
-// If your models_import already re-exports it correctly, use that instead.
-// The root cause of user_id being null was: User.findOne() either failing
-// silently or the import resolving to undefined.
-
-const QRCode = require('qrcode');
+const { SOMETHING_WENT_WRONG }           = require("../helper/message.helper");
+const CCAvenue                           = require("../utils/ccavenue");
+const { OrderDetailsSchema,
+        ShoppingCardSchema }             = require("./models_import");   // ← ShoppingCardSchema added
+const { findUserIdByEmail }              = require('../utils/Finduserbyemail');
+const mongoose                           = require("mongoose");
+const QRCode                             = require('qrcode');
 require("dotenv").config();
 
 // ==================== UTILITIES ====================
+
 const getEnv = (key, defaultValue = '') => {
   const value = process.env[key];
   return (value && typeof value === 'string') ? value.trim() : defaultValue;
@@ -23,26 +20,26 @@ const getEnv = (key, defaultValue = '') => {
 
 const generatePaymentQRCode = async (orderData, encryptedData, accessCode) => {
   try {
-    const { invoice_no } = orderData;
+    const { invoice_no }   = orderData;
     const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
-    const qrPaymentUrl = `${BACKEND_BASE_URL}/api/payment/qr-redirect/${invoice_no}`;
+    const qrPaymentUrl     = `${BACKEND_BASE_URL}/api/payment/qr-redirect/${invoice_no}`;
 
     const qrCodeDataUrl = await QRCode.toDataURL(qrPaymentUrl, {
       errorCorrectionLevel: 'H',
-      type: 'image/png',
+      type:    'image/png',
       quality: 0.92,
-      margin: 1,
-      width: 300,
-      color: { dark: '#000000', light: '#FFFFFF' }
+      margin:  1,
+      width:   300,
+      color:   { dark: '#000000', light: '#FFFFFF' },
     });
 
     console.log(`✓ QR Code generated: ${qrPaymentUrl}`);
     return {
-      qr_code: qrCodeDataUrl,
-      qr_url: qrPaymentUrl,
+      qr_code:        qrCodeDataUrl,
+      qr_url:         qrPaymentUrl,
       encrypted_data: encryptedData,
-      access_code: accessCode,
-      generated_at: new Date()
+      access_code:    accessCode,
+      generated_at:   new Date(),
     };
   } catch (error) {
     console.error('✗ QR generation error:', error);
@@ -71,79 +68,140 @@ const validateCCAvenueCredentials = () => {
     credentials: {
       merchantId: CCA_MERCHANT_ID,
       workingKey: CCA_WORKING_KEY,
-      accessCode: CCA_ACCESS_CODE
-    }
+      accessCode: CCA_ACCESS_CODE,
+    },
   };
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: delete cart items after a successful order save.
+//
+// Strategy (first match wins):
+//   1. Explicit cart item _ids sent by frontend  → delete only those rows
+//   2. Logged-in user_id                         → delete all rows for that user
+//   3. Guest guestId                             → delete all rows for that guest
+//
+// This helper never throws — cart clearing must never block the order response.
+// ─────────────────────────────────────────────────────────────────────────────
+const clearCartAfterOrder = async ({ userId = null, guestId = null, cartItemIds = [] }) => {
+  try {
+    // ── Strategy 1: specific item ids ────────────────────────────────────────
+    if (Array.isArray(cartItemIds) && cartItemIds.length > 0) {
+      const objectIds = cartItemIds.map(id => new mongoose.Types.ObjectId(id));
+      const res       = await ShoppingCardSchema.deleteMany({ _id: { $in: objectIds } });
+      console.log(`✓ [Cart] Cleared ${res.deletedCount} item(s) by cart item ids`);
+      return;
+    }
 
+    // ── Strategy 2: logged-in user ────────────────────────────────────────────
+    if (userId) {
+      const res = await ShoppingCardSchema.deleteMany({ user_id: userId });
+      console.log(`✓ [Cart] Cleared ${res.deletedCount} item(s) for user_id: ${userId}`);
+      return;
+    }
 
+    // ── Strategy 3: guest ─────────────────────────────────────────────────────
+    if (guestId) {
+      const res = await ShoppingCardSchema.deleteMany({ guest_id: guestId });
+      console.log(`✓ [Cart] Cleared ${res.deletedCount} item(s) for guest_id: ${guestId}`);
+      return;
+    }
+
+    console.warn('[Cart] clearCartAfterOrder: nothing to clear — no userId, guestId, or cartItemIds supplied');
+  } catch (err) {
+    console.error('[Cart] Failed to clear cart after order (non-fatal):', err.message);
+  }
+};
 
 // ==================== CREATE PAYMENT ORDER ====================
+
 const createPaymentOrder = async (req, res) => {
   try {
     const {
-      amount, order_id, currency = "INR", billing_name, billing_email, billing_tel,
-      cart_items, delivery_address, delivery_charges = 0, free_delivery = false,
-      user_id, gst_no, coupon, subtotal, tax_amount, discount_amount, total_amount,
-      payment_type, total_before_discount, created_by = "customer"
+      amount,
+      order_id,
+      currency            = "INR",
+      billing_name,
+      billing_email,
+      billing_tel,
+      cart_items,
+      delivery_address,
+      delivery_charges    = 0,
+      free_delivery       = false,
+      user_id,
+      guestId,                        // ← guest identifier sent by frontend
+      cart_item_ids       = [],       // ← optional: specific cart row _ids to delete
+      gst_no,
+      coupon,
+      subtotal,
+      tax_amount,
+      discount_amount,
+      total_amount,
+      payment_type,
+      total_before_discount,
+      created_by          = "customer",
+      photo_frame_details,
     } = req.body;
 
     console.log('='.repeat(60));
     console.log('Creating payment order:', { billing_email, amount, timestamp: new Date().toISOString() });
 
+    // ── Validate required fields ──────────────────────────────────────────────
     const requiredFields = ['amount', 'billing_name', 'billing_email', 'billing_tel', 'cart_items', 'delivery_address'];
-    const missingFields = requiredFields.filter(f => !req.body[f]);
+    const missingFields  = requiredFields.filter(f => !req.body[f]);
     if (missingFields.length > 0) return errorResponse(res, `Missing: ${missingFields.join(', ')}`);
 
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) return errorResponse(res, "Invalid amount");
 
+    // ── CCAvenue credentials ──────────────────────────────────────────────────
     const credentialCheck = validateCCAvenueCredentials();
     if (!credentialCheck.valid) return errorResponse(res, credentialCheck.error);
 
     const { merchantId, workingKey, accessCode } = credentialCheck.credentials;
     const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
     const BACKEND_BASE_URL  = getEnv('BACKEND_BASE_URL',  'https://printe.in');
-    const gatewayUrl = getGatewayUrl();
-    const finalOrderId = order_id || `PRINTE${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    const gatewayUrl        = getGatewayUrl();
+    const finalOrderId      = order_id || `PRINTE${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-    // ── Resolve user_id: prefer body value, fall back to email lookup ─────
+    // ── Resolve user_id: body value → email lookup ────────────────────────────
     let resolvedUserId = user_id || null;
     if (!resolvedUserId && billing_email) {
       resolvedUserId = await findUserIdByEmail(billing_email);
     }
 
-    // Process cart items
+    // ── Process cart items ────────────────────────────────────────────────────
     const processedCartItems = Array.isArray(cart_items)
       ? cart_items.map(item => ({
-          product_id:   item.product_id   || item.id    || '',
-          product_name: item.product_name || item.name  || 'Product',
-          quantity:     parseInt(item.quantity || item.product_quantity) || 1,
-          mrp_price:    parseFloat(item.mrp_price || item.MRP_price || 0),
-          price:        parseFloat(item.price || item.final_total_withoutGst || item.final_total) || 0,
-          image:        item.image  || item.product_image || '',
-          size:         item.size   || '',
-          color:        item.color  || '',
-          notes:        item.notes  || '',
+          product_id:          item.product_id   || item.id   || '',
+          product_name:        item.product_name || item.name || 'Product',
+          quantity:            parseInt(item.quantity || item.product_quantity) || 1,
+          mrp_price:           parseFloat(item.mrp_price || item.MRP_price || 0),
+          price:               parseFloat(item.price || item.final_total_withoutGst || item.final_total) || 0,
+          image:               item.image  || item.product_image || '',
+          size:                item.size   || '',
+          color:               item.color  || '',
+          notes:               item.notes  || '',
+          photo_frame_details: item.photo_frame_details || null,
         }))
       : [];
 
-    // Process delivery address
+    // ── Process delivery address ──────────────────────────────────────────────
     const processedDeliveryAddress = {
-      name:                  delivery_address.name                  || billing_name || '',
+      name:                  delivery_address.name                  || billing_name  || '',
       email:                 delivery_address.email                 || billing_email || '',
       mobile_number:         delivery_address.mobile_number         || delivery_address.phone || billing_tel || '',
       alternateMobileNumber: delivery_address.alternateMobileNumber || '',
       street:                delivery_address.street                || delivery_address.addressLine1 || delivery_address.address || '',
-      city:                  delivery_address.city   || '',
-      state:                 delivery_address.state  || '',
+      city:                  delivery_address.city    || '',
+      state:                 delivery_address.state   || '',
       pincode:               delivery_address.pincode || delivery_address.zip || '',
       country:               delivery_address.country || 'India',
       landmark:              delivery_address.landmark || delivery_address.addressLine2 || '',
       address_type:          delivery_address.address_type || 'home',
     };
 
+    // ── CCAvenue params ───────────────────────────────────────────────────────
     const ccavenueParams = {
       merchant_id:      merchantId,
       order_id:         finalOrderId,
@@ -168,28 +226,30 @@ const createPaymentOrder = async (req, res) => {
       delivery_country: processedDeliveryAddress.country || 'India',
       delivery_tel:     (processedDeliveryAddress.mobile_number || '').substring(0, 20),
       merchant_param1:  resolvedUserId ? resolvedUserId.toString() : '',
-      merchant_param2:  '',
+      merchant_param2:  '',   // filled after DB save
       merchant_param3:  created_by,
     };
 
+    // ── Encrypt ───────────────────────────────────────────────────────────────
     let encryptedData;
     try {
-      const ccavenue = new CCAvenue(workingKey);
-      encryptedData = ccavenue.encryptData(ccavenueParams);
+      encryptedData = new CCAvenue(workingKey).encryptData(ccavenueParams);
       console.log('✓ CCAvenue encryption successful');
     } catch (encryptError) {
       console.error('✗ Encryption error:', encryptError);
       return errorResponse(res, "Payment gateway error");
     }
 
+    // ── Generate QR ───────────────────────────────────────────────────────────
     let qrCodeData = null;
     try {
       qrCodeData = await generatePaymentQRCode({ invoice_no: finalOrderId }, encryptedData, accessCode);
       console.log('✓ QR Code generated');
     } catch (qrError) {
-      console.error('✗ QR generation failed:', qrError.message);
+      console.error('✗ QR generation failed (non-fatal):', qrError.message);
     }
 
+    // ── Build order document ──────────────────────────────────────────────────
     const orderData = {
       user_id:               resolvedUserId,
       cart_items:            processedCartItems,
@@ -204,13 +264,14 @@ const createPaymentOrder = async (req, res) => {
       gst_no:                gst_no || "",
       transaction_id:        "",
       payment_id:            "",
-      subtotal:              parseFloat(subtotal      || numericAmount),
-      tax_amount:            parseFloat(tax_amount    || 0),
-      discount_amount:       parseFloat(discount_amount || 0),
-      total_amount:          parseFloat(total_amount  || numericAmount),
+      subtotal:              parseFloat(subtotal            || numericAmount),
+      tax_amount:            parseFloat(tax_amount          || 0),
+      discount_amount:       parseFloat(discount_amount     || 0),
+      total_amount:          parseFloat(total_amount        || numericAmount),
       total_before_discount: parseFloat(total_before_discount || numericAmount),
       payment_option:        payment_type || "full",
       created_by,
+      photo_frame_details:   photo_frame_details || null,
     };
 
     if (qrCodeData) {
@@ -233,29 +294,39 @@ const createPaymentOrder = async (req, res) => {
       };
     }
 
+    // ── Save order to DB ──────────────────────────────────────────────────────
     let savedOrder;
     try {
-      const newOrder = new OrderDetailsSchema(orderData);
-      savedOrder = await newOrder.save();
+      savedOrder = await new OrderDetailsSchema(orderData).save();
 
+      // Re-encrypt with the real DB _id in merchant_param2
       ccavenueParams.merchant_param2 = savedOrder._id.toString();
-      const ccavenue = new CCAvenue(workingKey);
-      encryptedData = ccavenue.encryptData(ccavenueParams);
+      encryptedData = new CCAvenue(workingKey).encryptData(ccavenueParams);
 
       await OrderDetailsSchema.findByIdAndUpdate(savedOrder._id, {
         payment_encrypted_data: encryptedData,
       });
-      console.log('✓ Order created:', savedOrder.invoice_no);
+
+      console.log('✓ Order saved to DB:', savedOrder.invoice_no);
     } catch (dbError) {
-      console.error('✗ Database error:', dbError);
+      console.error('✗ DB save error:', dbError);
       return errorResponse(res, "Failed to create order");
     }
 
-    console.log('✓ Payment order complete with QR');
+    // ── ✅ Clear the shopping cart now that the order is confirmed in DB ───────
+    // Works for both logged-in users and guests.
+    // Precedence: explicit cart_item_ids → user_id → guestId
+    await clearCartAfterOrder({
+      userId:      resolvedUserId,
+      guestId:     guestId || null,
+      cartItemIds: Array.isArray(cart_item_ids) ? cart_item_ids : [],
+    });
+
+    console.log('✓ Payment order flow complete');
     console.log('='.repeat(60));
 
     return successResponse(res, "Order created successfully", {
-      success: true,
+      success:           true,
       order_id:          finalOrderId,
       database_order_id: savedOrder._id,
       amount:            ccavenueParams.amount,
@@ -282,6 +353,7 @@ const createPaymentOrder = async (req, res) => {
 };
 
 // ==================== ADMIN CREATE ORDER ====================
+
 const adminCreateOrder = async (req, res) => {
   try {
     const {
@@ -289,7 +361,7 @@ const adminCreateOrder = async (req, res) => {
       cart_items, delivery_address,
       delivery_charges = 0, free_delivery = false,
       gst_no, subtotal, tax_amount, discount_amount, total_amount,
-      payment_type = "Online Payment", notes, admin_id
+      payment_type = "Online Payment", notes, admin_id,
     } = req.body;
 
     console.log('='.repeat(60));
@@ -299,42 +371,27 @@ const adminCreateOrder = async (req, res) => {
       return errorResponse(res, "Missing required fields");
     }
 
-    // ── DEBUG: print exactly what User model resolves to ─────────────────────
-    // This block tells you WHY user_id is null. Remove after confirming it works.
+    // ── DEBUG block — remove after confirming user lookup works ──────────────
     try {
-      const mongoose = require('mongoose');
-
-      // Check 1: Is User registered in Mongoose?
       const registeredModels = Object.keys(mongoose.models);
       console.log('[DEBUG] Registered Mongoose models:', registeredModels);
-
-      // Check 2: Which collection does it point to?
       if (mongoose.models.User) {
         console.log('[DEBUG] User model collection:', mongoose.models.User.collection.collectionName);
       } else {
-        console.warn('[DEBUG] ⚠ "User" is NOT in mongoose.models — model was never registered before this call');
+        console.warn('[DEBUG] ⚠ "User" not in mongoose.models');
       }
-
-      // Check 3: Raw query — bypass all helpers, go direct
       const rawUser = await mongoose.models.User?.findOne(
         { email: customer_email.toLowerCase().trim() },
         { _id: 1, email: 1 }
       ).lean();
       console.log('[DEBUG] Raw direct query result:', rawUser);
-      // If rawUser is null:
-      //   → the email genuinely doesn't exist in DB, OR
-      //   → the collection name is wrong
-      // If rawUser has _id:
-      //   → the helper import was broken, this confirms the fix works
-
     } catch (debugErr) {
-      console.error('[DEBUG] Error during debug query:', debugErr.message);
+      console.error('[DEBUG] Error:', debugErr.message);
     }
     // ── END DEBUG ─────────────────────────────────────────────────────────────
 
-    // ── Correct user lookup via standalone utility ────────────────────────────
     const userId = await findUserIdByEmail(customer_email);
-    console.log(`User lookup result → userId: ${userId}`);
+    console.log(`User lookup → userId: ${userId}`);
 
     const credentialCheck = validateCCAvenueCredentials();
     if (!credentialCheck.valid) return errorResponse(res, credentialCheck.error);
@@ -342,41 +399,36 @@ const adminCreateOrder = async (req, res) => {
     const { merchantId, workingKey, accessCode } = credentialCheck.credentials;
     const BACKEND_BASE_URL  = getEnv('BACKEND_BASE_URL',  'https://printe.in');
     const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
-    const gatewayUrl = getGatewayUrl();
+    const gatewayUrl        = getGatewayUrl();
+    const invoiceNo         = `PRINTE${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-    const invoiceNo = `PRINTE${Date.now()}${Math.floor(Math.random() * 1000)}`;
-
-    // Process cart items — includes mrp_price and notes
     const processedCartItems = cart_items.map(item => ({
       product_id:   item.product_id   || '',
       product_name: item.product_name || '',
-      quantity:     parseInt(item.quantity)   || 1,
+      quantity:     parseInt(item.quantity)               || 1,
       mrp_price:    parseFloat(item.mrp_price || item.MRP_price || 0),
-      price:        parseFloat(item.price)    || 0,
+      price:        parseFloat(item.price)                || 0,
       image:        item.image  || '',
       size:         item.size   || '',
       color:        item.color  || '',
       notes:        item.notes  || '',
     }));
 
-    // Build delivery address — handles address_line1/2 and street/landmark shapes
     const processedAddress = {
       name:          customer_name,
       email:         customer_email,
       mobile_number: customer_phone,
       street: delivery_address.street
-        || [delivery_address.address_line1, delivery_address.address_line2]
-             .filter(Boolean).join(', ')
+        || [delivery_address.address_line1, delivery_address.address_line2].filter(Boolean).join(', ')
         || '',
-      landmark:     delivery_address.landmark || delivery_address.address_line2 || '',
-      city:         delivery_address.city    || '',
-      state:        delivery_address.state   || '',
-      pincode:      delivery_address.pincode || '',
-      country:      delivery_address.country || 'India',
+      landmark:     delivery_address.landmark     || delivery_address.address_line2 || '',
+      city:         delivery_address.city         || '',
+      state:        delivery_address.state        || '',
+      pincode:      delivery_address.pincode      || '',
+      country:      delivery_address.country      || 'India',
       address_type: delivery_address.address_type || 'home',
     };
 
-    // CCAvenue params
     const ccavenueParams = {
       merchant_id:      merchantId,
       order_id:         invoiceNo,
@@ -401,14 +453,12 @@ const adminCreateOrder = async (req, res) => {
       delivery_country: processedAddress.country || 'India',
       delivery_tel:     customer_phone.substring(0, 20),
       merchant_param1:  userId ? userId.toString() : '',
-      merchant_param2:  '',   // updated after save
+      merchant_param2:  '',
       merchant_param3:  'admin',
     };
 
-    const ccavenue = new CCAvenue(workingKey);
-    let encryptedData = ccavenue.encryptData(ccavenueParams);
+    let encryptedData = new CCAvenue(workingKey).encryptData(ccavenueParams);
 
-    // Generate QR
     let qrCodeData = null;
     try {
       qrCodeData = await generatePaymentQRCode({ invoice_no: invoiceNo }, encryptedData, accessCode);
@@ -417,25 +467,25 @@ const adminCreateOrder = async (req, res) => {
     }
 
     const orderData = {
-      user_id:              userId,           // ObjectId or null
-      cart_items:           processedCartItems,
-      delivery_address:     processedAddress,
-      order_status:         "pending payment",
-      total_price:          parseFloat(total_amount    || 0),
-      DeliveryCharges:      parseFloat(delivery_charges || 0),
-      FreeDelivery:         !!free_delivery,
+      user_id:             userId,
+      cart_items:          processedCartItems,
+      delivery_address:    processedAddress,
+      order_status:        "pending payment",
+      total_price:         parseFloat(total_amount    || 0),
+      DeliveryCharges:     parseFloat(delivery_charges || 0),
+      FreeDelivery:        !!free_delivery,
       payment_type,
-      invoice_no:           invoiceNo,
-      payment_status:       "pending",
-      gst_no:               gst_no || "",
-      subtotal:             parseFloat(subtotal        || 0),
-      tax_amount:           parseFloat(tax_amount      || 0),
-      discount_amount:      parseFloat(discount_amount || 0),
-      total_amount:         parseFloat(total_amount    || 0),
-      payment_option:       "full",
-      created_by:           "admin",
-      admin_notes:          notes || "",
-      created_by_admin_id:  admin_id || null,
+      invoice_no:          invoiceNo,
+      payment_status:      "pending",
+      gst_no:              gst_no || "",
+      subtotal:            parseFloat(subtotal         || 0),
+      tax_amount:          parseFloat(tax_amount       || 0),
+      discount_amount:     parseFloat(discount_amount  || 0),
+      total_amount:        parseFloat(total_amount     || 0),
+      payment_option:      "full",
+      created_by:          "admin",
+      admin_notes:         notes    || "",
+      created_by_admin_id: admin_id || null,
     };
 
     if (qrCodeData) {
@@ -449,12 +499,16 @@ const adminCreateOrder = async (req, res) => {
 
     const savedOrder = await new OrderDetailsSchema(orderData).save();
 
-    // Re-encrypt with real _id in merchant_param2
     ccavenueParams.merchant_param2 = savedOrder._id.toString();
     encryptedData = new CCAvenue(workingKey).encryptData(ccavenueParams);
     await OrderDetailsSchema.findByIdAndUpdate(savedOrder._id, {
       payment_encrypted_data: encryptedData,
     });
+
+    // ── ✅ Clear cart for this user (admin orders won't have a guestId) ────────
+    if (userId) {
+      await clearCartAfterOrder({ userId });
+    }
 
     console.log(`✓ Admin order created: ${savedOrder.invoice_no} | user_id: ${userId}`);
     console.log('='.repeat(60));
@@ -467,7 +521,7 @@ const adminCreateOrder = async (req, res) => {
       payment_link:   `${FRONTEND_BASE_URL}/payment/${savedOrder.invoice_no}`,
       qr_code:        savedOrder.payment_qr_code || null,
       qr_url:         savedOrder.payment_qr_url  || null,
-      user_id:        userId,   // returned for confirmation
+      user_id:        userId,
     });
 
   } catch (err) {
@@ -475,21 +529,21 @@ const adminCreateOrder = async (req, res) => {
     return errorResponse(res, "Failed to create order");
   }
 };
+
 // ==================== QR REDIRECT TO GATEWAY ====================
+
 const qrRedirectToGateway = async (req, res) => {
   try {
     const { invoice_no } = req.params;
     console.log('='.repeat(60));
-    console.log('QR redirect initiated:', { invoice_no, timestamp: new Date().toISOString() });
+    console.log('QR redirect:', { invoice_no, timestamp: new Date().toISOString() });
 
-    const order = await OrderDetailsSchema.findOne({ invoice_no });
+    const order             = await OrderDetailsSchema.findOne({ invoice_no });
     const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'https://printe.in');
 
     if (!order) {
-      console.log('✗ Order not found');
       return res.redirect(`${FRONTEND_BASE_URL}/payment/error?message=${encodeURIComponent('Order not found')}&order_id=${invoice_no}`);
     }
-
     if (order.payment_status === 'completed') {
       return res.redirect(`${FRONTEND_BASE_URL}/payment/success?order_id=${invoice_no}&tracking_id=${order.transaction_id || ''}&already_paid=true`);
     }
@@ -504,15 +558,14 @@ const qrRedirectToGateway = async (req, res) => {
 
     const { merchantId, workingKey, accessCode } = credentialCheck.credentials;
     const BACKEND_BASE_URL = getEnv('BACKEND_BASE_URL', 'https://printe.in');
-    const gatewayUrl = getGatewayUrl();
+    const gatewayUrl       = getGatewayUrl();
 
     let encryptedData    = order.payment_encrypted_data;
     let storedAccessCode = order.payment_access_code;
+    const needsRegen     = !encryptedData || !storedAccessCode || storedAccessCode !== accessCode;
 
-    const needsRegeneration = !encryptedData || !storedAccessCode || storedAccessCode !== accessCode;
-
-    if (needsRegeneration) {
-      console.log('⚠ Generating fresh encrypted data');
+    if (needsRegen) {
+      console.log('⚠ Regenerating encrypted data for QR redirect');
       const ccavenueParams = {
         merchant_id:      merchantId,
         order_id:         order.invoice_no,
@@ -521,37 +574,34 @@ const qrRedirectToGateway = async (req, res) => {
         redirect_url:     `${BACKEND_BASE_URL}/api/payment/ccavenue/callback`,
         cancel_url:       `${BACKEND_BASE_URL}/api/payment/ccavenue/callback`,
         language:         'EN',
-        billing_name:     (order.delivery_address?.name   || 'Customer').substring(0, 50),
-        billing_email:    order.delivery_address?.email   || 'noreply@example.com',
-        billing_address:  (order.delivery_address?.street || 'NA').substring(0, 100),
-        billing_city:     order.delivery_address?.city    || 'NA',
-        billing_state:    order.delivery_address?.state   || 'NA',
-        billing_zip:      order.delivery_address?.pincode || '000000',
-        billing_country:  order.delivery_address?.country || 'India',
-        billing_tel:      (order.delivery_address?.mobile_number || '0000000000').substring(0, 20),
-        delivery_name:    (order.delivery_address?.name   || 'Customer').substring(0, 50),
-        delivery_address: (order.delivery_address?.street || 'NA').substring(0, 100),
-        delivery_city:    order.delivery_address?.city    || 'NA',
-        delivery_state:   order.delivery_address?.state   || 'NA',
-        delivery_zip:     order.delivery_address?.pincode || '000000',
-        delivery_country: order.delivery_address?.country || 'India',
-        delivery_tel:     (order.delivery_address?.mobile_number || '0000000000').substring(0, 20),
-        merchant_param1:  order.user_id?.toString() || '',
-        merchant_param2:  order._id.toString(),
+        billing_name:     (order.delivery_address?.name           || 'Customer').substring(0, 50),
+        billing_email:     order.delivery_address?.email          || 'noreply@example.com',
+        billing_address:  (order.delivery_address?.street        || 'NA').substring(0, 100),
+        billing_city:      order.delivery_address?.city           || 'NA',
+        billing_state:     order.delivery_address?.state          || 'NA',
+        billing_zip:       order.delivery_address?.pincode        || '000000',
+        billing_country:   order.delivery_address?.country        || 'India',
+        billing_tel:      (order.delivery_address?.mobile_number  || '0000000000').substring(0, 20),
+        delivery_name:    (order.delivery_address?.name           || 'Customer').substring(0, 50),
+        delivery_address: (order.delivery_address?.street         || 'NA').substring(0, 100),
+        delivery_city:     order.delivery_address?.city           || 'NA',
+        delivery_state:    order.delivery_address?.state          || 'NA',
+        delivery_zip:      order.delivery_address?.pincode        || '000000',
+        delivery_country:  order.delivery_address?.country        || 'India',
+        delivery_tel:     (order.delivery_address?.mobile_number  || '0000000000').substring(0, 20),
+        merchant_param1:   order.user_id?.toString()              || '',
+        merchant_param2:   order._id.toString(),
         merchant_param3:  'qr_scan',
       };
 
       try {
-        const ccavenue = new CCAvenue(workingKey);
-        encryptedData = ccavenue.encryptData(ccavenueParams);
+        encryptedData    = new CCAvenue(workingKey).encryptData(ccavenueParams);
         storedAccessCode = accessCode;
-
         await OrderDetailsSchema.findByIdAndUpdate(order._id, {
           payment_encrypted_data: encryptedData,
           payment_access_code:    storedAccessCode,
           payment_gateway_url:    gatewayUrl,
-        }).catch(e => console.warn('⚠ Could not update encrypted data:', e.message));
-
+        }).catch(e => console.warn('⚠ Could not persist re-encrypted data:', e.message));
       } catch (encryptError) {
         console.error('✗ Encryption failed:', encryptError);
         return res.redirect(`${FRONTEND_BASE_URL}/payment/error?message=${encodeURIComponent('Encryption failed')}`);
@@ -602,18 +652,18 @@ const qrRedirectToGateway = async (req, res) => {
     <p class="subtitle">Connecting to CCAvenue payment gateway...</p>
     <div class="order-info">
       <div class="order-row"><span class="label">Order ID</span><span class="value">${order.invoice_no}</span></div>
-      <div class="order-row"><span class="label">Amount</span><span class="amount">₹${order.total_amount.toFixed(2)}</span></div>
+      <div class="order-row"><span class="label">Amount</span><span class="amount">&#8377;${order.total_amount.toFixed(2)}</span></div>
       <div class="order-row"><span class="label">Customer</span><span class="value">${order.delivery_address?.name || 'Customer'}</span></div>
     </div>
     <div class="security">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      <span class="security-text">🔒 Secure Payment</span>
+      <span class="security-text">&#128274; Secure Payment</span>
     </div>
     <div class="progress"><div class="progress-fill"></div></div>
     <div class="gateway"><p>Powered by</p><span class="badge">CCAvenue</span></div>
     <form id="paymentForm" method="post" action="${gatewayUrl}">
-      <input type="hidden" name="encRequest" value="${encryptedData}">
-      <input type="hidden" name="access_code" value="${storedAccessCode}">
+      <input type="hidden" name="encRequest"   value="${encryptedData}">
+      <input type="hidden" name="access_code"  value="${storedAccessCode}">
     </form>
   </div>
   <script>
@@ -629,7 +679,7 @@ const qrRedirectToGateway = async (req, res) => {
 </body>
 </html>`;
 
-    console.log('✓ Sending redirect page | Gateway:', gatewayUrl);
+    console.log('✓ Sending QR redirect page | Gateway:', gatewayUrl);
     console.log('='.repeat(60));
     return res.send(html);
 
@@ -641,12 +691,13 @@ const qrRedirectToGateway = async (req, res) => {
 };
 
 // ==================== CALLBACK HANDLER ====================
+
 const handleCCAvenueCallback = async (req, res) => {
   try {
     console.log('='.repeat(60));
     console.log('CCAvenue callback:', { method: req.method, timestamp: new Date().toISOString() });
 
-    const encResp = req.body.encResp || req.query.encResp;
+    const encResp           = req.body.encResp || req.query.encResp;
     const FRONTEND_BASE_URL = getEnv('FRONTEND_BASE_URL', 'http://localhost:5173');
 
     if (!encResp) {
@@ -660,15 +711,18 @@ const handleCCAvenueCallback = async (req, res) => {
 
     let decryptedData;
     try {
-      const ccavenue = new CCAvenue(credentialCheck.credentials.workingKey);
-      decryptedData = ccavenue.decryptData(encResp);
-      console.log('✓ Decrypted response');
+      decryptedData = new CCAvenue(credentialCheck.credentials.workingKey).decryptData(encResp);
+      console.log('✓ Response decrypted');
     } catch (err) {
       console.error('✗ Decryption error:', err);
       return res.redirect(`${FRONTEND_BASE_URL}/payment/error?message=${encodeURIComponent('Invalid response from payment gateway')}`);
     }
 
-    const { order_id, tracking_id, bank_ref_no, order_status, failure_message, status_message, amount, payment_mode, card_name } = decryptedData;
+    const {
+      order_id, tracking_id, bank_ref_no, order_status,
+      failure_message, status_message, amount, payment_mode, card_name,
+    } = decryptedData;
+
     console.log('Payment details:', { order_id, tracking_id, order_status, amount });
 
     if (!order_id) {
@@ -732,7 +786,7 @@ const handleCCAvenueCallback = async (req, res) => {
     }
 
     const redirect = `${frontendUrl}?${params.toString()}`;
-    console.log('Redirecting to:', redirect);
+    console.log('↪ Redirecting to:', redirect);
     console.log('='.repeat(60));
     return res.redirect(redirect);
 
@@ -744,6 +798,7 @@ const handleCCAvenueCallback = async (req, res) => {
 };
 
 // ==================== OTHER ENDPOINTS ====================
+
 const getPaymentStatus = async (req, res) => {
   try {
     const { order_id } = req.params;
@@ -807,9 +862,9 @@ const getQRCode = async (req, res) => {
   try {
     const { order_id } = req.params;
     const order = await OrderDetailsSchema.findOne({
-      $or: [{ invoice_no: order_id }, { _id: order_id }]
+      $or: [{ invoice_no: order_id }, { _id: order_id }],
     });
-    if (!order) return errorResponse(res, "Order not found");
+    if (!order)                 return errorResponse(res, "Order not found");
     if (!order.payment_qr_code) return errorResponse(res, "QR code not available");
 
     return successResponse(res, "QR Code retrieved", {
@@ -835,9 +890,9 @@ const getAllOrders = async (req, res) => {
     if (created_by)     query.created_by     = created_by;
     if (search) {
       query.$or = [
-        { invoice_no:                  { $regex: search, $options: 'i' } },
-        { 'delivery_address.email':    { $regex: search, $options: 'i' } },
-        { 'delivery_address.name':     { $regex: search, $options: 'i' } },
+        { invoice_no:               { $regex: search, $options: 'i' } },
+        { 'delivery_address.email': { $regex: search, $options: 'i' } },
+        { 'delivery_address.name':  { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -869,9 +924,8 @@ const generatePaymentLink = async (req, res) => {
   try {
     const { order_id } = req.params;
     const order = await OrderDetailsSchema.findOne({
-      $or: [{ invoice_no: order_id }, { _id: order_id }]
+      $or: [{ invoice_no: order_id }, { _id: order_id }],
     });
-
     if (!order) return errorResponse(res, "Order not found");
     if (order.payment_status !== 'pending') return errorResponse(res, "Link only for pending orders");
 
@@ -879,13 +933,13 @@ const generatePaymentLink = async (req, res) => {
     const BACKEND_BASE_URL  = getEnv('BACKEND_BASE_URL',  'https://printe.in');
 
     return successResponse(res, "Payment link generated", {
-      payment_link:     `${FRONTEND_BASE_URL}/payment/${order.invoice_no}`,
-      qr_payment_link:  `${BACKEND_BASE_URL}/api/payment/qr-redirect/${order.invoice_no}`,
-      order_id:         order.invoice_no,
-      amount:           order.total_amount,
-      customer_email:   order.delivery_address.email,
-      qr_code:          order.payment_qr_code,
-      qr_url:           order.payment_qr_url,
+      payment_link:    `${FRONTEND_BASE_URL}/payment/${order.invoice_no}`,
+      qr_payment_link: `${BACKEND_BASE_URL}/api/payment/qr-redirect/${order.invoice_no}`,
+      order_id:        order.invoice_no,
+      amount:          order.total_amount,
+      customer_email:  order.delivery_address.email,
+      qr_code:         order.payment_qr_code,
+      qr_url:          order.payment_qr_url,
     });
   } catch (err) {
     return errorResponse(res, "Failed to generate link");
@@ -896,7 +950,7 @@ const regenerateQRCode = async (req, res) => {
   try {
     const { order_id } = req.params;
     const order = await OrderDetailsSchema.findOne({
-      $or: [{ invoice_no: order_id }, { _id: order_id }]
+      $or: [{ invoice_no: order_id }, { _id: order_id }],
     });
     if (!order) return errorResponse(res, "Order not found");
 
@@ -920,22 +974,24 @@ const regenerateQRCode = async (req, res) => {
     const qrCodeData    = await generatePaymentQRCode({ invoice_no: order.invoice_no }, encryptedData, accessCode);
 
     await OrderDetailsSchema.findByIdAndUpdate(order._id, {
-      payment_qr_code:       qrCodeData.qr_code,
-      payment_qr_url:        qrCodeData.qr_url,
-      qr_code_generated_at:  qrCodeData.generated_at,
+      payment_qr_code:        qrCodeData.qr_code,
+      payment_qr_url:         qrCodeData.qr_url,
+      qr_code_generated_at:   qrCodeData.generated_at,
       payment_encrypted_data: qrCodeData.encrypted_data,
     });
 
     return successResponse(res, "QR Code regenerated", {
-      order_id:    order.invoice_no,
-      qr_code:     qrCodeData.qr_code,
-      qr_url:      qrCodeData.qr_url,
+      order_id:     order.invoice_no,
+      qr_code:      qrCodeData.qr_code,
+      qr_url:       qrCodeData.qr_url,
       generated_at: qrCodeData.generated_at,
     });
   } catch (err) {
     return errorResponse(res, "Failed to regenerate QR");
   }
 };
+
+// ==================== EXPORTS ====================
 
 module.exports = {
   createPaymentOrder,

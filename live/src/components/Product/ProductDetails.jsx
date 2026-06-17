@@ -23,8 +23,10 @@ import {
   Form,
   message,
   Drawer,
+  Upload,
 } from "antd";
 import React, { useCallback, useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import _ from "lodash";
 import { useDispatch, useSelector } from "react-redux";
 import UploadFileButton from "../UploadFileButton";
@@ -76,6 +78,10 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   LoadingOutlined,
+  InboxOutlined,
+  HomeOutlined,
+  ShopOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
 import { CiFaceSmile } from "react-icons/ci";
 import { CgSmileSad } from "react-icons/cg";
@@ -148,7 +154,7 @@ export const CustomModal = ({
                 onClick={onClose}
                 className="p-1 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <CloseOutlined className="text-gray-500" />
+                <CloseOutlined className="text-gray-500 " />
               </button>
             )}
           </div>
@@ -290,7 +296,1085 @@ const getGuestId = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ProductDetails
+// PhotoFrameImageUpload — single image upload with preview
+// ─────────────────────────────────────────────────────────────────────────────
+const PhotoFrameImageUpload = ({ label, value, onChange, required }) => {
+  const [preview, setPreview] = useState(value || null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result);
+      onChange(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemove = (e) => {
+    e.stopPropagation();
+    setPreview(null);
+    onChange(null);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-semibold text-gray-700">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <div className="relative">
+        {preview ? (
+          <div className="relative w-full h-36 rounded-xl overflow-hidden border-2 border-amber-400 shadow-sm group">
+            <img
+              src={preview}
+              alt={label}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <label
+                htmlFor={`upload-${label}`}
+                className="cursor-pointer bg-white/90 text-gray-800 px-3 py-1 rounded-lg text-xs font-medium hover:bg-white transition-colors"
+              >
+                Change
+              </label>
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="bg-red-500/90 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-red-500 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label
+            htmlFor={`upload-${label}`}
+            className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-amber-300 rounded-xl bg-amber-50 cursor-pointer hover:bg-amber-100 hover:border-amber-500 transition-all group"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-amber-100 group-hover:bg-amber-200 flex items-center justify-center transition-colors">
+                <CameraOutlined className="text-amber-600 text-xl" />
+              </div>
+              <span className="text-xs text-amber-700 font-medium">Click to upload</span>
+              <span className="text-xs text-gray-400">PNG, JPG up to 5MB</span>
+            </div>
+          </label>
+        )}
+        <input
+          id={`upload-${label}`}
+          type="file"
+          accept="image/*"
+          className="hidden mt-4"
+          onChange={handleFileChange} 
+        />
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PincodeDeliveryCalculatorForModal - standalone version for the modal
+// ─────────────────────────────────────────────────────────────────────────────
+const PincodeDeliveryCalculatorForModal = ({ 
+  onDeliveryChargeChange,
+  onPincodeChange,
+  initialPincode = "",
+}) => {
+  const [pincode, setPincode] = useState(initialPincode);
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [state, setState] = useState("");
+  const [error, setError] = useState("");
+  const [isValidatingPincode, setIsValidatingPincode] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isPincodeValid, setIsPincodeValid] = useState(null);
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+
+  const stateDeliveryDays = {
+    maharashtra:  { days: 2, name: "Maharashtra" },
+    gujarat:      { days: 3, name: "Gujarat" },
+    karnataka:    { days: 4, name: "Karnataka" },
+    "tamil nadu": { days: 3, name: "Tamil Nadu" },
+    kerala:       { days: 6, name: "Kerala" },
+    delhi:        { days: 7, name: "Delhi" },
+    default:      { days: 3, name: "Other States" },
+  };
+
+const pincodeToStateMap = {
+  // Tamil Nadu - All pincode ranges
+  600: "tamil nadu", // Chennai
+  601: "tamil nadu", // Chengalpattu
+  602: "tamil nadu", // Thiruvallur
+  603: "tamil nadu", // Kanchipuram
+  604: "tamil nadu", // Thiruvannamalai
+  605: "tamil nadu", // Villupuram
+  606: "tamil nadu", // Cuddalore
+  607: "tamil nadu", // Cuddalore
+  608: "tamil nadu", // Mayiladuthurai
+  609: "tamil nadu", // Nagapattinam
+  610: "tamil nadu", // Thiruvarur
+  611: "tamil nadu", // Thanjavur
+  612: "tamil nadu", // Thanjavur
+  613: "tamil nadu", // Pudukkottai
+  614: "tamil nadu", // Pudukkottai
+  615: "tamil nadu", // Sivaganga
+  616: "tamil nadu", // Ramanathapuram
+  617: "tamil nadu", // Virudhunagar
+  618: "tamil nadu", // Tirunelveli
+  619: "tamil nadu", // Thoothukkudi
+  620: "tamil nadu", // Tiruchirappalli
+  621: "tamil nadu", // Tiruchirappalli
+  622: "tamil nadu", // Karur
+  623: "tamil nadu", // Namakkal
+  624: "tamil nadu", // Dindigul
+  625: "tamil nadu", // Madurai
+  626: "tamil nadu", // Theni
+  627: "tamil nadu", // Tirunelveli
+  628: "tamil nadu", // Kanyakumari
+  629: "tamil nadu", // Kanyakumari
+  630: "tamil nadu", // Sivaganga
+  631: "tamil nadu", // Pudukkottai
+  632: "tamil nadu", // Vellore
+  633: "tamil nadu", // Vellore
+  634: "tamil nadu", // Tirupathur
+  635: "tamil nadu", // Krishnagiri
+  636: "tamil nadu", // Dharmapuri
+  637: "tamil nadu", // Namakkal
+  638: "tamil nadu", // Erode
+  639: "tamil nadu", // Erode
+  640: "tamil nadu", // Coimbatore
+  641: "tamil nadu", // Coimbatore
+  642: "tamil nadu", // Tiruppur
+  643: "tamil nadu", // Nilgiris
+  644: "tamil nadu", // Nilgiris
+  645: "tamil nadu", // Nilgiris
+  646: "tamil nadu", // Tiruppur
+  647: "tamil nadu", // Tiruppur
+  648: "tamil nadu", // Tiruppur
+  649: "tamil nadu", // Tiruppur
+  
+  // Other states
+  400: "maharashtra",
+  395: "gujarat",
+  560: "karnataka",
+  682: "kerala",
+  110: "delhi",
+};
+
+  const getStateFromPincode = (pin) => {
+    return pincodeToStateMap[pin.substring(0, 3)] || "default";
+  };
+
+  const calculateDeliveryDate = (stateKey = "tamil nadu") => {
+    const { days } = stateDeliveryDays[stateKey] || stateDeliveryDays.default;
+    const d = new Date();
+    d.setDate(d.getDate() + Number(days) + 2);
+    return d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const validatePincode = async (pin) => {
+    setIsValidatingPincode(true);
+    await new Promise((res) => setTimeout(res, 800));
+    const isValid = /^\d{6}$/.test(pin);
+    setIsPincodeValid(isValid);
+    
+    if (isValid) {
+      const stateKey = getStateFromPincode(pin);
+      const stateName = stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name;
+      setState(stateName);
+      setDeliveryDate(calculateDeliveryDate(stateKey));
+      
+      // 🔥 Calculate delivery charge based on state
+      let charge = 0;
+      if (stateKey === "tamil nadu") {
+        charge = 60; // Within Tamil Nadu
+      } else {
+        charge = 100; // Outside Tamil Nadu
+      }
+      setDeliveryCharge(charge);
+      
+      // 🔥 Pass the charge back to parent
+      if (onDeliveryChargeChange) {
+        onDeliveryChargeChange(charge);
+      }
+      if (onPincodeChange) {
+        onPincodeChange(pin);
+      }
+      
+      setError("");
+    } else {
+      setError("Please enter a valid 6-digit pincode");
+      setDeliveryDate("");
+      setState("");
+      setDeliveryCharge(0);
+      if (onDeliveryChargeChange) {
+        onDeliveryChargeChange(0);
+      }
+    }
+    setIsValidatingPincode(false);
+  };
+
+  const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "");
+    setPincode(value.slice(0, 6));
+    setIsPincodeValid(null);
+    setState("");
+    setDeliveryDate("");
+    setError("");
+    setDeliveryCharge(0);
+    if (value.length === 6) {
+      validatePincode(value);
+    } else {
+      if (onDeliveryChargeChange) {
+        onDeliveryChargeChange(0);
+      }
+    }
+  };
+
+  const extractPincodeFromDisplayName = (displayName) => {
+    const m = displayName.match(/\b\d{6}\b/);
+    return m ? m[0] : null;
+  };
+
+  const getPincodeByGPS = async () => {
+    setIsGettingLocation(true);
+    setError("");
+    try {
+      if (!navigator.geolocation) throw new Error("Geolocation not supported");
+      const position = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: 15000, enableHighAccuracy: true, maximumAge: 300000,
+        })
+      );
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
+      );
+      const d = await response.json();
+      const detectedPincode = d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
+      if (detectedPincode) {
+        setPincode(detectedPincode);
+        validatePincode(detectedPincode);
+        toast.success(`📍 Pincode detected: ${detectedPincode}`);
+      } else {
+        throw new Error("No pincode found");
+      }
+    } catch (err) {
+      toast.error("Failed to get location. Please enter pincode manually.");
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
+  return (
+    <div className="pincode-delivery-calculator-modal space-y-3">
+      <div className="pincode-input-container">
+        <div className="relative">
+          <Input
+            className="pincode-input !rounded-lg !border-gray-300 !h-11"
+            value={pincode}
+            onChange={handlePincodeChange}
+            placeholder="Enter 6-digit Pincode for delivery estimate"
+            maxLength={6}
+            suffix={
+              <div className="flex items-center gap-2">
+                {isValidatingPincode && <Spin size="small" />}
+                {isPincodeValid === true && <CheckCircleOutlined className="text-green-500" />}
+                {isPincodeValid === false && <CloseCircleOutlined className="text-red-500" />}
+              </div>
+            }
+          />
+          <button
+            onClick={getPincodeByGPS}
+            disabled={isGettingLocation}
+            className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+          >
+            {isGettingLocation ? (
+              <Spin size="small" />
+            ) : (
+              <>
+                <FaMapMarkerAlt className="text-xs" />
+                <span className="hidden sm:inline">Detect</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {error && (
+          <div className="mt-1 text-red-500 text-sm">{error}</div>
+        )}
+
+        {isPincodeValid && deliveryDate && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl"
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-green-700">
+                <CheckCircleOutlined className="text-green-500" />
+                <span className="font-medium">Delivery available to {state}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                <span className="flex items-center gap-1.5 text-gray-700">
+                  <FaTruck className="text-blue-500" />
+                  Expected Delivery: <strong>{deliveryDate}</strong>
+                </span>
+                <span className="flex items-center gap-1.5 text-gray-700">
+                  <FaMapMarkerAlt className="text-red-400" />
+                  Pincode: <strong>{pincode}</strong>
+                </span>
+              </div>
+              <div className="mt-1 pt-2 border-t border-green-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Delivery Charges:</span>
+                  <span className="font-bold text-green-700 text-base">₹{deliveryCharge}</span>
+                  {deliveryCharge === 0 && (
+                    <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">
+                      Free Delivery
+                    </span>
+                  )}
+                  {deliveryCharge === 60 && (
+                    <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">
+                      Within Tamil Nadu
+                    </span>
+                  )}
+                  {deliveryCharge === 100 && (
+                    <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">
+                      Outside Tamil Nadu
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PhotoFrameOrderModal - Updated with pincode checker
+// ─────────────────────────────────────────────────────────────────────────────
+const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
+  const [form] = Form.useForm();
+  const [fatherImg, setFatherImg]       = useState(null);
+  const [sonImg, setSonImg]             = useState(null);
+  const [deliveryType, setDeliveryType] = useState(null); // 'pickup' | 'delivery'
+  const [msgLength, setMsgLength]       = useState(0);
+  
+  // 🔥 New state for delivery charge from pincode
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [pincode, setPincode] = useState("");
+
+  const handleDeliveryChange = (type) => {
+    if (deliveryType === type) return;
+    setDeliveryType(type);
+    form.setFieldsValue({
+      pickup_from_office: type === "pickup",
+      delivery_to_home:   type === "delivery",
+    });
+  };
+
+  // 🔥 Handle delivery charge change from pincode calculator
+  const handleDeliveryChargeChange = (charge) => {
+    setDeliveryCharge(charge);
+  };
+
+  // 🔥 Handle pincode change
+  const handlePincodeChange = (pin) => {
+    setPincode(pin);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+
+      if (!fatherImg) {
+        toast.error("Please upload Father's photo");
+        return;
+      }
+      if (!sonImg) {
+        toast.error("Please upload Son's photo");
+        return;
+      }
+      if (!deliveryType) {
+        toast.error("Please select Pickup or Delivery option");
+        return;
+      }
+
+      // 🔥 For delivery option, validate pincode and charge
+      if (deliveryType === "delivery") {
+        if (!pincode || pincode.length !== 6) {
+          toast.error("Please enter a valid 6-digit pincode for delivery");
+          return;
+        }
+        if (deliveryCharge === 0) {
+          toast.error("Please wait while we calculate delivery charges for your pincode");
+          return;
+        }
+      }
+
+      // 🔥 Calculate final delivery charge based on delivery type and pincode
+      let finalDeliveryCharge = 0;
+      if (deliveryType === "pickup") {
+        finalDeliveryCharge = 0; // Free for pickup
+      } else {
+        finalDeliveryCharge = deliveryCharge; // Use the calculated charge from pincode
+      }
+
+      onConfirm({
+        father_name:       values.father_name,
+        son_name:          values.son_name,
+        unique_message:    values.unique_message || "",
+        father_image:      fatherImg,
+        son_image:         sonImg,
+        pickup_from_office: deliveryType === "pickup",
+        delivery_to_home:   deliveryType === "delivery",
+        delivery_charge:    finalDeliveryCharge,
+        pincode:            pincode, // Pass pincode to parent for backend
+      });
+    } catch {
+      // Ant Design form validation handles errors
+    }
+  };
+
+  const handleClose = () => {
+    form.resetFields();
+    setFatherImg(null);
+    setSonImg(null);
+    setDeliveryType(null);
+    setMsgLength(0);
+    setDeliveryCharge(0);
+    setPincode("");
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 !z-[9999] flex items-center justify-center p-3 !overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 24 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 24 }}
+        transition={{ type: "spring", damping: 22, stiffness: 300 }}
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col"
+        style={{ boxShadow: "0 24px 80px rgba(180,120,0,0.18), 0 4px 20px rgba(0,0,0,0.12)" }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{
+            background: "linear-gradient(135deg, #f2c41a 0%, #f2c41a 0%, #f2c41a 0%)",
+          }}
+        >
+          <div> 
+            <h2 className="text-black font-bold text-lg leading-tight">
+              🖼️ Photo Frame Details
+            </h2>
+            <p className="text-black text-xs mt-0.5">
+              Personalise your frame — we'll handle the rest
+            </p>
+          </div>
+          <button
+            onClick={handleClose}
+            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+          >
+            <CloseOutlined className="text-white text-sm" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-scroll overflow-x-hidden px-6 py-5">
+          <Form form={form} layout="vertical" requiredMark={false}>
+
+            {/* Names */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <Form.Item
+                label={<span className="text-sm font-semibold text-gray-700">Father's Name <span className="text-red-500">*</span></span>}
+                name="father_name"
+                rules={[{ required: true, message: "Enter father's name" }]}
+                className="!mb-0"
+              >
+                <Input
+                  placeholder="e.g. Rajan Kumar"
+                  className="rounded-lg"
+                  prefix={<UserOutlined className="text-amber-500" />}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span className="text-sm font-semibold text-gray-700">Son's Name <span className="text-red-500">*</span></span>}
+                name="son_name"
+                rules={[{ required: true, message: "Enter son's name" }]}
+                className="!mb-0"
+              >
+                <Input
+                  placeholder="e.g. Arjun Kumar"
+                  className="rounded-lg"
+                  prefix={<UserOutlined className="text-amber-500" />}
+                />
+              </Form.Item>
+            </div>
+
+            {/* Photos */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <PhotoFrameImageUpload
+                label="Father's Photo"
+                value={fatherImg}
+                onChange={setFatherImg}
+                required
+              />
+              <PhotoFrameImageUpload
+                label="Son's Photo"
+                value={sonImg}
+                onChange={setSonImg}
+                required
+              />
+            </div>
+
+            {/* Unique Message */}
+            <Form.Item
+              label={
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-sm font-semibold text-gray-700">
+                    Unique Message
+                    <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                  </span>
+                  <span
+                    className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      msgLength > 25
+                        ? "bg-red-100 text-red-600"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {msgLength}/30
+                  </span>
+                </div>
+              }
+              name="unique_message"
+              className="!mb-4"
+            >
+              <Input
+                placeholder="e.g. Forever In Our Hearts"
+                maxLength={30}
+                className="rounded-lg"
+                onChange={(e) => setMsgLength(e.target.value.length)}
+                showCount={false}
+              />
+            </Form.Item>
+
+            {/* Delivery Options */}
+            <div className="mb-4">
+              <p className="text-sm font-semibold text-gray-700 mb-3">
+                Delivery Option <span className="text-red-500">*</span>
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Pickup */}
+                <button
+                  type="button"
+                  onClick={() => handleDeliveryChange("pickup")}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${
+                    deliveryType === "pickup"
+                      ? "border-amber-500 bg-amber-50 shadow-sm"
+                      : "border-gray-200 hover:border-amber-300 hover:bg-amber-50/50"
+                  }`}
+                >
+                  {deliveryType === "pickup" && (
+                    <div className="absolute top-2 right-2">
+                      <CheckCircleOutlined className="text-amber-500 text-base" />
+                    </div>
+                  )}
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      deliveryType === "pickup" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    <ShopOutlined className="text-lg" />
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-sm font-semibold ${deliveryType === "pickup" ? "text-amber-700" : "text-gray-700"}`}>
+                      Pickup from Office
+                    </p>
+                    <p className="text-xs text-green-600 font-medium mt-0.5">Free</p>
+                  </div>
+                </button>
+
+                {/* Delivery */}
+                <button
+                  type="button"
+                  onClick={() => handleDeliveryChange("delivery")}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${
+                    deliveryType === "delivery"
+                      ? "border-amber-500 bg-amber-50 shadow-sm"
+                      : "border-gray-200 hover:border-amber-300 hover:bg-amber-50/50"
+                  }`}
+                >
+                  {deliveryType === "delivery" && (
+                    <div className="absolute top-2 right-2">
+                      <CheckCircleOutlined className="text-amber-500 text-base" />
+                    </div>
+                  )}
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      deliveryType === "delivery" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    <HomeOutlined className="text-lg" />
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-sm font-semibold ${deliveryType === "delivery" ? "text-amber-700" : "text-gray-700"}`}>
+                      Delivery to Home
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium mt-0.5">Charges apply</p>
+                  </div>
+                </button>
+              </div>
+
+              {/* 🔥 Delivery Charges Note with Pincode Calculator */}
+              <AnimatePresence>
+                {deliveryType === "delivery" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    transition={{ duration: 0.22 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <FaTruckFast className="text-blue-500 text-lg flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-blue-800 mb-2">
+                            Enter Pincode to Calculate Delivery Charges
+                          </p>
+                          
+                          {/* 🔥 Pincode Calculator for Modal */}
+                          <PincodeDeliveryCalculatorForModal
+                            onDeliveryChargeChange={handleDeliveryChargeChange}
+                            onPincodeChange={handlePincodeChange}
+                          />
+
+                          {/* Show delivery charge summary */}
+                          {deliveryCharge > 0 && (
+                            <div className="mt-2 p-2 bg-white rounded-lg border border-blue-200">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Delivery Charge:</span>
+                                <span className="font-bold text-blue-700 text-base">₹{deliveryCharge}</span>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {deliveryCharge === 60 && "📍 Within Tamil Nadu"}
+                                {deliveryCharge === 100 && "📍 Outside Tamil Nadu"}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </Form>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex gap-3">
+          <Button
+            onClick={handleClose}
+            className="flex-1 h-11 rounded-xl font-medium"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            onClick={handleSubmit}
+            loading={loading}
+            icon={<ShoppingCartOutlined />}
+            className="flex-1 h-11 rounded-xl font-semibold"
+            style={{
+              background: "linear-gradient(135deg, rgb(242, 196, 26) 0%, rgb(242, 196, 26) 0%, rgb(242, 196, 26) 0%)",
+              border: "none",
+              color: "black",
+            }}
+          >
+            Add to Cart
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PincodeDeliveryCalculator - Main component for product page
+// ─────────────────────────────────────────────────────────────────────────────
+import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
+
+export const PincodeDeliveryCalculator = ({ 
+  Production, 
+  freeDelivery, 
+  deliveryCharges,
+  onDeliveryChargeChange,
+  onPincodeChange,
+}) => {
+  const [pincode,             setPincode]             = useState("");
+  const [deliveryDate,        setDeliveryDate]        = useState("");
+  const [state,               setState]               = useState("");
+  const [error,               setError]               = useState("");
+  const [isLoading,           setIsLoading]           = useState(false);
+  const [isValidatingPincode, setIsValidatingPincode] = useState(false);
+  const [isGettingLocation,   setIsGettingLocation]   = useState(false);
+  const [isPincodeValid,      setIsPincodeValid]      = useState(null);
+  const [calculatedCharge,    setCalculatedCharge]    = useState(deliveryCharges || 0);
+
+  const stateDeliveryDays = {
+    maharashtra:  { days: 2, name: "Maharashtra" },
+    gujarat:      { days: 3, name: "Gujarat" },
+    karnataka:    { days: 4, name: "Karnataka" },
+    "tamil nadu": { days: 3, name: "Tamil Nadu" },
+    kerala:       { days: 6, name: "Kerala" },
+    delhi:        { days: 7, name: "Delhi" },
+    default:      { days: 3, name: "Other States" },
+  };
+
+  const pincodeToStateMap = {
+  // Tamil Nadu - All pincode ranges
+  600: "tamil nadu", // Chennai
+  601: "tamil nadu", // Chengalpattu
+  602: "tamil nadu", // Thiruvallur
+  603: "tamil nadu", // Kanchipuram
+  604: "tamil nadu", // Thiruvannamalai
+  605: "tamil nadu", // Villupuram
+  606: "tamil nadu", // Cuddalore
+  607: "tamil nadu", // Cuddalore
+  608: "tamil nadu", // Mayiladuthurai
+  609: "tamil nadu", // Nagapattinam
+  610: "tamil nadu", // Thiruvarur
+  611: "tamil nadu", // Thanjavur
+  612: "tamil nadu", // Thanjavur
+  613: "tamil nadu", // Pudukkottai
+  614: "tamil nadu", // Pudukkottai
+  615: "tamil nadu", // Sivaganga
+  616: "tamil nadu", // Ramanathapuram
+  617: "tamil nadu", // Virudhunagar
+  618: "tamil nadu", // Tirunelveli
+  619: "tamil nadu", // Thoothukkudi
+  620: "tamil nadu", // Tiruchirappalli
+  621: "tamil nadu", // Tiruchirappalli
+  622: "tamil nadu", // Karur
+  623: "tamil nadu", // Namakkal
+  624: "tamil nadu", // Dindigul
+  625: "tamil nadu", // Madurai
+  626: "tamil nadu", // Theni
+  627: "tamil nadu", // Tirunelveli
+  628: "tamil nadu", // Kanyakumari
+  629: "tamil nadu", // Kanyakumari
+  630: "tamil nadu", // Sivaganga
+  631: "tamil nadu", // Pudukkottai
+  632: "tamil nadu", // Vellore
+  633: "tamil nadu", // Vellore
+  634: "tamil nadu", // Tirupathur
+  635: "tamil nadu", // Krishnagiri
+  636: "tamil nadu", // Dharmapuri
+  637: "tamil nadu", // Namakkal
+  638: "tamil nadu", // Erode
+  639: "tamil nadu", // Erode
+  640: "tamil nadu", // Coimbatore
+  641: "tamil nadu", // Coimbatore
+  642: "tamil nadu", // Tiruppur
+  643: "tamil nadu", // Nilgiris
+  644: "tamil nadu", // Nilgiris
+  645: "tamil nadu", // Nilgiris
+  646: "tamil nadu", // Tiruppur
+  647: "tamil nadu", // Tiruppur
+  648: "tamil nadu", // Tiruppur
+  649: "tamil nadu", // Tiruppur
+  
+  // Other states
+  400: "maharashtra",
+  395: "gujarat",
+  560: "karnataka",
+  682: "kerala",
+  110: "delhi",
+};
+
+  const getStateFromPincode = (pin) => {
+    return pincodeToStateMap[pin.substring(0, 3)] || "default";
+  };
+
+  const calculateProductionDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + Number(Production || 0));
+    return d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const calculateDeliveryDate = (stateKey = "tamil nadu") => {
+    const { days } = stateDeliveryDays[stateKey] || stateDeliveryDays.default;
+    const d = new Date();
+    d.setDate(d.getDate() + Number(Production || 0) + Number(days) + 2);
+    return d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const validatePincode = async (pin) => {
+    setIsValidatingPincode(true);
+    await new Promise((res) => setTimeout(res, 800));
+    const isValid = /^\d{6}$/.test(pin);
+    setIsPincodeValid(isValid);
+    
+    if (isValid) {
+      const stateKey = getStateFromPincode(pin);
+      const stateName = stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name;
+      setState(stateName);
+      setDeliveryDate(calculateDeliveryDate(stateKey));
+      
+      // 🔥 Calculate delivery charge based on state
+      let charge = 0;
+      if (freeDelivery) {
+        charge = 0;
+      } else if (stateKey === "tamil nadu") {
+        charge = 60; // Within Tamil Nadu
+      } else {
+        charge = 100; // Outside Tamil Nadu
+      }
+      setCalculatedCharge(charge);
+      
+      // 🔥 Pass the charge back to parent
+      if (onDeliveryChargeChange) {
+        onDeliveryChargeChange(charge);
+      }
+      if (onPincodeChange) {
+        onPincodeChange(pin);
+      }
+      
+      setError("");
+    } else {
+      setError("Please enter a valid 6-digit pincode");
+      setDeliveryDate("");
+      setState("");
+      setCalculatedCharge(0);
+      if (onDeliveryChargeChange) {
+        onDeliveryChargeChange(0);
+      }
+    }
+    setIsValidatingPincode(false);
+  };
+
+  const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "");
+    setPincode(value.slice(0, 6));
+    setIsPincodeValid(null);
+    setState("");
+    setDeliveryDate("");
+    setError("");
+    setCalculatedCharge(0);
+    if (value.length === 6) {
+      validatePincode(value);
+    } else {
+      if (onDeliveryChargeChange) {
+        onDeliveryChargeChange(0);
+      }
+    }
+  };
+
+  const extractPincodeFromDisplayName = (displayName) => {
+    const m = displayName.match(/\b\d{6}\b/);
+    return m ? m[0] : null;
+  };
+
+  const getPincodeByGPS = async () => {
+    setIsGettingLocation(true);
+    setError("");
+    try {
+      if (!navigator.geolocation) throw new Error("Geolocation not supported");
+      const position = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: 15000, enableHighAccuracy: true, maximumAge: 300000,
+        })
+      );
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
+      );
+      const d = await response.json();
+      const detectedPincode = d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
+      if (detectedPincode) {
+        setPincode(detectedPincode);
+        validatePincode(detectedPincode);
+        toast.success(`📍 Pincode detected: ${detectedPincode}`);
+      } else {
+        throw new Error("No pincode found");
+      }
+    } catch (err) {
+      toast.error("Failed to get location. Please enter pincode manually.");
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
+  const productionDate = calculateProductionDate();
+  const displayCharge = calculatedCharge || deliveryCharges || 0;
+
+  return (
+    <div className="pincode-delivery-calculator">
+      <div className="pincode-input-container">
+        <div className="relative">
+          <Input
+            className="pincode-input !rounded-lg !border-gray-300 !h-11"
+            value={pincode}
+            onChange={handlePincodeChange}
+            placeholder="Enter 6-digit Pincode"
+            maxLength={6}
+            suffix={
+              <div className="flex items-center gap-2">
+                {isValidatingPincode && <Spin size="small" />}
+                {isPincodeValid === true && <CheckCircleOutlined className="text-green-500" />}
+                {isPincodeValid === false && <CloseCircleOutlined className="text-red-500" />}
+              </div>
+            }
+          />
+          <button
+            onClick={getPincodeByGPS}
+            disabled={isGettingLocation}
+            className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+          >
+            {isGettingLocation ? (
+              <Spin size="small" />
+            ) : (
+              <>
+                <FaMapMarkerAlt className="text-xs" />
+                <span className="hidden sm:inline">Detect</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {error && (
+          <div className="mt-1 text-red-500 text-sm">{error}</div>
+        )}
+
+        {pincode && deliveryDate ? (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl"
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-green-700">
+                <CheckCircleOutlined className="text-green-500" />
+                <span className="font-medium">Delivery available to {state}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                <span className="flex items-center gap-1.5 text-gray-700">
+                  <FaTruck className="text-blue-500" />
+                  Expected Delivery: <strong>{deliveryDate}</strong>
+                </span>
+                <span className="flex items-center gap-1.5 text-gray-700">
+                  <FaMapMarkerAlt className="text-red-400" />
+                  Pincode: <strong>{pincode}</strong>
+                </span>
+              </div>
+              <div className="mt-1 pt-2 border-t border-green-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Delivery Charges:</span>
+                  {freeDelivery ? (
+                    <>
+                      <span className="font-bold text-green-700 text-base">₹0</span>
+                      <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">
+                        Free Delivery
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-bold text-green-700 text-base">₹{displayCharge}</span>
+                      {displayCharge === 60 && (
+                        <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">
+                          Within Tamil Nadu
+                        </span>
+                      )}
+                      {displayCharge === 100 && (
+                        <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">
+                          Outside Tamil Nadu
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm text-gray-600">
+                Expected Dispatch by <strong>{productionDate}</strong>
+              </span>
+              <span className="text-xs text-gray-500">
+                Enter pincode for delivery date & charges
+              </span>
+              {freeDelivery && (
+                <span className="text-xs text-green-600 font-medium">
+                  🎉 Free Delivery on this product!
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SimpleHangingSoldBoard
+// ─────────────────────────────────────────────────────────────────────────────
+export const SimpleHangingSoldBoard = () => {
+  const swingAnimation = {
+    animate: {
+      rotate: [0, 8, -8, 6, -6, 3, -3, 0],
+      transition: { duration: 5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" },
+    },
+  };
+
+  return (
+    <div className="z-50 pointer-events-none flex justify-center">
+      <div className="relative">
+        <motion.div
+          className="relative mt-20 w-40 h-14 bg-red-600 rounded-md border-3 shadow-xl"
+          variants={swingAnimation}
+          animate="animate"
+          style={{ originY: 0 }}
+        >
+          <div className="relative w-full h-full flex items-center justify-center">
+            <div className="text-xl font-black tracking-wider">
+              <span className="bg-gradient-to-b from-white to-white bg-clip-text text-transparent">
+                SOLD OUT
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProductDetails - Main component
 // ─────────────────────────────────────────────────────────────────────────────
 const ProductDetails = ({
   data = {
@@ -341,6 +1425,9 @@ const ProductDetails = ({
   const Gst          = _.get(data, "GST", 0);
   const isSoldOut    = _.get(data, "is_soldout", false);
 
+  // ── Photo Frame detection ──────────────────────────────────────────────────
+  const isPhotoFrame = _.get(data, "is_photoframe", false);
+
   const isQrProduct = (() => {
     const name = _.get(data, "name", "");
     return name.includes("QR");
@@ -359,6 +1446,13 @@ const ProductDetails = ({
   const [noDesignUpload, setNoDesignUpload]   = useState(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [sendingNotification, setSendingNotification] = useState(false);
+
+  // ── Photo Frame Modal State ────────────────────────────────────────────────
+  const [showPhotoFrameModal, setShowPhotoFrameModal] = useState(false);
+  const [photoFrameLoading, setPhotoFrameLoading]     = useState(false);
+
+  // ── Pincode state ──────────────────────────────────────────────────────────
+  const [pincode, setPincode] = useState("");
 
   const [checkOutState, setCheckOutState] = useState({
     product_image:       getFirstProductImage(data),
@@ -462,9 +1556,9 @@ const ProductDetails = ({
       const roleFields          = getRoleFields(user.role);
       const firstAvailableItem  = quantityDiscounts.find((item) => item[roleFields.quantity]);
       if (firstAvailableItem) {
-        const initialQuantity       = Number(firstAvailableItem[roleFields.quantity]);
-        const initialDiscount       = Number(firstAvailableItem[roleFields.discount] || 0);
-        const initialFreeDelivery   = firstAvailableItem[roleFields.freeDelivery] || false;
+        const initialQuantity        = Number(firstAvailableItem[roleFields.quantity]);
+        const initialDiscount        = Number(firstAvailableItem[roleFields.discount] || 0);
+        const initialFreeDelivery    = firstAvailableItem[roleFields.freeDelivery] || false;
         const initialDeliveryCharges = initialFreeDelivery ? 0 : Number(firstAvailableItem[roleFields.deliveryCharges] || 100);
 
         setQuantity(initialQuantity);
@@ -541,7 +1635,7 @@ const ProductDetails = ({
 
   // ── Rating calculations ───────────────────────────────────────────────────
   useEffect(() => {
-    const ratingSum    = rate.reduce((sum, r) => sum + Math.round(r.rating), 0);
+    const ratingSum     = rate.reduce((sum, r) => sum + Math.round(r.rating), 0);
     const averageRating = ratingSum === 0 ? 0 : ratingSum / rate.length;
     setAverageRatingCount(parseFloat(averageRating.toFixed(1)));
   }, [rate]);
@@ -581,8 +1675,8 @@ const ProductDetails = ({
   // ── Variant selection ─────────────────────────────────────────────────────
   const handleOnChangeSelectOption = async (selectedValue, index) => {
     try {
-      const updatedVariant     = [...variant];
-      updatedVariant[index]    = selectedValue;
+      const updatedVariant  = [...variant];
+      updatedVariant[index] = selectedValue;
       setVariant(updatedVariant);
       const key    = updatedVariant.join("-");
       const result = await getVariantPrice(data._id, { key });
@@ -608,10 +1702,10 @@ const ProductDetails = ({
     }
   }, []);
 
-  const handleUploadImage  = (fileString) =>
+  const handleUploadImage = (fileString) =>
     setCheckOutState((prev) => ({ ...prev, product_design_file: fileString }));
 
-  const goToShoppingCart   = () => navigate("/shopping-cart");
+  const goToShoppingCart = () => navigate("/shopping-cart");
 
   // ── Quantity selection ────────────────────────────────────────────────────
   const handleQuantitySelect = (selectedQuantity) => {
@@ -619,8 +1713,8 @@ const ProductDetails = ({
 
     const applyDiscount = (selectedDiscount) => {
       if (selectedDiscount) {
-        const isFree   = selectedDiscount[roleFields.freeDelivery] || false;
-        const charges  = isFree ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
+        const isFree  = selectedDiscount[roleFields.freeDelivery] || false;
+        const charges = isFree ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
         setDiscountPercentage({ uuid: selectedDiscount.uniqe_id, percentage: Number(selectedDiscount[roleFields.discount] || 0) });
         setFreeDelivery(isFree);
         setDeliveryCharges(charges);
@@ -711,124 +1805,142 @@ const ProductDetails = ({
   };
 
   // ─────────────────────────────────────────────────────────────────────────
-  // ✅ handleBuy — FIXED: now sends phone_number + email so backend can store them
+  // 🔥 Handle delivery charge change from pincode calculator
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleDeliveryChargeChange = useCallback((charge) => {
+    if (freeDelivery) {
+      setDeliveryCharges(0);
+      setCheckOutState(prev => ({ ...prev, DeliveryCharges: 0 }));
+      return;
+    }
+    setDeliveryCharges(charge);
+    setCheckOutState(prev => ({ ...prev, DeliveryCharges: charge }));
+  }, [freeDelivery]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 🔥 Handle pincode change
+  // ─────────────────────────────────────────────────────────────────────────
+  const handlePincodeChange = useCallback((pin) => {
+    setPincode(pin);
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ✅ Pre-buy validation (shared between normal and photo frame flow)
+  // ─────────────────────────────────────────────────────────────────────────
+  const validateBeforeBuy = () => {
+    if (!quantity) {
+      toast.error("Please select quantity first");
+      return false;
+    }
+
+    if (isQrProduct && selectedPlatforms.length > 0) {
+      const missingLinks = selectedPlatforms.filter(
+        (p) => !platformLinks[p] || platformLinks[p].trim() === ""
+      );
+      if (missingLinks.length > 0) {
+        toast.error(`Please enter links for: ${missingLinks.join(", ")}`);
+        return false;
+      }
+      for (const platform of selectedPlatforms) {
+        const link = platformLinks[platform];
+        if (link && !link.startsWith("http://") && !link.startsWith("https://")) {
+          toast.error(`Please enter a valid URL for ${platform} (include http:// or https://)`);
+          return false;
+        }
+      }
+    }
+
+    if (_.isEmpty(user)) {
+      localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
+      toast.error("Please Login");
+      navigate("/login");
+      return false;
+    }
+
+    return true;
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ✅ Build and send cart payload
+  // ─────────────────────────────────────────────────────────────────────────
+  const submitToCart = async (extraPayload = {}) => {
+    const token   = localStorage.getItem("userData") || "guest";
+    const guestId = getGuestId();
+
+    const selectedPlatformLinks = {};
+    selectedPlatforms.forEach((platform) => {
+      if (platformLinks[platform]) {
+        selectedPlatformLinks[platform] = platformLinks[platform];
+      }
+    });
+
+    const userPhone = user.phone || user.phoneNumber || user.mobile || null;
+    const userEmail = user.email || null;
+
+    const baseCartPayload = {
+      ...checkOutState,
+      selected_platforms:     selectedPlatforms,
+      platform_links:         selectedPlatformLinks,
+      is_qr_product:          isQrProduct,
+      is_photo_frame:         isPhotoFrame,
+      sgst:                   Number(Gst / 2),
+      cgst:                   Number(Gst / 2),
+      MRP_savings:            calculateMRPSavings(),
+      TotalSavings:           calculateTotalSavings(),
+      FreeDelivery:           freeDelivery,
+      DeliveryCharges:        deliveryCharges,
+      noCustomtation:         noDesignUpload,
+      final_total:            Number(calculateTotalPrice()),
+      final_total_withoutGst: Number(calculateTotalPricewithoutGst()),
+      phone_number:           userPhone,
+      email:                  userEmail,
+      pincode:                pincode, // 🔥 Pass pincode to backend
+      // Photo frame specific fields (populated via extraPayload)
+      ...extraPayload,
+    };
+
+    let cartPayload;
+    if (token === "user") {
+      cartPayload = { ...baseCartPayload, userRole: token };
+    } else {
+      cartPayload = { ...baseCartPayload, guestId, GuestId: guestId, userRole: token };
+    }
+
+    console.log("[Cart] Sending payload:", cartPayload);
+
+    const result = await addToShoppingCart(cartPayload);
+
+    Swal.fire({
+      title:             "Product Added To Cart",
+      text:              "Choose an option: Go to the shopping cart page or stay here.",
+      icon:              "success",
+      showCancelButton:  true,
+      confirmButtonText: "Go to Shopping Cart",
+      cancelButtonText:  "Stay Here",
+    }).then((res) => {
+      if (res.isConfirmed) goToShoppingCart();
+    });
+
+    dispatch(ADD_TO_CART(_.get(result, "data.data.data", "")));
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ✅ handleBuy — routes to photo frame modal if is_photoframe === true
   // ─────────────────────────────────────────────────────────────────────────
   const handlebuy = async () => {
+    if (!validateBeforeBuy()) return;
+
+    // Photo frame → open custom modal first
+    if (isPhotoFrame) {
+      setShowPhotoFrameModal(true);
+      return;
+    }
+
+    // Normal product flow
     try {
       setLoading(true);
-
-      if (!quantity) {
-        toast.error("Please select quantity first");
-        return;
-      }
-
-      // Validate platform links for QR products
-      if (isQrProduct && selectedPlatforms.length > 0) {
-        const missingLinks = selectedPlatforms.filter(
-          (p) => !platformLinks[p] || platformLinks[p].trim() === ""
-        );
-        if (missingLinks.length > 0) {
-          toast.error(`Please enter links for: ${missingLinks.join(", ")}`);
-          return;
-        }
-        for (const platform of selectedPlatforms) {
-          const link = platformLinks[platform];
-          if (link && !link.startsWith("http://") && !link.startsWith("https://")) {
-            toast.error(`Please enter a valid URL for ${platform} (include http:// or https://)`);
-            return;
-          }
-        }
-      }
-
-      if (needDesignUpload && !checkOutState.product_design_file) {
-        toast.error("Please upload your design file first");
-        return;
-      }
-
-      if (needDesignUpload && !checked) {
-        toast.error("Please Confirm Your Designs");
-        return;
-      }
-
-      if (_.isEmpty(user)) {
-        localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
-        toast.error("Please Login");
-        return navigate("/login");
-      }
-
       setError("");
-
-      const token   = localStorage.getItem("userData") || "guest";
-      const guestId = getGuestId();
-
-      // Build selected platform links map
-      const selectedPlatformLinks = {};
-      selectedPlatforms.forEach((platform) => {
-        if (platformLinks[platform]) {
-          selectedPlatformLinks[platform] = platformLinks[platform];
-        }
-      });
-
-      // ✅ Extract user phone + email from Redux auth state
-      //    These are sent so the backend can store them on the cart document
-      //    immediately — without needing a separate DB lookup.
-      const userPhone = user.phone || user.phoneNumber || user.mobile || null;
-      const userEmail = user.email || null;
-
-      const baseCartPayload = {
-        ...checkOutState,
-        selected_platforms:      selectedPlatforms,
-        platform_links:          selectedPlatformLinks,
-        is_qr_product:           isQrProduct,
-        sgst:                    Number(Gst / 2),
-        cgst:                    Number(Gst / 2),
-        MRP_savings:             calculateMRPSavings(),
-        TotalSavings:            calculateTotalSavings(),
-        FreeDelivery:            freeDelivery,
-        DeliveryCharges:         deliveryCharges,
-        noCustomtation:          noDesignUpload,
-        final_total:             Number(calculateTotalPrice()),
-        final_total_withoutGst:  Number(calculateTotalPricewithoutGst()),
-        // ✅ Contact info — critical for abandonment reminders
-        phone_number:            userPhone,
-        email:                   userEmail,
-      };
-
-      let cartPayload;
-
-      if (token === "user") {
-        // Logged-in user
-        cartPayload = {
-          ...baseCartPayload,
-          userRole: token,
-        };
-      } else {
-        // Guest user — also pass guestId
-        cartPayload = {
-          ...baseCartPayload,
-          guestId:  guestId,
-          GuestId:  guestId,
-          userRole: token,
-        };
-      }
-
-      console.log("[Cart] Sending payload:", cartPayload);
-
-      const result = await addToShoppingCart(cartPayload);
-
-      Swal.fire({
-        title:             "Product Added To Cart",
-        text:              "Choose an option: Go to the shopping cart page or stay here.",
-        icon:              "success",
-        showCancelButton:  true,
-        confirmButtonText: "Go to Shopping Cart",
-        cancelButtonText:  "Stay Here",
-      }).then((res) => {
-        if (res.isConfirmed) goToShoppingCart();
-      });
-
-      dispatch(ADD_TO_CART(_.get(result, "data.data.data", "")));
-
+      await submitToCart();
     } catch (err) {
       if (err?.response?.status === 401) {
         localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
@@ -839,6 +1951,43 @@ const ProductDetails = ({
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ✅ handlePhotoFrameConfirm — called when user submits the photo frame form
+  // ─────────────────────────────────────────────────────────────────────────
+  const handlePhotoFrameConfirm = async (photoFrameData) => {
+    try {
+      setPhotoFrameLoading(true);
+      setError("");
+
+      await submitToCart({
+        photo_frame_details: {
+          father_name:        photoFrameData.father_name,
+          son_name:           photoFrameData.son_name,
+          unique_message:     photoFrameData.unique_message,
+          father_image:       photoFrameData.father_image,
+          son_image:          photoFrameData.son_image,
+          pickup_from_office: photoFrameData.pickup_from_office,
+          delivery_to_home:   photoFrameData.delivery_to_home,
+          delivery_charge:    photoFrameData.delivery_charge,
+          delivery_mode:      photoFrameData.delivery_to_home ? "home_delivery" : "office_pickup",
+          pincode:            photoFrameData.pincode,
+        },
+      });
+
+      setShowPhotoFrameModal(false);
+    } catch (err) {
+      if (err?.response?.status === 401) {
+        localStorage.setItem("redirect_url", _.get(data, "seo_url", ""));
+        toast.error("Login to place order");
+        navigate("/sign-up");
+      } else {
+        toast.error(err.message || "An error occurred");
+      }
+    } finally {
+      setPhotoFrameLoading(false);
     }
   };
 
@@ -973,13 +2122,13 @@ const ProductDetails = ({
     const productUrl   = encodeURIComponent(window.location.href);
     const productTitle = encodeURIComponent(_.get(data, "product_description_tittle", ""));
     const shareUrls    = {
-      facebook:  `https://www.facebook.com/sharer/sharer.php?u=${productUrl}&quote=${productTitle}`,
-      whatsapp:  `https://api.whatsapp.com/send?text=${productTitle} - ${productUrl}`,
-      linkedin:  `https://www.linkedin.com/sharing/share-offsite/?url=${productUrl}&title=${productTitle}`,
-      email:     `mailto:?subject=${productTitle}&body=Check out: ${productTitle} - ${productUrl}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${productUrl}&quote=${productTitle}`,
+      whatsapp: `https://api.whatsapp.com/send?text=${productTitle} - ${productUrl}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${productUrl}&title=${productTitle}`,
+      email:    `mailto:?subject=${productTitle}&body=Check out: ${productTitle} - ${productUrl}`,
     };
     if (platform === "email") window.location.href = shareUrls[platform];
-    else if (shareUrls[platform])   window.open(shareUrls[platform], "_blank");
+    else if (shareUrls[platform]) window.open(shareUrls[platform], "_blank");
     setShowShareMenu(false);
   };
 
@@ -1036,12 +2185,12 @@ const ProductDetails = ({
     }
   };
 
-  const validateEmail      = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validateEmail         = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const handleNoCustomization = (e) => {
     setNoDesignUpload(e.target.checked);
     setNeedDesignUpload(!e.target.checked);
   };
-  const handleDesignRemove = () =>
+  const handleDesignRemove    = () =>
     setCheckOutState((prev) => ({ ...prev, product_design_file: "" }));
 
   // ── ProcessingTimeInfo ────────────────────────────────────────────────────
@@ -1066,13 +2215,13 @@ const ProductDetails = ({
       />
     </div>
   );
-
+  
   const generateLabel = (label) => {
     switch (label) {
-      case "new":          return <Tag color="green">New</Tag>;
-      case "popular":      return <Tag color="purple">Popular</Tag>;
+      case "new":            return <Tag color="green">New</Tag>;
+      case "popular":        return <Tag color="purple">Popular</Tag>;
       case "only-for-today": return <Tag color="red">Only For Today</Tag>;
-      default:             return <></>;
+      default:               return <></>;
     }
   };
 
@@ -1091,9 +2240,28 @@ const ProductDetails = ({
                 {data.name}
               </h1>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {data.label?.map((label, index) => <span key={index}>{generateLabel(label)}</span>)}
-            </div>
+            {/* Photo Frame Badge */}
+            {isPhotoFrame && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-md mb-2"
+                style={{
+                  background: "linear-gradient(135deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%)",
+                }}
+              >
+                <motion.span
+                  animate={{ rotate: [0, -10, 10, -10, 0] }}
+                  transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 1.5 }}
+                  className="text-sm"
+                >
+                  🖼️
+                </motion.span>
+                <span className="text-white text-md font-bold tracking-wide whitespace-nowrap">
+                  Instagram Promotion Offer
+                </span>
+              </motion.div>
+            )}
           </div>
 
           <div className="w-full md:w-auto flex flex-col md:flex-row items-start md:items-center gap-3 md:relative">
@@ -1333,6 +2501,8 @@ const ProductDetails = ({
                 Production={processing_item}
                 freeDelivery={freeDelivery}
                 deliveryCharges={deliveryCharges}
+                onDeliveryChargeChange={handleDeliveryChargeChange}
+                onPincodeChange={handlePincodeChange}
               />
             </div>
           </motion.div>
@@ -1483,7 +2653,7 @@ const ProductDetails = ({
         )}
 
         {/* ── File Upload Section ────────────────────────────────────── */}
-        {!isSoldOut && (
+        {!isSoldOut && !isPhotoFrame && (
           <div className="space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <Checkbox checked={noDesignUpload} onChange={handleNoCustomization}>
@@ -1568,6 +2738,23 @@ const ProductDetails = ({
           </div>
         )}
 
+        {/* ── Photo Frame Info Banner ─────────────────────────────────── */}
+        {isPhotoFrame && !isSoldOut && (
+          <Alert
+            message={
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🖼️</span>
+                <span>
+                  This is a <strong>personalised photo frame</strong>. You'll be asked to provide names, photos, and delivery preferences when adding to cart.
+                </span>
+              </div>
+            }
+            type="info"
+            showIcon={false}
+            className="!py-3 !border-amber-300 !bg-amber-50"
+          />
+        )}
+
         {/* ── Add to Cart / Notify Button ────────────────────────────── */}
         <div className="w-full">
           {isGettingVariantPrice ? (
@@ -1602,7 +2789,7 @@ const ProductDetails = ({
                   onClick={handlebuy}
                   loading={loading}
                 >
-                  Add To Cart
+                  {isPhotoFrame ? "Personalise & Add to Cart" : "Add To Cart"}
                 </Button>
               )}
             </>
@@ -1623,6 +2810,20 @@ const ProductDetails = ({
             <img fetchpriority="high" loading="eager" src={checkOutState.product_design_file} alt="Design Preview" style={{ maxHeight: "400px" }} />
           </div>
         </CustomModal>
+
+        {/* ── Photo Frame Order Modal (portaled to <body>) ──────────── */}
+        {showPhotoFrameModal &&
+          createPortal(
+            <AnimatePresence>
+              <PhotoFrameOrderModal
+                open={showPhotoFrameModal}
+                onClose={() => setShowPhotoFrameModal(false)}
+                onConfirm={handlePhotoFrameConfirm}
+                loading={photoFrameLoading}
+              />
+            </AnimatePresence>,
+            document.body
+          )}
 
         {/* ── Notify Modal ───────────────────────────────────────────── */}
         <CustomModal
@@ -1736,212 +2937,3 @@ const ProductDetails = ({
 };
 
 export default ProductDetails;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PincodeDeliveryCalculator
-// ─────────────────────────────────────────────────────────────────────────────
-import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
-
-export const PincodeDeliveryCalculator = ({ Production, freeDelivery, deliveryCharges }) => {
-  const [pincode,              setPincode]              = useState("");
-  const [deliveryDate,         setDeliveryDate]         = useState("");
-  const [state,                setState]                = useState("");
-  const [error,                setError]                = useState("");
-  const [isLoading,            setIsLoading]            = useState(false);
-  const [isValidatingPincode,  setIsValidatingPincode]  = useState(false);
-  const [isGettingLocation,    setIsGettingLocation]    = useState(false);
-  const [isPincodeValid,       setIsPincodeValid]       = useState(null);
-  const [isModalOpen,          setIsModalOpen]          = useState(false);
-
-  const stateDeliveryDays = {
-    maharashtra:  { days: 2, name: "Maharashtra" },
-    gujarat:      { days: 3, name: "Gujarat" },
-    karnataka:    { days: 4, name: "Karnataka" },
-    "tamil nadu": { days: 3, name: "Tamil Nadu" },
-    kerala:       { days: 6, name: "Kerala" },
-    delhi:        { days: 7, name: "Delhi" },
-    default:      { days: 3, name: "Other States" },
-  };
-
-  const pincodeToStateMap = {
-    400: "maharashtra",
-    395: "gujarat",
-    560: "karnataka",
-    600: "tamil nadu",
-    682: "kerala",
-    110: "delhi",
-  };
-
-  const getStateFromPincode = (pin) => pincodeToStateMap[pin.substring(0, 3)] || "default";
-
-  const calculateProductionDate = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + Number(Production || 0));
-    return d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-  };
-
-  const calculateDeliveryDate = (stateKey = "tamil nadu") => {
-    const { days } = stateDeliveryDays[stateKey] || stateDeliveryDays.default;
-    const d = new Date();
-    d.setDate(d.getDate() + Number(Production || 0) + Number(days) + 2);
-    return d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-  };
-
-  const validatePincode = async (pin) => {
-    setIsValidatingPincode(true);
-    await new Promise((res) => setTimeout(res, 800));
-    const isValid = /^\d{6}$/.test(pin);
-    setIsPincodeValid(isValid);
-    if (isValid) {
-      const stateKey = getStateFromPincode(pin);
-      setState(stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name);
-      setDeliveryDate(calculateDeliveryDate(stateKey));
-      setError("");
-    } else {
-      setError("Please enter a valid 6-digit pincode");
-      setDeliveryDate("");
-      setState("");
-    }
-    setIsValidatingPincode(false);
-  };
-
-  const handlePincodeChange = (e) => {
-    const value = e.target.value.replace(/\D/g, "");
-    setPincode(value.slice(0, 6));
-    setIsPincodeValid(null);
-    setState("");
-    setDeliveryDate("");
-    setError("");
-    if (value.length === 6) validatePincode(value);
-  };
-
-  const extractPincodeFromDisplayName = (displayName) => {
-    const m = displayName.match(/\b\d{6}\b/);
-    return m ? m[0] : null;
-  };
-
-  const getPincodeByGPS = async () => {
-    setIsGettingLocation(true);
-    setError("");
-    try {
-      if (!navigator.geolocation) throw new Error("Geolocation not supported");
-      const position = await new Promise((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: 15000, enableHighAccuracy: true, maximumAge: 300000,
-        })
-      );
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
-      );
-      const d = await response.json();
-      const detectedPincode = d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
-      if (detectedPincode) {
-        setPincode(detectedPincode);
-        validatePincode(detectedPincode);
-        toast.success(`📍 Pincode detected: ${detectedPincode}`);
-      } else {
-        throw new Error("No pincode found");
-      }
-    } catch (err) {
-      toast.error("Failed to get location. Please enter pincode manually.");
-    } finally {
-      setIsGettingLocation(false);
-    }
-  };
-
-  const productionDate = calculateProductionDate();
-
-  return (
-    <div className="pincode-delivery-calculator">
-      <div className="pincode-input-container">
-        <motion.div whileHover={{ scale: 1.01 }} className="input-wrapper relative overflow-hidden rounded-lg">
-          <Input
-            className="pincode-input"
-            value={pincode}
-            onChange={handlePincodeChange}
-            placeholder="Enter 6-digit Pincode"
-            maxLength={6}
-            suffix={
-              <div className="input-suffix">
-                {isValidatingPincode && <Spin size="small" />}
-                {isPincodeValid && <CheckCircleOutlined className="success-icon" />}
-                {isPincodeValid === false && <CloseCircleOutlined className="error-icon" />}
-              </div>
-            }
-          />
-          <button
-            onClick={getPincodeByGPS}
-            disabled={isGettingLocation}
-            className="location-button absolute flex top-0 right-0 bg-yellow-500 h-full p-2"
-          >
-            {isGettingLocation
-              ? <Spin size="small" />
-              : <span className="button-content flex items-center gap-2"><FaMapMarkerAlt /> Get Location</span>
-            }
-          </button>
-        </motion.div>
-
-        {error && <div className="error-message">{error}</div>}
-
-        {pincode && deliveryDate ? (
-          <motion.div className="delivery-info" whileHover={{ x: 5 }}>
-            <span className="delivery-text">
-              Expected Delivery by <Text strong>{deliveryDate}</Text>
-            </span>
-            <Divider type="vertical" />
-            {freeDelivery ? (
-              <div className="flex items-center gap-2">
-                <Text delete type="secondary">₹ {deliveryCharges}</Text>
-                <Text type="success" strong>Cheers – Zero Delivery Charges, 100% Happiness!</Text>
-              </div>
-            ) : (
-              <Text type="success" strong>₹ {deliveryCharges} Delivery Charges Applicable</Text>
-            )}
-          </motion.div>
-        ) : (
-          <motion.div className="production-info" whileHover={{ x: 5 }}>
-            <span className="production-text">
-              Expected Dispatch by <Text strong>{productionDate}</Text>
-            </span>
-            <Divider type="vertical" />
-            <Text type="secondary">Enter pincode for delivery date & charges</Text>
-            {freeDelivery && <Text type="success" strong>Cheers – Zero Delivery Charges, 100% Happiness!</Text>}
-          </motion.div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SimpleHangingSoldBoard
-// ─────────────────────────────────────────────────────────────────────────────
-export const SimpleHangingSoldBoard = () => {
-  const swingAnimation = {
-    animate: {
-      rotate: [0, 8, -8, 6, -6, 3, -3, 0],
-      transition: { duration: 5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" },
-    },
-  };
-
-  return (
-    <div className="z-50 pointer-events-none flex justify-center">
-      <div className="relative">
-        <motion.div
-          className="relative mt-20 w-40 h-14 bg-red-600 rounded-md border-3 shadow-xl"
-          variants={swingAnimation}
-          animate="animate"
-          style={{ originY: 0 }}
-        >
-          <div className="relative w-full h-full flex items-center justify-center">
-            <div className="text-xl font-black tracking-wider">
-              <span className="bg-gradient-to-b from-white to-white bg-clip-text text-transparent">
-                SOLD OUT
-              </span>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
-};

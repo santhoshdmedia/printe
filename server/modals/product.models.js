@@ -112,6 +112,9 @@ module.exports = mongoose.model(
       product_Lock: {
         type: Boolean,
       },
+      is_acrylic: {
+        type: Boolean,
+      },
       Production_time: {
         type: String,
       },
@@ -130,7 +133,9 @@ module.exports = mongoose.model(
       is_soldout: {
         type: Boolean,
       },
-
+      is_photoframe: {
+        type: Boolean,
+      },
       is_customer: {
         type: Boolean,
       },

@@ -34,6 +34,9 @@ const ShoppingCardSchemaDefinition = new mongoose.Schema(
     sgst:                   { type: Number, default: 0 },
     MRP_savings:            { type: Number, default: 0 },
     TotalSavings:           { type: Number, default: 0 },
+    photo_frame_details:{
+      type:Object
+    },
 
     // ── Delivery ───────────────────────────────────────────────────────────
     FreeDelivery:    { type: Boolean, default: false },

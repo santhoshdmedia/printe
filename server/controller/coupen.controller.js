@@ -6,7 +6,6 @@ function isValidDate(date) {
 }
 
 // Helper: Get discount value based on user type
-// FIX: Added 'user' as an alias for 'customer' to match what applyCoupon sends
 function getDiscountValue(coupon, userType) {
   switch (userType?.toLowerCase()) {
     case 'dealer':
@@ -14,14 +13,13 @@ function getDiscountValue(coupon, userType) {
     case 'corporate':
       return coupon.Corporate_discountValue || 0;
     case 'customer':
-    case 'user': // FIX: 'user' was accepted by applyCoupon but never mapped here — caused 0 discount
+    case 'user':
     default:
       return coupon.Customer_discountValue || 0;
   }
 }
 
 // Helper: Get tier discount value based on user type
-// FIX: Added 'user' alias here too for consistency
 function getTierDiscountValue(tier, userType) {
   switch (userType?.toLowerCase()) {
     case 'dealer':
@@ -29,7 +27,7 @@ function getTierDiscountValue(tier, userType) {
     case 'corporate':
       return tier.Corporate_discountValue || 0;
     case 'customer':
-    case 'user': // FIX: same alias fix
+    case 'user':
     default:
       return tier.Customer_discountValue || 0;
   }
@@ -43,9 +41,6 @@ function findApplicableTier(discountTiers, quantity) {
 }
 
 // Helper: Check if a cart item matches the coupon's applicable products
-// FIX: Previously matched only by hardcoded name "Victoria Luxe".
-// Now matches by applicableProducts ID first (correct), falls back to name only
-// if no applicableProducts are set on the coupon.
 function isItemApplicableForTier(coupon, item) {
   const hasProductRestriction = coupon.applicableProducts && coupon.applicableProducts.length > 0;
 
@@ -68,7 +63,6 @@ function calculateTieredQuantityDiscount(coupon, cartItems, userType) {
   }
 
   for (const item of cartItems) {
-    // FIX: Use product ID matching instead of hardcoded "Victoria Luxe" name check
     if (!isItemApplicableForTier(coupon, item)) {
       continue;
     }
@@ -92,15 +86,11 @@ function calculateTieredQuantityDiscount(coupon, cartItems, userType) {
 }
 
 // Helper: Check if cart contains at least one applicable product
-// FIX: This entire function is NEW — applicableProducts was stored but never checked,
-// meaning product-specific coupons applied to ALL orders regardless of cart contents
 function cartContainsApplicableProduct(coupon, cartItems) {
-  // If no applicableProducts restriction, coupon applies to everything
   if (!coupon.applicableProducts || coupon.applicableProducts.length === 0) {
     return true;
   }
 
-  // Convert ObjectIds to strings for comparison
   const applicableIds = coupon.applicableProducts.map(id => id.toString());
 
   return cartItems.some(item => {
@@ -110,11 +100,9 @@ function cartContainsApplicableProduct(coupon, cartItems) {
 }
 
 // Helper: Filter order amount to only include applicable products
-// FIX: NEW — when a coupon is product-specific, discount should only apply
-// to the price of those products, not the entire order total
 function getApplicableOrderAmount(coupon, cartItems, totalOrderAmount) {
   if (!coupon.applicableProducts || coupon.applicableProducts.length === 0) {
-    return totalOrderAmount; // No restriction — use full order amount
+    return totalOrderAmount;
   }
 
   const applicableIds = coupon.applicableProducts.map(id => id.toString());
@@ -136,7 +124,6 @@ function getApplicableOrderAmount(coupon, cartItems, totalOrderAmount) {
 function calculateDiscount(coupon, orderAmount, cartItems = [], userType = 'customer') {
   let discount = 0;
 
-  // FIX: For product-specific coupons, only apply discount to applicable items' total
   const applicableAmount = getApplicableOrderAmount(coupon, cartItems, orderAmount);
 
   switch (coupon.discountType) {
@@ -160,12 +147,10 @@ function calculateDiscount(coupon, orderAmount, cartItems = [], userType = 'cust
       discount = 0;
   }
 
-  // Apply maximum discount limit
   if (coupon.maximumDiscount && discount > coupon.maximumDiscount) {
     discount = coupon.maximumDiscount;
   }
 
-  // Ensure discount doesn't exceed order amount
   discount = Math.min(discount, orderAmount);
 
   return Math.round(discount * 100) / 100;
@@ -177,32 +162,20 @@ async function validateCoupon(coupon, userId, orderAmount, cartItems = [], userT
   const startDate = new Date(coupon.startDate);
   const endDate = new Date(coupon.endDate);
 
-  // DEBUG: Remove these logs once working
-  console.log('\n=== COUPON VALIDATION DEBUG ===');
-  console.log('Code:', coupon.code, '| discountType:', coupon.discountType);
-  console.log('applicableProducts:', JSON.stringify(coupon.applicableProducts));
-  console.log('applicableCategories:', JSON.stringify(coupon.applicableCategories));
-  console.log('cartItems:', JSON.stringify(cartItems));
-  console.log('orderAmount:', orderAmount, '| minimumOrderAmount:', coupon.minimumOrderAmount);
-  console.log('================================\n');
-
   if (!coupon.isActive) {
-        console.log('VALIDATION FAILED AT LINE ~' + 189, "return { valid: false, message: 'Coupon is not active' };");
     return { valid: false, message: 'Coupon is not active' };
   }
 
   if (now < startDate) {
-        console.log('VALIDATION FAILED AT LINE ~' + 193, "return { valid: false, message: 'Coupon is not yet active' };");
     return { valid: false, message: 'Coupon is not yet active' };
   }
 
   if (now > endDate) {
-        console.log('VALIDATION FAILED AT LINE ~' + 197, "return { valid: false, message: 'Coupon has expired' };");
     return { valid: false, message: 'Coupon has expired' };
   }
 
+  // ✅ FIX: usageLimit check now works because usedCount is actually incremented on each use
   if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
-        console.log('VALIDATION FAILED AT LINE ~' + 201, "return { valid: false, message: 'Coupon usage limit reached' };");
     return { valid: false, message: 'Coupon usage limit reached' };
   }
 
@@ -213,8 +186,6 @@ async function validateCoupon(coupon, userId, orderAmount, cartItems = [], userT
     };
   }
 
-  // Check applicableProducts restriction
-  // FIX: Was never checked before — product-specific coupons applied to all orders
   if (!cartContainsApplicableProduct(coupon, cartItems)) {
     return {
       valid: false,
@@ -222,15 +193,12 @@ async function validateCoupon(coupon, userId, orderAmount, cartItems = [], userT
     };
   }
 
-  // Check applicableCategories restriction
   if (coupon.applicableCategories && coupon.applicableCategories.length > 0) {
     const isAllCategories = coupon.applicableCategories.includes('all');
     if (!isAllCategories) {
       const applicableCatIds = coupon.applicableCategories.map(id => id.toString());
 
       const cartHasCategory = cartItems.some(item => {
-        // Match categoryId if present. Also check productId as fallback —
-        // some frontends accidentally send the category ObjectId in the productId field.
         const itemCatId = (item.categoryId || item.category || '').toString();
         const itemProductId = (item.productId || '').toString();
         return applicableCatIds.includes(itemCatId) || applicableCatIds.includes(itemProductId);
@@ -245,16 +213,13 @@ async function validateCoupon(coupon, userId, orderAmount, cartItems = [], userT
     }
   }
 
-  // Check for tiered quantity coupons
   if (coupon.discountType === 'tiered_quantity') {
     if (!cartItems || cartItems.length === 0) {
-          console.log('VALIDATION FAILED AT LINE ~' + 246, "return { valid: false, message: 'No items in cart' };");
       return { valid: false, message: 'No items in cart' };
     }
 
     const minTierQuantity = Math.min(...coupon.discountTiers.map(tier => tier.minimumQuantity));
 
-    // FIX: Use isItemApplicableForTier() — matches by product ID, not hardcoded name
     const hasApplicableItem = cartItems.some(
       item => isItemApplicableForTier(coupon, item) && (item.quantity || 1) >= minTierQuantity
     );
@@ -267,15 +232,21 @@ async function validateCoupon(coupon, userId, orderAmount, cartItems = [], userT
     }
   }
 
+  // ✅ FIX: singleUse check now works because userIdsUsed is populated on each use
   if (coupon.singleUse && coupon.userIdsUsed && coupon.userIdsUsed.includes(userId)) {
-        console.log('VALIDATION FAILED AT LINE ~' + 265, "return { valid: false, message: 'Coupon already used' };");
-    return { valid: false, message: 'Coupon already used' };
+    return { valid: false, message: 'You have already used this coupon' };
   }
 
   return { valid: true, message: 'Coupon is valid' };
 }
 
-// Apply coupon
+// ====================================================
+// ✅ MAIN FIX: Apply coupon now records usage atomically
+// Previously: validated + calculated discount but NEVER
+// incremented usedCount or stored userId — so the same
+// coupon could be applied unlimited times regardless of
+// usageLimit or singleUse settings.
+// ====================================================
 const applyCoupon = async (req, res) => {
   try {
     const { code, orderAmount, userId, cartItems = [], userType = 'user' } = req.body;
@@ -324,6 +295,37 @@ const applyCoupon = async (req, res) => {
       });
     }
 
+    // ✅ FIX: Atomically increment usedCount and record userId for singleUse coupons.
+    // Using findOneAndUpdate with $inc ensures this is safe under concurrent requests
+    // (two users applying at the same time won't both slip past a usageLimit of 1).
+    const updateQuery = {
+      $inc: { usedCount: 1 }
+    };
+
+    if (coupon.singleUse) {
+      updateQuery.$addToSet = { userIdsUsed: userId };
+    }
+
+    // Double-check usageLimit atomically to prevent race conditions
+    const updateFilter = { _id: coupon._id };
+    if (coupon.usageLimit !== null) {
+      updateFilter.$expr = { $lt: ['$usedCount', coupon.usageLimit] };
+    }
+
+    const updatedCoupon = await Coupon.findOneAndUpdate(
+      updateFilter,
+      updateQuery,
+      { new: true }
+    );
+
+    // If updatedCoupon is null here, another concurrent request just consumed the last use
+    if (!updatedCoupon && coupon.usageLimit !== null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Coupon usage limit just reached. Please try a different coupon.'
+      });
+    }
+
     const finalAmount = Math.max(0, orderAmount - discountAmount);
 
     const response = {
@@ -339,6 +341,11 @@ const applyCoupon = async (req, res) => {
           minimumOrderAmount: coupon.minimumOrderAmount,
           maximumDiscount: coupon.maximumDiscount,
           userType: userType,
+          // ✅ Show remaining uses so the frontend can display it
+          usedCount: updatedCoupon ? updatedCoupon.usedCount : coupon.usedCount + 1,
+          remainingUses: coupon.usageLimit
+            ? coupon.usageLimit - (updatedCoupon ? updatedCoupon.usedCount : coupon.usedCount + 1)
+            : null,
           discountValues: {
             customer: coupon.Customer_discountValue,
             dealer: coupon.Dealer_discountValue,
@@ -350,11 +357,10 @@ const applyCoupon = async (req, res) => {
 
     if (coupon.discountType === 'tiered_quantity') {
       response.data.coupon.discountTiers = coupon.discountTiers;
-      response.data.coupon.applicableProduct = "Victoria Luxe";
       response.data.coupon.appliedTiers = [];
 
       for (const item of cartItems) {
-        if (item.name === "Victoria Luxe" || item.product_name === "Victoria Luxe") {
+        if (isItemApplicableForTier(coupon, item)) {
           const applicableTier = findApplicableTier(coupon.discountTiers, item.quantity || 1);
           if (applicableTier) {
             const discountPerItem = getTierDiscountValue(applicableTier, userType);
@@ -393,9 +399,10 @@ const getAllCoupons = async (req, res) => {
         dealer: couponObj.Dealer_discountValue,
         corporate: couponObj.Corporate_discountValue
       };
-      if (couponObj.discountType === 'tiered_quantity') {
-        couponObj.specialNote = 'This coupon only applies to Victoria Luxe products';
-      }
+      // ✅ Add remaining uses info for admin table
+      couponObj.remainingUses = couponObj.usageLimit
+        ? couponObj.usageLimit - couponObj.usedCount
+        : null;
       return couponObj;
     });
 
@@ -432,9 +439,9 @@ const getCouponById = async (req, res) => {
       dealer: couponObj.Dealer_discountValue,
       corporate: couponObj.Corporate_discountValue
     };
-    if (couponObj.discountType === 'tiered_quantity') {
-      couponObj.specialNote = 'This coupon only applies to Victoria Luxe products';
-    }
+    couponObj.remainingUses = couponObj.usageLimit
+      ? couponObj.usageLimit - couponObj.usedCount
+      : null;
 
     return res.status(200).json({
       success: true,
@@ -511,9 +518,6 @@ const createCoupon = async (req, res) => {
       singleUse
     };
 
-    // FIX: Removed broken 'PERCENTAGE' (uppercase) branch — the schema enum only allows
-    // lowercase 'percentage', so that branch could never be reached and was dead code.
-    // tiered_quantity and all other types are now handled cleanly.
     if (discountType === 'tiered_quantity') {
       if (!discountTiers || !Array.isArray(discountTiers) || discountTiers.length === 0) {
         return res.status(400).json({
@@ -522,7 +526,6 @@ const createCoupon = async (req, res) => {
         });
       }
       couponData.discountTiers = discountTiers;
-      couponData.note = 'This coupon only applies to Victoria Luxe products';
     } else {
       if (Customer_discountValue === undefined || Dealer_discountValue === undefined || Corporate_discountValue === undefined) {
         return res.status(400).json({
@@ -633,7 +636,7 @@ const deleteCoupon = async (req, res) => {
   }
 };
 
-// Mark coupon as used
+// Mark coupon as used (call this from your Order creation endpoint AFTER order is confirmed)
 const markCouponAsUsed = async (req, res) => {
   try {
     const { couponId, userId } = req.body;

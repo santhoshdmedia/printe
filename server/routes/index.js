@@ -16,7 +16,7 @@ router.use("/product", product_routers);
 router.use("/dashboard", dashboard_routers);
 router.use("/Reward", RewardRoutes);
 router.use("/order", VerfiyToken, order_routers);
-router.use("/banner", VerfiyToken, banner_routes);
+router.use("/banner",  banner_routes);
 router.use("/banner_text", banner_Text_routes);
 router.use("/review", VerfiyToken, review_routes);
 router.use("/blog", blog_routes);
