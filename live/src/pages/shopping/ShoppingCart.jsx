@@ -203,7 +203,7 @@ const ShoppingCart = () => {
         .cart-page-wrapper {
           width: 100%;
           min-height: 100svh;
-          background: #f5f5f5;
+          background: #fff;
           padding: 12px;
           box-sizing: border-box;
         }
