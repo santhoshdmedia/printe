@@ -6,6 +6,10 @@ import _ from 'lodash';
 import { applyCouponCode } from '../../helper/api_helper';
 import { initiateCCAvenuePayment } from './pay/utils/payment';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const NON_TN_DELIVERY_CHARGE = 100;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -14,8 +18,8 @@ import { initiateCCAvenuePayment } from './pay/utils/payment';
  */
 const isPhotoFrame = (item) => {
   return Boolean(
-    item.is_photo_frame || 
-    item.is_photoframe || 
+    item.is_photo_frame ||
+    item.is_photoframe ||
     (item.photo_frame_details && Object.keys(item.photo_frame_details).length > 0)
   );
 };
@@ -26,17 +30,17 @@ const isPhotoFrame = (item) => {
  */
 const getDeliveryToHome = (item) => {
   if (!isPhotoFrame(item)) return true;
-  
+
   // Check nested photo_frame_details first
   if (item.photo_frame_details && typeof item.photo_frame_details.delivery_to_home === 'boolean') {
     return item.photo_frame_details.delivery_to_home;
   }
-  
+
   // Fallback to top-level flag
   if (typeof item.delivery_to_home === 'boolean') {
     return item.delivery_to_home;
   }
-  
+
   return true; // default to home delivery
 };
 
@@ -49,21 +53,33 @@ const getPickupFromOffice = (item) => {
 };
 
 /**
+ * Check whether a given state string refers to Tamil Nadu.
+ * Accepts common variants/casing/whitespace differences.
+ */
+const isTamilNaduState = (state) => {
+  if (!state) return false;
+  const normalized = state.trim().toLowerCase().replace(/\s+/g, '');
+  return normalized === 'tamilnadu' || normalized === 'tn';
+};
+
+/**
  * Calculate delivery charge for a single cart item.
- * 
+ *
  * Rules (in order of precedence):
  *   1. FreeDelivery === true → ₹0
  *   2. Photo frame with pickup_from_office === true → ₹0
  *   3. Photo frame with delivery_to_home === false → ₹0
- *   4. All other items → item.DeliveryCharges
+ *   4. Delivery state/pincode is NOT Tamil Nadu → ₹100 (flat, overrides item.DeliveryCharges)
+ *   5. Delivery state/pincode IS Tamil Nadu → item.DeliveryCharges
  */
-const getItemDeliveryCharge = (item) => {
+const getItemDeliveryCharge = (item, isTamilNadu) => {
   console.log('Calculating delivery for:', item.product_name, {
     FreeDelivery: item.FreeDelivery,
     isPhotoFrame: isPhotoFrame(item),
     pickup_from_office: getPickupFromOffice(item),
     delivery_to_home: getDeliveryToHome(item),
-    DeliveryCharges: item.DeliveryCharges
+    DeliveryCharges: item.DeliveryCharges,
+    isTamilNadu,
   });
 
   // Rule 1: Free delivery
@@ -71,7 +87,7 @@ const getItemDeliveryCharge = (item) => {
     console.log('→ Free delivery (FreeDelivery=true)');
     return 0;
   }
-  
+
   // Rule 2 & 3: Photo frame pickup scenarios
   if (isPhotoFrame(item)) {
     if (getPickupFromOffice(item)) {
@@ -83,18 +99,24 @@ const getItemDeliveryCharge = (item) => {
       return 0;
     }
   }
-  
-  // Rule 4: Normal delivery charge
+
+  // Rule 4: Non-Tamil Nadu delivery → flat ₹100
+  if (!isTamilNadu) {
+    console.log(`→ Flat outstation delivery charge: ₹${NON_TN_DELIVERY_CHARGE}`);
+    return NON_TN_DELIVERY_CHARGE;
+  }
+
+  // Rule 5: Tamil Nadu → normal delivery charge
   const charge = Number(item.DeliveryCharges) || 0;
-  console.log(`→ Normal delivery charge: ₹${charge}`);
+  console.log(`→ Normal (Tamil Nadu) delivery charge: ₹${charge}`);
   return charge;
 };
 
 /**
  * Get the total delivery charge for all cart items.
  */
-const getTotalDeliveryCharge = (cartData) => {
-  return _.sum(cartData.map(item => getItemDeliveryCharge(item)));
+const getTotalDeliveryCharge = (cartData, isTamilNadu) => {
+  return _.sum(cartData.map(item => getItemDeliveryCharge(item, isTamilNadu)));
 };
 
 // ─── Reusable input components ──────────────────────────────────────────────
@@ -190,6 +212,10 @@ const NewCheckout = () => {
 
   const addresses = _.get(user, 'addresses', []);
 
+  // Whether the currently entered delivery state is Tamil Nadu.
+  // Drives the flat ₹100 outstation delivery charge rule.
+  const isTamilNaduDelivery = isTamilNaduState(formData.state);
+
   // ─── Guards ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -225,8 +251,10 @@ const NewCheckout = () => {
     );
     const tax = subtotal * 0.18;
 
-    // Use the helper function to calculate delivery charges
-    const delivery = getTotalDeliveryCharge(cartData);
+    // Use the helper function to calculate delivery charges, factoring in
+    // whether the delivery address state is Tamil Nadu (flat ₹100 otherwise,
+    // unless the item is pickup-from-office, which is always free).
+    const delivery = getTotalDeliveryCharge(cartData, isTamilNaduDelivery);
 
     const discount           = appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0;
     const totalBeforeDiscount = subtotal + tax + delivery;
@@ -234,7 +262,7 @@ const NewCheckout = () => {
     const payable            = paymentOption === 'half' ? Math.ceil(total * 0.5) : total;
 
     setCalculations({ subtotal, tax, delivery, discount, total, totalBeforeDiscount, payable });
-  }, [cartData, appliedCoupon, paymentOption]);
+  }, [cartData, appliedCoupon, paymentOption, isTamilNaduDelivery]);
 
   // ─── Form validation ──────────────────────────────────────────────────────
 
@@ -515,6 +543,13 @@ const NewCheckout = () => {
                   <TextInputField label="State *" name="state" value={formData.state} onChange={handleTextChange} placeholder="Maharashtra" icon={FaGlobeAsia} disabled={loading} />
                   <NumberInputField label="Pincode *" name="pincode" value={formData.pincode} onChange={handlePincodeChange} placeholder="400001" maxLength={6} icon={FaMapPin} disabled={loading} />
                 </div>
+                {formData.state && (
+                  <div className={`text-xs ${isTamilNaduDelivery ? 'text-green-600' : 'text-orange-600'}`}>
+                    {isTamilNaduDelivery
+                      ? '✓ Delivering within Tamil Nadu — standard delivery charges apply'
+                      : `⚠ Outstation delivery (outside Tamil Nadu) — flat ₹${NON_TN_DELIVERY_CHARGE} delivery charge applies per applicable item`}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -575,8 +610,9 @@ const NewCheckout = () => {
                   const isPhotoFrameItem = isPhotoFrame(item);
                   const pickupFromOffice = getPickupFromOffice(item);
                   const deliveryToHome = getDeliveryToHome(item);
-                  const noDeliveryCharge = (item.FreeDelivery) || (isPhotoFrameItem && (pickupFromOffice || !deliveryToHome));
-                  
+                  const itemDeliveryCharge = getItemDeliveryCharge(item, isTamilNaduDelivery);
+                  const noDeliveryCharge = itemDeliveryCharge === 0;
+
                   return (
                     <div key={item._id} className="flex items-center gap-4 py-3 border-b border-gray-200">
                       <img fetchpriority="high" loading="eager" src={item.product_image} alt={item.product_name} className="w-16 h-16 object-cover rounded-lg" onError={(e) => { e.target.src = '/placeholder-product.jpg'; }} />
@@ -584,14 +620,17 @@ const NewCheckout = () => {
                         <h3 className="font-medium text-gray-900 line-clamp-1">{item.product_name}</h3>
                         <p className="text-sm text-gray-600">Qty: {item.product_quantity || 1}</p>
                         <p className="text-sm text-gray-600">₹{(Number(item.final_total_withoutGst || item.final_total) / (item.product_quantity || 1)).toFixed(2)} each</p>
-                        {/* Badge shows delivery info for photo frames */}
-                        {isPhotoFrameItem && noDeliveryCharge && (
-                          <p className="text-xs text-green-600 mt-1">
-                            {pickupFromOffice ? '✓ Pickup from office (no delivery charge)' : '✓ No delivery charge (pickup only)'}
-                          </p>
+                        {/* Badge shows delivery info */}
+                        {isPhotoFrameItem && pickupFromOffice && (
+                          <p className="text-xs text-green-600 mt-1">✓ Pickup from office (no delivery charge)</p>
                         )}
-                        {isPhotoFrameItem && deliveryToHome && !pickupFromOffice && (
-                          <p className="text-xs text-blue-600 mt-1">📦 Home delivery (₹{getItemDeliveryCharge(item).toFixed(2)})</p>
+                        {isPhotoFrameItem && !pickupFromOffice && !deliveryToHome && (
+                          <p className="text-xs text-green-600 mt-1">✓ No delivery charge (pickup only)</p>
+                        )}
+                        {!noDeliveryCharge && (
+                          <p className="text-xs text-blue-600 mt-1">
+                            📦 {isTamilNaduDelivery ? 'Home delivery' : 'Outstation delivery'} (₹{itemDeliveryCharge.toFixed(2)})
+                          </p>
                         )}
                       </div>
                       <div className="text-right">
@@ -604,7 +643,12 @@ const NewCheckout = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center"><span className="text-gray-600">Subtotal ({cartData.length} items):</span><span className="font-semibold">₹{calculations.subtotal.toFixed(2)}</span></div>
                 <div className="flex justify-between items-center"><span className="text-gray-600">Taxes (18% GST):</span><span className="font-semibold">₹{calculations.tax.toFixed(2)}</span></div>
-                <div className="flex justify-between items-center"><span className="text-gray-600">Delivery charges:</span><span className="font-semibold">₹{calculations.delivery.toFixed(2)}</span></div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">
+                    Delivery charges{formData.state ? ` (${isTamilNaduDelivery ? 'Tamil Nadu' : 'Outstation'})` : ''}:
+                  </span>
+                  <span className="font-semibold">₹{calculations.delivery.toFixed(2)}</span>
+                </div>
                 {appliedCoupon && calculations.discount > 0 && (
                   <div className="flex justify-between items-center text-green-600"><span>Discount ({appliedCoupon.code}):</span><span className="font-bold">-₹{calculations.discount.toFixed(2)}</span></div>
                 )}
@@ -638,7 +682,7 @@ const NewCheckout = () => {
                   <span className="text-sm text-gray-700">I agree to the <a href="/terms" className="text-blue-600 hover:text-yellow-500 underline">Terms and Conditions</a></span>
                 </label>
               </div>
-              <button onClick={handlePayment} 
+              <button onClick={handlePayment}
               className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-white py-4 px-6 rounded-xl hover:from-yellow-500 hover:to-yellow-700 transition-all duration-300 font-bold flex items-center justify-center gap-3 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:scale-100 shadow-lg hover:shadow-xl">
                 {loading
                   ? <><FaSpinner className="w-5 h-5 animate-spin" />Processing Payment...</>

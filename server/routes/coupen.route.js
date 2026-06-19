@@ -3,7 +3,9 @@
   getAllCoupons,
   getCouponById,
   updateCoupon,
-  deleteCoupon } = require("./controller_import");
+  deleteCoupon,
+  createBulkCoupons,
+  markCouponAsUsed } = require("./controller_import");
 
 const router = require("express").Router();
 
@@ -14,5 +16,7 @@ router.get('/',  getAllCoupons);
 router.get('/:id',  getCouponById);
 router.put('/:id',  updateCoupon);
 router.delete('/:id', deleteCoupon);
+router.post('/bulk', createBulkCoupons);
+router.patch('/used/:id', markCouponAsUsed);
 
 module.exports = router;

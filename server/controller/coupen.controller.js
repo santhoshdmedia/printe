@@ -1,5 +1,5 @@
 const Coupon = require('../modals/coupen.modals');
-
+const crypto = require('crypto');
 // Helper: Validate date
 function isValidDate(date) {
   return date && !isNaN(new Date(date).getTime());
@@ -387,6 +387,8 @@ const applyCoupon = async (req, res) => {
   }
 };
 
+
+
 // Get all coupons (Admin only)
 const getAllCoupons = async (req, res) => {
   try {
@@ -683,6 +685,182 @@ const markCouponAsUsed = async (req, res) => {
   }
 };
 
+
+// Helper: Generate a random alphanumeric suffix
+function generateRandomSuffix(length = 6) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  const bytes = crypto.randomBytes(length);
+  for (let i = 0; i < length; i++) {
+    result += chars[bytes[i] % chars.length];
+  }
+  return result;
+}
+
+// Helper: Generate a single unique code with prefix, checking DB + in-memory batch set
+async function generateUniqueCode(prefix, existingCodesSet, suffixLength = 6, maxAttempts = 20) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const code = `${prefix}-${generateRandomSuffix(suffixLength)}`.toUpperCase();
+
+    if (existingCodesSet.has(code)) {
+      continue; // collision within this batch, retry
+    }
+
+    const exists = await Coupon.findOne({ code });
+    if (!exists) {
+      return code;
+    }
+  }
+  throw new Error('Failed to generate a unique coupon code after multiple attempts');
+}
+
+// Create multiple single-use coupons with a common prefix (Admin only)
+const createBulkCoupons = async (req, res) => {
+  try {
+    const {
+      prefix,
+      count = 1,
+      discountType,
+      Customer_discountValue,
+      Dealer_discountValue,
+      Corporate_discountValue,
+      discountTiers,
+      minimumOrderAmount = 0,
+      maximumDiscount = null,
+      startDate,
+      endDate,
+      isActive = true,
+      applicableProducts = [],
+      excludedProducts = [],
+      applicableCategories = [],
+      suffixLength = 6
+    } = req.body;
+
+    // ---- Validation ----
+    if (!prefix || typeof prefix !== 'string' || !prefix.trim()) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid prefix' });
+    }
+
+    if (!discountType || !startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide discountType, startDate, and endDate'
+      });
+    }
+
+    const numCount = parseInt(count, 10);
+    if (!Number.isInteger(numCount) || numCount < 1 || numCount > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Count must be an integer between 1 and 100'
+      });
+    }
+
+    if (!isValidDate(startDate) || !isValidDate(endDate)) {
+      return res.status(400).json({ success: false, message: 'Invalid date format' });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (end <= start) {
+      return res.status(400).json({ success: false, message: 'End date must be after start date' });
+    }
+
+    // Sanitize prefix: alphanumeric + hyphen only
+    const cleanPrefix = prefix.trim().replace(/[^a-zA-Z0-9-]/g, '').toUpperCase();
+    if (!cleanPrefix) {
+      return res.status(400).json({ success: false, message: 'Prefix must contain alphanumeric characters' });
+    }
+
+    // ---- Build base coupon data (shared across all generated coupons) ----
+    const baseCouponData = {
+      discountType,
+      minimumOrderAmount,
+      maximumDiscount,
+      startDate: start,
+      endDate: end,
+      usageLimit: 1,        // single-use coupon => only usable once
+      singleUse: true,      // also track per-user usage flag
+      isActive,
+      applicableProducts,
+      excludedProducts,
+      applicableCategories
+    };
+
+    if (discountType === 'tiered_quantity') {
+      if (!discountTiers || !Array.isArray(discountTiers) || discountTiers.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide discountTiers for tiered_quantity discount type'
+        });
+      }
+      baseCouponData.discountTiers = discountTiers;
+    } else {
+      if (
+        Customer_discountValue === undefined ||
+        Dealer_discountValue === undefined ||
+        Corporate_discountValue === undefined
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide Customer_discountValue, Dealer_discountValue, and Corporate_discountValue'
+        });
+      }
+      baseCouponData.Customer_discountValue = Customer_discountValue;
+      baseCouponData.Dealer_discountValue = Dealer_discountValue;
+      baseCouponData.Corporate_discountValue = Corporate_discountValue;
+    }
+
+    // ---- Generate unique codes ----
+    const generatedCodes = new Set();
+    const couponsToCreate = [];
+
+    for (let i = 0; i < numCount; i++) {
+      const code = await generateUniqueCode(cleanPrefix, generatedCodes, suffixLength);
+      generatedCodes.add(code);
+      couponsToCreate.push({
+        ...baseCouponData,
+        code
+      });
+    }
+
+    // ---- Insert all at once ----
+    // ordered: true ensures if a duplicate-key error occurs (rare race condition),
+    // it stops and reports clearly rather than silently skipping.
+    const createdCoupons = await Coupon.insertMany(couponsToCreate, { ordered: true });
+
+    return res.status(201).json({
+      success: true,
+      message: `${createdCoupons.length} coupon(s) created successfully`,
+      data: {
+        count: createdCoupons.length,
+        codes: createdCoupons.map(c => c.code),
+        coupons: createdCoupons
+      }
+    });
+
+  } catch (error) {
+    console.error('Create bulk coupons error:', error);
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'A duplicate coupon code was generated. Please retry.'
+      });
+    }
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ success: false, message: messages.join(', ') });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Something went wrong while creating bulk coupons'
+    });
+  }
+};
+
 module.exports = {
   applyCoupon,
   createCoupon,
@@ -690,5 +868,6 @@ module.exports = {
   getCouponById,
   updateCoupon,
   deleteCoupon,
-  markCouponAsUsed
+  markCouponAsUsed,
+  createBulkCoupons
 };

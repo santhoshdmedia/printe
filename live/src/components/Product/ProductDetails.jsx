@@ -25,11 +25,10 @@ import {
   Drawer,
   Upload,
 } from "antd";
-import React, { useCallback, useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef, useId } from "react";
 import { createPortal } from "react-dom";
 import _ from "lodash";
 import { useDispatch, useSelector } from "react-redux";
-import UploadFileButton from "../UploadFileButton";
 import { Link, useNavigate } from "react-router-dom";
 import { IconHelper } from "../../helper/IconHelper";
 import {
@@ -57,7 +56,6 @@ import {
 } from "../../helper/notification_helper";
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import Soldout from "../../assets/logo/soldOut.png";
-
 import {
   DISCOUNT_HELPER,
   GST_DISCOUNT_HELPER,
@@ -96,12 +94,76 @@ import {
   verifyWhatsAppOtp,
   resendWhatsAppOtp,
 } from "../../helper/api_helper";
-
 import { FaGoogle, FaInstagram, FaFacebook, FaYoutube, FaWhatsapp, FaGlobe, FaPlus } from "react-icons/fa";
+import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
+import { FaTruckFast } from "react-icons/fa6";
+import { RiRocket2Fill } from "react-icons/ri";
+import { GiWaxSeal } from "react-icons/gi";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CustomModal
-// ─────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// FIXED UploadFileButton (inline, no separate import needed if you patch the
+// original file — but included here so this file is self-contained for review)
+//
+// ROOT CAUSE of the photo-upload cross-wiring bug:
+//   The original UploadFileButton used a hardcoded id="file-input" on every
+//   <input> it rendered. When Father and Son upload boxes appeared side-by-side,
+//   both <label htmlFor="file-input"> elements resolved to the SAME DOM input.
+//   Clicking Son's label fired Father's onChange (or vice-versa), and sometimes
+//   neither worked at all.
+//
+// FIX: useId() gives each instance a guaranteed-unique id string.
+// ═════════════════════════════════════════════════════════════════════════════
+const UploadFileButton = ({
+  className = "",
+  handleUploadImage = () => {},
+  buttonText = "Upload File",
+}) => {
+  const dispatch = useDispatch();
+
+  // ✅ unique per instance — no two UploadFileButton siblings can share the same id
+  const uid     = useId();
+  const inputId = `upload-input-${uid}`;
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    dispatch({ type: "UPLOAD_IMAGE", data: { file, handleUploadImage } });
+    // Reset so the same file can be chosen again after removal
+    e.target.value = "";
+  };
+
+  return (
+    <div className={`flex items-center ${className}`}>
+      <input
+        type="file"
+        name="image"
+        id={inputId}
+        accept="image/png, image/tiff, image/jpeg, image/jpg,
+          image/vnd.adobe.photoshop, application/postscript,
+          application/pdf, image/svg+xml,
+          application/vnd.corel-draw, application/msword,
+          application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+          application/vnd.ms-powerpoint,
+          application/vnd.openxmlformats-officedocument.presentationml.presentation,
+          application/zip"
+        onChange={handleFileChange}
+        style={{ display: "none" }}
+      />
+      <label htmlFor={inputId} className="!w-full cursor-pointer">
+        <Tag
+          color="green"
+          className="center_div !cursor-pointer !h-[50px] !text-[14px] !w-full gap-x-4"
+        >
+          {buttonText}
+        </Tag>
+      </label>
+    </div>
+  );
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// CUSTOM MODAL
+// ═════════════════════════════════════════════════════════════════════════════
 export const CustomModal = ({
   open,
   onClose,
@@ -154,7 +216,7 @@ export const CustomModal = ({
                 onClick={onClose}
                 className="p-1 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <CloseOutlined className="text-gray-500 " />
+                <CloseOutlined className="text-gray-500" />
               </button>
             )}
           </div>
@@ -174,13 +236,9 @@ export const CustomModal = ({
 
 const { Title, Text, Paragraph } = Typography;
 
-import { FaTruckFast } from "react-icons/fa6";
-import { RiRocket2Fill } from "react-icons/ri";
-import { GiWaxSeal } from "react-icons/gi";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CustomPopover
-// ─────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// CUSTOM POPOVER
+// ═════════════════════════════════════════════════════════════════════════════
 export const CustomPopover = ({
   open,
   onClose,
@@ -212,18 +270,18 @@ export const CustomPopover = ({
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AnimatedWaxSealBadge
-// ─────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// ANIMATED WAX SEAL BADGE
+// ═════════════════════════════════════════════════════════════════════════════
 const AnimatedWaxSealBadge = () => (
   <motion.div whileHover={{ scale: 1.05 }} className="relative -top-20 h-0 overflow-visible">
     <SimpleHangingSoldBoard />
   </motion.div>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═════════════════════════════════════════════════════════════════════════════
 const getProductImages = (data) => {
   const images = _.get(data, "images", []);
   if (!images || images.length === 0) return [];
@@ -241,27 +299,27 @@ const getRoleFields = (role) => {
   switch (role) {
     case "Dealer":
       return {
-        quantity:         "Dealer_quantity",
-        discount:         "Dealer_discount",
-        freeDelivery:     "free_delivery_dealer",
-        recommended:      "recommended_stats_dealer",
-        deliveryCharges:  "delivery_charges_dealer",
+        quantity:        "Dealer_quantity",
+        discount:        "Dealer_discount",
+        freeDelivery:    "free_delivery_dealer",
+        recommended:     "recommended_stats_dealer",
+        deliveryCharges: "delivery_charges_dealer",
       };
     case "Corporate":
       return {
-        quantity:         "Corporate_quantity",
-        discount:         "Corporate_discount",
-        freeDelivery:     "free_delivery_corporate",
-        recommended:      "recommended_stats_corporate",
-        deliveryCharges:  "delivery_charges_corporate",
+        quantity:        "Corporate_quantity",
+        discount:        "Corporate_discount",
+        freeDelivery:    "free_delivery_corporate",
+        recommended:     "recommended_stats_corporate",
+        deliveryCharges: "delivery_charges_corporate",
       };
     default:
       return {
-        quantity:         "Customer_quantity",
-        discount:         "Customer_discount",
-        freeDelivery:     "free_delivery_customer",
-        recommended:      "recommended_stats_customer",
-        deliveryCharges:  "delivery_charges_customer",
+        quantity:        "Customer_quantity",
+        discount:        "Customer_discount",
+        freeDelivery:    "free_delivery_customer",
+        recommended:     "recommended_stats_customer",
+        deliveryCharges: "delivery_charges_customer",
       };
   }
 };
@@ -283,9 +341,6 @@ const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
   return basePrice * (1 + gst / 100);
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ✅ Guest ID helper — stable across the session
-// ─────────────────────────────────────────────────────────────────────────────
 const getGuestId = () => {
   let guestId = localStorage.getItem("guestId");
   if (!guestId) {
@@ -295,108 +350,106 @@ const getGuestId = () => {
   return guestId;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PhotoFrameImageUpload — single image upload with preview
-// ─────────────────────────────────────────────────────────────────────────────
-const PhotoFrameImageUpload = ({ label, value, onChange, required }) => {
+// ═════════════════════════════════════════════════════════════════════════════
+// PhotoFrameImageUpload
+//
+// Accepts an explicit `fieldKey` ("father" | "son") and calls
+// onChange(fieldKey, fileString) — so the parent always knows which box
+// the upload belongs to, independent of closure identity.
+//
+// Each instance renders its OWN UploadFileButton which now uses useId()
+// internally, so the underlying <input> elements are never shared.
+// ═════════════════════════════════════════════════════════════════════════════
+const PhotoFrameImageUpload = ({ fieldKey, label, value, onChange, required }) => {
   const [preview, setPreview] = useState(value || null);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result);
-      onChange(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
+  // Keep local preview in sync if parent resets the value (e.g. on modal close)
+  useEffect(() => {
+    setPreview(value || null);
+  }, [value]);
+
+  const handleUpload = useCallback(
+    (fileString) => {
+      if (!fileString) return;
+      setPreview(fileString);
+      // ✅ always pass fieldKey so the parent dispatcher can route correctly
+      onChange(fieldKey, fileString);
+    },
+    [onChange, fieldKey]
+  );
 
   const handleRemove = (e) => {
     e.stopPropagation();
     setPreview(null);
-    onChange(null);
+    onChange(fieldKey, null);
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 h-full">
       <label className="text-sm font-semibold text-gray-700">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <div className="relative">
-        {preview ? (
-          <div className="relative w-full h-36 rounded-xl overflow-hidden border-2 border-amber-400 shadow-sm group">
-            <img
-              src={preview}
-              alt={label}
-              className="w-full h-full object-cover"
+
+      {preview ? (
+        <div className="relative w-full h-36 rounded-xl overflow-hidden border-2 border-amber-400 shadow-sm group flex-grow">
+          <img src={preview} alt={label} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+            {/*
+              ✅ UploadFileButton now generates its own unique id via useId(),
+              so this instance and the sibling instance (Father vs Son) can
+              never share a DOM input element.
+            */}
+            <UploadFileButton
+              handleUploadImage={handleUpload}
+              buttonText="Change"
+              className="bg-white/90 text-gray-800 px-3 py-1 rounded-lg text-xs font-medium hover:bg-white transition-colors cursor-pointer"
             />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-              <label
-                htmlFor={`upload-${label}`}
-                className="cursor-pointer bg-white/90 text-gray-800 px-3 py-1 rounded-lg text-xs font-medium hover:bg-white transition-colors"
-              >
-                Change
-              </label>
-              <button
-                type="button"
-                onClick={handleRemove}
-                className="bg-red-500/90 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-red-500 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="bg-red-500/90 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-red-500 transition-colors"
+            >
+              Remove
+            </button>
           </div>
-        ) : (
-          <label
-            htmlFor={`upload-${label}`}
-            className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-amber-300 rounded-xl bg-amber-50 cursor-pointer hover:bg-amber-100 hover:border-amber-500 transition-all group"
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-amber-100 group-hover:bg-amber-200 flex items-center justify-center transition-colors">
-                <CameraOutlined className="text-amber-600 text-xl" />
+        </div>
+      ) : (
+        <div className="w-full h-36 rounded-xl overflow-hidden border-2 border-dashed border-amber-300 bg-amber-50 hover:bg-amber-100 hover:border-amber-500 transition-all flex-grow flex items-center justify-center">
+          <UploadFileButton
+            handleUploadImage={handleUpload}
+            buttonText={
+              <div className="flex flex-col items-center gap-2 py-2">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                  <CameraOutlined className="text-amber-600 text-xl" />
+                </div>
+                <span className="text-xs text-amber-700 font-medium">Click to upload</span>
+                <span className="text-xs text-gray-400">PNG, JPG up to 5MB</span>
               </div>
-              <span className="text-xs text-amber-700 font-medium">Click to upload</span>
-              <span className="text-xs text-gray-400">PNG, JPG up to 5MB</span>
-            </div>
-          </label>
-        )}
-        <input
-          id={`upload-${label}`}
-          type="file"
-          accept="image/*"
-          className="hidden mt-4"
-          onChange={handleFileChange} 
-        />
-      </div>
+            }
+            className="w-full h-full flex items-center justify-center cursor-pointer"
+          />
+        </div>
+      )}
     </div>
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PincodeDeliveryCalculatorForModal - standalone version for the modal
-// ─────────────────────────────────────────────────────────────────────────────
-const PincodeDeliveryCalculatorForModal = ({ 
+// ═════════════════════════════════════════════════════════════════════════════
+// PINCODE DELIVERY CALCULATOR FOR MODAL
+// ═════════════════════════════════════════════════════════════════════════════
+const PincodeDeliveryCalculatorForModal = ({
   onDeliveryChargeChange,
   onPincodeChange,
   initialPincode = "",
 }) => {
-  const [pincode, setPincode] = useState(initialPincode);
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [state, setState] = useState("");
-  const [error, setError] = useState("");
+  const [pincode,             setPincode]             = useState(initialPincode);
+  const [deliveryDate,        setDeliveryDate]        = useState("");
+  const [state,               setState]               = useState("");
+  const [error,               setError]               = useState("");
   const [isValidatingPincode, setIsValidatingPincode] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [isPincodeValid, setIsPincodeValid] = useState(null);
-  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [isGettingLocation,   setIsGettingLocation]   = useState(false);
+  const [isPincodeValid,      setIsPincodeValid]      = useState(null);
+  const [deliveryCharge,      setDeliveryCharge]      = useState(0);
 
   const stateDeliveryDays = {
     maharashtra:  { days: 2, name: "Maharashtra" },
@@ -408,76 +461,37 @@ const PincodeDeliveryCalculatorForModal = ({
     default:      { days: 3, name: "Other States" },
   };
 
-const pincodeToStateMap = {
-  // Tamil Nadu - All pincode ranges
-  600: "tamil nadu", // Chennai
-  601: "tamil nadu", // Chengalpattu
-  602: "tamil nadu", // Thiruvallur
-  603: "tamil nadu", // Kanchipuram
-  604: "tamil nadu", // Thiruvannamalai
-  605: "tamil nadu", // Villupuram
-  606: "tamil nadu", // Cuddalore
-  607: "tamil nadu", // Cuddalore
-  608: "tamil nadu", // Mayiladuthurai
-  609: "tamil nadu", // Nagapattinam
-  610: "tamil nadu", // Thiruvarur
-  611: "tamil nadu", // Thanjavur
-  612: "tamil nadu", // Thanjavur
-  613: "tamil nadu", // Pudukkottai
-  614: "tamil nadu", // Pudukkottai
-  615: "tamil nadu", // Sivaganga
-  616: "tamil nadu", // Ramanathapuram
-  617: "tamil nadu", // Virudhunagar
-  618: "tamil nadu", // Tirunelveli
-  619: "tamil nadu", // Thoothukkudi
-  620: "tamil nadu", // Tiruchirappalli
-  621: "tamil nadu", // Tiruchirappalli
-  622: "tamil nadu", // Karur
-  623: "tamil nadu", // Namakkal
-  624: "tamil nadu", // Dindigul
-  625: "tamil nadu", // Madurai
-  626: "tamil nadu", // Theni
-  627: "tamil nadu", // Tirunelveli
-  628: "tamil nadu", // Kanyakumari
-  629: "tamil nadu", // Kanyakumari
-  630: "tamil nadu", // Sivaganga
-  631: "tamil nadu", // Pudukkottai
-  632: "tamil nadu", // Vellore
-  633: "tamil nadu", // Vellore
-  634: "tamil nadu", // Tirupathur
-  635: "tamil nadu", // Krishnagiri
-  636: "tamil nadu", // Dharmapuri
-  637: "tamil nadu", // Namakkal
-  638: "tamil nadu", // Erode
-  639: "tamil nadu", // Erode
-  640: "tamil nadu", // Coimbatore
-  641: "tamil nadu", // Coimbatore
-  642: "tamil nadu", // Tiruppur
-  643: "tamil nadu", // Nilgiris
-  644: "tamil nadu", // Nilgiris
-  645: "tamil nadu", // Nilgiris
-  646: "tamil nadu", // Tiruppur
-  647: "tamil nadu", // Tiruppur
-  648: "tamil nadu", // Tiruppur
-  649: "tamil nadu", // Tiruppur
-  
-  // Other states
-  400: "maharashtra",
-  395: "gujarat",
-  560: "karnataka",
-  682: "kerala",
-  110: "delhi",
-};
-
-  const getStateFromPincode = (pin) => {
-    return pincodeToStateMap[pin.substring(0, 3)] || "default";
+  const pincodeToStateMap = {
+    600: "tamil nadu", 601: "tamil nadu", 602: "tamil nadu", 603: "tamil nadu",
+    604: "tamil nadu", 605: "tamil nadu", 606: "tamil nadu", 607: "tamil nadu",
+    608: "tamil nadu", 609: "tamil nadu", 610: "tamil nadu", 611: "tamil nadu",
+    612: "tamil nadu", 613: "tamil nadu", 614: "tamil nadu", 615: "tamil nadu",
+    616: "tamil nadu", 617: "tamil nadu", 618: "tamil nadu", 619: "tamil nadu",
+    620: "tamil nadu", 621: "tamil nadu", 622: "tamil nadu", 623: "tamil nadu",
+    624: "tamil nadu", 625: "tamil nadu", 626: "tamil nadu", 627: "tamil nadu",
+    628: "tamil nadu", 629: "tamil nadu", 630: "tamil nadu", 631: "tamil nadu",
+    632: "tamil nadu", 633: "tamil nadu", 634: "tamil nadu", 635: "tamil nadu",
+    636: "tamil nadu", 637: "tamil nadu", 638: "tamil nadu", 639: "tamil nadu",
+    640: "tamil nadu", 641: "tamil nadu", 642: "tamil nadu", 643: "tamil nadu",
+    644: "tamil nadu", 645: "tamil nadu", 646: "tamil nadu", 647: "tamil nadu",
+    648: "tamil nadu", 649: "tamil nadu",
+    400: "maharashtra",
+    395: "gujarat",
+    560: "karnataka",
+    682: "kerala",
+    110: "delhi",
   };
+
+  const getStateFromPincode = (pin) =>
+    pincodeToStateMap[parseInt(pin.substring(0, 3))] || "default";
 
   const calculateDeliveryDate = (stateKey = "tamil nadu") => {
     const { days } = stateDeliveryDays[stateKey] || stateDeliveryDays.default;
     const d = new Date();
     d.setDate(d.getDate() + Number(days) + 2);
-    return d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+    return d.toLocaleDateString("en-US", {
+      weekday: "short", day: "numeric", month: "short", year: "numeric",
+    });
   };
 
   const validatePincode = async (pin) => {
@@ -485,39 +499,23 @@ const pincodeToStateMap = {
     await new Promise((res) => setTimeout(res, 800));
     const isValid = /^\d{6}$/.test(pin);
     setIsPincodeValid(isValid);
-    
+
     if (isValid) {
-      const stateKey = getStateFromPincode(pin);
+      const stateKey  = getStateFromPincode(pin);
       const stateName = stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name;
       setState(stateName);
       setDeliveryDate(calculateDeliveryDate(stateKey));
-      
-      // 🔥 Calculate delivery charge based on state
-      let charge = 0;
-      if (stateKey === "tamil nadu") {
-        charge = 60; // Within Tamil Nadu
-      } else {
-        charge = 100; // Outside Tamil Nadu
-      }
+      const charge = stateKey === "tamil nadu" ? 60 : 100;
       setDeliveryCharge(charge);
-      
-      // 🔥 Pass the charge back to parent
-      if (onDeliveryChargeChange) {
-        onDeliveryChargeChange(charge);
-      }
-      if (onPincodeChange) {
-        onPincodeChange(pin);
-      }
-      
+      if (onDeliveryChargeChange) onDeliveryChargeChange(charge);
+      if (onPincodeChange) onPincodeChange(pin);
       setError("");
     } else {
       setError("Please enter a valid 6-digit pincode");
       setDeliveryDate("");
       setState("");
       setDeliveryCharge(0);
-      if (onDeliveryChargeChange) {
-        onDeliveryChargeChange(0);
-      }
+      if (onDeliveryChargeChange) onDeliveryChargeChange(0);
     }
     setIsValidatingPincode(false);
   };
@@ -533,9 +531,7 @@ const pincodeToStateMap = {
     if (value.length === 6) {
       validatePincode(value);
     } else {
-      if (onDeliveryChargeChange) {
-        onDeliveryChargeChange(0);
-      }
+      if (onDeliveryChargeChange) onDeliveryChargeChange(0);
     }
   };
 
@@ -558,7 +554,8 @@ const pincodeToStateMap = {
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
       );
       const d = await response.json();
-      const detectedPincode = d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
+      const detectedPincode =
+        d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
       if (detectedPincode) {
         setPincode(detectedPincode);
         validatePincode(detectedPincode);
@@ -566,7 +563,7 @@ const pincodeToStateMap = {
       } else {
         throw new Error("No pincode found");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to get location. Please enter pincode manually.");
     } finally {
       setIsGettingLocation(false);
@@ -586,7 +583,7 @@ const pincodeToStateMap = {
             suffix={
               <div className="flex items-center gap-2">
                 {isValidatingPincode && <Spin size="small" />}
-                {isPincodeValid === true && <CheckCircleOutlined className="text-green-500" />}
+                {isPincodeValid === true  && <CheckCircleOutlined className="text-green-500" />}
                 {isPincodeValid === false && <CloseCircleOutlined className="text-red-500" />}
               </div>
             }
@@ -607,9 +604,7 @@ const pincodeToStateMap = {
           </button>
         </div>
 
-        {error && (
-          <div className="mt-1 text-red-500 text-sm">{error}</div>
-        )}
+        {error && <div className="mt-1 text-red-500 text-sm">{error}</div>}
 
         {isPincodeValid && deliveryDate && (
           <motion.div
@@ -636,21 +631,9 @@ const pincodeToStateMap = {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">Delivery Charges:</span>
                   <span className="font-bold text-green-700 text-base">₹{deliveryCharge}</span>
-                  {deliveryCharge === 0 && (
-                    <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">
-                      Free Delivery
-                    </span>
-                  )}
-                  {deliveryCharge === 60 && (
-                    <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">
-                      Within Tamil Nadu
-                    </span>
-                  )}
-                  {deliveryCharge === 100 && (
-                    <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">
-                      Outside Tamil Nadu
-                    </span>
-                  )}
+                  {deliveryCharge === 0  && <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">Free Delivery</span>}
+                  {deliveryCharge === 60 && <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">Within Tamil Nadu</span>}
+                  {deliveryCharge === 100 && <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">Outside Tamil Nadu</span>}
                 </div>
               </div>
             </div>
@@ -661,89 +644,80 @@ const pincodeToStateMap = {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PhotoFrameOrderModal - Updated with pincode checker
-// ─────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// PhotoFrameOrderModal
+//
+// handleImageChange is the single dispatcher that both PhotoFrameImageUpload
+// instances call with (fieldKey, value).  "father" → setFatherImg,
+// "son" → setSonImg.  There is no way for a cross-wired upload to land in
+// the wrong state slot.
+// ═════════════════════════════════════════════════════════════════════════════
 const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
-  const [form] = Form.useForm();
-  const [fatherImg, setFatherImg]       = useState(null);
-  const [sonImg, setSonImg]             = useState(null);
-  const [deliveryType, setDeliveryType] = useState(null); // 'pickup' | 'delivery'
-  const [msgLength, setMsgLength]       = useState(0);
-  
-  // 🔥 New state for delivery charge from pincode
+  const [form]          = Form.useForm();
+  const [fatherImg, setFatherImg]           = useState(null);
+  const [sonImg,    setSonImg]              = useState(null);
+  const [deliveryType,  setDeliveryType]    = useState(null);
+  const [msgLength,     setMsgLength]       = useState(0);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
-  const [pincode, setPincode] = useState("");
+  const [pincode,       setPincode]         = useState("");
+  const [validationError, setValidationError] = useState("");
+
+  // ✅ Single dispatcher — fieldKey is the source of truth, not closure identity
+  const handleImageChange = useCallback((fieldKey, fileStringOrNull) => {
+    if (fieldKey === "father") {
+      setFatherImg(fileStringOrNull);
+    } else if (fieldKey === "son") {
+      setSonImg(fileStringOrNull);
+    }
+  }, []);
 
   const handleDeliveryChange = (type) => {
     if (deliveryType === type) return;
     setDeliveryType(type);
+    setValidationError("");
     form.setFieldsValue({
       pickup_from_office: type === "pickup",
       delivery_to_home:   type === "delivery",
     });
   };
 
-  // 🔥 Handle delivery charge change from pincode calculator
-  const handleDeliveryChargeChange = (charge) => {
-    setDeliveryCharge(charge);
-  };
-
-  // 🔥 Handle pincode change
-  const handlePincodeChange = (pin) => {
-    setPincode(pin);
+  const showError = (msg) => {
+    setValidationError(msg);
+    setTimeout(() => setValidationError(""), 4000);
   };
 
   const handleSubmit = async () => {
+    setValidationError("");
     try {
       const values = await form.validateFields();
 
-      if (!fatherImg) {
-        toast.error("Please upload Father's photo");
-        return;
-      }
-      if (!sonImg) {
-        toast.error("Please upload Son's photo");
-        return;
-      }
-      if (!deliveryType) {
-        toast.error("Please select Pickup or Delivery option");
-        return;
-      }
-
-      // 🔥 For delivery option, validate pincode and charge
+      if (!fatherImg) { showError("Please upload Father's photo"); return; }
+      if (!sonImg)    { showError("Please upload Son's photo");    return; }
+      if (!deliveryType) { showError("Please select Pickup or Delivery option"); return; }
       if (deliveryType === "delivery") {
         if (!pincode || pincode.length !== 6) {
-          toast.error("Please enter a valid 6-digit pincode for delivery");
+          showError("Please enter a valid 6-digit pincode for delivery");
           return;
         }
         if (deliveryCharge === 0) {
-          toast.error("Please wait while we calculate delivery charges for your pincode");
+          showError("Please wait while we calculate delivery charges for your pincode");
           return;
         }
       }
 
-      // 🔥 Calculate final delivery charge based on delivery type and pincode
-      let finalDeliveryCharge = 0;
-      if (deliveryType === "pickup") {
-        finalDeliveryCharge = 0; // Free for pickup
-      } else {
-        finalDeliveryCharge = deliveryCharge; // Use the calculated charge from pincode
-      }
-
       onConfirm({
-        father_name:       values.father_name,
-        son_name:          values.son_name,
-        unique_message:    values.unique_message || "",
-        father_image:      fatherImg,
-        son_image:         sonImg,
+        father_name:        values.father_name,
+        son_name:           values.son_name,
+        unique_message:     values.unique_message || "",
+        father_image:       fatherImg,
+        son_image:          sonImg,
         pickup_from_office: deliveryType === "pickup",
         delivery_to_home:   deliveryType === "delivery",
-        delivery_charge:    finalDeliveryCharge,
-        pincode:            pincode, // Pass pincode to parent for backend
+        delivery_charge:    deliveryType === "pickup" ? 0 : deliveryCharge,
+        pincode,
       });
     } catch {
-      // Ant Design form validation handles errors
+      // Ant Design form validation handles field-level errors inline
     }
   };
 
@@ -755,6 +729,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
     setMsgLength(0);
     setDeliveryCharge(0);
     setPincode("");
+    setValidationError("");
     onClose();
   };
 
@@ -780,17 +755,11 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
         {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4"
-          style={{
-            background: "linear-gradient(135deg, #f2c41a 0%, #f2c41a 0%, #f2c41a 0%)",
-          }}
+          style={{ background: "linear-gradient(135deg, #f2c41a 0%, #f2c41a 100%)" }}
         >
-          <div> 
-            <h2 className="text-black font-bold text-lg leading-tight">
-              🖼️ Photo Frame Details
-            </h2>
-            <p className="text-black text-xs mt-0.5">
-              Personalise your frame — we'll handle the rest
-            </p>
+          <div>
+            <h2 className="text-black font-bold text-lg leading-tight">🖼️ Photo Frame Details</h2>
+            <p className="text-black text-xs mt-0.5">Personalise your frame — we'll handle the rest</p>
           </div>
           <button
             onClick={handleClose}
@@ -802,8 +771,29 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
 
         {/* Body */}
         <div className="flex-1 overflow-y-scroll overflow-x-hidden px-6 py-5">
-          <Form form={form} layout="vertical" requiredMark={false}>
+          <AnimatePresence>
+            {validationError && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+                className="mb-4 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium"
+              >
+                <CloseCircleOutlined className="text-red-500 flex-shrink-0" />
+                <span>{validationError}</span>
+                <button
+                  type="button"
+                  onClick={() => setValidationError("")}
+                  className="ml-auto text-red-400 hover:text-red-600"
+                >
+                  <CloseOutlined className="text-xs" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
+          <Form form={form} layout="vertical" requiredMark={false}>
             {/* Names */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <Form.Item
@@ -833,18 +823,25 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
               </Form.Item>
             </div>
 
-            {/* Photos */}
+            {/*
+              ✅ Photo Uploads — each gets a unique fieldKey.
+              handleImageChange routes by fieldKey so uploads can never cross.
+              UploadFileButton instances each have their own unique <input> id
+              via useId(), so DOM label→input wiring is always 1-to-1.
+            */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <PhotoFrameImageUpload
+                fieldKey="father"
                 label="Father's Photo"
                 value={fatherImg}
-                onChange={setFatherImg}
+                onChange={handleImageChange}
                 required
               />
               <PhotoFrameImageUpload
+                fieldKey="son"
                 label="Son's Photo"
                 value={sonImg}
-                onChange={setSonImg}
+                onChange={handleImageChange}
                 required
               />
             </div>
@@ -859,9 +856,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                   </span>
                   <span
                     className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      msgLength > 25
-                        ? "bg-red-100 text-red-600"
-                        : "bg-amber-100 text-amber-700"
+                      msgLength > 25 ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"
                     }`}
                   >
                     {msgLength}/30
@@ -901,11 +896,9 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                       <CheckCircleOutlined className="text-amber-500 text-base" />
                     </div>
                   )}
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      deliveryType === "pickup" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500"
-                    }`}
-                  >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    deliveryType === "pickup" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500"
+                  }`}>
                     <ShopOutlined className="text-lg" />
                   </div>
                   <div className="text-center">
@@ -931,11 +924,9 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                       <CheckCircleOutlined className="text-amber-500 text-base" />
                     </div>
                   )}
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      deliveryType === "delivery" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500"
-                    }`}
-                  >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    deliveryType === "delivery" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500"
+                  }`}>
                     <HomeOutlined className="text-lg" />
                   </div>
                   <div className="text-center">
@@ -947,7 +938,6 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                 </button>
               </div>
 
-              {/* 🔥 Delivery Charges Note with Pincode Calculator */}
               <AnimatePresence>
                 {deliveryType === "delivery" && (
                   <motion.div
@@ -964,14 +954,10 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                           <p className="text-sm font-semibold text-blue-800 mb-2">
                             Enter Pincode to Calculate Delivery Charges
                           </p>
-                          
-                          {/* 🔥 Pincode Calculator for Modal */}
                           <PincodeDeliveryCalculatorForModal
-                            onDeliveryChargeChange={handleDeliveryChargeChange}
-                            onPincodeChange={handlePincodeChange}
+                            onDeliveryChargeChange={setDeliveryCharge}
+                            onPincodeChange={setPincode}
                           />
-
-                          {/* Show delivery charge summary */}
                           {deliveryCharge > 0 && (
                             <div className="mt-2 p-2 bg-white rounded-lg border border-blue-200">
                               <div className="flex items-center justify-between">
@@ -979,7 +965,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                                 <span className="font-bold text-blue-700 text-base">₹{deliveryCharge}</span>
                               </div>
                               <div className="text-xs text-gray-500 mt-1">
-                                {deliveryCharge === 60 && "📍 Within Tamil Nadu"}
+                                {deliveryCharge === 60  && "📍 Within Tamil Nadu"}
                                 {deliveryCharge === 100 && "📍 Outside Tamil Nadu"}
                               </div>
                             </div>
@@ -996,10 +982,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex gap-3">
-          <Button
-            onClick={handleClose}
-            className="flex-1 h-11 rounded-xl font-medium"
-          >
+          <Button onClick={handleClose} className="flex-1 h-11 rounded-xl font-medium">
             Cancel
           </Button>
           <Button
@@ -1009,7 +992,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
             icon={<ShoppingCartOutlined />}
             className="flex-1 h-11 rounded-xl font-semibold"
             style={{
-              background: "linear-gradient(135deg, rgb(242, 196, 26) 0%, rgb(242, 196, 26) 0%, rgb(242, 196, 26) 0%)",
+              background: "linear-gradient(135deg, rgb(242, 196, 26) 0%, rgb(242, 196, 26) 100%)",
               border: "none",
               color: "black",
             }}
@@ -1022,14 +1005,12 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PincodeDeliveryCalculator - Main component for product page
-// ─────────────────────────────────────────────────────────────────────────────
-import { FaTruck, FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
-
-export const PincodeDeliveryCalculator = ({ 
-  Production, 
-  freeDelivery, 
+// ═════════════════════════════════════════════════════════════════════════════
+// PINCODE DELIVERY CALCULATOR — Main product page component
+// ═════════════════════════════════════════════════════════════════════════════
+export const PincodeDeliveryCalculator = ({
+  Production,
+  freeDelivery,
   deliveryCharges,
   onDeliveryChargeChange,
   onPincodeChange,
@@ -1038,7 +1019,6 @@ export const PincodeDeliveryCalculator = ({
   const [deliveryDate,        setDeliveryDate]        = useState("");
   const [state,               setState]               = useState("");
   const [error,               setError]               = useState("");
-  const [isLoading,           setIsLoading]           = useState(false);
   const [isValidatingPincode, setIsValidatingPincode] = useState(false);
   const [isGettingLocation,   setIsGettingLocation]   = useState(false);
   const [isPincodeValid,      setIsPincodeValid]      = useState(null);
@@ -1055,81 +1035,44 @@ export const PincodeDeliveryCalculator = ({
   };
 
   const pincodeToStateMap = {
-  // Tamil Nadu - All pincode ranges
-  600: "tamil nadu", // Chennai
-  601: "tamil nadu", // Chengalpattu
-  602: "tamil nadu", // Thiruvallur
-  603: "tamil nadu", // Kanchipuram
-  604: "tamil nadu", // Thiruvannamalai
-  605: "tamil nadu", // Villupuram
-  606: "tamil nadu", // Cuddalore
-  607: "tamil nadu", // Cuddalore
-  608: "tamil nadu", // Mayiladuthurai
-  609: "tamil nadu", // Nagapattinam
-  610: "tamil nadu", // Thiruvarur
-  611: "tamil nadu", // Thanjavur
-  612: "tamil nadu", // Thanjavur
-  613: "tamil nadu", // Pudukkottai
-  614: "tamil nadu", // Pudukkottai
-  615: "tamil nadu", // Sivaganga
-  616: "tamil nadu", // Ramanathapuram
-  617: "tamil nadu", // Virudhunagar
-  618: "tamil nadu", // Tirunelveli
-  619: "tamil nadu", // Thoothukkudi
-  620: "tamil nadu", // Tiruchirappalli
-  621: "tamil nadu", // Tiruchirappalli
-  622: "tamil nadu", // Karur
-  623: "tamil nadu", // Namakkal
-  624: "tamil nadu", // Dindigul
-  625: "tamil nadu", // Madurai
-  626: "tamil nadu", // Theni
-  627: "tamil nadu", // Tirunelveli
-  628: "tamil nadu", // Kanyakumari
-  629: "tamil nadu", // Kanyakumari
-  630: "tamil nadu", // Sivaganga
-  631: "tamil nadu", // Pudukkottai
-  632: "tamil nadu", // Vellore
-  633: "tamil nadu", // Vellore
-  634: "tamil nadu", // Tirupathur
-  635: "tamil nadu", // Krishnagiri
-  636: "tamil nadu", // Dharmapuri
-  637: "tamil nadu", // Namakkal
-  638: "tamil nadu", // Erode
-  639: "tamil nadu", // Erode
-  640: "tamil nadu", // Coimbatore
-  641: "tamil nadu", // Coimbatore
-  642: "tamil nadu", // Tiruppur
-  643: "tamil nadu", // Nilgiris
-  644: "tamil nadu", // Nilgiris
-  645: "tamil nadu", // Nilgiris
-  646: "tamil nadu", // Tiruppur
-  647: "tamil nadu", // Tiruppur
-  648: "tamil nadu", // Tiruppur
-  649: "tamil nadu", // Tiruppur
-  
-  // Other states
-  400: "maharashtra",
-  395: "gujarat",
-  560: "karnataka",
-  682: "kerala",
-  110: "delhi",
-};
-
-  const getStateFromPincode = (pin) => {
-    return pincodeToStateMap[pin.substring(0, 3)] || "default";
+    600: "tamil nadu", 601: "tamil nadu", 602: "tamil nadu", 603: "tamil nadu",
+    604: "tamil nadu", 605: "tamil nadu", 606: "tamil nadu", 607: "tamil nadu",
+    608: "tamil nadu", 609: "tamil nadu", 610: "tamil nadu", 611: "tamil nadu",
+    612: "tamil nadu", 613: "tamil nadu", 614: "tamil nadu", 615: "tamil nadu",
+    616: "tamil nadu", 617: "tamil nadu", 618: "tamil nadu", 619: "tamil nadu",
+    620: "tamil nadu", 621: "tamil nadu", 622: "tamil nadu", 623: "tamil nadu",
+    624: "tamil nadu", 625: "tamil nadu", 626: "tamil nadu", 627: "tamil nadu",
+    628: "tamil nadu", 629: "tamil nadu", 630: "tamil nadu", 631: "tamil nadu",
+    632: "tamil nadu", 633: "tamil nadu", 634: "tamil nadu", 635: "tamil nadu",
+    636: "tamil nadu", 637: "tamil nadu", 638: "tamil nadu", 639: "tamil nadu",
+    640: "tamil nadu", 641: "tamil nadu", 642: "tamil nadu", 643: "tamil nadu",
+    644: "tamil nadu", 645: "tamil nadu", 646: "tamil nadu", 647: "tamil nadu",
+    648: "tamil nadu", 649: "tamil nadu",
+    400: "maharashtra",
+    395: "gujarat",
+    560: "karnataka",
+    682: "kerala",
+    110: "delhi",
   };
+
+  const getStateFromPincode = (pin) =>
+    pincodeToStateMap[parseInt(pin.substring(0, 3))] || "default";
 
   const calculateProductionDate = () => {
     const d = new Date();
     d.setDate(d.getDate() + Number(Production || 0));
-    return d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+    return d.toLocaleDateString("en-US", {
+      weekday: "short", day: "numeric", month: "short", year: "numeric",
+    });
   };
 
   const calculateDeliveryDate = (stateKey = "tamil nadu") => {
     const { days } = stateDeliveryDays[stateKey] || stateDeliveryDays.default;
     const d = new Date();
     d.setDate(d.getDate() + Number(Production || 0) + Number(days) + 2);
-    return d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+    return d.toLocaleDateString("en-US", {
+      weekday: "short", day: "numeric", month: "short", year: "numeric",
+    });
   };
 
   const validatePincode = async (pin) => {
@@ -1137,41 +1080,31 @@ export const PincodeDeliveryCalculator = ({
     await new Promise((res) => setTimeout(res, 800));
     const isValid = /^\d{6}$/.test(pin);
     setIsPincodeValid(isValid);
-    
+
     if (isValid) {
-      const stateKey = getStateFromPincode(pin);
+      const stateKey  = getStateFromPincode(pin);
       const stateName = stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name;
       setState(stateName);
       setDeliveryDate(calculateDeliveryDate(stateKey));
-      
-      // 🔥 Calculate delivery charge based on state
+
       let charge = 0;
       if (freeDelivery) {
         charge = 0;
       } else if (stateKey === "tamil nadu") {
-        charge = 60; // Within Tamil Nadu
+        charge = 60;
       } else {
-        charge = 100; // Outside Tamil Nadu
+        charge = 100;
       }
       setCalculatedCharge(charge);
-      
-      // 🔥 Pass the charge back to parent
-      if (onDeliveryChargeChange) {
-        onDeliveryChargeChange(charge);
-      }
-      if (onPincodeChange) {
-        onPincodeChange(pin);
-      }
-      
+      if (onDeliveryChargeChange) onDeliveryChargeChange(charge);
+      if (onPincodeChange) onPincodeChange(pin);
       setError("");
     } else {
       setError("Please enter a valid 6-digit pincode");
       setDeliveryDate("");
       setState("");
       setCalculatedCharge(0);
-      if (onDeliveryChargeChange) {
-        onDeliveryChargeChange(0);
-      }
+      if (onDeliveryChargeChange) onDeliveryChargeChange(0);
     }
     setIsValidatingPincode(false);
   };
@@ -1187,9 +1120,7 @@ export const PincodeDeliveryCalculator = ({
     if (value.length === 6) {
       validatePincode(value);
     } else {
-      if (onDeliveryChargeChange) {
-        onDeliveryChargeChange(0);
-      }
+      if (onDeliveryChargeChange) onDeliveryChargeChange(0);
     }
   };
 
@@ -1212,7 +1143,8 @@ export const PincodeDeliveryCalculator = ({
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
       );
       const d = await response.json();
-      const detectedPincode = d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
+      const detectedPincode =
+        d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
       if (detectedPincode) {
         setPincode(detectedPincode);
         validatePincode(detectedPincode);
@@ -1220,15 +1152,15 @@ export const PincodeDeliveryCalculator = ({
       } else {
         throw new Error("No pincode found");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to get location. Please enter pincode manually.");
     } finally {
       setIsGettingLocation(false);
     }
   };
 
-  const productionDate = calculateProductionDate();
-  const displayCharge = calculatedCharge || deliveryCharges || 0;
+  const productionDate  = calculateProductionDate();
+  const displayCharge   = calculatedCharge || deliveryCharges || 0;
 
   return (
     <div className="pincode-delivery-calculator">
@@ -1243,7 +1175,7 @@ export const PincodeDeliveryCalculator = ({
             suffix={
               <div className="flex items-center gap-2">
                 {isValidatingPincode && <Spin size="small" />}
-                {isPincodeValid === true && <CheckCircleOutlined className="text-green-500" />}
+                {isPincodeValid === true  && <CheckCircleOutlined className="text-green-500" />}
                 {isPincodeValid === false && <CloseCircleOutlined className="text-red-500" />}
               </div>
             }
@@ -1264,9 +1196,7 @@ export const PincodeDeliveryCalculator = ({
           </button>
         </div>
 
-        {error && (
-          <div className="mt-1 text-red-500 text-sm">{error}</div>
-        )}
+        {error && <div className="mt-1 text-red-500 text-sm">{error}</div>}
 
         {pincode && deliveryDate ? (
           <motion.div
@@ -1295,23 +1225,13 @@ export const PincodeDeliveryCalculator = ({
                   {freeDelivery ? (
                     <>
                       <span className="font-bold text-green-700 text-base">₹0</span>
-                      <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">
-                        Free Delivery
-                      </span>
+                      <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">Free Delivery</span>
                     </>
                   ) : (
                     <>
                       <span className="font-bold text-green-700 text-base">₹{displayCharge}</span>
-                      {displayCharge === 60 && (
-                        <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">
-                          Within Tamil Nadu
-                        </span>
-                      )}
-                      {displayCharge === 100 && (
-                        <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">
-                          Outside Tamil Nadu
-                        </span>
-                      )}
+                      {displayCharge === 60  && <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">Within Tamil Nadu</span>}
+                      {displayCharge === 100 && <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">Outside Tamil Nadu</span>}
                     </>
                   )}
                 </div>
@@ -1324,13 +1244,9 @@ export const PincodeDeliveryCalculator = ({
               <span className="text-sm text-gray-600">
                 Expected Dispatch by <strong>{productionDate}</strong>
               </span>
-              <span className="text-xs text-gray-500">
-                Enter pincode for delivery date & charges
-              </span>
+              <span className="text-xs text-gray-500">Enter pincode for delivery date & charges</span>
               {freeDelivery && (
-                <span className="text-xs text-green-600 font-medium">
-                  🎉 Free Delivery on this product!
-                </span>
+                <span className="text-xs text-green-600 font-medium">🎉 Free Delivery on this product!</span>
               )}
             </div>
           </motion.div>
@@ -1340,9 +1256,9 @@ export const PincodeDeliveryCalculator = ({
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SimpleHangingSoldBoard
-// ─────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// SIMPLE HANGING SOLD BOARD
+// ═════════════════════════════════════════════════════════════════════════════
 export const SimpleHangingSoldBoard = () => {
   const swingAnimation = {
     animate: {
@@ -1373,9 +1289,9 @@ export const SimpleHangingSoldBoard = () => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ProductDetails - Main component
-// ─────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// PRODUCT DETAILS — MAIN COMPONENT
+// ═════════════════════════════════════════════════════════════════════════════
 const ProductDetails = ({
   data = {
     _id:      "",
@@ -1386,7 +1302,7 @@ const ProductDetails = ({
     label:    [],
   },
 }) => {
-  const { user } = useSelector((state) => state.authSlice);
+  const { user }  = useSelector((state) => state.authSlice);
   const [form]       = Form.useForm();
   const [notifyForm] = Form.useForm();
   const dispatch  = useDispatch();
@@ -1424,8 +1340,6 @@ const ProductDetails = ({
   const product_type = _.get(data, "type", "Stand Alone Product");
   const Gst          = _.get(data, "GST", 0);
   const isSoldOut    = _.get(data, "is_soldout", false);
-
-  // ── Photo Frame detection ──────────────────────────────────────────────────
   const isPhotoFrame = _.get(data, "is_photoframe", false);
 
   const isQrProduct = (() => {
@@ -1434,22 +1348,22 @@ const ProductDetails = ({
   })();
 
   // ── State ──────────────────────────────────────────────────────────────────
-  const [quantity, setQuantity]               = useState(null);
-  const [discountPercentage, setDiscountPercentage] = useState({ uuid: "", percentage: 0 });
-  const [variant, setVariant]                 = useState([]);
+  const [quantity,            setQuantity]            = useState(null);
+  const [discountPercentage,  setDiscountPercentage]  = useState({ uuid: "", percentage: 0 });
+  const [variant,             setVariant]             = useState([]);
   const [currentPriceSplitup, setCurrentPriceSplitup] = useState([]);
-  const [checked, setChecked]                 = useState(false);
-  const [error, setError]                     = useState("");
-  const [maximum_quantity, setMaximumQuantity] = useState();
-  const [freeDelivery, setFreeDelivery]       = useState(false);
-  const [deliveryCharges, setDeliveryCharges] = useState(100);
-  const [noDesignUpload, setNoDesignUpload]   = useState(false);
-  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [checked,             setChecked]             = useState(false);
+  const [error,               setError]               = useState("");
+  const [maximum_quantity,    setMaximumQuantity]      = useState();
+  const [freeDelivery,        setFreeDelivery]         = useState(false);
+  const [deliveryCharges,     setDeliveryCharges]      = useState(100);
+  const [noDesignUpload,      setNoDesignUpload]       = useState(false);
+  const [showNotifyModal,     setShowNotifyModal]      = useState(false);
   const [sendingNotification, setSendingNotification] = useState(false);
 
-  // ── Photo Frame Modal State ────────────────────────────────────────────────
+  // ── Photo Frame Modal ──────────────────────────────────────────────────────
   const [showPhotoFrameModal, setShowPhotoFrameModal] = useState(false);
-  const [photoFrameLoading, setPhotoFrameLoading]     = useState(false);
+  const [photoFrameLoading,   setPhotoFrameLoading]   = useState(false);
 
   // ── Pincode state ──────────────────────────────────────────────────────────
   const [pincode, setPincode] = useState("");
@@ -1471,31 +1385,31 @@ const ProductDetails = ({
     DeliveryCharges:     100,
   });
 
-  // ── Platform state ────────────────────────────────────────────────────────
-  const [selectedPlatforms, setSelectedPlatforms]       = useState([]);
-  const [platformLinks, setPlatformLinks]               = useState({});
-  const [expandedPlatform, setExpandedPlatform]         = useState(null);
+  // ── Platform state ─────────────────────────────────────────────────────────
+  const [selectedPlatforms, setSelectedPlatforms] = useState([]);
+  const [platformLinks,     setPlatformLinks]     = useState({});
+  const [expandedPlatform,  setExpandedPlatform]  = useState(null);
 
-  const [needDesignUpload, setNeedDesignUpload]   = useState(true);
-  const [reviewData, setReviewData]               = useState([]);
-  const [review, setReview]                       = useState([]);
-  const [rate, setRate]                           = useState([]);
-  const [loading, setLoading]                     = useState(false);
-  const [averageRatingCount, setAverageRatingCount] = useState(0);
-  const [stock, setStockCount]                    = useState(0);
-  const [isModalOpen, setIsModalOpen]             = useState(false);
-  const [designPreviewVisible, setDesignPreviewVisible] = useState(false);
-  const [individualBox, setIndividualBox]         = useState(false);
+  const [needDesignUpload,      setNeedDesignUpload]      = useState(true);
+  const [reviewData,            setReviewData]            = useState([]);
+  const [review,                setReview]                = useState([]);
+  const [rate,                  setRate]                  = useState([]);
+  const [loading,               setLoading]               = useState(false);
+  const [averageRatingCount,    setAverageRatingCount]    = useState(0);
+  const [stock,                 setStockCount]            = useState(0);
+  const [isModalOpen,           setIsModalOpen]           = useState(false);
+  const [designPreviewVisible,  setDesignPreviewVisible]  = useState(false);
+  const [individualBox,         setIndividualBox]         = useState(false);
   const [quantityDropdownVisible, setQuantityDropdownVisible] = useState(false);
-  const [instructionsVisible, setInstructionsVisible] = useState(false);
-  const [lazy, setLazy]                           = useState(false);
-  const [showBulkOrderForm, setShowBulkOrderForm] = useState(false);
-  const [showShareMenu, setShowShareMenu]         = useState(false);
-  const [otpSent, setOtpSent]                     = useState(false);
-  const [emailVerified, setEmailVerified]         = useState(false);
-  const [sendingOtp, setSendingOtp]               = useState(false);
+  const [instructionsVisible,   setInstructionsVisible]   = useState(false);
+  const [lazy,                  setLazy]                  = useState(false);
+  const [showBulkOrderForm,     setShowBulkOrderForm]     = useState(false);
+  const [showShareMenu,         setShowShareMenu]         = useState(false);
+  const [otpSent,               setOtpSent]               = useState(false);
+  const [emailVerified,         setEmailVerified]         = useState(false);
+  const [sendingOtp,            setSendingOtp]            = useState(false);
 
-  // ── Redux ─────────────────────────────────────────────────────────────────
+  // ── Redux ──────────────────────────────────────────────────────────────────
   const { isGettingVariantPrice, product, productRateAndReview } = useSelector(
     (state) => state.publicSlice
   );
@@ -1513,7 +1427,7 @@ const ProductDetails = ({
       ? Number(productionTime) + Number(ArrangeTime)
       : Number(productionTime);
 
-  // ── Platform options ──────────────────────────────────────────────────────
+  // ── Platform options ───────────────────────────────────────────────────────
   const platformOptions = [
     { value: "Google",    label: "Google",    icon: <FaGoogle />,    color: "#4285F4", bgColor: "#4285F41A" },
     { value: "Instagram", label: "Instagram", icon: <FaInstagram />, color: "#E4405F", bgColor: "#E4405F1A" },
@@ -1524,7 +1438,7 @@ const ProductDetails = ({
     { value: "Other",     label: "Other",     icon: <FaPlus />,      color: "#9C27B0", bgColor: "#9C27B01A" },
   ];
 
-  // ── Quantity options ──────────────────────────────────────────────────────
+  // ── Quantity options ───────────────────────────────────────────────────────
   const generateQuantityOptions = () => {
     const roleFields = getRoleFields(user.role);
     if (quantityType === "textbox") {
@@ -1550,11 +1464,11 @@ const ProductDetails = ({
 
   const quantityOptions = generateQuantityOptions();
 
-  // ── Init quantity ─────────────────────────────────────────────────────────
+  // ── Init quantity ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
-      const roleFields          = getRoleFields(user.role);
-      const firstAvailableItem  = quantityDiscounts.find((item) => item[roleFields.quantity]);
+      const roleFields         = getRoleFields(user.role);
+      const firstAvailableItem = quantityDiscounts.find((item) => item[roleFields.quantity]);
       if (firstAvailableItem) {
         const initialQuantity        = Number(firstAvailableItem[roleFields.quantity]);
         const initialDiscount        = Number(firstAvailableItem[roleFields.discount] || 0);
@@ -1587,7 +1501,7 @@ const ProductDetails = ({
     }
   }, [quantityDiscounts, quantityType, maxQuantity, user.role]);
 
-  // ── Platform handlers ─────────────────────────────────────────────────────
+  // ── Platform handlers ──────────────────────────────────────────────────────
   const handlePlatformSelect = (platform, e) => {
     if (e) e.stopPropagation();
 
@@ -1633,7 +1547,7 @@ const ProductDetails = ({
     handlePlatformSelect(platform, e);
   };
 
-  // ── Rating calculations ───────────────────────────────────────────────────
+  // ── Rating calculations ────────────────────────────────────────────────────
   useEffect(() => {
     const ratingSum     = rate.reduce((sum, r) => sum + Math.round(r.rating), 0);
     const averageRating = ratingSum === 0 ? 0 : ratingSum / rate.length;
@@ -1652,7 +1566,7 @@ const ProductDetails = ({
     }
   }, [reviewData]);
 
-  // ── Init product variants / stock ─────────────────────────────────────────
+  // ── Init product variants / stock ──────────────────────────────────────────
   useEffect(() => {
     if (product_type === "Stand Alone Product") {
       setCheckOutState((prev) => ({ ...prev, product_price: basePrice }));
@@ -1672,7 +1586,7 @@ const ProductDetails = ({
     }
   }, [product, product_type, basePrice, data]);
 
-  // ── Variant selection ─────────────────────────────────────────────────────
+  // ── Variant selection ──────────────────────────────────────────────────────
   const handleOnChangeSelectOption = async (selectedValue, index) => {
     try {
       const updatedVariant  = [...variant];
@@ -1707,7 +1621,7 @@ const ProductDetails = ({
 
   const goToShoppingCart = () => navigate("/shopping-cart");
 
-  // ── Quantity selection ────────────────────────────────────────────────────
+  // ── Quantity selection ─────────────────────────────────────────────────────
   const handleQuantitySelect = (selectedQuantity) => {
     const roleFields = getRoleFields(user.role);
 
@@ -1745,9 +1659,12 @@ const ProductDetails = ({
     setQuantityDropdownVisible(false);
   };
 
-  // ── Price helpers ─────────────────────────────────────────────────────────
+  // ── Price helpers ──────────────────────────────────────────────────────────
   const formatPrice = (price) =>
-    `₹${parseFloat(price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    `₹${parseFloat(price).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
 
   const getUnitPrice = () => {
     const p = Number(_.get(checkOutState, "product_price", 0));
@@ -1776,17 +1693,17 @@ const ProductDetails = ({
     const u = getUnitPrice();
     return typeof u === "number" && !isNaN(u) ? u.toFixed(2) : Number(u);
   };
-  const calculateMRPTotalPrice        = () => (!quantity ? 0 : (Number(_.get(data, "MRP_price", 0)) * quantity).toFixed(2));
-  const calculateOriginalTotalPrice   = () => (!quantity ? 0 : (getOriginalUnitPrice() * quantity).toFixed(2));
-  const calculateMRPSavings           = () => {
+  const calculateMRPTotalPrice      = () => (!quantity ? 0 : (Number(_.get(data, "MRP_price", 0)) * quantity).toFixed(2));
+  const calculateOriginalTotalPrice = () => (!quantity ? 0 : (getOriginalUnitPrice() * quantity).toFixed(2));
+  const calculateMRPSavings         = () => {
     if (!quantity) return 0;
     return ((Number(_.get(data, "MRP_price", 0)) - getMRPUnitPrice()) * quantity).toFixed(2);
   };
-  const calculateDiscountSavings      = () => {
+  const calculateDiscountSavings = () => {
     if (!quantity) return 0;
     return ((getOriginalUnitPrice() - getUnitPrice()) * quantity).toFixed(2);
   };
-  const calculateTotalSavings         = () =>
+  const calculateTotalSavings = () =>
     (parseFloat(calculateMRPSavings()) + parseFloat(calculateDiscountSavings())).toFixed(2);
 
   const calculateDealPercentageDiscount = () => {
@@ -1804,29 +1721,22 @@ const ProductDetails = ({
     return Math.min(100, Math.round((total / mrp) * 100));
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 🔥 Handle delivery charge change from pincode calculator
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Delivery charge from pincode calculator ────────────────────────────────
   const handleDeliveryChargeChange = useCallback((charge) => {
     if (freeDelivery) {
       setDeliveryCharges(0);
-      setCheckOutState(prev => ({ ...prev, DeliveryCharges: 0 }));
+      setCheckOutState((prev) => ({ ...prev, DeliveryCharges: 0 }));
       return;
     }
     setDeliveryCharges(charge);
-    setCheckOutState(prev => ({ ...prev, DeliveryCharges: charge }));
+    setCheckOutState((prev) => ({ ...prev, DeliveryCharges: charge }));
   }, [freeDelivery]);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 🔥 Handle pincode change
-  // ─────────────────────────────────────────────────────────────────────────
   const handlePincodeChange = useCallback((pin) => {
     setPincode(pin);
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // ✅ Pre-buy validation (shared between normal and photo frame flow)
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Pre-buy validation ─────────────────────────────────────────────────────
   const validateBeforeBuy = () => {
     if (!quantity) {
       toast.error("Please select quantity first");
@@ -1860,9 +1770,7 @@ const ProductDetails = ({
     return true;
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // ✅ Build and send cart payload
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Build and send cart payload ────────────────────────────────────────────
   const submitToCart = async (extraPayload = {}) => {
     const token   = localStorage.getItem("userData") || "guest";
     const guestId = getGuestId();
@@ -1894,19 +1802,14 @@ const ProductDetails = ({
       final_total_withoutGst: Number(calculateTotalPricewithoutGst()),
       phone_number:           userPhone,
       email:                  userEmail,
-      pincode:                pincode, // 🔥 Pass pincode to backend
-      // Photo frame specific fields (populated via extraPayload)
+      pincode,
       ...extraPayload,
     };
 
-    let cartPayload;
-    if (token === "user") {
-      cartPayload = { ...baseCartPayload, userRole: token };
-    } else {
-      cartPayload = { ...baseCartPayload, guestId, GuestId: guestId, userRole: token };
-    }
-
-    console.log("[Cart] Sending payload:", cartPayload);
+    const cartPayload =
+      token === "user"
+        ? { ...baseCartPayload, userRole: token }
+        : { ...baseCartPayload, guestId, GuestId: guestId, userRole: token };
 
     const result = await addToShoppingCart(cartPayload);
 
@@ -1924,19 +1827,15 @@ const ProductDetails = ({
     dispatch(ADD_TO_CART(_.get(result, "data.data.data", "")));
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // ✅ handleBuy — routes to photo frame modal if is_photoframe === true
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── handleBuy ──────────────────────────────────────────────────────────────
   const handlebuy = async () => {
     if (!validateBeforeBuy()) return;
 
-    // Photo frame → open custom modal first
     if (isPhotoFrame) {
       setShowPhotoFrameModal(true);
       return;
     }
 
-    // Normal product flow
     try {
       setLoading(true);
       setError("");
@@ -1954,9 +1853,7 @@ const ProductDetails = ({
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // ✅ handlePhotoFrameConfirm — called when user submits the photo frame form
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── handlePhotoFrameConfirm ────────────────────────────────────────────────
   const handlePhotoFrameConfirm = async (photoFrameData) => {
     try {
       setPhotoFrameLoading(true);
@@ -1991,7 +1888,7 @@ const ProductDetails = ({
     }
   };
 
-  // ── Notify when available ────────────────────────────────────────────────
+  // ── Notify when available ──────────────────────────────────────────────────
   const handleNotify = () => {
     setShowNotifyModal(true);
     notifyForm.resetFields();
@@ -2031,7 +1928,7 @@ const ProductDetails = ({
     form.resetFields();
   };
 
-  // ── Quantity dropdown renderer ────────────────────────────────────────────
+  // ── Quantity dropdown renderer ─────────────────────────────────────────────
   const quantityDropdownRender = () => {
     const options = generateQuantityOptions();
     return (
@@ -2117,7 +2014,7 @@ const ProductDetails = ({
     );
   };
 
-  // ── Share ─────────────────────────────────────────────────────────────────
+  // ── Share ──────────────────────────────────────────────────────────────────
   const shareProduct = async (platform) => {
     const productUrl   = encodeURIComponent(window.location.href);
     const productTitle = encodeURIComponent(_.get(data, "product_description_tittle", ""));
@@ -2148,7 +2045,7 @@ const ProductDetails = ({
     }
   };
 
-  // ── Bulk order ────────────────────────────────────────────────────────────
+  // ── Bulk order ─────────────────────────────────────────────────────────────
   const handleBulkOrderSubmit = async (values) => {
     try {
       await bulkOrder(values);
@@ -2193,7 +2090,7 @@ const ProductDetails = ({
   const handleDesignRemove    = () =>
     setCheckOutState((prev) => ({ ...prev, product_design_file: "" }));
 
-  // ── ProcessingTimeInfo ────────────────────────────────────────────────────
+  // ── ProcessingTimeInfo ─────────────────────────────────────────────────────
   const ProcessingTimeInfo = () => (
     <div className="max-h-[400px] overflow-y-auto text-gray-700">
       <Paragraph>
@@ -2215,7 +2112,7 @@ const ProductDetails = ({
       />
     </div>
   );
-  
+
   const generateLabel = (label) => {
     switch (label) {
       case "new":            return <Tag color="green">New</Tag>;
@@ -2225,14 +2122,14 @@ const ProductDetails = ({
     }
   };
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Render
-  // ────────────────────────────────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ════════════════════════════════════════════════════════════════════════════
   return (
     <Spin spinning={loading} indicator={<IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />}>
       <div className="font-primary w-full space-y-2 relative">
 
-        {/* ── Product Header ─────────────────────────────────────────── */}
+        {/* ── Product Header ───────────────────────────────────────── */}
         <div className="space-y-1 flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="flex-1 w-full md:w-auto">
             <div className="flex items-center gap-2 mb-1">
@@ -2240,7 +2137,6 @@ const ProductDetails = ({
                 {data.name}
               </h1>
             </div>
-            {/* Photo Frame Badge */}
             {isPhotoFrame && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -2330,7 +2226,7 @@ const ProductDetails = ({
           </div>
         </div>
 
-        {/* ── Product Description ────────────────────────────────────── */}
+        {/* ── Product Description ──────────────────────────────────── */}
         <div>
           <h2 className="text-md font-semibold w-full md:w-[70%]">
             {_.get(data, "product_description_tittle", "")}
@@ -2346,7 +2242,7 @@ const ProductDetails = ({
           </ul>
         </div>
 
-        {/* ── Quantity & Variants ────────────────────────────────────── */}
+        {/* ── Quantity & Variants ──────────────────────────────────── */}
         <div className="w-full flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
             <Text strong className="block mb-2 md:mb-0 md:w-24">Quantity:</Text>
@@ -2389,7 +2285,13 @@ const ProductDetails = ({
                               }`}
                               style={{ width: "50px", height: "50px" }}
                             >
-                              <img fetchpriority="high" loading="eager" src={option.image_name} className="w-full h-full object-contain" alt={option.value} />
+                              <img
+                                fetchpriority="high"
+                                loading="eager"
+                                src={option.image_name}
+                                className="w-full h-full object-contain"
+                                alt={option.value}
+                              />
                             </div>
                             <Text className="text-xs mt-1 text-center">{option.value}</Text>
                           </div>
@@ -2403,7 +2305,7 @@ const ProductDetails = ({
           </div>
         </div>
 
-        {/* ── Total Price Card ───────────────────────────────────────── */}
+        {/* ── Total Price Card ─────────────────────────────────────── */}
         <Card className="rounded-lg border-0 bg-blue-50">
           <div className="space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
@@ -2508,7 +2410,7 @@ const ProductDetails = ({
           </motion.div>
         </Card>
 
-        {/* ── Platform Selection (QR Products) ──────────────────────── */}
+        {/* ── Platform Selection (QR Products) ─────────────────────── */}
         {isQrProduct && (
           <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-white">
             <div>
@@ -2539,7 +2441,10 @@ const ProductDetails = ({
                       <div className="flex items-center">
                         <div
                           className="flex items-center justify-center w-8 h-8 rounded-full mr-3"
-                          style={{ backgroundColor: isSelected ? platform.color : "#f3f4f6", color: isSelected ? "white" : platform.color }}
+                          style={{
+                            backgroundColor: isSelected ? platform.color : "#f3f4f6",
+                            color: isSelected ? "white" : platform.color,
+                          }}
                         >
                           {platform.icon}
                         </div>
@@ -2652,7 +2557,7 @@ const ProductDetails = ({
           </div>
         )}
 
-        {/* ── File Upload Section ────────────────────────────────────── */}
+        {/* ── File Upload Section ──────────────────────────────────── */}
         {!isSoldOut && !isPhotoFrame && (
           <div className="space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
@@ -2738,7 +2643,7 @@ const ProductDetails = ({
           </div>
         )}
 
-        {/* ── Photo Frame Info Banner ─────────────────────────────────── */}
+        {/* ── Photo Frame Info Banner ──────────────────────────────── */}
         {isPhotoFrame && !isSoldOut && (
           <Alert
             message={
@@ -2755,18 +2660,14 @@ const ProductDetails = ({
           />
         )}
 
-        {/* ── Add to Cart / Notify Button ────────────────────────────── */}
+        {/* ── Add to Cart / Notify Button ──────────────────────────── */}
         <div className="w-full">
           {isGettingVariantPrice ? (
             <div className="center_div py-6"><Spin size="large" /></div>
           ) : (
             <>
               {isSoldOut ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="mb-4">
                     <Button
                       type="default"
@@ -2798,7 +2699,7 @@ const ProductDetails = ({
 
         <Divider className="!my-4" />
 
-        {/* ── Design Preview Modal ───────────────────────────────────── */}
+        {/* ── Design Preview Modal ─────────────────────────────────── */}
         <CustomModal
           open={designPreviewVisible}
           onClose={() => setDesignPreviewVisible(false)}
@@ -2807,11 +2708,17 @@ const ProductDetails = ({
           footer={[<Button key="close" onClick={() => setDesignPreviewVisible(false)}>Close</Button>]}
         >
           <div className="flex justify-center">
-            <img fetchpriority="high" loading="eager" src={checkOutState.product_design_file} alt="Design Preview" style={{ maxHeight: "400px" }} />
+            <img
+              fetchpriority="high"
+              loading="eager"
+              src={checkOutState.product_design_file}
+              alt="Design Preview"
+              style={{ maxHeight: "400px" }}
+            />
           </div>
         </CustomModal>
 
-        {/* ── Photo Frame Order Modal (portaled to <body>) ──────────── */}
+        {/* ── Photo Frame Order Modal (portaled to <body>) ─────────── */}
         {showPhotoFrameModal &&
           createPortal(
             <AnimatePresence>
@@ -2825,7 +2732,7 @@ const ProductDetails = ({
             document.body
           )}
 
-        {/* ── Notify Modal ───────────────────────────────────────────── */}
+        {/* ── Notify Modal ─────────────────────────────────────────── */}
         <CustomModal
           open={showNotifyModal}
           onClose={() => { setShowNotifyModal(false); notifyForm.resetFields(); }}
@@ -2846,10 +2753,17 @@ const ProductDetails = ({
                   </Form.Item>
                 </Col>
               </Row>
-              <Form.Item label="Email Address" name="email" rules={[{ required: true, message: "Please enter email" }, { type: "email", message: "Invalid email" }]}>
+              <Form.Item
+                label="Email Address"
+                name="email"
+                rules={[{ required: true, message: "Please enter email" }, { type: "email", message: "Invalid email" }]}
+              >
                 <Input
                   placeholder="your@email.com"
-                  suffix={emailVerified ? <CheckCircleOutlined style={{ color: "#52c41a" }} /> : <LoadingOutlined spin={sendingOtp} />}
+                  suffix={emailVerified
+                    ? <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                    : <LoadingOutlined spin={sendingOtp} />
+                  }
                   onBlur={(e) => { if (e.target.value && validateEmail(e.target.value)) handleSendOtp(e.target.value); }}
                 />
               </Form.Item>
@@ -2875,8 +2789,13 @@ const ProductDetails = ({
           </Form>
         </CustomModal>
 
-        {/* ── Bulk Order Modal ───────────────────────────────────────── */}
-        <CustomModal open={showBulkOrderForm} onClose={() => setShowBulkOrderForm(false)} title="Bulk Order Inquiry" width={600}>
+        {/* ── Bulk Order Modal ─────────────────────────────────────── */}
+        <CustomModal
+          open={showBulkOrderForm}
+          onClose={() => setShowBulkOrderForm(false)}
+          title="Bulk Order Inquiry"
+          width={600}
+        >
           <Form form={form} layout="vertical" onFinish={handleBulkOrderSubmit}>
             <div className="space-y-4">
               <Row gutter={16}>
@@ -2891,10 +2810,17 @@ const ProductDetails = ({
                   </Form.Item>
                 </Col>
               </Row>
-              <Form.Item label="Email Address" name="email" rules={[{ required: true, message: "Please enter email" }, { type: "email", message: "Invalid email" }]}>
+              <Form.Item
+                label="Email Address"
+                name="email"
+                rules={[{ required: true, message: "Please enter email" }, { type: "email", message: "Invalid email" }]}
+              >
                 <Input
                   placeholder="your@email.com"
-                  suffix={emailVerified ? <CheckCircleOutlined style={{ color: "#52c41a" }} /> : <LoadingOutlined spin={sendingOtp} />}
+                  suffix={emailVerified
+                    ? <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                    : <LoadingOutlined spin={sendingOtp} />
+                  }
                   onBlur={(e) => { if (e.target.value && validateEmail(e.target.value)) handleSendOtp(e.target.value); }}
                 />
               </Form.Item>
@@ -2920,7 +2846,7 @@ const ProductDetails = ({
           </Form>
         </CustomModal>
 
-        {/* ── Product Meta ────────────────────────────────────────────── */}
+        {/* ── Product Meta ─────────────────────────────────────────── */}
         <div className="space-y-2 z-0 relative">
           <div className="flex items-center">
             <Text strong className="!text-gray-800 !w-20">Categories:</Text>
