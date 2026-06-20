@@ -16,6 +16,8 @@ import BeforeAfterSlider from "../../components/Home/BeforeAfter";
 import BlogCarousel from "../../components/Home/BlogCarousel"; 
 import { Helmet } from "react-helmet-async";
 
+
+// changeg
 const Home = () => {
   const [loading, setLoading] = useState(true);
   const [sectionData, setSectionData] = useState([]);
