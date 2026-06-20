@@ -86,12 +86,12 @@ const Home = () => {
         <meta name="keywords" content="online printing services, custom printing, business cards, flyers, posters, brochures, photo prints, print delivery India, digital print services, personalized printing" />
       </Helmet>
 
-      <div className="block">
+      <div className="hidden lg:block">
         <CarouselBanner />
       </div>
-      {/* <div className="">
+      <div className="block lg:hidden">
         <SubCategoryBannerCarousel />
-      </div> */}
+      </div>
 
       {!user?._id && (
         <div className="pt-8 block lg:hidden">
