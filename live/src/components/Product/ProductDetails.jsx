@@ -1122,7 +1122,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                                 </span>
                               </div>
                               <div className="text-xs text-gray-500 mt-1">
-                                {deliveryCharge === 60 &&
+                                {deliveryCharge === 80 &&
                                   "📍 Within Tamil Nadu"}
                                 {deliveryCharge === 100 &&
                                   "📍 Outside Tamil Nadu"}
