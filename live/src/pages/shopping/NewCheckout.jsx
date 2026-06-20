@@ -107,7 +107,7 @@ const getItemDeliveryCharge = (item, isTamilNadu) => {
   }
 
   // Rule 5: Tamil Nadu → normal delivery charge
-  const charge = Number(item.DeliveryCharges) || 0;
+  const charge = Number(80) || 0;
   console.log(`→ Normal (Tamil Nadu) delivery charge: ₹${charge}`);
   return charge;
 };
