@@ -86,7 +86,7 @@ const Home = () => {
         <meta name="keywords" content="online printing services, custom printing, business cards, flyers, posters, brochures, photo prints, print delivery India, digital print services, personalized printing" />
       </Helmet>
 
-      <div className="hidden lg:block">
+      <div className="block">
         <CarouselBanner />
       </div>
       {/* <div className="">

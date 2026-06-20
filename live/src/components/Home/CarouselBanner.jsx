@@ -141,7 +141,7 @@ const CarouselBanner = () => {
   const isTablet = bp === "md";
 
   const bannerHeight = isMobile
-    ? "clamp(580px, 55vw, 460px)"
+    ? "clamp(500px, 55vw, 460px)"
     : isTablet
     ? "55vh"
     : "83vh";
@@ -261,7 +261,6 @@ const CarouselBanner = () => {
         display: "flex",
         flexDirection: "column",
       }}
-      className={`${isMobile ? 'pt-20':'pt-0'}`}
       onMouseEnter={() => clearInterval(autoPlayRef.current)}
       onMouseLeave={() => startAutoPlay()}
       onTouchStart={handleTouchStart}
