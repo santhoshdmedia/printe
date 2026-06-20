@@ -89,9 +89,9 @@ const Home = () => {
       <div className="hidden lg:block">
         <CarouselBanner />
       </div>
-      <div className="">
+      {/* <div className="">
         <SubCategoryBannerCarousel />
-      </div>
+      </div> */}
 
       {!user?._id && (
         <div className="pt-8 block lg:hidden">

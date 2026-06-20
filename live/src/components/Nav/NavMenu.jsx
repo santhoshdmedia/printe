@@ -645,7 +645,7 @@ const NavMenu = () => {
                                   <img   fetchpriority="high" loading="eager"
                                     src={imageToUse}
                                     alt={`${category.main_category_name} Banner`}
-                                    className="w-full h-full object-cover rounded-lg border border-gray-300"
+                                    className="w-full h-full object-contain rounded-lg border border-gray-300"
                                     onError={(e) => {
                                       e.target.src = "/placeholder-category.jpg";
                                     }}
