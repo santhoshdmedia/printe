@@ -585,7 +585,7 @@ const PincodeDeliveryCalculatorForModal = ({
         stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name;
       setState(stateName);
       setDeliveryDate(calculateDeliveryDate(stateKey));
-      const charge = stateKey === "tamil nadu" ? 60 : 100;
+      const charge = stateKey === "tamil nadu" ? 80 : 100;
       setDeliveryCharge(charge);
       if (onDeliveryChargeChange) onDeliveryChargeChange(charge);
       if (onPincodeChange) onPincodeChange(pin);
