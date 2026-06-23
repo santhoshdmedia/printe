@@ -52,7 +52,8 @@ const OrderDetails = () => {
   };
 
   const numberToWords = (num) => {
-    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+      'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
     const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
     const thousands = ['', 'Thousand', 'Lakh', 'Crore'];
     if (num === 0) return 'Zero Rupees Only';
@@ -70,17 +71,80 @@ const OrderDetails = () => {
     return result.trim() + ' Rupees' + (paise > 0 ? ' and ' + cvt(paise).trim() + ' Paise' : '') + ' Only';
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // computeOrderTotals — single source of truth for all price calculations.
+  // Always uses total_price (the actual amount paid) as the final figure.
+  // Coupon discount is read directly from order.discount_amount / order.coupon.
+  // ─────────────────────────────────────────────────────────────────────────
+  const computeOrderTotals = (order) => {
+    const cartItems = getCartItems(order);
+
+    const itemDetails = cartItems.map((item) => {
+      const taxableValue = (item.price || 0) * (item.quantity || 0);
+      const taxAmount = taxableValue * 0.18;
+      return { ...item, taxableValue, taxAmount, amount: taxableValue + taxAmount };
+    });
+
+    const taxableAmount = itemDetails.reduce((s, i) => s + i.taxableValue, 0);
+    const totalTax     = itemDetails.reduce((s, i) => s + i.taxAmount,   0);
+    const cgst         = totalTax / 2;
+    const sgst         = totalTax / 2;
+    const subtotal     = taxableAmount + totalTax; // before discount & delivery
+
+    // Coupon discount (from DB field — the only reliable source)
+    const coupon         = order.coupon || null;
+    const discountAmount = Number(order.discount_amount || 0);
+
+    // Delivery charges
+    const deliveryCharges = Number(order.DeliveryCharges || 0);
+
+    // The actual amount the customer paid — always trust total_price from DB
+    const amountPaid = Number(order.total_price ?? 0);
+
+    // MRP-based savings (only meaningful when mrp_price is set on items)
+    const totalMRP    = cartItems.reduce((s, i) => s + (i.mrp_price || 0) * (i.quantity || 1), 0);
+    // Total savings = MRP savings + coupon discount
+    const mrpSavings      = Math.max(0, totalMRP - subtotal);
+    const totalSavings    = mrpSavings + discountAmount;
+
+    const totalQuantity = itemDetails.reduce((s, i) => s + (i.quantity || 0), 0);
+
+    return {
+      itemDetails,
+      taxableAmount,
+      totalTax,
+      cgst,
+      sgst,
+      subtotal,
+      deliveryCharges,
+      discountAmount,
+      coupon,
+      amountPaid,       // ← this is what goes on the invoice as "Total Amount"
+      totalSavings,
+      totalQuantity,
+    };
+  };
+
   const handleDownloadPDF = async () => {
     setPdfLoading(true);
     try {
       const pdf = new jsPDF("p", "pt", "a4");
-      const options = { scale: 2, useCORS: true, logging: false, allowTaint: false, backgroundColor: "#FFFFFF", quality: 1.2 };
-      const ordersToExport = allOrders.length > 0 ? allOrders : (filterOrderData ? [filterOrderData] : []);
-      if (ordersToExport.length === 0) { message.error("No order data available"); setPdfLoading(false); return; }
+      const options = {
+        scale: 2, useCORS: true, logging: false,
+        allowTaint: false, backgroundColor: "#FFFFFF", quality: 1.2,
+      };
+      const ordersToExport =
+        allOrders.length > 0 ? allOrders : filterOrderData ? [filterOrderData] : [];
+      if (ordersToExport.length === 0) {
+        message.error("No order data available");
+        setPdfLoading(false);
+        return;
+      }
       const ordersByInvoice = _.groupBy(ordersToExport, "invoice_no");
       let pageCount = 0;
       const tempContainer = document.createElement("div");
-      tempContainer.style.cssText = "position:absolute;left:-9999px;width:794px;font-family:Arial,sans-serif;background:#fff;";
+      tempContainer.style.cssText =
+        "position:absolute;left:-9999px;width:794px;font-family:Arial,sans-serif;background:#fff;";
       document.body.appendChild(tempContainer);
       for (const [invoiceNo, orders] of Object.entries(ordersByInvoice)) {
         const el = document.createElement("div");
@@ -101,34 +165,23 @@ const OrderDetails = () => {
     } catch (error) {
       console.error("PDF generation error:", error);
       message.error("Failed to generate PDF. Please try again.");
-    } finally { setPdfLoading(false); }
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
-  // generateInvoiceHTML  (used for PDF export via html2canvas)
-  // The outer wrapper is position:relative + min-height:1122px (A4 height px).
-  // All dynamic content sits inside a top div with padding-bottom:320px to
-  // reserve space. The bottom section uses position:absolute;bottom:0 so it
-  // is always anchored to the page base regardless of content height.
+  // generateInvoiceHTML — PDF version
   // ─────────────────────────────────────────────────────────────────────────
   const generateInvoiceHTML = (orders, invoiceNo) => {
     if (!orders || orders.length === 0) return "<div>No order data available</div>";
     const firstOrder = orders[0] || {};
-    const cartItems = getCartItems(firstOrder);
+    const {
+      itemDetails, taxableAmount, cgst, sgst, deliveryCharges,
+      discountAmount, coupon, amountPaid, totalSavings,
+    } = computeOrderTotals(firstOrder);
 
-    const itemDetails = cartItems.map(item => {
-      const taxableValue = (item.price || 0) * (item.quantity || 0);
-      const taxAmount = taxableValue * 0.18;
-      return { ...item, taxableValue, taxAmount, amount: taxableValue + taxAmount };
-    });
-    const taxableAmount = itemDetails.reduce((s, i) => s + i.taxableValue, 0);
-    const totalTax = itemDetails.reduce((s, i) => s + i.taxAmount, 0);
-    const cgst = totalTax / 2; const sgst = totalTax / 2;
-    const MRP = cartItems.reduce((s, i) => s + (i.mrp_price || 0), 0);
-    const grandTotal = Math.round(taxableAmount + totalTax + (firstOrder.DeliveryCharges || 0));
-    const grandSavings = Number(Math.abs(MRP - grandTotal));
     const da = firstOrder.delivery_address || {};
-    const fullAddress = [da.street || da.street_address, da.city, da.state, da.pincode ? `PINCODE: ${da.pincode}` : null].filter(Boolean).join(", ");
 
     let paymentStatusHTML = "";
     if (firstOrder.payment_status === "pending") {
@@ -136,24 +189,33 @@ const OrderDetails = () => {
         <p style="margin:0;font-weight:bold;color:#856404;font-size:11px;">Payment Status: <span style="color:#dc3545;">Pending Payment</span></p>
         <p style="margin:4px 0 0;font-size:10px;">Please complete the payment to process your order</p>
       </div>`;
-    } else if (firstOrder.payment_status === "completed" || firstOrder.payment_status === "fully_paid") {
+    } else {
       paymentStatusHTML = `<div style="padding:8px;background:#d4edda;border:1px solid #c3e6cb;border-radius:4px;margin-bottom:6px;">
         <p style="margin:0;font-weight:bold;color:#155724;font-size:11px;">Payment Status: <span style="color:#28a745;">Paid</span></p>
       </div>`;
     }
 
+    const couponRowHTML = coupon
+      ? `<tr style="color:#b8860b;">
+          <td style="padding:6px 10px;border-bottom:1px solid #ddd;">
+            Coupon Discount (${coupon.code})
+          </td>
+          <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;">
+            − ₹ ${discountAmount.toFixed(2)}
+          </td>
+        </tr>`
+      : "";
+
     return `
 <div style="font-family:Arial,sans-serif;position:relative;min-height:1122px;width:794px;box-sizing:border-box;">
-
-  <!-- TOP CONTENT — padding-bottom reserves space for the fixed bottom block -->
   <div style="">
 
     <!-- Header -->
     <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:5px;margin-bottom:4px;">
-    <div style="display:flex;justify-content:center;">
-      <img   fetchpriority="high" loading="eager" src="${ImageHelper.pdf_logo}" style="width:140px;height:40px;object-fit:contain;"/>
+      <div style="display:flex;justify-content:center;">
+        <img fetchpriority="high" loading="eager" src="${ImageHelper.pdf_logo}" style="width:140px;height:40px;object-fit:contain;"/>
       </div>
-      <div style="display:flex;justify-content:center;gap:20px;font-size:10px; margin-bottom:4px;">
+      <div style="display:flex;justify-content:center;gap:20px;font-size:10px;margin-bottom:4px;">
         <p style="margin:0;"><b>Email:</b> <a href="mailto:info@printe.in">info@printe.in</a></p>
         <p style="margin:0;"><b>Website:</b> <a href="http://www.printe.in">www.printe.in</a></p>
       </div>
@@ -165,7 +227,9 @@ const OrderDetails = () => {
         <p style="margin:4px 0;font-size:10px;"><b>Invoice #:</b> ${invoiceNo}</p>
         <p style="margin:4px 0;font-size:10px;"><b>Invoice Date:</b> ${moment(firstOrder.createdAt).format("DD MMM YYYY")}</p>
       </div>
-      ${firstOrder.payment_status === "pending" ? `<div style="text-align:right;"><p style="margin:0;font-weight:bold;font-size:12px;color:#ff6b6b;">PAYMENT PENDING</p></div>` : ''}
+      ${firstOrder.payment_status === "pending"
+        ? `<div style="text-align:right;"><p style="margin:0;font-weight:bold;font-size:12px;color:#ff6b6b;">PAYMENT PENDING</p></div>`
+        : ''}
     </div>
 
     <!-- Customer + Shipping -->
@@ -173,7 +237,7 @@ const OrderDetails = () => {
       <div style="flex:1;">
         <h3 style="font-size:12px;font-weight:bold;margin:0 0 2px;border-bottom:1px solid #ddd;padding-bottom:1px;">Customer Details:</h3>
         <p style="margin:2px 0;font-size:10px;font-weight:bold;">Mr.${da.name || "Customer Name"}</p>
-        <p style="margin:2px 0;font-size:10px;line-height:1.4;width:80%;">${da.street}</br>${da.city},&nbsp;${da.state},&nbsp;${da.pincode ? `PINCODE: ${da.pincode}` : null}</p>
+        <p style="margin:2px 0;font-size:10px;line-height:1.4;width:80%;">${da.street}<br/>${da.city},&nbsp;${da.state},&nbsp;${da.pincode ? `PINCODE: ${da.pincode}` : ''}</p>
         <p style="margin:2px 0;font-size:10px;"><b>Phone:</b> ${da.mobile_number || ""}</p>
         <p style="margin:1px 0;font-size:10px;"><b>Email:</b> ${da.email || ""}</p>
       </div>
@@ -188,8 +252,8 @@ const OrderDetails = () => {
     <!-- Items Table -->
     <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:4px;">
       <thead>
-        <tr style="background:#f2c41a;color:#333; ">
-          <th style="border:1px solid #ddd;padding-bottom:10px;text-align:left;width:30px; ">#</th>
+        <tr style="background:#f2c41a;color:#333;">
+          <th style="border:1px solid #ddd;padding-bottom:10px;text-align:left;width:30px;">#</th>
           <th style="border:1px solid #ddd;padding-bottom:10px;text-align:left;">Item</th>
           <th style="border:1px solid #ddd;padding-bottom:10px;text-align:right;width:80px;">MRP</th>
           <th style="border:1px solid #ddd;padding-bottom:10px;text-align:center;width:60px;">Qty</th>
@@ -201,71 +265,82 @@ const OrderDetails = () => {
       <tbody>
         ${itemDetails.map((item, idx) => `
         <tr>
-          <td style="border:1px solid #ddd;padding-bottom:10px;vertical-align:top; padding-left:5px;">${idx + 1}</td>
-          <td style="border:1px solid #ddd;padding-bottom:10px; padding-left:5px; vertical-align:top;">
+          <td style="border:1px solid #ddd;padding-bottom:10px;vertical-align:top;padding-left:5px;">${idx + 1}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;padding-left:5px;vertical-align:top;">
             <span style="font-weight:bold;text-transform:uppercase;">${item.product_name || "Product"}</span>
             ${item.notes ? `<br/><span style="font-weight:400;text-transform:capitalize;">${item.notes}</span>` : ''}
-            ${item.size ? `<div style="font-size:9px;color:#666; " >Size: ${item.size}</div>` : ''}
+            ${item.size  ? `<div style="font-size:9px;color:#666;">Size: ${item.size}</div>` : ''}
             ${item.color ? `<div style="font-size:9px;color:#666;">Color: ${item.color}</div>` : ''}
           </td>
-          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top; padding-right:5px;">₹ ${(item.mrp_price || 0).toFixed(2)}</td>
-          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:center;vertical-align:top; padding-right:5px;">${item.quantity || 0}</td>
-          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top; padding-right:5px;">₹ ${item.taxableValue.toFixed(2)}</td>
-          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top; padding-right:5px;">₹ ${item.taxAmount.toFixed(2)}</td>
-          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top;font-weight:bold; padding-right:5px;">₹ ${item.amount.toFixed(2)}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top;padding-right:5px;">₹ ${(item.mrp_price || 0).toFixed(2)}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:center;vertical-align:top;padding-right:5px;">${item.quantity || 0}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top;padding-right:5px;">₹ ${item.taxableValue.toFixed(2)}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top;padding-right:5px;">₹ ${item.taxAmount.toFixed(2)}</td>
+          <td style="border:1px solid #ddd;padding-bottom:10px;text-align:right;vertical-align:top;font-weight:bold;padding-right:5px;">₹ ${item.amount.toFixed(2)}</td>
         </tr>`).join('')}
       </tbody>
     </table>
 
-    <!-- Total in words -->
+    <!-- Total in words (uses actual amount paid) -->
     <p style="margin:0 0 6px;font-size:11px;font-style:italic;background:#f8f9fa;padding:5px;border-radius:4px;">
-      <b>Total amount (in words):</b>&nbsp;INR ${numberToWords(grandTotal)}
+      <b>Total amount (in words):</b>&nbsp;INR ${numberToWords(amountPaid)}
     </p>
 
     <!-- QR + Totals -->
     <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
       <div style="flex:1;">
-         ${firstOrder.payment_status === "pending" && firstOrder.payment_qr_code ? `
+        ${firstOrder.payment_status === "pending" && firstOrder.payment_qr_code ? `
         <div style="border:1px solid #ddd;padding:5px;border-radius:4px;display:inline-block;text-align:center;">
           <h4 style="font-size:11px;font-weight:bold;margin:0 0 6px;">Payment QR Code</h4>
-          <img   fetchpriority="high" loading="eager" src="${firstOrder.payment_qr_code}" style="width:100px;height:100px;margin-bottom:4px;"/>
+          <img fetchpriority="high" loading="eager" src="${firstOrder.payment_qr_code}" style="width:100px;height:100px;margin-bottom:4px;"/>
           <p style="margin:0;font-size:9px;font-weight:bold;">Scan to Pay</p>
           <p style="margin:3px 0 0;font-size:8px;color:#666;">Use any UPI app to scan</p>
-        </div>`: ''}
+        </div>` : ''}
       </div>
       <div style="width:380px;">
         <table style="width:100%;border-collapse:collapse;font-size:10px;">
           <tbody>
-            <tr><td style="padding:6px 10px;border-bottom:1px solid #ddd;font-weight:bold;">Taxable Amount</td>
-                <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;font-weight:bold;">₹ ${taxableAmount.toFixed(2)}</td></tr>
-            <tr><td style="padding:6px 10px;border-bottom:1px solid #ddd;">CGST 9.0%</td>
-                <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;">₹ ${cgst.toFixed(2)}</td></tr>
-            <tr><td style="padding:6px 10px;border-bottom:1px solid #ddd;">SGST 9.0%</td>
-                <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;">₹ ${sgst.toFixed(2)}</td></tr>
-            ${firstOrder.DeliveryCharges ? `<tr><td style="padding:6px 10px;border-bottom:1px solid #ddd;">Shipping Charges</td>
-                <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;">₹ ${firstOrder.DeliveryCharges.toFixed(2)}</td></tr>` : ''}
-            <tr style="color:#1b8755;"><td style="padding:6px 10px;border-bottom:1px solid #ddd;"><b>Savings</b></td>
-                <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;"><b>₹ ${grandSavings.toFixed(2)}</b></td></tr>
-            <tr><td style="padding:10px;background:#f8f9fa;font-weight:bold;font-size:13px;">Total Amount</td>
-                <td style="padding:10px;background:#f8f9fa;text-align:right;font-weight:bold;font-size:13px;color:#ff6b6b;">₹ ${grandTotal.toFixed(2)}</td></tr>
+            <tr>
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;font-weight:bold;">Taxable Amount</td>
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;font-weight:bold;">₹ ${taxableAmount.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;">CGST 9.0%</td>
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;">₹ ${cgst.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;">SGST 9.0%</td>
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;">₹ ${sgst.toFixed(2)}</td>
+            </tr>
+            ${deliveryCharges > 0 ? `
+            <tr>
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;">Shipping Charges</td>
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;">₹ ${deliveryCharges.toFixed(2)}</td>
+            </tr>` : ''}
+            ${couponRowHTML}
+            <tr style="color:#1b8755;">
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;"><b>Total Savings</b></td>
+              <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;"><b>₹ ${totalSavings.toFixed(2)}</b></td>
+            </tr>
+            <tr>
+              <td style="padding:10px;background:#f8f9fa;font-weight:bold;font-size:13px;">Amount Paid</td>
+              <td style="padding:10px;background:#f8f9fa;text-align:right;font-weight:bold;font-size:13px;color:#ff6b6b;">₹ ${amountPaid.toFixed(2)}</td>
+            </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-  </div><!-- end top content -->
+  </div>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       BOTTOM-PINNED BLOCK
-       ═══════════════════════════════════════════════════════════ -->
+  <!-- Bottom pinned block -->
   <div style="width:794px;background:#fff;">
-
-  <div style="width:794px;background:#fff; display;flex; gap:20px; justify-content:space-between;">  
-        ${paymentStatusHTML}
+    <div style="width:794px;background:#fff;">
+      ${paymentStatusHTML}
     </div>
-    <!-- Terms & Conditions Section -->
+
     <div style="background:#f8f9fa;padding:8px;border-radius:4px;margin-bottom:6px;border-left:3px solid #f2c41a;">
-      <p style="margin:0 0 4px;font-weight:bold;font-size:11px;">📋 TERMS & CONDITIONS:</p>
+      <p style="margin:0 0 4px;font-weight:bold;font-size:11px;">📋 TERMS &amp; CONDITIONS:</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:9px;color:#555;">
         <div style="flex:1;min-width:200px;">
           <p style="margin:2px 0;">• Goods once sold will not be taken back or exchanged.</p>
@@ -280,9 +355,6 @@ const OrderDetails = () => {
       </div>
     </div>
 
-    
-
-    <!-- Seller Info + Signature -->
     <div style="padding-top:4px;margin-bottom:4px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-end;">
         <div style="flex:1;">
@@ -294,13 +366,12 @@ const OrderDetails = () => {
         </div>
         <div style="text-align:center;">
           <p style="font-size:6px;color:#666;margin:2px 0 0;">For PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
-          <img   fetchpriority="high" loading="eager" src="${signatureImage}" style="width:80px;height:auto;transform:rotate(20deg);margin-left:50px;"/>
+          <img fetchpriority="high" loading="eager" src="${signatureImage}" style="width:80px;height:auto;transform:rotate(20deg);margin-left:50px;"/>
           <p style="font-size:8px;font-weight:bold;margin:0;">Authorized Signature</p>
         </div>
       </div>
     </div>
 
-    <!-- Footer -->
     <div style="border-top:2px solid #f2c41a;text-align:center;font-size:11px;color:#666;padding-top:4px;">
       <p style="margin:2px 0;">MARKETED BY PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
       <p style="margin:2px 0;">#8 Church Colony, Tiruchirappalli, Tamil Nadu - 620017</p>
@@ -309,37 +380,29 @@ const OrderDetails = () => {
         Powered By <a href="https://www.dmedia.in/" style="color:white;text-decoration:underline;font-weight:bold;">DMEDIA</a>
       </div>
     </div>
-
-  </div><!-- end bottom-pinned block -->
+  </div>
 
 </div>`;
   };
 
   // ─────────────────────────────────────────────────────────────────────────
-  // renderInvoice  (on-screen JSX version)
-  // Outer wrapper: flex column + minHeight 1122px.
-  // Top content: flex:1 so it expands.
-  // Bottom section: marginTop:"auto" pushes it to the bottom.
+  // renderInvoice — on-screen JSX version
   // ─────────────────────────────────────────────────────────────────────────
   const renderInvoice = (orders, invoiceNo) => {
-    if (!orders || orders.length === 0) return <div className="text-center p-8">No order data available</div>;
-    const firstOrder = orders[0] || {};
-    const cartItems = getCartItems(firstOrder);
+    if (!orders || orders.length === 0)
+      return <div className="text-center p-8">No order data available</div>;
 
-    const itemDetails = cartItems.map(item => {
-      const taxableValue = (item.price || 0) * (item.quantity || 0);
-      const taxAmount = taxableValue * 0.18;
-      return { ...item, taxableValue, taxAmount, amount: taxableValue + taxAmount };
-    });
-    const taxableAmount = itemDetails.reduce((s, i) => s + i.taxableValue, 0);
-    const totalTax = itemDetails.reduce((s, i) => s + i.taxAmount, 0);
-    const MRP = cartItems.reduce((s, i) => s + (i.mrp_price || 0), 0);
-    const cgst = totalTax / 2; const sgst = totalTax / 2;
-    const grandTotal = Math.round(taxableAmount + totalTax + (firstOrder.DeliveryCharges || 0));
-    const grandSavings = Number(Math.abs(MRP - grandTotal));
-    const totalQuantity = itemDetails.reduce((s, i) => s + (i.quantity || 0), 0);
+    const firstOrder = orders[0] || {};
+    const {
+      itemDetails, taxableAmount, cgst, sgst, deliveryCharges,
+      discountAmount, coupon, amountPaid, totalSavings, totalQuantity,
+    } = computeOrderTotals(firstOrder);
+
     const da = firstOrder.delivery_address || {};
-    const fullAddress = [da.street || da.street_address, da.city, da.state, da.pincode ? `PINCode: ${da.pincode}` : null].filter(Boolean).join(", ");
+    const fullAddress = [
+      da.street || da.street_address, da.city, da.state,
+      da.pincode ? `PINCode: ${da.pincode}` : null,
+    ].filter(Boolean).join(", ");
 
     return (
       <div
@@ -347,13 +410,12 @@ const OrderDetails = () => {
         className="w-full mx-auto bg-white border border-gray-200 rounded-lg shadow-sm mb-6"
         style={{ maxWidth: "794px", minHeight: "1122px", display: "flex", flexDirection: "column" }}
       >
-
-        {/* ── TOP: grows to fill available space ── */}
+        {/* ── TOP content ── */}
         <div style={{ flex: 1 }} className="p-6">
 
           {/* Header */}
           <div className="text-center mb-4 pb-3 border-b-2 border-gray-800">
-            <img   fetchpriority="high" loading="eager" src={ImageHelper.pdf_logo} alt="Logo" className="w-36 mx-auto object-contain mb-2" />
+            <img fetchpriority="high" loading="eager" src={ImageHelper.pdf_logo} alt="Logo" className="w-36 mx-auto object-contain mb-2" />
             <div className="flex justify-center gap-6 text-sm text-gray-600">
               <p><span className="font-semibold">Email:</span> info@printe.in</p>
               <p><span className="font-semibold">Website:</span> www.printe.in</p>
@@ -365,16 +427,22 @@ const OrderDetails = () => {
             <div className="flex gap-8">
               <div>
                 <p className="text-sm"><span className="font-semibold">Invoice #:</span> {invoiceNo}</p>
-                <p className="text-sm"><span className="font-semibold">Invoice Date:</span>{" "}
-                  {firstOrder.createdAt ? moment(firstOrder.createdAt).format("DD MMM YYYY") : "N/A"}</p>
+                <p className="text-sm">
+                  <span className="font-semibold">Invoice Date:</span>{" "}
+                  {firstOrder.createdAt ? moment(firstOrder.createdAt).format("DD MMM YYYY") : "N/A"}
+                </p>
               </div>
               <div>
-                <p className="text-sm"><span className="font-semibold">Due Date:</span>{" "}
-                  {firstOrder.createdAt ? moment(firstOrder.createdAt).add(7, 'days').format("DD MMM YYYY") : "N/A"}</p>
+                <p className="text-sm">
+                  <span className="font-semibold">Due Date:</span>{" "}
+                  {firstOrder.createdAt ? moment(firstOrder.createdAt).add(7, "days").format("DD MMM YYYY") : "N/A"}
+                </p>
               </div>
             </div>
             <div className={`px-4 py-2 rounded ${firstOrder.payment_status === "pending" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
-              <p className="font-bold text-sm">{firstOrder.payment_status === "pending" ? "PAYMENT PENDING" : "PAID"}</p>
+              <p className="font-bold text-sm">
+                {firstOrder.payment_status === "pending" ? "PAYMENT PENDING" : "PAID"}
+              </p>
             </div>
           </div>
 
@@ -416,7 +484,7 @@ const OrderDetails = () => {
                     <td className="border border-gray-300 px-4 py-1 pt-2 align-top">
                       <div className="font-semibold mb-1 uppercase">{item.product_name || "Product"}</div>
                       {item.notes && <div className="text-xs text-gray-500 capitalize">{item.notes}</div>}
-                      {item.size && <div className="text-xs text-gray-500">Size: {item.size}</div>}
+                      {item.size  && <div className="text-xs text-gray-500">Size: {item.size}</div>}
                       {item.color && <div className="text-xs text-gray-500">Color: {item.color}</div>}
                     </td>
                     <td className="border border-gray-300 px-4 py-1 pt-2 text-right align-top">₹ {(item.mrp_price || 0).toFixed(2)}</td>
@@ -430,10 +498,10 @@ const OrderDetails = () => {
             </table>
           </div>
 
-          {/* Total in words */}
+          {/* Total in words — uses actual amount paid */}
           <div className="mb-4 bg-gray-50 p-4 rounded border border-gray-200 flex gap-2 items-center">
-            <h4 className="font-semibold text-gray-800">Total amount (in words):</h4>
-            <p className="text-sm italic text-gray-700">INR {numberToWords(grandTotal)}</p>
+            <h4 className="font-semibold text-gray-800 whitespace-nowrap">Total amount (in words):</h4>
+            <p className="text-sm italic text-gray-700">INR {numberToWords(amountPaid)}</p>
           </div>
 
           {/* QR + Totals */}
@@ -443,23 +511,60 @@ const OrderDetails = () => {
                 <div className="mt-4">
                   <div className="border border-gray-300 rounded-lg p-4 inline-block">
                     <h4 className="font-semibold text-gray-800 mb-3 text-center">Payment QR Code</h4>
-                    <img   fetchpriority="high" loading="eager" src={firstOrder.payment_qr_code} alt="Payment QR Code" className="w-48 h-48 mx-auto mb-3" />
+                    <img fetchpriority="high" loading="eager" src={firstOrder.payment_qr_code} alt="Payment QR Code" className="w-48 h-48 mx-auto mb-3" />
                     <p className="text-sm font-semibold text-center">Scan to Pay</p>
                     <p className="text-xs text-gray-500 text-center mt-1">Use any UPI app to scan</p>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Totals breakdown */}
             <div className="w-[50%]">
               <div className="border border-gray-300 rounded-lg overflow-hidden">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <tbody>
-                    <tr className="bg-gray-50"><td className="px-4 py-3 font-semibold">Taxable Amount</td><td className="px-4 py-3 text-right font-semibold">₹ {taxableAmount.toFixed(2)}</td></tr>
-                    <tr className="border-t border-gray-300"><td className="px-4 py-3">CGST 9.0%</td><td className="px-4 py-3 text-right">₹ {cgst.toFixed(2)}</td></tr>
-                    <tr className="border-t border-gray-300"><td className="px-4 py-3">SGST 9.0%</td><td className="px-4 py-3 text-right">₹ {sgst.toFixed(2)}</td></tr>
-                    {firstOrder.DeliveryCharges > 0 && <tr className="border-t border-gray-300"><td className="px-4 py-3">Shipping Charges</td><td className="px-4 py-3 text-right">₹ {firstOrder.DeliveryCharges.toFixed(2)}</td></tr>}
-                    <tr className="border-t border-gray-300 text-green-700"><td className="px-4 py-3">Savings</td><td className="px-4 py-3 text-right">₹ {grandSavings.toFixed(2)}</td></tr>
-                    <tr className="border-t border-gray-300 bg-gray-800 text-white"><td className="px-4 py-3 font-bold">Total Amount</td><td className="px-4 py-3 text-right font-bold">₹ {grandTotal.toFixed(2)}</td></tr>
+                    <tr className="bg-gray-50">
+                      <td className="px-4 py-3 font-semibold">Taxable Amount</td>
+                      <td className="px-4 py-3 text-right font-semibold">₹ {taxableAmount.toFixed(2)}</td>
+                    </tr>
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-3">CGST 9.0%</td>
+                      <td className="px-4 py-3 text-right">₹ {cgst.toFixed(2)}</td>
+                    </tr>
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-3">SGST 9.0%</td>
+                      <td className="px-4 py-3 text-right">₹ {sgst.toFixed(2)}</td>
+                    </tr>
+                    {deliveryCharges > 0 && (
+                      <tr className="border-t border-gray-300">
+                        <td className="px-4 py-3">Shipping Charges</td>
+                        <td className="px-4 py-3 text-right">₹ {deliveryCharges.toFixed(2)}</td>
+                      </tr>
+                    )}
+                    {coupon && discountAmount > 0 && (
+                      <tr className="border-t border-gray-300 text-yellow-700 bg-yellow-50">
+                        <td className="px-4 py-3">
+                          <span className="font-semibold">Coupon Discount</span>
+                          <br />
+                          <span className="text-xs text-yellow-600">({coupon.code})</span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold">
+                          − ₹ {discountAmount.toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
+                    {totalSavings > 0 && (
+                      <tr className="border-t border-gray-300 text-green-700">
+                        <td className="px-4 py-3">Total Savings</td>
+                        <td className="px-4 py-3 text-right">₹ {totalSavings.toFixed(2)}</td>
+                      </tr>
+                    )}
+                    {/* ✅ Amount Paid — the actual figure from DB */}
+                    <tr className="border-t border-gray-300 bg-gray-800 text-white">
+                      <td className="px-4 py-3 font-bold">Amount Paid</td>
+                      <td className="px-4 py-3 text-right font-bold">₹ {amountPaid.toFixed(2)}</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -473,24 +578,39 @@ const OrderDetails = () => {
         </div>
         {/* ── END top content ── */}
 
-        {/* ══════════════════════════════════════════════════════════════
-            BOTTOM-PINNED SECTION
-            marginTop:"auto" pushes this block to the bottom of the
-            flex-column container regardless of content height above it.
-            ══════════════════════════════════════════════════════════════ */}
+        {/* ── BOTTOM-PINNED SECTION ── */}
         <div style={{ marginTop: "auto" }} className="px-6 pb-0">
 
           {/* Payment Status */}
           {firstOrder.payment_status === "pending" ? (
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="font-semibold text-yellow-800">Payment Status: <span className="text-red-600">Pending Payment</span></p>
-              <p className="text-sm text-yellow-700 mt-1">Please complete the payment to process your order</p>
+              <p className="font-semibold text-yellow-800">
+                Payment Status: <span className="text-red-600">Pending Payment</span>
+              </p>
+              <p className="text-sm text-yellow-700 mt-1">
+                Please complete the payment to process your order
+              </p>
             </div>
           ) : (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="font-semibold text-green-800">Payment Status: <span className="text-green-600">Paid</span></p>
+              <p className="font-semibold text-green-800">
+                Payment Status: <span className="text-green-600">Paid</span>
+              </p>
             </div>
           )}
+
+          {/* Terms */}
+          <div className="mb-4 p-4 bg-gray-50 border-l-4 border-yellow-400 rounded">
+            <p className="font-bold text-sm mb-2">📋 TERMS &amp; CONDITIONS:</p>
+            <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+              <p>• Goods once sold will not be taken back or exchanged.</p>
+              <p>• Notify discrepancies within 48 hours of receipt.</p>
+              <p>• All disputes are subject to Trichy jurisdiction only.</p>
+              <p>• This is a system-generated invoice.</p>
+              <p>• Payment must be completed within 7 days of invoice.</p>
+              <p>• Subject to force majeure conditions.</p>
+            </div>
+          </div>
 
           {/* Seller Info + Signature */}
           <div className="pt-4 border-t border-gray-300 mb-0">
@@ -503,8 +623,10 @@ const OrderDetails = () => {
                 </tbody></table>
               </div>
               <div className="text-center">
-                <p className="text-[10px] w-[90%] text-gray-600">For PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED</p>
-                <img   fetchpriority="high" loading="eager" src={signatureImage} alt="Authorized Signature" className="w-24 mx-auto rotate-12" />
+                <p className="text-[10px] w-[90%] text-gray-600">
+                  For PAZHANAM DESIGNS AND CONSTRUCTIONS PRIVATE LIMITED
+                </p>
+                <img fetchpriority="high" loading="eager" src={signatureImage} alt="Authorized Signature" className="w-24 mx-auto rotate-12" />
                 <p className="font-semibold text-gray-800">Authorized Signature</p>
               </div>
             </div>
@@ -516,22 +638,27 @@ const OrderDetails = () => {
             <p className="mb-1">#8 Church Colony, Tiruchirappalli, Tamil Nadu - 620017</p>
             <p className="mb-3">Email: info@printe.in | Customer-care: +91 95856 10000 | Website: www.printe.in</p>
             <div className="bg-gray-800 text-white py-2 px-4 rounded">
-              Powered By{" "}<a href="https://www.dmedia.in/" className="text-white font-bold hover:underline">DMEDIA</a>
+              Powered By{" "}
+              <a href="https://www.dmedia.in/" className="text-white font-bold hover:underline">DMEDIA</a>
             </div>
           </div>
 
         </div>
-        {/* ══ END BOTTOM-PINNED SECTION ══ */}
+        {/* ── END BOTTOM-PINNED SECTION ── */}
 
       </div>
     );
   };
 
-  // Track order status
+  // ── Track order status ──
   const statusItems = [
-    { key: "1", label: "placed" }, { key: "2", label: "design" }, { key: "3", label: "production" },
-    { key: "4", label: "quality check" }, { key: "5", label: "packing" },
-    { key: "6", label: "out for delivery" }, { key: "7", label: "completed" },
+    { key: "1", label: "placed" },
+    { key: "2", label: "design" },
+    { key: "3", label: "production" },
+    { key: "4", label: "quality check" },
+    { key: "5", label: "packing" },
+    { key: "6", label: "out for delivery" },
+    { key: "7", label: "completed" },
   ];
   const statusMapping = {
     placed: "placed", design: "designing team", production: "production team",
@@ -540,17 +667,22 @@ const OrderDetails = () => {
   };
   const ORDER_TIME_LINE = (status) => {
     const dbStatus = statusMapping[status.toLowerCase()] || status;
-    return _.get(filterOrderData, "order_delivery_timeline", []).find(t => t.order_status === dbStatus);
+    return _.get(filterOrderData, "order_delivery_timeline", [])
+      .find((t) => t.order_status === dbStatus);
   };
-  const completedTimelines = _.get(filterOrderData, "order_delivery_timeline", []).map(r => r.order_status);
+  const completedTimelines = _.get(filterOrderData, "order_delivery_timeline", [])
+    .map((r) => r.order_status);
   if (!completedTimelines.includes("placed")) completedTimelines.push("placed");
   const GET_COLOR_STATUS = (res) => {
-    try { return completedTimelines.includes(statusMapping[res?.label?.toLowerCase()] || res?.label) ? "green" : "gray"; }
-    catch { return "gray"; }
+    try {
+      return completedTimelines.includes(
+        statusMapping[res?.label?.toLowerCase()] || res?.label
+      ) ? "green" : "gray";
+    } catch { return "gray"; }
   };
 
   const ordersByInvoice = _.groupBy(
-    allOrders.length > 0 ? allOrders : (filterOrderData ? [filterOrderData] : []),
+    allOrders.length > 0 ? allOrders : filterOrderData ? [filterOrderData] : [],
     "invoice_no"
   );
 
@@ -559,44 +691,65 @@ const OrderDetails = () => {
   return (
     <div className="w-full h-auto flex-1 flex gap-3 flex-col">
       <Helmet>
-        <title>My Orders – Printe.in Account | Track & Manage Your Orders</title>
-        <meta name="description" content="View, track, and manage your printing and gifting orders on Printe.in. Check order status, order history, invoices, and delivery updates easily." />
-        <meta name="keywords" content="printe my orders, order history, track printing orders, order status printe, user orders dashboard, manage orders online" />
+        <title>My Orders – Printe.in Account | Track &amp; Manage Your Orders</title>
+        <meta name="description" content="View, track, and manage your printing and gifting orders on Printe.in." />
+        <meta name="keywords" content="printe my orders, order history, track printing orders, order status printe" />
       </Helmet>
+
       <Collapse defaultActiveKey={["1"]} className="!bg-white overflow-hidden">
-        <Collapse.Panel key="1" header="Invoice"
+        <Collapse.Panel
+          key="1"
+          header="Invoice"
           extra={
-            <Tag onClick={handleDownloadPDF} color="green" className="!flex items-center gap-x-2 !cursor-pointer hover:bg-green-100">
+            <Tag
+              onClick={handleDownloadPDF}
+              color="green"
+              className="!flex items-center gap-x-2 !cursor-pointer hover:bg-green-100"
+            >
               {pdfLoading ? <Spin size="small" /> : <IconHelper.DOWNLOAD_ICON />}
               Download Invoice
             </Tag>
           }
         >
           <div className="w-full flex justify-center items-start overflow-auto">
-            {Object.entries(ordersByInvoice).map(([invoiceNo, orders]) => renderInvoice(orders, invoiceNo))}
+            {Object.entries(ordersByInvoice).map(([invoiceNo, orders]) =>
+              renderInvoice(orders, invoiceNo)
+            )}
           </div>
         </Collapse.Panel>
+
         <Collapse.Panel key="2" header="Track Order Status">
           <div className="bg-white p-5">
             <h2 className="text-xl font-bold text-center mb-6">Track Order Status</h2>
-            <Timeline className="text-sm" items={statusItems.map((res) => {
-              const timelineEntry = ORDER_TIME_LINE(res.label);
-              const createdAt = _.get(timelineEntry, "createdAt", null);
-              const color = GET_COLOR_STATUS(res);
-              return {
-                dot: <div className={`w-3 h-3 rounded-full ${color === "green" ? "bg-green-500" : "bg-gray-300"}`} />,
-                children: (
-                  <div className={`pl-4 ${createdAt ? "" : "opacity-50"}`}>
-                    <h3 className="font-medium capitalize text-gray-800">{res.label}</h3>
-                    {createdAt && <p className="text-sm text-gray-500">{moment(createdAt).format("DD-MMM-YYYY")}</p>}
-                  </div>
-                ),
-                color,
-              };
-            })} />
+            <Timeline
+              className="text-sm"
+              items={statusItems.map((res) => {
+                const timelineEntry = ORDER_TIME_LINE(res.label);
+                const createdAt = _.get(timelineEntry, "createdAt", null);
+                const color = GET_COLOR_STATUS(res);
+                return {
+                  dot: (
+                    <div className={`w-3 h-3 rounded-full ${color === "green" ? "bg-green-500" : "bg-gray-300"}`} />
+                  ),
+                  children: (
+                    <div className={`pl-4 ${createdAt ? "" : "opacity-50"}`}>
+                      <h3 className="font-medium capitalize text-gray-800">{res.label}</h3>
+                      {createdAt && (
+                        <p className="text-sm text-gray-500">{moment(createdAt).format("DD-MMM-YYYY")}</p>
+                      )}
+                    </div>
+                  ),
+                  color,
+                };
+              })}
+            />
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <h4 className="font-semibold text-gray-800 mb-2">Current Status:</h4>
-              <p className="text-gray-600">{filterOrderData.order_status ? _.startCase(filterOrderData.order_status) : "Order placed"}</p>
+              <p className="text-gray-600">
+                {filterOrderData.order_status
+                  ? _.startCase(filterOrderData.order_status)
+                  : "Order placed"}
+              </p>
             </div>
           </div>
         </Collapse.Panel>

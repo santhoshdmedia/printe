@@ -1,450 +1,328 @@
-import { useState, useEffect, useCallback } from 'react';
-import { FaCreditCard, FaSpinner, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaCity, FaGlobeAsia, FaMapPin, FaReceipt, FaTag, FaPercent, FaShoppingCart } from 'react-icons/fa';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  FaCreditCard, FaSpinner, FaUser, FaEnvelope, FaPhone,
+  FaMapMarkerAlt, FaCity, FaGlobeAsia, FaMapPin, FaReceipt,
+  FaTag, FaShoppingCart, FaCheckCircle,
+} from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import _ from 'lodash';
 import { applyCouponCode } from '../../helper/api_helper';
 import { initiateCCAvenuePayment } from './pay/utils/payment';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────────────────────────
 
-const NON_TN_DELIVERY_CHARGE = 100;
+const PINCODE_API = 'https://api.postalpincode.in/pincode/';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
-/**
- * Determine if an item is a photo frame product.
- * Checks: is_photo_frame, is_photoframe, or presence of photo_frame_details
- */
-const isPhotoFrame = (item) => {
-  return Boolean(
+const isPhotoFrame = (item) =>
+  Boolean(
     item.is_photo_frame ||
     item.is_photoframe ||
     (item.photo_frame_details && Object.keys(item.photo_frame_details).length > 0)
   );
-};
 
-/**
- * Get the delivery_to_home flag for a cart item.
- * For photo frame items, checks photo_frame_details.delivery_to_home
- */
 const getDeliveryToHome = (item) => {
   if (!isPhotoFrame(item)) return true;
-
-  // Check nested photo_frame_details first
-  if (item.photo_frame_details && typeof item.photo_frame_details.delivery_to_home === 'boolean') {
+  if (item.photo_frame_details && typeof item.photo_frame_details.delivery_to_home === 'boolean')
     return item.photo_frame_details.delivery_to_home;
-  }
-
-  // Fallback to top-level flag
-  if (typeof item.delivery_to_home === 'boolean') {
-    return item.delivery_to_home;
-  }
-
-  return true; // default to home delivery
+  if (typeof item.delivery_to_home === 'boolean') return item.delivery_to_home;
+  return true;
 };
 
-/**
- * Get the pickup_from_office flag for a photo frame item.
- */
 const getPickupFromOffice = (item) => {
   if (!isPhotoFrame(item)) return false;
   return Boolean(item.photo_frame_details?.pickup_from_office);
 };
 
-/**
- * Check whether a given state string refers to Tamil Nadu.
- * Accepts common variants/casing/whitespace differences.
- */
 const isTamilNaduState = (state) => {
   if (!state) return false;
-  const normalized = state.trim().toLowerCase().replace(/\s+/g, '');
-  return normalized === 'tamilnadu' || normalized === 'tn';
+  const n = state.trim().toLowerCase().replace(/\s+/g, '');
+  return n === 'tamilnadu' || n === 'tn';
 };
 
 /**
- * Calculate delivery charge for a single cart item.
- *
- * Rules (in order of precedence):
- *   1. FreeDelivery === true → ₹0
- *   2. Photo frame with pickup_from_office === true → ₹0
- *   3. Photo frame with delivery_to_home === false → ₹0
- *   4. Delivery state/pincode is NOT Tamil Nadu → ₹100 (flat, overrides item.DeliveryCharges)
- *   5. Delivery state/pincode IS Tamil Nadu → item.DeliveryCharges
+ * Delivery charge for a single item.
+ * Uses:
+ *   - item.DeliveryCharges  → Tamil Nadu charge
+ *   - item.out_of_tn_charge → outside-TN charge (fallback 100 if 0/missing)
  */
 const getItemDeliveryCharge = (item, isTamilNadu) => {
-  console.log('Calculating delivery for:', item.product_name, {
-    FreeDelivery: item.FreeDelivery,
-    isPhotoFrame: isPhotoFrame(item),
-    pickup_from_office: getPickupFromOffice(item),
-    delivery_to_home: getDeliveryToHome(item),
-    DeliveryCharges: item.DeliveryCharges,
-    isTamilNadu,
-  });
+  if (item.FreeDelivery) return 0;
 
-  // Rule 1: Free delivery
-  if (item.FreeDelivery) {
-    console.log('→ Free delivery (FreeDelivery=true)');
-    return 0;
-  }
-
-  // Rule 2 & 3: Photo frame pickup scenarios
   if (isPhotoFrame(item)) {
-    if (getPickupFromOffice(item)) {
-      console.log('→ No delivery charge (pickup from office)');
-      return 0;
-    }
-    if (!getDeliveryToHome(item)) {
-      console.log('→ No delivery charge (not delivered to home)');
-      return 0;
-    }
+    if (getPickupFromOffice(item)) return 0;
+    if (!getDeliveryToHome(item)) return 0;
   }
 
-  // Rule 4: Non-Tamil Nadu delivery → flat ₹100
   if (!isTamilNadu) {
-    console.log(`→ Flat outstation delivery charge: ₹${NON_TN_DELIVERY_CHARGE}`);
-    return NON_TN_DELIVERY_CHARGE;
+    // Use out_of_tn_charge from API; fall back to 100 if not set
+    const outCharge = Number(item.out_of_tn_charge);
+    return outCharge > 0 ? outCharge : 100;
   }
 
-  // Rule 5: Tamil Nadu → normal delivery charge
-  const charge = Number(80) || 0;
-  console.log(`→ Normal (Tamil Nadu) delivery charge: ₹${charge}`);
-  return charge;
+  return Number(item.DeliveryCharges) || 0;
 };
 
-/**
- * Get the total delivery charge for all cart items.
- */
-const getTotalDeliveryCharge = (cartData, isTamilNadu) => {
-  return _.sum(cartData.map(item => getItemDeliveryCharge(item, isTamilNadu)));
-};
+const getTotalDeliveryCharge = (cartData, isTamilNadu) =>
+  _.sum(cartData.map((item) => getItemDeliveryCharge(item, isTamilNadu)));
 
-// ─── Reusable input components ──────────────────────────────────────────────
+// ─── Input components ──────────────────────────────────────────────────────────
 
-const TextInputField = ({ label, name, type = 'text', placeholder, icon: Icon, value, onChange, disabled, ...props }) => (
+const Field = ({ label, icon: Icon, error, children }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+      {label}
+    </label>
     <div className="relative">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Icon className="h-5 w-5 text-gray-400" />
+        <Icon className="h-4 w-4 text-gray-400" />
       </div>
-      <input
-        type={type}
-        name={name}
-        value={value || ''}
-        onChange={onChange}
-        className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
-        placeholder={placeholder}
-        disabled={disabled}
-        autoComplete="on"
-        {...props}
-      />
+      {children}
     </div>
+    {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
   </div>
 );
 
-const NumberInputField = ({ label, name, placeholder, icon: Icon, maxLength, value, onChange, disabled, ...props }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Icon className="h-5 w-5 text-gray-400" />
-      </div>
-      <input
-        type="text"
-        name={name}
-        value={value || ''}
-        onChange={onChange}
-        className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none"
-        placeholder={placeholder}
-        maxLength={maxLength}
-        disabled={disabled}
-        autoComplete="on"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        {...props}
-      />
-    </div>
-    {name === 'phone' && value && value.length !== 10 && (
-      <div className="mt-1 text-xs text-red-500">Phone number must be exactly 10 digits</div>
-    )}
-    {name === 'pincode' && value && value.length !== 6 && (
-      <div className="mt-1 text-xs text-red-500">Pincode must be exactly 6 digits</div>
-    )}
-  </div>
-);
+const inputCls =
+  'block w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg ' +
+  'focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors focus:outline-none ' +
+  'disabled:bg-gray-50 disabled:text-gray-400 bg-white';
 
-// ─── Main component ──────────────────────────────────────────────────────────
+// ─── Main component ────────────────────────────────────────────────────────────
 
 const NewCheckout = () => {
-  const { user } = useSelector((state) => state.authSlice);
+  const { user } = useSelector((s) => s.authSlice);
   const location = useLocation();
   const navigate = useNavigate();
   const selectedProducts = location.state?.selectedProducts || [];
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [couponCode, setCouponCode] = useState('');
-  const [couponType, setCouponType] = useState('');
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [loading, setLoading]             = useState(false);
+  const [error, setError]                 = useState('');
+  const [couponCode, setCouponCode]       = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [couponError, setCouponError] = useState('');
-  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [couponError, setCouponError]     = useState('');
+  const [acceptTerms, setAcceptTerms]     = useState(false);
   const [paymentOption, setPaymentOption] = useState('full');
-  const [cartData, setCartData] = useState([]);
-  const [gstNo, setGstNo] = useState(user?.gst_no || '');
+  const [cartData, setCartData]           = useState([]);
+  const [gstNo, setGstNo]                 = useState(user?.gst_no || '');
   const [selectedAddress, setSelectedAddress] = useState(0);
+  const [pincodeLoading, setPincodeLoading]   = useState(false);
+  const [pincodeError, setPincodeError]       = useState('');
+  const [pincodeResolved, setPincodeResolved] = useState(false);
+
   const [calculations, setCalculations] = useState({
     subtotal: 0, tax: 0, delivery: 0, discount: 0,
     total: 0, totalBeforeDiscount: 0, payable: 0,
   });
 
   const [formData, setFormData] = useState({
-    name:         user?.name  || '',
-    email:        user?.email || '',
-    phone:        user?.phone || '',
-    addressLine1: '',
-    addressLine2: '',
-    city:         '',
-    state:        '',
-    pincode:      '',
+    name: user?.name || '', email: user?.email || '', phone: String(user?.phone || ''),
+    addressLine1: '', addressLine2: '', city: '', state: '', pincode: '',
   });
 
+  const [fieldErrors, setFieldErrors] = useState({});
   const addresses = _.get(user, 'addresses', []);
-
-  // Whether the currently entered delivery state is Tamil Nadu.
-  // Drives the flat ₹100 outstation delivery charge rule.
   const isTamilNaduDelivery = isTamilNaduState(formData.state);
 
-  // ─── Guards ───────────────────────────────────────────────────────────────
+  // Debounced pincode lookup ref
+  const pincodeTimer = useRef(null);
 
-  useEffect(() => {
-    if (!user?.name) navigate('/login');
-  }, [user?.name, navigate]);
+  // ── Guards ─────────────────────────────────────────────────────────────────
+  useEffect(() => { if (!user?.name) navigate('/login'); }, [user?.name, navigate]);
+  useEffect(() => { if (selectedProducts.length > 0) setCartData(selectedProducts); }, [selectedProducts]);
 
-  useEffect(() => {
-    if (selectedProducts.length > 0) setCartData(selectedProducts);
-  }, [selectedProducts]);
-
-  // Pre-fill form when a saved address is selected
+  // Pre-fill saved address
   useEffect(() => {
     if (addresses[selectedAddress]) {
-      const address = addresses[selectedAddress];
-      const streetParts = address.street ? address.street.split('\n') : ['', ''];
-      setFormData(prev => ({
+      const addr = addresses[selectedAddress];
+      const parts = addr.street ? addr.street.split('\n') : ['', ''];
+      setFormData((prev) => ({
         ...prev,
-        phone:        address.mobileNumber || user?.phone || '',
-        addressLine1: streetParts[0] || '',
-        addressLine2: streetParts[1] || '',
-        city:         address.city    || '',
-        state:        address.state   || '',
-        pincode:      address.pincode || '',
+        phone: String(addr.mobileNumber || user?.phone || ''),
+        addressLine1: parts[0] || '',
+        addressLine2: parts[1] || '',
+        city: addr.city || '',
+        state: addr.state || '',
+        pincode: addr.pincode || '',
       }));
+      setPincodeResolved(false);
     }
   }, [selectedAddress, user, addresses]);
 
-  // ─── Price calculations ───────────────────────────────────────────────────
+  // ── Pincode lookup ─────────────────────────────────────────────────────────
+  const lookupPincode = useCallback(async (pin) => {
+    if (pin.length !== 6) {
+      setPincodeError('');
+      setPincodeResolved(false);
+      return;
+    }
+    setPincodeLoading(true);
+    setPincodeError('');
+    try {
+      const res  = await fetch(`${PINCODE_API}${pin}`);
+      const data = await res.json();
+      if (data?.[0]?.Status === 'Success' && data[0].PostOffice?.length > 0) {
+        const po = data[0].PostOffice[0];
+        setFormData((prev) => ({
+          ...prev,
+          city:  po.District || po.Block || prev.city,
+          state: po.State    || prev.state,
+        }));
+        setFieldErrors((prev) => ({ ...prev, city: '', state: '', pincode: '' }));
+        setPincodeResolved(true);
+        setPincodeError('');
+      } else {
+        setPincodeError('Pincode not found. Please enter city and state manually.');
+        setPincodeResolved(false);
+      }
+    } catch {
+      setPincodeError('Could not verify pincode. Please enter city and state manually.');
+      setPincodeResolved(false);
+    } finally {
+      setPincodeLoading(false);
+    }
+  }, []);
 
+  // ── Price calculations ─────────────────────────────────────────────────────
   useEffect(() => {
-    const subtotal = _.sum(
-      cartData.map(item => Number(item.final_total_withoutGst) || Number(item.final_total) || 0)
-    );
-    const tax = subtotal * 0.18;
-
-    // Use the helper function to calculate delivery charges, factoring in
-    // whether the delivery address state is Tamil Nadu (flat ₹100 otherwise,
-    // unless the item is pickup-from-office, which is always free).
-    const delivery = getTotalDeliveryCharge(cartData, isTamilNaduDelivery);
-
-    const discount           = appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0;
+    const subtotal  = _.sum(cartData.map((i) => Number(i.final_total_withoutGst) || Number(i.final_total) || 0));
+    const tax       = subtotal * 0.18;
+    const delivery  = getTotalDeliveryCharge(cartData, isTamilNaduDelivery);
+    const discount  = appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0;
     const totalBeforeDiscount = subtotal + tax + delivery;
-    const total              = Math.max(0, totalBeforeDiscount - discount);
-    const payable            = paymentOption === 'half' ? Math.ceil(total * 0.5) : total;
-
+    const total     = Math.max(0, totalBeforeDiscount - discount);
+    const payable   = paymentOption === 'half' ? Math.ceil(total * 0.5) : total;
     setCalculations({ subtotal, tax, delivery, discount, total, totalBeforeDiscount, payable });
   }, [cartData, appliedCoupon, paymentOption, isTamilNaduDelivery]);
 
-  // ─── Form validation ──────────────────────────────────────────────────────
-
+  // ── Validation ─────────────────────────────────────────────────────────────
   const validateForm = () => {
+    const errs = {};
+    if (!formData.name?.trim())              errs.name         = 'Required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email || '')) errs.email = 'Invalid email';
+    if (!/^\d{10}$/.test(String(formData.phone || '').replace(/\D/g, ''))) errs.phone = 'Must be 10 digits';
+    if (!formData.addressLine1?.trim())      errs.addressLine1 = 'Required';
+    if (!formData.city?.trim())             errs.city         = 'Required';
+    if (!formData.state?.trim())            errs.state        = 'Required';
+    if (!/^\d{6}$/.test(String(formData.pincode || ''))) errs.pincode = 'Must be 6 digits';
+
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) { setError('Please fix the errors above'); return false; }
+    if (!acceptTerms) { setError('Please accept the Terms & Conditions'); return false; }
     if (cartData.length === 0) { setError('No products selected'); return false; }
-
-    const requiredFields = [
-      { field: 'name',     message: 'Please enter your name' },
-      { field: 'email',    message: 'Please enter a valid email address', test: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) },
-      { field: 'phone',    message: 'Please enter a valid 10-digit phone number', test: (val) => /^\d{10}$/.test(val.replace(/\D/g, '')) },
-      { field: 'addressLine1', message: 'Please enter your address (Line 1)' },
-      { field: 'city',     message: 'Please enter your city' },
-      { field: 'state',    message: 'Please enter your state' },
-      { field: 'pincode',  message: 'Please enter a valid 6-digit pincode', test: (val) => /^\d{6}$/.test(val) },
-    ];
-
-    for (const { field, message, test } of requiredFields) {
-      const value = formData[field]?.trim();
-      if (!value)            { setError(message); return false; }
-      if (test && !test(value)) { setError(message); return false; }
-    }
-
-    if (!acceptTerms) { setError('Please accept terms and conditions'); return false; }
     return true;
   };
 
-  // ─── Coupon helpers ───────────────────────────────────────────────────────
-
+  // ── Coupon ─────────────────────────────────────────────────────────────────
   const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) { setCouponError('Please enter a coupon code'); return; }
-
+    if (!couponCode.trim()) { setCouponError('Enter a coupon code'); return; }
     try {
-      setCouponLoading(true);
-      setCouponError('');
-
-      const orderAmount = calculations.totalBeforeDiscount;
-      const cartItems = cartData.map(item => {
-        let productId  = item.product_id?.$oid  || (item.product_id  || item.productId  || '').toString();
-        let categoryId = item.category_id?.$oid || (item.category_id || item.categoryId || item.category || '').toString();
-
+      setCouponLoading(true); setCouponError('');
+      const cartItems = cartData.map((item) => {
+        const productId  = item.product_id?.$oid  || String(item.product_id  || item.productId  || '');
+        const categoryId = item.category_id?.$oid || String(item.category_id || item.categoryId || item.category || item.product_category_id || item.cat_id || '');
         const quantity   = Number(item.product_quantity) || 1;
         const totalPrice = Number(item.final_total_withoutGst || item.final_total) || 0;
-        const price      = parseFloat((totalPrice / quantity).toFixed(2));
-
-        const resolvedCategoryId = categoryId || (item.product_category_id || '').toString() || (item.cat_id || '').toString() || '';
-        if (!resolvedCategoryId) console.warn('Could not find categoryId for cart item:', Object.keys(item));
-
-        return { productId, categoryId: resolvedCategoryId, name: item.product_name || item.name || '', quantity, price };
+        return { productId, categoryId, name: item.product_name || '', quantity, price: parseFloat((totalPrice / quantity).toFixed(2)) };
       });
-
-      const couponData = {
-        code:        couponCode.trim().toUpperCase(),
-        orderAmount: parseFloat(orderAmount.toFixed(2)),
-        userId:      user?._id?.toString() || user?.id,
+      const resp = await applyCouponCode({
+        code: couponCode.trim().toUpperCase(),
+        orderAmount: parseFloat(calculations.totalBeforeDiscount.toFixed(2)),
+        userId: user?._id?.toString() || user?.id,
         cartItems,
-        userType:    user?.role || 'user',
-      };
-
-      const response = await applyCouponCode(couponData);
-
-      if (response?.success === true) {
-        const coupon    = response.data?.coupon || response.data;
-        const coupontyp = response.data?.coupon?.discountType || '';
-        if (coupon) {
-          setCouponType(coupontyp);
-          setAppliedCoupon(coupon);
-          setCouponError('');
-          setError('');
-          const discountAmount = Number(coupon.discountAmount) || 0;
-          const newTotal       = Math.max(0, calculations.totalBeforeDiscount - discountAmount);
-          const newPayable     = paymentOption === 'half' ? Math.ceil(newTotal * 0.5) : newTotal;
-          setCalculations(prev => ({ ...prev, discount: discountAmount, total: newTotal, payable: newPayable }));
-        } else throw new Error('Invalid coupon response');
+        userType: user?.role || 'user',
+      });
+      if (resp?.success) {
+        const coupon = resp.data?.coupon || resp.data;
+        if (!coupon) throw new Error('Invalid coupon response');
+        setAppliedCoupon(coupon);
+        setCouponError('');
+        setError('');
       } else {
-        throw new Error(response?.message || response?.data?.message || response?.error?.message || 'Coupon application failed');
+        throw new Error(resp?.message || resp?.data?.message || 'Coupon application failed');
       }
     } catch (err) {
-      let errorMessage = 'Invalid coupon code';
-      if (err.response?.data?.message)  errorMessage = err.response.data.message;
-      else if (err.message)             errorMessage = err.message;
-
-      if (errorMessage.includes('Victoria Luxe')) errorMessage = 'This coupon only applies to Victoria Luxe products';
-      else if (errorMessage.includes('minimum order amount')) { const m = errorMessage.match(/₹(\d+)/); errorMessage = m ? `Minimum order amount is ₹${m[1]}` : errorMessage; }
-      else if (errorMessage.includes('expired') || errorMessage.includes('not active')) errorMessage = 'This coupon is not valid or has expired';
-      else if (errorMessage.includes('not applicable to the categories') || errorMessage.includes('not applicable to the products')) errorMessage = 'This coupon is not valid for the products in your cart';
-
-      setCouponError(errorMessage);
+      let msg = err.response?.data?.message || err.message || 'Invalid coupon code';
+      if (msg.includes('minimum order amount')) { const m = msg.match(/₹(\d+)/); msg = m ? `Minimum order ₹${m[1]}` : msg; }
+      else if (msg.includes('expired') || msg.includes('not active')) msg = 'Coupon expired or inactive';
+      else if (msg.includes('not applicable')) msg = 'Coupon not valid for items in cart';
+      setCouponError(msg);
       setAppliedCoupon(null);
-      setCalculations(prev => ({ ...prev, discount: 0, total: prev.totalBeforeDiscount, payable: paymentOption === 'half' ? Math.ceil(prev.totalBeforeDiscount * 0.5) : prev.totalBeforeDiscount }));
-    } finally {
-      setCouponLoading(false);
-    }
+    } finally { setCouponLoading(false); }
   };
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null); setCouponCode(''); setCouponError('');
-    setCalculations(prev => ({ ...prev, discount: 0, total: prev.totalBeforeDiscount, payable: paymentOption === 'half' ? Math.ceil(prev.totalBeforeDiscount * 0.5) : prev.totalBeforeDiscount }));
   };
 
-  const getDiscountDescription = (coupon) => {
-    if (!coupon) return '';
-    switch (coupon.discountType) {
-      case 'percentage':      return `${coupon.discountValue || 0}% off`;
-      case 'fixed':           return `₹${coupon.discountValue || 0} off`;
+  const getDiscountLabel = (c) => {
+    if (!c) return '';
+    switch (c.discountType) {
+      case 'percentage':      return `${c.discountValue || 0}% off`;
+      case 'fixed':           return `₹${c.discountValue || 0} off`;
       case 'shipping':        return 'Free shipping';
-      case 'tiered_quantity': return 'Tiered discount applied';
+      case 'tiered_quantity': return 'Tiered discount';
       default:                return 'Discount applied';
     }
   };
 
-  const getDiscountField = (role) => {
-    switch (role) {
-      case 'Dealer':    return 'Dealer_discountValue';
-      case 'Corporate': return 'Corporate_discountValue';
-      default:          return 'Customer_discountValue';
-    }
-  };
+  const getDiscountField = (role) =>
+    role === 'Dealer' ? 'Dealer_discountValue' :
+    role === 'Corporate' ? 'Corporate_discountValue' : 'Customer_discountValue';
 
-  // ─── Payment ──────────────────────────────────────────────────────────────
-
+  // ── Payment ────────────────────────────────────────────────────────────────
   const handlePayment = async () => {
     if (!validateForm()) return;
-    setLoading(true);
-    setError('');
-
+    setLoading(true); setError('');
     try {
       const orderId = `PRINTE${Date.now()}`;
       const street  = formData.addressLine2
         ? `${formData.addressLine1}\n${formData.addressLine2}`
         : formData.addressLine1;
 
-      const deliveryAddress = {
-        name: formData.name, email: formData.email, mobile_number: formData.phone,
-        alternateMobileNumber: '', street, city: formData.city,
-        state: formData.state, pincode: formData.pincode,
-      };
-
-      const couponData = appliedCoupon
-        ? {
-            couponCode:    appliedCoupon.code,
-            discountType:  appliedCoupon.discountType,
-            discountValue: appliedCoupon[getDiscountField(user.role)],
-            discountAmount: appliedCoupon.discountAmount,
-            finalAmount:   appliedCoupon.finalAmount,
-            discountTiers: appliedCoupon.discountTiers,
-            appliedTiers:  appliedCoupon.appliedTiers,
-          }
-        : null;
-
-      // ── Photo frame details ──────────────────────────────────────────
-      const photoFrameDetails = cartData.map(item => ({
-        cart_item_id:     item._id,
-        product_id:       item.product_id,
-        delivery_to_home: getDeliveryToHome(item),
-        pickup_from_office: getPickupFromOffice(item),
-        ...(item.photo_frame_details || {}),
-      }));
-
-      const paymentData = {
-        amount:               calculations.payable,
-        order_id:             orderId,
-        billing_name:         formData.name,
-        billing_email:        formData.email,
-        billing_tel:          formData.phone,
-        currency:             'INR',
-        cart_items:           cartData,
-        photo_frame_details:  photoFrameDetails,
-        delivery_address:     deliveryAddress,
-        user_id:              user?._id,
-        delivery_charges:     calculations.delivery,
-        free_delivery:        cartData.every(item => item.FreeDelivery),
-        gst_no:               gstNo || undefined,
-        coupon:               couponData,
-        subtotal:             calculations.subtotal,
-        tax_amount:           calculations.tax,
-        discount_amount:      calculations.discount,
-        total_amount:         calculations.total,
-        payment_type:         paymentOption,
+      await initiateCCAvenuePayment({
+        amount:          calculations.payable,
+        order_id:        orderId,
+        billing_name:    formData.name,
+        billing_email:   formData.email,
+        billing_tel:     formData.phone,
+        currency:        'INR',
+        cart_items:      cartData,
+        photo_frame_details: cartData.map((item) => ({
+          cart_item_id: item._id, product_id: item.product_id,
+          delivery_to_home: getDeliveryToHome(item),
+          pickup_from_office: getPickupFromOffice(item),
+          ...(item.photo_frame_details || {}),
+        })),
+        delivery_address: {
+          name: formData.name, email: formData.email, mobile_number: formData.phone,
+          alternateMobileNumber: '', street, city: formData.city,
+          state: formData.state, pincode: formData.pincode,
+        },
+        user_id:          user?._id,
+        delivery_charges: calculations.delivery,
+        free_delivery:    cartData.every((i) => i.FreeDelivery),
+        gst_no:           gstNo || undefined,
+        coupon: appliedCoupon ? {
+          couponCode:    appliedCoupon.code,
+          discountType:  appliedCoupon.discountType,
+          discountValue: appliedCoupon[getDiscountField(user.role)],
+          discountAmount: appliedCoupon.discountAmount,
+          finalAmount:   appliedCoupon.finalAmount,
+          discountTiers: appliedCoupon.discountTiers,
+          appliedTiers:  appliedCoupon.appliedTiers,
+        } : null,
+        subtotal:              calculations.subtotal,
+        tax_amount:            calculations.tax,
+        discount_amount:       calculations.discount,
+        total_amount:          calculations.total,
+        payment_type:          paymentOption,
         total_before_discount: calculations.totalBeforeDiscount,
-      };
-
-      await initiateCCAvenuePayment(paymentData);
+      });
     } catch (err) {
       console.error('Payment error:', err);
       setError(err?.message || 'Failed to process payment. Please try again.');
@@ -452,20 +330,53 @@ const NewCheckout = () => {
     }
   };
 
-  // ─── Input handlers ───────────────────────────────────────────────────────
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData((p) => ({ ...p, [name]: value }));
+    setFieldErrors((p) => ({ ...p, [name]: '' }));
+    setError('');
+  }, []);
 
-  const handleTextChange    = useCallback((e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); setError(''); }, []);
-  const handlePhoneChange   = useCallback((e) => { setFormData(prev => ({ ...prev, phone:   e.target.value.replace(/\D/g, '').slice(0, 10) })); setError(''); }, []);
-  const handlePincodeChange = useCallback((e) => { setFormData(prev => ({ ...prev, pincode: e.target.value.replace(/\D/g, '').slice(0, 6)  })); setError(''); }, []);
-  const handleEmailChange   = useCallback((e) => { setFormData(prev => ({ ...prev, email: e.target.value })); setError(''); }, []);
-  const handleGstChange     = useCallback((e) => { setGstNo(e.target.value.toUpperCase()); }, []);
+  const handlePhoneChange = useCallback((e) => {
+    setFormData((p) => ({ ...p, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }));
+    setFieldErrors((p) => ({ ...p, phone: '' }));
+    setError('');
+  }, []);
 
-  // ─── Early-return states ──────────────────────────────────────────────────
+  const handlePincodeChange = useCallback((e) => {
+    const pin = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setFormData((p) => ({ ...p, pincode: pin }));
+    setFieldErrors((p) => ({ ...p, pincode: '' }));
+    setError('');
+    setPincodeResolved(false);
+    setPincodeError('');
 
+    // Clear city/state when pincode changes so stale auto-fill doesn't persist
+    if (pin.length < 6) {
+      setFormData((p) => ({ ...p, pincode: pin, city: '', state: '' }));
+    }
+
+    // Debounce the API call
+    clearTimeout(pincodeTimer.current);
+    if (pin.length === 6) {
+      pincodeTimer.current = setTimeout(() => lookupPincode(pin), 500);
+    }
+  }, [lookupPincode]);
+
+  const handleEmailChange = useCallback((e) => {
+    setFormData((p) => ({ ...p, email: e.target.value }));
+    setFieldErrors((p) => ({ ...p, email: '' }));
+    setError('');
+  }, []);
+
+  const handleGstChange = useCallback((e) => setGstNo(e.target.value.toUpperCase()), []);
+
+  // ── Early returns ──────────────────────────────────────────────────────────
   if (loading && cartData.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center"><FaSpinner className="w-8 h-8 animate-spin mx-auto mb-4" /><p>Loading checkout...</p></div>
+        <FaSpinner className="w-8 h-8 animate-spin text-indigo-600" />
       </div>
     );
   }
@@ -474,125 +385,210 @@ const NewCheckout = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">No Products Selected</h2>
-          <p className="mb-4">Please add products to your cart before checkout.</p>
-          <button onClick={() => navigate('/shopping-cart')} className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700">Go to Cart</button>
+          <FaShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
+          <p className="text-gray-500 mb-6">Add products to your cart before checkout.</p>
+          <button onClick={() => navigate('/shopping-cart')}
+            className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors">
+            Go to Cart
+          </button>
         </div>
       </div>
     );
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Checkout</h1>
-          <p className="text-gray-600">Complete your purchase securely</p>
+
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
+          <p className="text-gray-500 mt-1">Review your order and complete your purchase</p>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
-          {/* ── Left column ─────────────────────────────────────────────── */}
+          {/* ── Left column ──────────────────────────────────────────────── */}
           <div className="xl:col-span-2 space-y-6">
 
             {/* Saved address picker */}
             {addresses.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-xl p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <FaUser className="text-blue-600" />Select Delivery Address
-                  </h2>
-                  {addresses.length > 1 && (
-                    <select value={selectedAddress} onChange={(e) => setSelectedAddress(Number(e.target.value))} className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                      {addresses.map((_, index) => <option key={index} value={index}>Address {index + 1}</option>)}
-                    </select>
-                  )}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <FaUser className="text-indigo-500" /> Saved Addresses
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {addresses.map((addr, idx) => (
+                    <button key={idx} onClick={() => setSelectedAddress(idx)}
+                      className={`text-left p-4 rounded-xl border-2 transition-all text-sm ${
+                        selectedAddress === idx
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}>
+                      <div className="font-semibold text-gray-800 mb-1">Address {idx + 1}</div>
+                      <div className="text-gray-500 line-clamp-2">
+                        {[addr.street, addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}
+                      </div>
+                      {selectedAddress === idx && (
+                        <div className="mt-2 text-indigo-600 text-xs font-semibold flex items-center gap-1">
+                          <FaCheckCircle /> Selected
+                        </div>
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
 
             {/* Shipping information */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <FaMapMarkerAlt className="text-blue-600" />Shipping Information
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-base font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <FaMapMarkerAlt className="text-indigo-500" /> Shipping Information
               </h2>
-              <div className="space-y-6">
-                <TextInputField label="Full Name *" name="name" value={formData.name} onChange={handleTextChange} placeholder="John Doe" icon={FaUser} disabled={loading} />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <TextInputField label="Email Address *" name="email" type="email" value={formData.email} onChange={handleEmailChange} placeholder="john@example.com" icon={FaEnvelope} disabled={loading} />
-                  <NumberInputField label="Phone Number *" name="phone" value={formData.phone} onChange={handlePhoneChange} placeholder="9876543210" maxLength={10} icon={FaPhone} disabled={loading} />
+              <div className="space-y-5">
+
+                {/* Name */}
+                <Field label="Full Name *" icon={FaUser} error={fieldErrors.name}>
+                  <input name="name" value={formData.name} onChange={handleChange}
+                    placeholder="John Doe" disabled={loading} autoComplete="name"
+                    className={inputCls} />
+                </Field>
+
+                {/* Email + Phone */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <Field label="Email Address *" icon={FaEnvelope} error={fieldErrors.email}>
+                    <input name="email" type="email" value={formData.email} onChange={handleEmailChange}
+                      placeholder="john@example.com" disabled={loading} autoComplete="email"
+                      className={inputCls} />
+                  </Field>
+                  <Field label="Phone Number *" icon={FaPhone} error={fieldErrors.phone}>
+                    <input name="phone" value={formData.phone} onChange={handlePhoneChange}
+                      placeholder="9876543210" maxLength={10} disabled={loading}
+                      autoComplete="tel" inputMode="numeric" pattern="[0-9]*"
+                      className={inputCls} />
+                  </Field>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address Line 1 (Street, Building) *</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><FaMapMarkerAlt className="h-5 w-5 text-gray-400" /></div>
-                    <input name="addressLine1" value={formData.addressLine1 || ''} onChange={handleTextChange} className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none" placeholder="House No., Building, Street, Area" disabled={loading} autoComplete="address-line1" />
-                  </div>
+
+                {/* Address Line 1 */}
+                <Field label="Address Line 1 *" icon={FaMapMarkerAlt} error={fieldErrors.addressLine1}>
+                  <input name="addressLine1" value={formData.addressLine1} onChange={handleChange}
+                    placeholder="House No., Building, Street, Area" disabled={loading}
+                    autoComplete="address-line1" className={inputCls} />
+                </Field>
+
+                {/* Address Line 2 */}
+                <Field label="Address Line 2 (Optional)" icon={FaMapMarkerAlt}>
+                  <input name="addressLine2" value={formData.addressLine2} onChange={handleChange}
+                    placeholder="Landmark, Apartment, Suite" disabled={loading}
+                    autoComplete="address-line2" className={inputCls} />
+                </Field>
+
+                {/* Pincode — auto-fills City + State */}
+                <Field label="Pincode *" icon={FaMapPin}
+                  error={fieldErrors.pincode || pincodeError}>
+                  <input name="pincode" value={formData.pincode} onChange={handlePincodeChange}
+                    placeholder="600001" maxLength={6} disabled={loading}
+                    inputMode="numeric" pattern="[0-9]*" autoComplete="postal-code"
+                    className={inputCls} />
+                  {pincodeLoading && (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      <FaSpinner className="h-4 w-4 text-indigo-500 animate-spin" />
+                    </div>
+                  )}
+                  {pincodeResolved && !pincodeLoading && (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      <FaCheckCircle className="h-4 w-4 text-green-500" />
+                    </div>
+                  )}
+                </Field>
+
+                {/* City + State — auto-filled from pincode */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <Field label="City *" icon={FaCity} error={fieldErrors.city}>
+                    <input name="city" value={formData.city} onChange={handleChange}
+                      placeholder={pincodeLoading ? 'Auto-filling…' : 'Mumbai'}
+                      disabled={loading} autoComplete="address-level2"
+                      className={inputCls + (pincodeResolved ? ' bg-green-50' : '')} />
+                  </Field>
+                  <Field label="State *" icon={FaGlobeAsia} error={fieldErrors.state}>
+                    <input name="state" value={formData.state} onChange={handleChange}
+                      placeholder={pincodeLoading ? 'Auto-filling…' : 'Maharashtra'}
+                      disabled={loading} autoComplete="address-level1"
+                      className={inputCls + (pincodeResolved ? ' bg-green-50' : '')} />
+                  </Field>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address Line 2 (Optional)</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><FaMapMarkerAlt className="h-5 w-5 text-gray-400" /></div>
-                    <input name="addressLine2" value={formData.addressLine2 || ''} onChange={handleTextChange} className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus:outline-none" placeholder="Landmark, Apartment, Suite, Unit" disabled={loading} autoComplete="address-line2" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <TextInputField label="City *" name="city" value={formData.city} onChange={handleTextChange} placeholder="Mumbai" icon={FaCity} disabled={loading} />
-                  <TextInputField label="State *" name="state" value={formData.state} onChange={handleTextChange} placeholder="Maharashtra" icon={FaGlobeAsia} disabled={loading} />
-                  <NumberInputField label="Pincode *" name="pincode" value={formData.pincode} onChange={handlePincodeChange} placeholder="400001" maxLength={6} icon={FaMapPin} disabled={loading} />
-                </div>
+
+                {/* TN / outstation indicator */}
                 {formData.state && (
-                  <div className={`text-xs ${isTamilNaduDelivery ? 'text-green-600' : 'text-orange-600'}`}>
+                  <div className={`text-xs font-medium px-3 py-2 rounded-lg ${
+                    isTamilNaduDelivery
+                      ? 'bg-green-50 text-green-700 border border-green-200'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  }`}>
                     {isTamilNaduDelivery
                       ? '✓ Delivering within Tamil Nadu — standard delivery charges apply'
-                      : `⚠ Outstation delivery (outside Tamil Nadu) — flat ₹${NON_TN_DELIVERY_CHARGE} delivery charge applies per applicable item`}
+                      : '⚠ Outstation delivery (outside Tamil Nadu) — per-item outstation charges apply'}
                   </div>
                 )}
               </div>
             </div>
 
             {/* Coupon */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2"><FaTag className="text-green-600" />Apply Coupon Code</h2>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <FaTag className="text-green-600" /> Coupon Code
+              </h2>
               <div className="flex gap-3">
-                <div className="flex-1">
-                  <input type="text" value={couponCode} onChange={(e) => { setCouponCode(e.target.value); setCouponError(''); }} placeholder="Enter coupon code" disabled={!!appliedCoupon || couponLoading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 focus:outline-none" autoComplete="off" />
-                </div>
+                <input type="text" value={couponCode}
+                  onChange={(e) => { setCouponCode(e.target.value); setCouponError(''); }}
+                  placeholder="Enter coupon code" disabled={!!appliedCoupon || couponLoading}
+                  autoComplete="off"
+                  className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-50 focus:outline-none" />
                 {!appliedCoupon
-                  ? <button onClick={handleApplyCoupon} disabled={!couponCode.trim() || couponLoading} className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium">{couponLoading ? <><FaSpinner className="inline mr-2 animate-spin" />Applying...</> : 'Apply'}</button>
-                  : <button onClick={handleRemoveCoupon} className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">Remove</button>
+                  ? <button onClick={handleApplyCoupon}
+                      disabled={!couponCode.trim() || couponLoading}
+                      className="px-5 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                      {couponLoading ? <FaSpinner className="animate-spin" /> : 'Apply'}
+                    </button>
+                  : <button onClick={handleRemoveCoupon}
+                      className="px-5 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors">
+                      Remove
+                    </button>
                 }
               </div>
-              {couponError && <div className="mt-2 text-red-600 text-sm">{couponError}</div>}
+              {couponError && <p className="mt-2 text-xs text-red-500">{couponError}</p>}
               {appliedCoupon && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <div>
-                      <span className="font-medium text-green-700">Coupon Applied: {appliedCoupon.code}</span>
-                      <div className="text-sm text-green-600">{getDiscountDescription(appliedCoupon)}</div>
-                    </div>
-                    <div className="text-green-700 font-bold">{`Discounted Price ₹${calculations.total.toFixed(2)}`}</div>
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-semibold text-green-700">{appliedCoupon.code}</p>
+                    <p className="text-xs text-green-600">{getDiscountLabel(appliedCoupon)}</p>
                   </div>
+                  <p className="text-sm font-bold text-green-700">
+                    −₹{calculations.discount.toFixed(2)}
+                  </p>
                 </div>
               )}
             </div>
 
             {/* GST */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2"><FaReceipt className="text-purple-600" />GST Information (Optional)</h2>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <input type="text" value={gstNo} onChange={handleGstChange} placeholder="Enter GSTIN number (15 characters)" maxLength={15} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none" />
-                </div>
-              </div>
-              {gstNo && gstNo.length !== 15 && <div className="mt-2 text-red-600 text-sm">GST number must be exactly 15 characters long.</div>}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <FaReceipt className="text-purple-500" /> GSTIN (Optional)
+              </h2>
+              <input type="text" value={gstNo} onChange={handleGstChange}
+                placeholder="Enter GSTIN (15 characters)" maxLength={15}
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none" />
+              {gstNo && gstNo.length !== 15 && (
+                <p className="mt-1 text-xs text-red-500">GSTIN must be exactly 15 characters</p>
+              )}
             </div>
 
+            {/* Global error */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-700 text-sm font-medium">{error}</p>
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="text-sm text-red-700 font-medium">{error}</p>
               </div>
             )}
           </div>
@@ -601,100 +597,129 @@ const NewCheckout = () => {
           <div className="space-y-6">
 
             {/* Order summary */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <FaShoppingCart className="text-blue-600" />Order Summary
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-base font-bold text-gray-800 mb-5 flex items-center gap-2">
+                <FaShoppingCart className="text-indigo-500" /> Order Summary
               </h2>
-              <div className="space-y-4 mb-6">
+
+              {/* Items */}
+              <div className="divide-y divide-gray-100 mb-5">
                 {cartData.map((item) => {
-                  const isPhotoFrameItem = isPhotoFrame(item);
-                  const pickupFromOffice = getPickupFromOffice(item);
-                  const deliveryToHome = getDeliveryToHome(item);
-                  const itemDeliveryCharge = getItemDeliveryCharge(item, isTamilNaduDelivery);
-                  const noDeliveryCharge = itemDeliveryCharge === 0;
+                  const charge = getItemDeliveryCharge(item, isTamilNaduDelivery);
+                  const isFrame = isPhotoFrame(item);
+                  const pickup  = getPickupFromOffice(item);
+                  const toHome  = getDeliveryToHome(item);
 
                   return (
-                    <div key={item._id} className="flex items-center gap-4 py-3 border-b border-gray-200">
-                      <img fetchpriority="high" loading="eager" src={item.product_image} alt={item.product_name} className="w-16 h-16 object-cover rounded-lg" onError={(e) => { e.target.src = '/placeholder-product.jpg'; }} />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 line-clamp-1">{item.product_name}</h3>
-                        <p className="text-sm text-gray-600">Qty: {item.product_quantity || 1}</p>
-                        <p className="text-sm text-gray-600">₹{(Number(item.final_total_withoutGst || item.final_total) / (item.product_quantity || 1)).toFixed(2)} each</p>
-                        {/* Badge shows delivery info */}
-                        {isPhotoFrameItem && pickupFromOffice && (
-                          <p className="text-xs text-green-600 mt-1">✓ Pickup from office (no delivery charge)</p>
+                    <div key={item._id} className="py-3 flex gap-3">
+                      <img src={item.product_image} alt={item.product_name}
+                        className="w-14 h-14 object-cover rounded-lg flex-shrink-0"
+                        onError={(e) => { e.target.src = '/placeholder-product.jpg'; }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{item.product_name}</p>
+                        <p className="text-xs text-gray-400">Qty: {item.product_quantity || 1}</p>
+                        {isFrame && pickup && (
+                          <p className="text-xs text-green-600 mt-0.5">✓ Pickup — no delivery</p>
                         )}
-                        {isPhotoFrameItem && !pickupFromOffice && !deliveryToHome && (
-                          <p className="text-xs text-green-600 mt-1">✓ No delivery charge (pickup only)</p>
+                        {isFrame && !pickup && !toHome && (
+                          <p className="text-xs text-green-600 mt-0.5">✓ No delivery charge</p>
                         )}
-                        {!noDeliveryCharge && (
-                          <p className="text-xs text-blue-600 mt-1">
-                            📦 {isTamilNaduDelivery ? 'Home delivery' : 'Outstation delivery'} (₹{itemDeliveryCharge.toFixed(2)})
+                        {charge > 0 && (
+                          <p className="text-xs text-indigo-600 mt-0.5">
+                            📦 Delivery ₹{charge.toFixed(2)} {!isTamilNaduDelivery ? '(Outstation)' : ''}
                           </p>
                         )}
+                        {item.FreeDelivery && (
+                          <p className="text-xs text-green-600 mt-0.5">✓ Free delivery</p>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold">₹{Number(item.final_total_withoutGst || item.final_total).toFixed(2)}</p>
-                      </div>
+                      <p className="text-sm font-bold text-gray-800 whitespace-nowrap">
+                        ₹{Number(item.final_total_withoutGst || item.final_total).toFixed(2)}
+                      </p>
                     </div>
                   );
                 })}
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center"><span className="text-gray-600">Subtotal ({cartData.length} items):</span><span className="font-semibold">₹{calculations.subtotal.toFixed(2)}</span></div>
-                <div className="flex justify-between items-center"><span className="text-gray-600">Taxes (18% GST):</span><span className="font-semibold">₹{calculations.tax.toFixed(2)}</span></div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">
-                    Delivery charges{formData.state ? ` (${isTamilNaduDelivery ? 'Tamil Nadu' : 'Outstation'})` : ''}:
+
+              {/* Totals */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal ({cartData.length} items)</span>
+                  <span className="font-medium text-gray-800">₹{calculations.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>GST (18%)</span>
+                  <span className="font-medium text-gray-800">₹{calculations.tax.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>
+                    Delivery
+                    {formData.state
+                      ? ` (${isTamilNaduDelivery ? 'Tamil Nadu' : 'Outstation'})`
+                      : ''}
                   </span>
-                  <span className="font-semibold">₹{calculations.delivery.toFixed(2)}</span>
+                  <span className="font-medium text-gray-800">₹{calculations.delivery.toFixed(2)}</span>
                 </div>
                 {appliedCoupon && calculations.discount > 0 && (
-                  <div className="flex justify-between items-center text-green-600"><span>Discount ({appliedCoupon.code}):</span><span className="font-bold">-₹{calculations.discount.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount ({appliedCoupon.code})</span>
+                    <span className="font-semibold">−₹{calculations.discount.toFixed(2)}</span>
+                  </div>
                 )}
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="flex justify-between items-center text-lg font-bold"><span>Order Total:</span><span className="text-blue-600">₹{calculations.total.toFixed(2)}</span></div>
-                  {appliedCoupon && (
-                    <div className="text-sm text-gray-500 mt-1">
-                      Original: <span className="line-through">₹{calculations.totalBeforeDiscount.toFixed(2)}</span>
-                      <span className="ml-2 text-green-600">(Saved ₹{calculations.discount.toFixed(2)})</span>
-                    </div>
-                  )}
+                <div className="border-t border-gray-100 pt-3 mt-1 flex justify-between items-center">
+                  <span className="text-base font-bold text-gray-900">Total</span>
+                  <span className="text-base font-bold text-indigo-600">
+                    ₹{calculations.total.toFixed(2)}
+                  </span>
                 </div>
+                {appliedCoupon && (
+                  <p className="text-xs text-gray-400">
+                    Was <span className="line-through">₹{calculations.totalBeforeDiscount.toFixed(2)}</span>
+                    <span className="text-green-600 ml-1">Save ₹{calculations.discount.toFixed(2)}</span>
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Payment options */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Options</h2>
-              <div className="space-y-3 mb-6">
-                <label className="flex items-start gap-3 p-4 border border-yellow-500 rounded-lg bg-yellow-50 cursor-pointer">
-                  <input type="radio" name="paymentOption" value="full" checked={paymentOption === 'full'} onChange={(e) => setPaymentOption(e.target.value)} className="mt-1 text-yellow-600 focus:ring-yellow-500" />
-                  <div className="flex-1">
-                    <div className="font-medium flex justify-between"><span>Full Payment</span><span className="font-bold">₹{calculations.total.toFixed(2)}</span></div>
-                    <p className="text-sm text-gray-600 mt-1">Pay the full amount now</p>
+            {/* Payment */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-base font-bold text-gray-800 mb-4">Payment</h2>
+
+              <label className="flex items-start gap-3 p-4 border-2 border-indigo-500 bg-indigo-50 rounded-xl cursor-pointer mb-5">
+                <input type="radio" name="paymentOption" value="full" checked={paymentOption === 'full'}
+                  onChange={(e) => setPaymentOption(e.target.value)}
+                  className="mt-0.5 text-indigo-600 focus:ring-indigo-500" />
+                <div className="flex-1">
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-sm">Full Payment</span>
+                    <span className="font-bold text-sm">₹{calculations.total.toFixed(2)}</span>
                   </div>
-                </label>
-              </div>
-              <div className="mb-6">
-                <label className="flex items-start gap-3">
-                  <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-1 text-yellow-600 focus:ring-yellow-500 rounded" />
-                  <span className="text-sm text-gray-700">I agree to the <a href="/terms" className="text-blue-600 hover:text-yellow-500 underline">Terms and Conditions</a></span>
-                </label>
-              </div>
-              <button onClick={handlePayment}
-              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-white py-4 px-6 rounded-xl hover:from-yellow-500 hover:to-yellow-700 transition-all duration-300 font-bold flex items-center justify-center gap-3 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:scale-100 shadow-lg hover:shadow-xl">
+                  <p className="text-xs text-gray-500 mt-0.5">Pay the full amount now</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 mb-6">
+                <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="mt-0.5 text-indigo-600 focus:ring-indigo-500 rounded" />
+                <span className="text-xs text-gray-600">
+                  I agree to the{' '}
+                  <a href="/terms" className="text-indigo-600 underline hover:text-indigo-700">
+                    Terms and Conditions
+                  </a>
+                </span>
+              </label>
+
+              <button onClick={handlePayment} disabled={loading}
+                className="w-full bg-indigo-600 text-white py-3.5 px-6 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-md hover:shadow-lg">
                 {loading
-                  ? <><FaSpinner className="w-5 h-5 animate-spin" />Processing Payment...</>
-                  : <><FaCreditCard className="w-5 h-5" />Pay ₹{calculations.payable.toFixed(2)}</>
+                  ? <><FaSpinner className="animate-spin" /> Processing…</>
+                  : <><FaCreditCard /> Pay ₹{calculations.payable.toFixed(2)}</>
                 }
               </button>
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-center gap-2 text-blue-700">
-                  <div className="flex items-center gap-1 text-sm"><span>🔒</span><span className="font-medium">Secure Payment</span></div>
-                  <span className="text-blue-400">•</span>
-                  <span className="text-sm">Powered by CCAvenue</span>
-                </div>
+
+              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
+                <span>🔒</span>
+                <span>Secure payment via CCAvenue</span>
               </div>
             </div>
 

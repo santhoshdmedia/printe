@@ -1,5 +1,11 @@
 const Coupon = require('../modals/coupen.modals');
+const Product = require('../modals/product.models'); // adjust path as needed
 const crypto = require('crypto');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Helper: Validate date
 function isValidDate(date) {
   return date && !isNaN(new Date(date).getTime());
@@ -40,18 +46,27 @@ function findApplicableTier(discountTiers, quantity) {
   return sortedTiers.find(tier => quantity >= tier.minimumQuantity);
 }
 
+// Helper: Safely extract a string ID from either a populated object or a raw ObjectId/string.
+// After .populate(), applicableProducts entries are objects { _id, name, … }.
+// Without populate they are raw ObjectIds. Both cases are handled here.
+function toIdString(val) {
+  if (val && typeof val === 'object' && val._id) return val._id.toString();
+  return val ? val.toString() : '';
+}
+
 // Helper: Check if a cart item matches the coupon's applicable products
 function isItemApplicableForTier(coupon, item) {
-  const hasProductRestriction = coupon.applicableProducts && coupon.applicableProducts.length > 0;
+  const hasProductRestriction =
+    coupon.applicableProducts && coupon.applicableProducts.length > 0;
 
   if (hasProductRestriction) {
-    const applicableIds = coupon.applicableProducts.map(id => id.toString());
+    const applicableIds = coupon.applicableProducts.map(toIdString);
     const itemId = (item.productId || item._id || '').toString();
     return applicableIds.includes(itemId);
   }
 
   // Fallback: match by name if no product IDs are set
-  return item.name === "Victoria Luxe" || item.product_name === "Victoria Luxe";
+  return item.name === 'Victoria Luxe' || item.product_name === 'Victoria Luxe';
 }
 
 // Helper: Calculate tiered quantity discount
@@ -63,9 +78,7 @@ function calculateTieredQuantityDiscount(coupon, cartItems, userType) {
   }
 
   for (const item of cartItems) {
-    if (!isItemApplicableForTier(coupon, item)) {
-      continue;
-    }
+    if (!isItemApplicableForTier(coupon, item)) continue;
 
     const quantity = item.quantity || 1;
     const applicableTier = findApplicableTier(coupon.discountTiers, quantity);
@@ -88,10 +101,10 @@ function calculateTieredQuantityDiscount(coupon, cartItems, userType) {
 // Helper: Check if cart contains at least one applicable product
 function cartContainsApplicableProduct(coupon, cartItems) {
   if (!coupon.applicableProducts || coupon.applicableProducts.length === 0) {
-    return true;
+    return true; // no restriction → applies to everything
   }
 
-  const applicableIds = coupon.applicableProducts.map(id => id.toString());
+  const applicableIds = coupon.applicableProducts.map(toIdString);
 
   return cartItems.some(item => {
     const itemId = (item.productId || item._id || '').toString();
@@ -105,7 +118,7 @@ function getApplicableOrderAmount(coupon, cartItems, totalOrderAmount) {
     return totalOrderAmount;
   }
 
-  const applicableIds = coupon.applicableProducts.map(id => id.toString());
+  const applicableIds = coupon.applicableProducts.map(toIdString);
 
   const applicableAmount = cartItems.reduce((sum, item) => {
     const itemId = (item.productId || item._id || '').toString();
@@ -174,7 +187,6 @@ async function validateCoupon(coupon, userId, orderAmount, cartItems = [], userT
     return { valid: false, message: 'Coupon has expired' };
   }
 
-  // ✅ FIX: usageLimit check now works because usedCount is actually incremented on each use
   if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
     return { valid: false, message: 'Coupon usage limit reached' };
   }
@@ -186,6 +198,8 @@ async function validateCoupon(coupon, userId, orderAmount, cartItems = [], userT
     };
   }
 
+  // ── Product-specific validation ────────────────────────────────────────────
+  // If the coupon targets specific products, the cart MUST contain at least one.
   if (!cartContainsApplicableProduct(coupon, cartItems)) {
     return {
       valid: false,
@@ -232,7 +246,6 @@ async function validateCoupon(coupon, userId, orderAmount, cartItems = [], userT
     }
   }
 
-  // ✅ FIX: singleUse check now works because userIdsUsed is populated on each use
   if (coupon.singleUse && coupon.userIdsUsed && coupon.userIdsUsed.includes(userId)) {
     return { valid: false, message: 'You have already used this coupon' };
   }
@@ -240,13 +253,35 @@ async function validateCoupon(coupon, userId, orderAmount, cartItems = [], userT
   return { valid: true, message: 'Coupon is valid' };
 }
 
-// ====================================================
-// ✅ MAIN FIX: Apply coupon now records usage atomically
-// Previously: validated + calculated discount but NEVER
-// incremented usedCount or stored userId — so the same
-// coupon could be applied unlimited times regardless of
-// usageLimit or singleUse settings.
-// ====================================================
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW: Get products list for coupon UI (dropdown population)
+// GET /api/coupon/products
+// Returns only the fields the coupon UI needs (id, name, product_code, images)
+// ─────────────────────────────────────────────────────────────────────────────
+const getProductsForCoupon = async (req, res) => {
+  try {
+    const products = await Product.find(
+      { is_visible: true },
+      { _id: 1, name: 1, product_code: 1, images: 1 }
+    ).sort({ name: 1 });
+
+    return res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    console.error('Get products for coupon error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Something went wrong while fetching products'
+    });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Apply coupon
+// ─────────────────────────────────────────────────────────────────────────────
 const applyCoupon = async (req, res) => {
   try {
     const { code, orderAmount, userId, cartItems = [], userType = 'user' } = req.body;
@@ -261,7 +296,7 @@ const applyCoupon = async (req, res) => {
     const coupon = await Coupon.findOne({
       code: code.toUpperCase().trim(),
       isActive: true
-    });
+    }).populate('applicableProducts', '_id name product_code');
 
     if (!coupon) {
       return res.status(404).json({
@@ -295,30 +330,20 @@ const applyCoupon = async (req, res) => {
       });
     }
 
-    // ✅ FIX: Atomically increment usedCount and record userId for singleUse coupons.
-    // Using findOneAndUpdate with $inc ensures this is safe under concurrent requests
-    // (two users applying at the same time won't both slip past a usageLimit of 1).
-    const updateQuery = {
-      $inc: { usedCount: 1 }
-    };
+    // Atomically increment usedCount and record userId for singleUse coupons.
+    const updateQuery = { $inc: { usedCount: 1 } };
 
     if (coupon.singleUse) {
       updateQuery.$addToSet = { userIdsUsed: userId };
     }
 
-    // Double-check usageLimit atomically to prevent race conditions
     const updateFilter = { _id: coupon._id };
     if (coupon.usageLimit !== null) {
       updateFilter.$expr = { $lt: ['$usedCount', coupon.usageLimit] };
     }
 
-    const updatedCoupon = await Coupon.findOneAndUpdate(
-      updateFilter,
-      updateQuery,
-      { new: true }
-    );
+    const updatedCoupon = await Coupon.findOneAndUpdate(updateFilter, updateQuery, { new: true });
 
-    // If updatedCoupon is null here, another concurrent request just consumed the last use
     if (!updatedCoupon && coupon.usageLimit !== null) {
       return res.status(400).json({
         success: false,
@@ -335,17 +360,28 @@ const applyCoupon = async (req, res) => {
         coupon: {
           code: coupon.code,
           discountType: coupon.discountType,
-          discountValue: coupon.discountType === 'tiered_quantity' ? null : getDiscountValue(coupon, userType),
-          discountAmount: discountAmount,
-          finalAmount: finalAmount,
+          discountValue:
+            coupon.discountType === 'tiered_quantity' ? null : getDiscountValue(coupon, userType),
+          discountAmount,
+          finalAmount,
           minimumOrderAmount: coupon.minimumOrderAmount,
           maximumDiscount: coupon.maximumDiscount,
-          userType: userType,
-          // ✅ Show remaining uses so the frontend can display it
+          userType,
           usedCount: updatedCoupon ? updatedCoupon.usedCount : coupon.usedCount + 1,
           remainingUses: coupon.usageLimit
-            ? coupon.usageLimit - (updatedCoupon ? updatedCoupon.usedCount : coupon.usedCount + 1)
+            ? coupon.usageLimit -
+              (updatedCoupon ? updatedCoupon.usedCount : coupon.usedCount + 1)
             : null,
+          // Return which products this coupon is restricted to so the frontend
+          // can inform the customer clearly.
+          applicableProducts:
+            coupon.applicableProducts && coupon.applicableProducts.length > 0
+              ? coupon.applicableProducts.map(p => ({
+                  _id: p._id,
+                  name: p.name,
+                  product_code: p.product_code
+                }))
+              : [],
           discountValues: {
             customer: coupon.Customer_discountValue,
             dealer: coupon.Dealer_discountValue,
@@ -377,7 +413,6 @@ const applyCoupon = async (req, res) => {
     }
 
     return res.status(200).json(response);
-
   } catch (error) {
     console.error('Apply coupon error:', error);
     return res.status(500).json({
@@ -387,12 +422,15 @@ const applyCoupon = async (req, res) => {
   }
 };
 
-
-
+// ─────────────────────────────────────────────────────────────────────────────
 // Get all coupons (Admin only)
+// ─────────────────────────────────────────────────────────────────────────────
 const getAllCoupons = async (req, res) => {
   try {
-    const coupons = await Coupon.find().sort({ createdAt: -1 });
+    // Populate applicableProducts so admin UI can display product names
+    const coupons = await Coupon.find()
+      .populate('applicableProducts', '_id name product_code images')
+      .sort({ createdAt: -1 });
 
     const couponsWithDetails = coupons.map(coupon => {
       const couponObj = coupon.toObject();
@@ -401,7 +439,6 @@ const getAllCoupons = async (req, res) => {
         dealer: couponObj.Dealer_discountValue,
         corporate: couponObj.Corporate_discountValue
       };
-      // ✅ Add remaining uses info for admin table
       couponObj.remainingUses = couponObj.usageLimit
         ? couponObj.usageLimit - couponObj.usedCount
         : null;
@@ -413,7 +450,6 @@ const getAllCoupons = async (req, res) => {
       count: coupons.length,
       data: couponsWithDetails
     });
-
   } catch (error) {
     console.error('Get all coupons error:', error);
     return res.status(500).json({
@@ -423,16 +459,18 @@ const getAllCoupons = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get coupon by ID (Admin only)
+// ─────────────────────────────────────────────────────────────────────────────
 const getCouponById = async (req, res) => {
   try {
-    const coupon = await Coupon.findById(req.params.id);
+    const coupon = await Coupon.findById(req.params.id).populate(
+      'applicableProducts',
+      '_id name product_code images'
+    );
 
     if (!coupon) {
-      return res.status(404).json({
-        success: false,
-        message: 'Coupon not found'
-      });
+      return res.status(404).json({ success: false, message: 'Coupon not found' });
     }
 
     const couponObj = coupon.toObject();
@@ -445,11 +483,7 @@ const getCouponById = async (req, res) => {
       ? couponObj.usageLimit - couponObj.usedCount
       : null;
 
-    return res.status(200).json({
-      success: true,
-      data: couponObj
-    });
-
+    return res.status(200).json({ success: true, data: couponObj });
   } catch (error) {
     console.error('Get coupon by ID error:', error);
     if (error.name === 'CastError') {
@@ -462,7 +496,9 @@ const getCouponById = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Create coupon (Admin only)
+// ─────────────────────────────────────────────────────────────────────────────
 const createCoupon = async (req, res) => {
   try {
     const {
@@ -478,6 +514,8 @@ const createCoupon = async (req, res) => {
       endDate,
       usageLimit = null,
       isActive = true,
+      // applicableProducts: array of product ObjectIds.
+      // When provided and non-empty, the coupon is restricted to those products only.
       applicableProducts = [],
       excludedProducts = [],
       singleUse = false
@@ -498,12 +536,28 @@ const createCoupon = async (req, res) => {
     const end = new Date(endDate);
 
     if (end <= start) {
-      return res.status(400).json({ success: false, message: 'End date must be after start date' });
+      return res.status(400).json({
+        success: false,
+        message: 'End date must be after start date'
+      });
     }
 
     const existingCoupon = await Coupon.findOne({ code: code.toUpperCase().trim() });
     if (existingCoupon) {
       return res.status(400).json({ success: false, message: 'Coupon code already exists' });
+    }
+
+    // Validate that supplied product IDs actually exist in the DB
+    if (applicableProducts && applicableProducts.length > 0) {
+      const foundCount = await Product.countDocuments({
+        _id: { $in: applicableProducts }
+      });
+      if (foundCount !== applicableProducts.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'One or more applicableProducts IDs are invalid'
+        });
+      }
     }
 
     const couponData = {
@@ -529,10 +583,15 @@ const createCoupon = async (req, res) => {
       }
       couponData.discountTiers = discountTiers;
     } else {
-      if (Customer_discountValue === undefined || Dealer_discountValue === undefined || Corporate_discountValue === undefined) {
+      if (
+        Customer_discountValue === undefined ||
+        Dealer_discountValue === undefined ||
+        Corporate_discountValue === undefined
+      ) {
         return res.status(400).json({
           success: false,
-          message: 'Please provide Customer_discountValue, Dealer_discountValue, and Corporate_discountValue'
+          message:
+            'Please provide Customer_discountValue, Dealer_discountValue, and Corporate_discountValue'
         });
       }
       couponData.Customer_discountValue = Customer_discountValue;
@@ -547,7 +606,6 @@ const createCoupon = async (req, res) => {
       message: 'Coupon created successfully',
       data: coupon
     });
-
   } catch (error) {
     console.error('Create coupon error:', error);
     if (error.code === 11000) {
@@ -564,7 +622,9 @@ const createCoupon = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Update coupon (Admin only)
+// ─────────────────────────────────────────────────────────────────────────────
 const updateCoupon = async (req, res) => {
   try {
     const coupon = await Coupon.findById(req.params.id);
@@ -574,6 +634,19 @@ const updateCoupon = async (req, res) => {
     }
 
     const updates = req.body;
+
+    // Validate updated applicableProducts if provided
+    if (updates.applicableProducts && updates.applicableProducts.length > 0) {
+      const foundCount = await Product.countDocuments({
+        _id: { $in: updates.applicableProducts }
+      });
+      if (foundCount !== updates.applicableProducts.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'One or more applicableProducts IDs are invalid'
+        });
+      }
+    }
 
     if (updates.code && updates.code !== coupon.code) {
       const existingCoupon = await Coupon.findOne({
@@ -599,7 +672,6 @@ const updateCoupon = async (req, res) => {
       message: 'Coupon updated successfully',
       data: coupon
     });
-
   } catch (error) {
     console.error('Update coupon error:', error);
     if (error.name === 'CastError') {
@@ -615,7 +687,9 @@ const updateCoupon = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Delete coupon (Admin only)
+// ─────────────────────────────────────────────────────────────────────────────
 const deleteCoupon = async (req, res) => {
   try {
     const coupon = await Coupon.findByIdAndDelete(req.params.id);
@@ -625,7 +699,6 @@ const deleteCoupon = async (req, res) => {
     }
 
     return res.status(200).json({ success: true, message: 'Coupon deleted successfully' });
-
   } catch (error) {
     console.error('Delete coupon error:', error);
     if (error.name === 'CastError') {
@@ -638,7 +711,9 @@ const deleteCoupon = async (req, res) => {
   }
 };
 
-// Mark coupon as used (call this from your Order creation endpoint AFTER order is confirmed)
+// ─────────────────────────────────────────────────────────────────────────────
+// Mark coupon as used (call from Order creation endpoint AFTER order is confirmed)
+// ─────────────────────────────────────────────────────────────────────────────
 const markCouponAsUsed = async (req, res) => {
   try {
     const { couponId, userId } = req.body;
@@ -675,7 +750,6 @@ const markCouponAsUsed = async (req, res) => {
         remainingUses: coupon.usageLimit ? coupon.usageLimit - coupon.usedCount : null
       }
     });
-
   } catch (error) {
     console.error('Mark coupon as used error:', error);
     return res.status(500).json({
@@ -685,8 +759,10 @@ const markCouponAsUsed = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Bulk coupon creation (Admin only)
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Helper: Generate a random alphanumeric suffix
 function generateRandomSuffix(length = 6) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
@@ -697,24 +773,18 @@ function generateRandomSuffix(length = 6) {
   return result;
 }
 
-// Helper: Generate a single unique code with prefix, checking DB + in-memory batch set
 async function generateUniqueCode(prefix, existingCodesSet, suffixLength = 6, maxAttempts = 20) {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const code = `${prefix}-${generateRandomSuffix(suffixLength)}`.toUpperCase();
 
-    if (existingCodesSet.has(code)) {
-      continue; // collision within this batch, retry
-    }
+    if (existingCodesSet.has(code)) continue;
 
     const exists = await Coupon.findOne({ code });
-    if (!exists) {
-      return code;
-    }
+    if (!exists) return code;
   }
   throw new Error('Failed to generate a unique coupon code after multiple attempts');
 }
 
-// Create multiple single-use coupons with a common prefix (Admin only)
 const createBulkCoupons = async (req, res) => {
   try {
     const {
@@ -736,7 +806,6 @@ const createBulkCoupons = async (req, res) => {
       suffixLength = 6
     } = req.body;
 
-    // ---- Validation ----
     if (!prefix || typeof prefix !== 'string' || !prefix.trim()) {
       return res.status(400).json({ success: false, message: 'Please provide a valid prefix' });
     }
@@ -767,21 +836,33 @@ const createBulkCoupons = async (req, res) => {
       return res.status(400).json({ success: false, message: 'End date must be after start date' });
     }
 
-    // Sanitize prefix: alphanumeric + hyphen only
     const cleanPrefix = prefix.trim().replace(/[^a-zA-Z0-9-]/g, '').toUpperCase();
     if (!cleanPrefix) {
-      return res.status(400).json({ success: false, message: 'Prefix must contain alphanumeric characters' });
+      return res.status(400).json({
+        success: false,
+        message: 'Prefix must contain alphanumeric characters'
+      });
     }
 
-    // ---- Build base coupon data (shared across all generated coupons) ----
+    // Validate applicableProducts for bulk coupons too
+    if (applicableProducts && applicableProducts.length > 0) {
+      const foundCount = await Product.countDocuments({ _id: { $in: applicableProducts } });
+      if (foundCount !== applicableProducts.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'One or more applicableProducts IDs are invalid'
+        });
+      }
+    }
+
     const baseCouponData = {
       discountType,
       minimumOrderAmount,
       maximumDiscount,
       startDate: start,
       endDate: end,
-      usageLimit: 1,        // single-use coupon => only usable once
-      singleUse: true,      // also track per-user usage flag
+      usageLimit: 1,
+      singleUse: true,
       isActive,
       applicableProducts,
       excludedProducts,
@@ -804,7 +885,8 @@ const createBulkCoupons = async (req, res) => {
       ) {
         return res.status(400).json({
           success: false,
-          message: 'Please provide Customer_discountValue, Dealer_discountValue, and Corporate_discountValue'
+          message:
+            'Please provide Customer_discountValue, Dealer_discountValue, and Corporate_discountValue'
         });
       }
       baseCouponData.Customer_discountValue = Customer_discountValue;
@@ -812,22 +894,15 @@ const createBulkCoupons = async (req, res) => {
       baseCouponData.Corporate_discountValue = Corporate_discountValue;
     }
 
-    // ---- Generate unique codes ----
     const generatedCodes = new Set();
     const couponsToCreate = [];
 
     for (let i = 0; i < numCount; i++) {
       const code = await generateUniqueCode(cleanPrefix, generatedCodes, suffixLength);
       generatedCodes.add(code);
-      couponsToCreate.push({
-        ...baseCouponData,
-        code
-      });
+      couponsToCreate.push({ ...baseCouponData, code });
     }
 
-    // ---- Insert all at once ----
-    // ordered: true ensures if a duplicate-key error occurs (rare race condition),
-    // it stops and reports clearly rather than silently skipping.
     const createdCoupons = await Coupon.insertMany(couponsToCreate, { ordered: true });
 
     return res.status(201).json({
@@ -839,7 +914,6 @@ const createBulkCoupons = async (req, res) => {
         coupons: createdCoupons
       }
     });
-
   } catch (error) {
     console.error('Create bulk coupons error:', error);
 
@@ -869,5 +943,6 @@ module.exports = {
   updateCoupon,
   deleteCoupon,
   markCouponAsUsed,
-  createBulkCoupons
+  createBulkCoupons,
+  getProductsForCoupon  // ← new export; wire to GET /api/coupon/products in your router
 };

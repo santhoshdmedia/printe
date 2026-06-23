@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 const mongoose               = require("mongoose");
 const { errorResponse,
         successResponse }    = require("../helper/response.helper");
@@ -6,7 +7,6 @@ const { ShoppingCardSchema } = require("./models_import");
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: resolve phone + email for a logged-in user
 // ─────────────────────────────────────────────────────────────────────────────
-
 const resolveUserContact = async (userData, bodyOverrides = {}) => {
   let phone = bodyOverrides.phone_number || bodyOverrides.phone || null;
   let email = bodyOverrides.email        || null;
@@ -43,16 +43,10 @@ const resolveUserContact = async (userData, bodyOverrides = {}) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: recalculate price fields when quantity changes
-//
-// We derive the unit prices from the existing item, then multiply by new qty.
-// All the per-unit values are stored when the item is first added, so we just
-// back-calculate unit cost and scale up.
 // ─────────────────────────────────────────────────────────────────────────────
-
 const recalcPriceFields = (existingItem, newQty) => {
   const oldQty = existingItem.quantity || existingItem.product_quantity || 1;
 
-  // Derive per-unit amounts from the stored totals
   const unitFinalTotal           = oldQty > 0 ? (existingItem.final_total            || 0) / oldQty : 0;
   const unitFinalTotalWithoutGst = oldQty > 0 ? (existingItem.final_total_withoutGst || 0) / oldQty : 0;
   const unitCgst                 = oldQty > 0 ? (existingItem.cgst                   || 0) / oldQty : 0;
@@ -72,8 +66,14 @@ const recalcPriceFields = (existingItem, newQty) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add to Cart
+//
+// Stores TWO delivery charge fields every time:
+//   DeliveryCharges   — charge for deliveries within Tamil Nadu
+//   out_of_tn_charge  — charge for deliveries outside Tamil Nadu
+//
+// The frontend always sends both values regardless of where the user's pincode
+// is, so the order system always has access to the correct rate for both zones.
 // ─────────────────────────────────────────────────────────────────────────────
-
 const addToShoppingCart = async (req, res) => {
   try {
     // ── Identify owner ────────────────────────────────────────────────────────
@@ -109,6 +109,12 @@ const addToShoppingCart = async (req, res) => {
       return errorResponse(res, "Product ID is required");
     }
 
+    // ── Extract both delivery charges from request body ───────────────────────
+    // DeliveryCharges  = inside Tamil Nadu rate (sent by frontend always)
+    // out_of_tn_charge = outside Tamil Nadu rate (sent by frontend always)
+    const incomingDeliveryChargesTN    = Number(req.body.DeliveryCharges   || 0);
+    const incomingOutOfTNCharge        = Number(req.body.out_of_tn_charge  || 0);
+
     // ── Check for existing item (same product + variant) ─────────────────────
     const existingItemQuery = {
       [identifierField]: userIdentifier,
@@ -126,27 +132,30 @@ const addToShoppingCart = async (req, res) => {
       const addedQty = parseInt(req.body.product_quantity || req.body.quantity) || 1;
       const newQty   = existingItem.quantity + addedQty;
 
-      // ✅ FIX 1: recalculate all price fields proportionally for the new qty
       const recalculated = recalcPriceFields(existingItem, newQty);
 
-      existingItem.quantity              = newQty;
-      existingItem.product_quantity      = newQty;
-      existingItem.final_total           = recalculated.final_total;
-      existingItem.final_total_withoutGst= recalculated.final_total_withoutGst;
-      existingItem.cgst                  = recalculated.cgst;
-      existingItem.sgst                  = recalculated.sgst;
-      existingItem.MRP_savings           = recalculated.MRP_savings;
-      existingItem.TotalSavings          = recalculated.TotalSavings;
-      existingItem.updated_at            = new Date();
-      existingItem.reminder_count        = 0;
-      existingItem.last_reminder_sent_at = null;
+      existingItem.quantity               = newQty;
+      existingItem.product_quantity       = newQty;
+      existingItem.final_total            = recalculated.final_total;
+      existingItem.final_total_withoutGst = recalculated.final_total_withoutGst;
+      existingItem.cgst                   = recalculated.cgst;
+      existingItem.sgst                   = recalculated.sgst;
+      existingItem.MRP_savings            = recalculated.MRP_savings;
+      existingItem.TotalSavings           = recalculated.TotalSavings;
+      existingItem.updated_at             = new Date();
+      existingItem.reminder_count         = 0;
+      existingItem.last_reminder_sent_at  = null;
+
+      // Always update BOTH delivery charge fields so they reflect the latest
+      // quantity-tier rates sent from the frontend.
+      existingItem.DeliveryCharges   = incomingDeliveryChargesTN;
+      existingItem.out_of_tn_charge  = incomingOutOfTNCharge;
 
       if (phone) existingItem.phone_number = phone;
       if (email) existingItem.email        = email;
 
       if (req.body.selected_platforms) existingItem.selected_platforms = req.body.selected_platforms;
       if (req.body.platform_links)     existingItem.platform_links     = req.body.platform_links;
-
       if (req.body.is_photo_frame !== undefined) existingItem.is_photo_frame     = req.body.is_photo_frame;
       if (req.body.photo_frame_details)          existingItem.photo_frame_details = req.body.photo_frame_details;
 
@@ -174,7 +183,10 @@ const addToShoppingCart = async (req, res) => {
         TotalSavings:             req.body.TotalSavings           || 0,
         FreeDelivery:             req.body.FreeDelivery           || false,
         noCustomtation:           req.body.noCustomtation         || false,
-        DeliveryCharges:          req.body.DeliveryCharges        || 0,
+        // ── Dual delivery charges ─────────────────────────────────────────
+        DeliveryCharges:          incomingDeliveryChargesTN,   // inside Tamil Nadu
+        out_of_tn_charge:         incomingOutOfTNCharge,       // outside Tamil Nadu
+        // ─────────────────────────────────────────────────────────────────
         is_qr_product:            req.body.is_qr_product          || false,
         selected_platforms:       req.body.selected_platforms     || [],
         platform_links:           req.body.platform_links         || {},
@@ -214,7 +226,6 @@ const addToShoppingCart = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Get My Cart
 // ─────────────────────────────────────────────────────────────────────────────
-
 const getMyShoppingCart = async (req, res) => {
   try {
     let userIdentifier;
@@ -255,7 +266,8 @@ const getMyShoppingCart = async (req, res) => {
           product_design_file:    1,
           FreeDelivery:           1,
           noCustomtation:         1,
-          DeliveryCharges:        1,
+          DeliveryCharges:        1,   // inside TN
+          out_of_tn_charge:       1,   // outside TN
           product_image:          1,
           product_name:           1,
           category_name:          1,
@@ -294,7 +306,8 @@ const getMyShoppingCart = async (req, res) => {
       product_design_file:    item.product_design_file    || "",
       FreeDelivery:           item.FreeDelivery            || false,
       noCustomtation:         item.noCustomtation          || false,
-      DeliveryCharges:        item.DeliveryCharges         || 0,
+      DeliveryCharges:        item.DeliveryCharges         || 0,    // inside TN
+      out_of_tn_charge:       item.out_of_tn_charge        || 0,    // outside TN
       product_image:          item.product_image           || "",
       product_name:           item.product_name            || "",
       category_name:          item.category_name           || "",
@@ -336,7 +349,6 @@ const getMyShoppingCart = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Remove Cart Items
 // ─────────────────────────────────────────────────────────────────────────────
-
 const removeMyShoppingCart = async (req, res) => {
   try {
     const { ids, guestId } = req.body;
@@ -354,7 +366,6 @@ const removeMyShoppingCart = async (req, res) => {
     } else {
       userIdentifier  = guestId;
       identifierField = "guest_id";
-
       if (!userIdentifier) return errorResponse(res, "Guest ID is required for guest users");
     }
 
@@ -374,7 +385,6 @@ const removeMyShoppingCart = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Update Cart Item Quantity
 // ─────────────────────────────────────────────────────────────────────────────
-
 const updateCartItemQuantity = async (req, res) => {
   try {
     const { itemId, quantity, guestId } = req.body;
@@ -392,13 +402,11 @@ const updateCartItemQuantity = async (req, res) => {
     } else {
       userIdentifier  = guestId;
       identifierField = "guest_id";
-
       if (!userIdentifier) {
         return res.status(400).json({ message: "Guest ID is required for guest users", data: [] });
       }
     }
 
-    // quantity 0 → delete
     if (quantity === 0) {
       await ShoppingCardSchema.findOneAndDelete({
         _id:               new mongoose.Types.ObjectId(itemId),
@@ -407,7 +415,6 @@ const updateCartItemQuantity = async (req, res) => {
       return res.status(200).json({ message: "Item removed from cart", data: [] });
     }
 
-    // ✅ FIX 1 (also here): recalculate prices when quantity is updated manually
     const cartItem = await ShoppingCardSchema.findOne({
       _id:               new mongoose.Types.ObjectId(itemId),
       [identifierField]: userIdentifier,
@@ -420,6 +427,9 @@ const updateCartItemQuantity = async (req, res) => {
     const safeQty      = Math.max(1, quantity);
     const recalculated = recalcPriceFields(cartItem, safeQty);
 
+    // Note: delivery charges (DeliveryCharges + out_of_tn_charge) are NOT
+    // recalculated here — they are per-order flat rates, not per-unit.
+    // They were already set when the item was added / last updated from frontend.
     const updatedItem = await ShoppingCardSchema.findByIdAndUpdate(
       cartItem._id,
       {
@@ -434,7 +444,7 @@ const updateCartItemQuantity = async (req, res) => {
         reminder_count:         0,
         last_reminder_sent_at:  null,
       },
-      { new: true }
+      { new: true },
     );
 
     return res.status(200).json({ message: "Cart item updated successfully", data: [updatedItem] });
@@ -448,7 +458,6 @@ const updateCartItemQuantity = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Merge Guest Cart → User Cart (after login)
 // ─────────────────────────────────────────────────────────────────────────────
-
 const mergeCartsAfterLogin = async (req, res) => {
   try {
     const userId      = req.userData?.id;
@@ -471,23 +480,27 @@ const mergeCartsAfterLogin = async (req, res) => {
         const newQty       = existingUserItem.quantity + guestItem.quantity;
         const recalculated = recalcPriceFields(existingUserItem, newQty);
 
-        existingUserItem.quantity              = newQty;
-        existingUserItem.product_quantity      = newQty;
-        existingUserItem.final_total           = recalculated.final_total;
-        existingUserItem.final_total_withoutGst= recalculated.final_total_withoutGst;
-        existingUserItem.cgst                  = recalculated.cgst;
-        existingUserItem.sgst                  = recalculated.sgst;
-        existingUserItem.MRP_savings           = recalculated.MRP_savings;
-        existingUserItem.TotalSavings          = recalculated.TotalSavings;
-        existingUserItem.updated_at            = new Date();
-        existingUserItem.reminder_count        = 0;
-        existingUserItem.last_reminder_sent_at = null;
+        existingUserItem.quantity               = newQty;
+        existingUserItem.product_quantity       = newQty;
+        existingUserItem.final_total            = recalculated.final_total;
+        existingUserItem.final_total_withoutGst = recalculated.final_total_withoutGst;
+        existingUserItem.cgst                   = recalculated.cgst;
+        existingUserItem.sgst                   = recalculated.sgst;
+        existingUserItem.MRP_savings            = recalculated.MRP_savings;
+        existingUserItem.TotalSavings           = recalculated.TotalSavings;
+        existingUserItem.updated_at             = new Date();
+        existingUserItem.reminder_count         = 0;
+        existingUserItem.last_reminder_sent_at  = null;
+
+        // Carry over both delivery charges from the guest item if they exist
+        if (guestItem.DeliveryCharges  !== undefined) existingUserItem.DeliveryCharges  = guestItem.DeliveryCharges;
+        if (guestItem.out_of_tn_charge !== undefined) existingUserItem.out_of_tn_charge = guestItem.out_of_tn_charge;
 
         if (contact.phone) existingUserItem.phone_number = contact.phone;
         if (contact.email) existingUserItem.email        = contact.email;
 
-        if (guestItem.is_photo_frame)     existingUserItem.is_photo_frame     = guestItem.is_photo_frame;
-        if (guestItem.photo_frame_details)existingUserItem.photo_frame_details = guestItem.photo_frame_details;
+        if (guestItem.is_photo_frame)      existingUserItem.is_photo_frame      = guestItem.is_photo_frame;
+        if (guestItem.photo_frame_details) existingUserItem.photo_frame_details = guestItem.photo_frame_details;
 
         await existingUserItem.save();
         await ShoppingCardSchema.findByIdAndDelete(guestItem._id);
@@ -516,7 +529,6 @@ const mergeCartsAfterLogin = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Backfill missing phone/email on existing cart items
 // ─────────────────────────────────────────────────────────────────────────────
-
 const backfillCartContacts = async (req, res) => {
   try {
     let User;
@@ -535,7 +547,7 @@ const backfillCartContacts = async (req, res) => {
 
     console.log(`[Backfill] Found ${itemsMissingContact.length} cart items missing contact info`);
 
-    const userIds = [...new Set(itemsMissingContact.map(i => String(i.user_id)))];
+    const userIds = [...new Set(itemsMissingContact.map((i) => String(i.user_id)))];
     let updated = 0;
 
     for (const userId of userIds) {
@@ -557,12 +569,11 @@ const backfillCartContacts = async (req, res) => {
         if (phone) updateFields.phone_number = phone;
         if (email) updateFields.email        = email;
 
-        const result = await ShoppingCardSchema.updateMany(
+        const r = await ShoppingCardSchema.updateMany(
           { user_id: userId, $or: [{ phone_number: null }, { email: null }] },
-          { $set: updateFields }
+          { $set: updateFields },
         );
-
-        updated += result.modifiedCount;
+        updated += r.modifiedCount;
       } catch (err) {
         console.warn(`[Backfill] Failed for user ${userId}:`, err.message);
       }
@@ -582,7 +593,6 @@ const backfillCartContacts = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Guest ID Validation Middleware
 // ─────────────────────────────────────────────────────────────────────────────
-
 const validateGuestId = (req, res, next) => {
   if (!req.userData && !req.body.guestId && !req.query.guestId) {
     return res.status(400).json({ message: "Guest ID is required for guest operations", data: [] });
@@ -593,7 +603,6 @@ const validateGuestId = (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Exports
 // ─────────────────────────────────────────────────────────────────────────────
-
 module.exports = {
   addToShoppingCart,
   getMyShoppingCart,

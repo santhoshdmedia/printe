@@ -109,17 +109,10 @@ import { RiRocket2Fill } from "react-icons/ri";
 import { GiWaxSeal } from "react-icons/gi";
 
 // ═════════════════════════════════════════════════════════════════════════════
-// FIXED UploadFileButton (inline, no separate import needed if you patch the
-// original file — but included here so this file is self-contained for review)
-//
-// ROOT CAUSE of the photo-upload cross-wiring bug:
-//   The original UploadFileButton used a hardcoded id="file-input" on every
-//   <input> it rendered. When Father and Son upload boxes appeared side-by-side,
-//   both <label htmlFor="file-input"> elements resolved to the SAME DOM input.
-//   Clicking Son's label fired Father's onChange (or vice-versa), and sometimes
-//   neither worked at all.
-//
-// FIX: useId() gives each instance a guaranteed-unique id string.
+// UploadFileButton
+// Uses useId() so every rendered instance gets a unique <input> id.
+// This prevents the label→input cross-wiring bug when two upload boxes
+// (Father / Son) are mounted side-by-side.
 // ═════════════════════════════════════════════════════════════════════════════
 const UploadFileButton = ({
   className = "",
@@ -127,8 +120,6 @@ const UploadFileButton = ({
   buttonText = "Upload File",
 }) => {
   const dispatch = useDispatch();
-
-  // ✅ unique per instance — no two UploadFileButton siblings can share the same id
   const uid = useId();
   const inputId = `upload-input-${uid}`;
 
@@ -136,7 +127,6 @@ const UploadFileButton = ({
     const file = e.target.files[0];
     if (!file) return;
     dispatch({ type: "UPLOAD_IMAGE", data: { file, handleUploadImage } });
-    // Reset so the same file can be chosen again after removal
     e.target.value = "";
   };
 
@@ -315,6 +305,7 @@ const getRoleFields = (role) => {
         freeDelivery: "free_delivery_dealer",
         recommended: "recommended_stats_dealer",
         deliveryCharges: "delivery_charges_dealer",
+        deliveryChargesOuterTN: "delivery_charges_dealer_outer_tn",
       };
     case "Corporate":
       return {
@@ -323,6 +314,7 @@ const getRoleFields = (role) => {
         freeDelivery: "free_delivery_corporate",
         recommended: "recommended_stats_corporate",
         deliveryCharges: "delivery_charges_corporate",
+        deliveryChargesOuterTN: "delivery_charges_corporate_outer_tn",
       };
     default:
       return {
@@ -331,21 +323,13 @@ const getRoleFields = (role) => {
         freeDelivery: "free_delivery_customer",
         recommended: "recommended_stats_customer",
         deliveryCharges: "delivery_charges_customer",
+        deliveryChargesOuterTN: "delivery_charges_customer_outer_tn",
       };
   }
 };
 
-const calculateUnitPrice = (
-  basePrice,
-  discountPercentage,
-  userRole,
-  gst = 18,
-) => {
-  if (
-    userRole === "Corporate" ||
-    userRole === "Dealer" ||
-    userRole === "bni_user"
-  ) {
+const calculateUnitPrice = (basePrice, discountPercentage, userRole, gst = 18) => {
+  if (userRole === "Corporate" || userRole === "Dealer" || userRole === "bni_user") {
     return DISCOUNT_HELPER(discountPercentage, basePrice);
   }
   return GST_DISCOUNT_HELPER(discountPercentage, basePrice, gst);
@@ -355,11 +339,7 @@ const calculateUnitPriceWithoutGst = (basePrice, discountPercentage) =>
   DISCOUNT_HELPER(discountPercentage, basePrice);
 
 const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
-  if (
-    userRole === "Corporate" ||
-    userRole === "Dealer" ||
-    userRole === "bni_user"
-  ) {
+  if (userRole === "Corporate" || userRole === "Dealer" || userRole === "bni_user") {
     return basePrice;
   }
   return basePrice * (1 + gst / 100);
@@ -368,33 +348,33 @@ const calculateMRPUnitPrice = (basePrice, userRole, gst = 0) => {
 const getGuestId = () => {
   let guestId = localStorage.getItem("guestId");
   if (!guestId) {
-    guestId =
-      "guest_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+    guestId = "guest_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
     localStorage.setItem("guestId", guestId);
   }
   return guestId;
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
-// PhotoFrameImageUpload
-//
-// Accepts an explicit `fieldKey` ("father" | "son") and calls
-// onChange(fieldKey, fileString) — so the parent always knows which box
-// the upload belongs to, independent of closure identity.
-//
-// Each instance renders its OWN UploadFileButton which now uses useId()
-// internally, so the underlying <input> elements are never shared.
+// Helper: get delivery charges from product data
+// Returns charge for the specified zone (inside or outside TN).
 // ═════════════════════════════════════════════════════════════════════════════
-const PhotoFrameImageUpload = ({
-  fieldKey,
-  label,
-  value,
-  onChange,
-  required,
-}) => {
+const getDeliveryChargesFromProduct = (productData, userRole, isOutsideTN = false) => {
+  const roleFields = getRoleFields(userRole);
+  const quantityDiscountData = _.get(productData, "quantity_discount_splitup[0]", {});
+
+  if (isOutsideTN) {
+    return Number(_.get(quantityDiscountData, roleFields.deliveryChargesOuterTN, 150)) || 100;
+  }
+  return Number(_.get(quantityDiscountData, roleFields.deliveryCharges, 10)) || 100;
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PhotoFrameImageUpload
+// Each instance owns its fieldKey — uploads can never cross-wire.
+// ═════════════════════════════════════════════════════════════════════════════
+const PhotoFrameImageUpload = ({ fieldKey, label, value, onChange, required }) => {
   const [preview, setPreview] = useState(value || null);
 
-  // Keep local preview in sync if parent resets the value (e.g. on modal close)
   useEffect(() => {
     setPreview(value || null);
   }, [value]);
@@ -403,7 +383,6 @@ const PhotoFrameImageUpload = ({
     (fileString) => {
       if (!fileString) return;
       setPreview(fileString);
-      // ✅ always pass fieldKey so the parent dispatcher can route correctly
       onChange(fieldKey, fileString);
     },
     [onChange, fieldKey],
@@ -423,17 +402,8 @@ const PhotoFrameImageUpload = ({
 
       {preview ? (
         <div className="relative w-full h-36 rounded-xl overflow-hidden border-2 border-amber-400 shadow-sm group flex-grow">
-          <img
-            src={preview}
-            alt={label}
-            className="w-full h-full object-cover"
-          />
+          <img src={preview} alt={label} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-            {/*
-              ✅ UploadFileButton now generates its own unique id via useId(),
-              so this instance and the sibling instance (Father vs Son) can
-              never share a DOM input element.
-            */}
             <UploadFileButton
               handleUploadImage={handleUpload}
               buttonText="Change"
@@ -457,12 +427,8 @@ const PhotoFrameImageUpload = ({
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                   <CameraOutlined className="text-amber-600 text-xl" />
                 </div>
-                <span className="text-xs text-amber-700 font-medium">
-                  Click to upload
-                </span>
-                <span className="text-xs text-gray-400">
-                  PNG, JPG up to 5MB
-                </span>
+                <span className="text-xs text-amber-700 font-medium">Click to upload</span>
+                <span className="text-xs text-gray-400">PNG, JPG up to 5MB</span>
               </div>
             }
             className="w-full h-full flex items-center justify-center cursor-pointer"
@@ -475,8 +441,11 @@ const PhotoFrameImageUpload = ({
 
 // ═════════════════════════════════════════════════════════════════════════════
 // PINCODE DELIVERY CALCULATOR FOR MODAL
+// onDeliveryChargeChange(insideTNCharge, outsideTNCharge) — always emits both
 // ═════════════════════════════════════════════════════════════════════════════
 const PincodeDeliveryCalculatorForModal = ({
+  productData,
+  userRole,
   onDeliveryChargeChange,
   onPincodeChange,
   initialPincode = "",
@@ -501,61 +470,20 @@ const PincodeDeliveryCalculatorForModal = ({
   };
 
   const pincodeToStateMap = {
-    600: "tamil nadu",
-    601: "tamil nadu",
-    602: "tamil nadu",
-    603: "tamil nadu",
-    604: "tamil nadu",
-    605: "tamil nadu",
-    606: "tamil nadu",
-    607: "tamil nadu",
-    608: "tamil nadu",
-    609: "tamil nadu",
-    610: "tamil nadu",
-    611: "tamil nadu",
-    612: "tamil nadu",
-    613: "tamil nadu",
-    614: "tamil nadu",
-    615: "tamil nadu",
-    616: "tamil nadu",
-    617: "tamil nadu",
-    618: "tamil nadu",
-    619: "tamil nadu",
-    620: "tamil nadu",
-    621: "tamil nadu",
-    622: "tamil nadu",
-    623: "tamil nadu",
-    624: "tamil nadu",
-    625: "tamil nadu",
-    626: "tamil nadu",
-    627: "tamil nadu",
-    628: "tamil nadu",
-    629: "tamil nadu",
-    630: "tamil nadu",
-    631: "tamil nadu",
-    632: "tamil nadu",
-    633: "tamil nadu",
-    634: "tamil nadu",
-    635: "tamil nadu",
-    636: "tamil nadu",
-    637: "tamil nadu",
-    638: "tamil nadu",
-    639: "tamil nadu",
-    640: "tamil nadu",
-    641: "tamil nadu",
-    642: "tamil nadu",
-    643: "tamil nadu",
-    644: "tamil nadu",
-    645: "tamil nadu",
-    646: "tamil nadu",
-    647: "tamil nadu",
-    648: "tamil nadu",
-    649: "tamil nadu",
-    400: "maharashtra",
-    395: "gujarat",
-    560: "karnataka",
-    682: "kerala",
-    110: "delhi",
+    600: "tamil nadu", 601: "tamil nadu", 602: "tamil nadu", 603: "tamil nadu",
+    604: "tamil nadu", 605: "tamil nadu", 606: "tamil nadu", 607: "tamil nadu",
+    608: "tamil nadu", 609: "tamil nadu", 610: "tamil nadu", 611: "tamil nadu",
+    612: "tamil nadu", 613: "tamil nadu", 614: "tamil nadu", 615: "tamil nadu",
+    616: "tamil nadu", 617: "tamil nadu", 618: "tamil nadu", 619: "tamil nadu",
+    620: "tamil nadu", 621: "tamil nadu", 622: "tamil nadu", 623: "tamil nadu",
+    624: "tamil nadu", 625: "tamil nadu", 626: "tamil nadu", 627: "tamil nadu",
+    628: "tamil nadu", 629: "tamil nadu", 630: "tamil nadu", 631: "tamil nadu",
+    632: "tamil nadu", 633: "tamil nadu", 634: "tamil nadu", 635: "tamil nadu",
+    636: "tamil nadu", 637: "tamil nadu", 638: "tamil nadu", 639: "tamil nadu",
+    640: "tamil nadu", 641: "tamil nadu", 642: "tamil nadu", 643: "tamil nadu",
+    644: "tamil nadu", 645: "tamil nadu", 646: "tamil nadu", 647: "tamil nadu",
+    648: "tamil nadu", 649: "tamil nadu",
+    400: "maharashtra", 395: "gujarat", 560: "karnataka", 682: "kerala", 110: "delhi",
   };
 
   const getStateFromPincode = (pin) =>
@@ -566,10 +494,7 @@ const PincodeDeliveryCalculatorForModal = ({
     const d = new Date();
     d.setDate(d.getDate() + Number(days) + 2);
     return d.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
+      weekday: "short", day: "numeric", month: "short", year: "numeric",
     });
   };
 
@@ -581,13 +506,19 @@ const PincodeDeliveryCalculatorForModal = ({
 
     if (isValid) {
       const stateKey = getStateFromPincode(pin);
-      const stateName =
-        stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name;
+      const stateName = stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name;
       setState(stateName);
       setDeliveryDate(calculateDeliveryDate(stateKey));
-      const charge = stateKey === "tamil nadu" ? 80 : 100;
+
+      const isOutsideTN = stateKey !== "tamil nadu";
+      // Always calculate both rates
+      const insideTNCharge = getDeliveryChargesFromProduct(productData, userRole, false);
+      const outsideTNCharge = getDeliveryChargesFromProduct(productData, userRole, true);
+      const charge = isOutsideTN ? outsideTNCharge : insideTNCharge;
+
       setDeliveryCharge(charge);
-      if (onDeliveryChargeChange) onDeliveryChargeChange(charge);
+      // ✅ emit both so parent can store out_of_tn_charge too
+      if (onDeliveryChargeChange) onDeliveryChargeChange(charge, insideTNCharge, outsideTNCharge);
       if (onPincodeChange) onPincodeChange(pin);
       setError("");
     } else {
@@ -595,7 +526,7 @@ const PincodeDeliveryCalculatorForModal = ({
       setDeliveryDate("");
       setState("");
       setDeliveryCharge(0);
-      if (onDeliveryChargeChange) onDeliveryChargeChange(0);
+      if (onDeliveryChargeChange) onDeliveryChargeChange(0, 0, 0);
     }
     setIsValidatingPincode(false);
   };
@@ -611,7 +542,7 @@ const PincodeDeliveryCalculatorForModal = ({
     if (value.length === 6) {
       validatePincode(value);
     } else {
-      if (onDeliveryChargeChange) onDeliveryChargeChange(0);
+      if (onDeliveryChargeChange) onDeliveryChargeChange(0, 0, 0);
     }
   };
 
@@ -627,17 +558,14 @@ const PincodeDeliveryCalculatorForModal = ({
       if (!navigator.geolocation) throw new Error("Geolocation not supported");
       const position = await new Promise((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: 15000,
-          enableHighAccuracy: true,
-          maximumAge: 300000,
+          timeout: 15000, enableHighAccuracy: true, maximumAge: 300000,
         }),
       );
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`,
       );
       const d = await response.json();
-      const detectedPincode =
-        d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
+      const detectedPincode = d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
       if (detectedPincode) {
         setPincode(detectedPincode);
         validatePincode(detectedPincode);
@@ -665,12 +593,8 @@ const PincodeDeliveryCalculatorForModal = ({
             suffix={
               <div className="flex items-center gap-2">
                 {isValidatingPincode && <Spin size="small" />}
-                {isPincodeValid === true && (
-                  <CheckCircleOutlined className="text-green-500" />
-                )}
-                {isPincodeValid === false && (
-                  <CloseCircleOutlined className="text-red-500" />
-                )}
+                {isPincodeValid === true && <CheckCircleOutlined className="text-green-500" />}
+                {isPincodeValid === false && <CloseCircleOutlined className="text-red-500" />}
               </div>
             }
           />
@@ -701,9 +625,7 @@ const PincodeDeliveryCalculatorForModal = ({
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 text-green-700">
                 <CheckCircleOutlined className="text-green-500" />
-                <span className="font-medium">
-                  Delivery available to {state}
-                </span>
+                <span className="font-medium">Delivery available to {state}</span>
               </div>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
                 <span className="flex items-center gap-1.5 text-gray-700">
@@ -717,23 +639,19 @@ const PincodeDeliveryCalculatorForModal = ({
               </div>
               <div className="mt-1 pt-2 border-t border-green-200">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
-                    Delivery Charges:
-                  </span>
-                  <span className="font-bold text-green-700 text-base">
-                    ₹{deliveryCharge}
-                  </span>
+                  <span className="text-sm text-gray-600">Delivery Charges:</span>
+                  <span className="font-bold text-green-700 text-base">₹{deliveryCharge}</span>
                   {deliveryCharge === 0 && (
                     <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">
                       Free Delivery
                     </span>
                   )}
-                  {deliveryCharge === 60 && (
+                  {state === "Tamil Nadu" && deliveryCharge > 0 && (
                     <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">
                       Within Tamil Nadu
                     </span>
                   )}
-                  {deliveryCharge === 100 && (
+                  {state !== "Tamil Nadu" && deliveryCharge > 0 && (
                     <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">
                       Outside Tamil Nadu
                     </span>
@@ -750,29 +668,23 @@ const PincodeDeliveryCalculatorForModal = ({
 
 // ═════════════════════════════════════════════════════════════════════════════
 // PhotoFrameOrderModal
-//
-// handleImageChange is the single dispatcher that both PhotoFrameImageUpload
-// instances call with (fieldKey, value).  "father" → setFatherImg,
-// "son" → setSonImg.  There is no way for a cross-wired upload to land in
-// the wrong state slot.
+// handleImageChange routes by fieldKey — uploads can never cross.
 // ═════════════════════════════════════════════════════════════════════════════
-const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
+const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading, productData, userRole }) => {
   const [form] = Form.useForm();
   const [fatherImg, setFatherImg] = useState(null);
   const [sonImg, setSonImg] = useState(null);
   const [deliveryType, setDeliveryType] = useState(null);
   const [msgLength, setMsgLength] = useState(0);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [outOfTNCharge, setOutOfTNCharge] = useState(0);
   const [pincode, setPincode] = useState("");
   const [validationError, setValidationError] = useState("");
 
-  // ✅ Single dispatcher — fieldKey is the source of truth, not closure identity
+  // Single dispatcher — fieldKey is source of truth
   const handleImageChange = useCallback((fieldKey, fileStringOrNull) => {
-    if (fieldKey === "father") {
-      setFatherImg(fileStringOrNull);
-    } else if (fieldKey === "son") {
-      setSonImg(fileStringOrNull);
-    }
+    if (fieldKey === "father") setFatherImg(fileStringOrNull);
+    else if (fieldKey === "son") setSonImg(fileStringOrNull);
   }, []);
 
   const handleDeliveryChange = (type) => {
@@ -790,32 +702,27 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
     setTimeout(() => setValidationError(""), 4000);
   };
 
+  // ✅ Receives insideTN charge, insideTNCharge, outsideTNCharge from calculator
+  const handleDeliveryChargeChange = useCallback((charge, insideTN, outsideTN) => {
+    setDeliveryCharge(charge);
+    setOutOfTNCharge(outsideTN || 0);
+  }, []);
+
   const handleSubmit = async () => {
     setValidationError("");
     try {
       const values = await form.validateFields();
 
-      if (!fatherImg) {
-        showError("Please upload Father's photo");
-        return;
-      }
-      if (!sonImg) {
-        showError("Please upload Son's photo");
-        return;
-      }
-      if (!deliveryType) {
-        showError("Please select Pickup or Delivery option");
-        return;
-      }
+      if (!fatherImg) { showError("Please upload Father's photo"); return; }
+      if (!sonImg) { showError("Please upload Son's photo"); return; }
+      if (!deliveryType) { showError("Please select Pickup or Delivery option"); return; }
       if (deliveryType === "delivery") {
         if (!pincode || pincode.length !== 6) {
           showError("Please enter a valid 6-digit pincode for delivery");
           return;
         }
         if (deliveryCharge === 0) {
-          showError(
-            "Please wait while we calculate delivery charges for your pincode",
-          );
+          showError("Please wait while we calculate delivery charges for your pincode");
           return;
         }
       }
@@ -829,10 +736,11 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
         pickup_from_office: deliveryType === "pickup",
         delivery_to_home: deliveryType === "delivery",
         delivery_charge: deliveryType === "pickup" ? 0 : deliveryCharge,
+        out_of_tn_charge: deliveryType === "pickup" ? 0 : outOfTNCharge,
         pincode,
       });
     } catch {
-      // Ant Design form validation handles field-level errors inline
+      // Ant Design handles field-level errors
     }
   };
 
@@ -843,6 +751,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
     setDeliveryType(null);
     setMsgLength(0);
     setDeliveryCharge(0);
+    setOutOfTNCharge(0);
     setPincode("");
     setValidationError("");
     onClose();
@@ -865,25 +774,16 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
         exit={{ opacity: 0, scale: 0.92, y: 24 }}
         transition={{ type: "spring", damping: 22, stiffness: 300 }}
         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col"
-        style={{
-          boxShadow:
-            "0 24px 80px rgba(180,120,0,0.18), 0 4px 20px rgba(0,0,0,0.12)",
-        }}
+        style={{ boxShadow: "0 24px 80px rgba(180,120,0,0.18), 0 4px 20px rgba(0,0,0,0.12)" }}
       >
         {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4"
-          style={{
-            background: "linear-gradient(135deg, #f2c41a 0%, #f2c41a 100%)",
-          }}
+          style={{ background: "linear-gradient(135deg, #f2c41a 0%, #f2c41a 100%)" }}
         >
           <div>
-            <h2 className="text-black font-bold text-lg leading-tight">
-              🖼️ Photo Frame Details
-            </h2>
-            <p className="text-black text-xs mt-0.5">
-              Personalise your frame — we'll handle the rest
-            </p>
+            <h2 className="text-black font-bold text-lg leading-tight">🖼️ Photo Frame Details</h2>
+            <p className="text-black text-xs mt-0.5">Personalise your frame — we'll handle the rest</p>
           </div>
           <button
             onClick={handleClose}
@@ -955,12 +855,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
               </Form.Item>
             </div>
 
-            {/*
-              ✅ Photo Uploads — each gets a unique fieldKey.
-              handleImageChange routes by fieldKey so uploads can never cross.
-              UploadFileButton instances each have their own unique <input> id
-              via useId(), so DOM label→input wiring is always 1-to-1.
-            */}
+            {/* Photo Uploads */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <PhotoFrameImageUpload
                 fieldKey="father"
@@ -984,15 +879,11 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                 <div className="flex items-center justify-between w-full">
                   <span className="text-sm font-semibold text-gray-700">
                     Unique Message
-                    <span className="text-gray-400 font-normal ml-1">
-                      (optional)
-                    </span>
+                    <span className="text-gray-400 font-normal ml-1">(optional)</span>
                   </span>
                   <span
                     className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      msgLength > 25
-                        ? "bg-red-100 text-red-600"
-                        : "bg-amber-100 text-amber-700"
+                      msgLength > 25 ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"
                     }`}
                   >
                     {msgLength}/30
@@ -1034,23 +925,16 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                   )}
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      deliveryType === "pickup"
-                        ? "bg-amber-500 text-white"
-                        : "bg-gray-100 text-gray-500"
+                      deliveryType === "pickup" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500"
                     }`}
                   >
                     <ShopOutlined className="text-lg" />
                   </div>
                   <div className="text-center">
-                    <p
-                      className={`text-sm font-semibold ${deliveryType === "pickup" ? "text-amber-700" : "text-gray-700"}`}
-                    >
-                      Pickup from Office <br />
-                      Dmedia corporate office
+                    <p className={`text-sm font-semibold ${deliveryType === "pickup" ? "text-amber-700" : "text-gray-700"}`}>
+                      Pickup from Office <br />Dmedia corporate office
                     </p>
-                    <p className="text-xs text-green-600 font-medium mt-0.5">
-                      Free
-                    </p>
+                    <p className="text-xs text-green-600 font-medium mt-0.5">Free</p>
                   </div>
                 </button>
 
@@ -1071,22 +955,16 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                   )}
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      deliveryType === "delivery"
-                        ? "bg-amber-500 text-white"
-                        : "bg-gray-100 text-gray-500"
+                      deliveryType === "delivery" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500"
                     }`}
                   >
                     <HomeOutlined className="text-lg" />
                   </div>
                   <div className="text-center">
-                    <p
-                      className={`text-sm font-semibold ${deliveryType === "delivery" ? "text-amber-700" : "text-gray-700"}`}
-                    >
+                    <p className={`text-sm font-semibold ${deliveryType === "delivery" ? "text-amber-700" : "text-gray-700"}`}>
                       Delivery to Home
                     </p>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">
-                      Charges apply
-                    </p>
+                    <p className="text-xs text-gray-500 font-medium mt-0.5">Charges apply</p>
                   </div>
                 </button>
               </div>
@@ -1108,24 +986,16 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                             Enter Pincode to Calculate Delivery Charges
                           </p>
                           <PincodeDeliveryCalculatorForModal
-                            onDeliveryChargeChange={setDeliveryCharge}
+                            productData={productData}
+                            userRole={userRole}
+                            onDeliveryChargeChange={handleDeliveryChargeChange}
                             onPincodeChange={setPincode}
                           />
                           {deliveryCharge > 0 && (
                             <div className="mt-2 p-2 bg-white rounded-lg border border-blue-200">
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">
-                                  Delivery Charge:
-                                </span>
-                                <span className="font-bold text-blue-700 text-base">
-                                  ₹{deliveryCharge}
-                                </span>
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {deliveryCharge === 80 &&
-                                  "📍 Within Tamil Nadu"}
-                                {deliveryCharge === 100 &&
-                                  "📍 Outside Tamil Nadu"}
+                                <span className="text-sm text-gray-600">Delivery Charge:</span>
+                                <span className="font-bold text-blue-700 text-base">₹{deliveryCharge}</span>
                               </div>
                             </div>
                           )}
@@ -1136,6 +1006,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                 )}
               </AnimatePresence>
             </div>
+
             <div className="mt-4">
               <Form.Item
                 name="ai_disclaimer_ack"
@@ -1145,18 +1016,13 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
                     validator: (_, value) =>
                       value
                         ? Promise.resolve()
-                        : Promise.reject(
-                            new Error(
-                              "Please acknowledge this before proceeding",
-                            ),
-                          ),
+                        : Promise.reject(new Error("Please acknowledge this before proceeding")),
                   },
                 ]}
                 className="!mb-0"
               >
                 <Checkbox className="text-sm text-gray-600">
-                  I understand this is an AI-generated photo and facial features
-                  may differ slightly (10–20%) from the original.
+                  I understand this is an AI-generated photo and facial features may differ slightly (10–20%) from the original.
                 </Checkbox>
               </Form.Item>
             </div>
@@ -1165,10 +1031,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex gap-3">
-          <Button
-            onClick={handleClose}
-            className="flex-1 h-11 rounded-xl font-medium"
-          >
+          <Button onClick={handleClose} className="flex-1 h-11 rounded-xl font-medium">
             Cancel
           </Button>
           <Button
@@ -1178,8 +1041,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
             icon={<ShoppingCartOutlined />}
             className="flex-1 h-11 rounded-xl font-semibold"
             style={{
-              background:
-                "linear-gradient(135deg, rgb(242, 196, 26) 0%, rgb(242, 196, 26) 100%)",
+              background: "linear-gradient(135deg, rgb(242, 196, 26) 0%, rgb(242, 196, 26) 100%)",
               border: "none",
               color: "black",
             }}
@@ -1193,12 +1055,14 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading }) => {
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
-// PINCODE DELIVERY CALCULATOR — Main product page component
+// PINCODE DELIVERY CALCULATOR — Main product page
+// onDeliveryChargeChange(insideTNCharge, outsideTNCharge) — always emits both
 // ═════════════════════════════════════════════════════════════════════════════
 export const PincodeDeliveryCalculator = ({
+  productData,
+  userRole,
   Production,
   freeDelivery,
-  deliveryCharges,
   onDeliveryChargeChange,
   onPincodeChange,
 }) => {
@@ -1209,9 +1073,7 @@ export const PincodeDeliveryCalculator = ({
   const [isValidatingPincode, setIsValidatingPincode] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isPincodeValid, setIsPincodeValid] = useState(null);
-  const [calculatedCharge, setCalculatedCharge] = useState(
-    deliveryCharges || 0,
-  );
+  const [calculatedCharge, setCalculatedCharge] = useState(0);
 
   const stateDeliveryDays = {
     maharashtra: { days: 2, name: "Maharashtra" },
@@ -1224,61 +1086,20 @@ export const PincodeDeliveryCalculator = ({
   };
 
   const pincodeToStateMap = {
-    600: "tamil nadu",
-    601: "tamil nadu",
-    602: "tamil nadu",
-    603: "tamil nadu",
-    604: "tamil nadu",
-    605: "tamil nadu",
-    606: "tamil nadu",
-    607: "tamil nadu",
-    608: "tamil nadu",
-    609: "tamil nadu",
-    610: "tamil nadu",
-    611: "tamil nadu",
-    612: "tamil nadu",
-    613: "tamil nadu",
-    614: "tamil nadu",
-    615: "tamil nadu",
-    616: "tamil nadu",
-    617: "tamil nadu",
-    618: "tamil nadu",
-    619: "tamil nadu",
-    620: "tamil nadu",
-    621: "tamil nadu",
-    622: "tamil nadu",
-    623: "tamil nadu",
-    624: "tamil nadu",
-    625: "tamil nadu",
-    626: "tamil nadu",
-    627: "tamil nadu",
-    628: "tamil nadu",
-    629: "tamil nadu",
-    630: "tamil nadu",
-    631: "tamil nadu",
-    632: "tamil nadu",
-    633: "tamil nadu",
-    634: "tamil nadu",
-    635: "tamil nadu",
-    636: "tamil nadu",
-    637: "tamil nadu",
-    638: "tamil nadu",
-    639: "tamil nadu",
-    640: "tamil nadu",
-    641: "tamil nadu",
-    642: "tamil nadu",
-    643: "tamil nadu",
-    644: "tamil nadu",
-    645: "tamil nadu",
-    646: "tamil nadu",
-    647: "tamil nadu",
-    648: "tamil nadu",
-    649: "tamil nadu",
-    400: "maharashtra",
-    395: "gujarat",
-    560: "karnataka",
-    682: "kerala",
-    110: "delhi",
+    600: "tamil nadu", 601: "tamil nadu", 602: "tamil nadu", 603: "tamil nadu",
+    604: "tamil nadu", 605: "tamil nadu", 606: "tamil nadu", 607: "tamil nadu",
+    608: "tamil nadu", 609: "tamil nadu", 610: "tamil nadu", 611: "tamil nadu",
+    612: "tamil nadu", 613: "tamil nadu", 614: "tamil nadu", 615: "tamil nadu",
+    616: "tamil nadu", 617: "tamil nadu", 618: "tamil nadu", 619: "tamil nadu",
+    620: "tamil nadu", 621: "tamil nadu", 622: "tamil nadu", 623: "tamil nadu",
+    624: "tamil nadu", 625: "tamil nadu", 626: "tamil nadu", 627: "tamil nadu",
+    628: "tamil nadu", 629: "tamil nadu", 630: "tamil nadu", 631: "tamil nadu",
+    632: "tamil nadu", 633: "tamil nadu", 634: "tamil nadu", 635: "tamil nadu",
+    636: "tamil nadu", 637: "tamil nadu", 638: "tamil nadu", 639: "tamil nadu",
+    640: "tamil nadu", 641: "tamil nadu", 642: "tamil nadu", 643: "tamil nadu",
+    644: "tamil nadu", 645: "tamil nadu", 646: "tamil nadu", 647: "tamil nadu",
+    648: "tamil nadu", 649: "tamil nadu",
+    400: "maharashtra", 395: "gujarat", 560: "karnataka", 682: "kerala", 110: "delhi",
   };
 
   const getStateFromPincode = (pin) =>
@@ -1288,10 +1109,7 @@ export const PincodeDeliveryCalculator = ({
     const d = new Date();
     d.setDate(d.getDate() + Number(Production || 0));
     return d.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
+      weekday: "short", day: "numeric", month: "short", year: "numeric",
     });
   };
 
@@ -1300,10 +1118,7 @@ export const PincodeDeliveryCalculator = ({
     const d = new Date();
     d.setDate(d.getDate() + Number(Production || 0) + Number(days) + 2);
     return d.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
+      weekday: "short", day: "numeric", month: "short", year: "numeric",
     });
   };
 
@@ -1315,21 +1130,26 @@ export const PincodeDeliveryCalculator = ({
 
     if (isValid) {
       const stateKey = getStateFromPincode(pin);
-      const stateName =
-        stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name;
+      const stateName = stateDeliveryDays[stateKey]?.name || stateDeliveryDays.default.name;
       setState(stateName);
       setDeliveryDate(calculateDeliveryDate(stateKey));
 
       let charge = 0;
+      let outOfTNCharge = 0;
       if (freeDelivery) {
         charge = 0;
-      } else if (stateKey === "tamil nadu") {
-        charge = 60;
+        outOfTNCharge = 0;
       } else {
-        charge = 100;
+        const isOutsideTN = stateKey !== "tamil nadu";
+        // Always compute both rates
+        const insideTNCharge = getDeliveryChargesFromProduct(productData, userRole, false);
+        outOfTNCharge = getDeliveryChargesFromProduct(productData, userRole, true);
+        charge = isOutsideTN ? outOfTNCharge : insideTNCharge;
       }
+
       setCalculatedCharge(charge);
-      if (onDeliveryChargeChange) onDeliveryChargeChange(charge);
+      // ✅ emit both so ProductDetails can store out_of_tn_charge
+      if (onDeliveryChargeChange) onDeliveryChargeChange(charge, outOfTNCharge);
       if (onPincodeChange) onPincodeChange(pin);
       setError("");
     } else {
@@ -1337,7 +1157,7 @@ export const PincodeDeliveryCalculator = ({
       setDeliveryDate("");
       setState("");
       setCalculatedCharge(0);
-      if (onDeliveryChargeChange) onDeliveryChargeChange(0);
+      if (onDeliveryChargeChange) onDeliveryChargeChange(0, 0);
     }
     setIsValidatingPincode(false);
   };
@@ -1353,7 +1173,7 @@ export const PincodeDeliveryCalculator = ({
     if (value.length === 6) {
       validatePincode(value);
     } else {
-      if (onDeliveryChargeChange) onDeliveryChargeChange(0);
+      if (onDeliveryChargeChange) onDeliveryChargeChange(0, 0);
     }
   };
 
@@ -1369,17 +1189,14 @@ export const PincodeDeliveryCalculator = ({
       if (!navigator.geolocation) throw new Error("Geolocation not supported");
       const position = await new Promise((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: 15000,
-          enableHighAccuracy: true,
-          maximumAge: 300000,
+          timeout: 15000, enableHighAccuracy: true, maximumAge: 300000,
         }),
       );
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`,
       );
       const d = await response.json();
-      const detectedPincode =
-        d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
+      const detectedPincode = d.address?.postcode || extractPincodeFromDisplayName(d.display_name);
       if (detectedPincode) {
         setPincode(detectedPincode);
         validatePincode(detectedPincode);
@@ -1395,7 +1212,7 @@ export const PincodeDeliveryCalculator = ({
   };
 
   const productionDate = calculateProductionDate();
-  const displayCharge = calculatedCharge || deliveryCharges || 0;
+  const displayCharge = calculatedCharge || 0;
 
   return (
     <div className="pincode-delivery-calculator">
@@ -1410,12 +1227,8 @@ export const PincodeDeliveryCalculator = ({
             suffix={
               <div className="flex items-center gap-2">
                 {isValidatingPincode && <Spin size="small" />}
-                {isPincodeValid === true && (
-                  <CheckCircleOutlined className="text-green-500" />
-                )}
-                {isPincodeValid === false && (
-                  <CloseCircleOutlined className="text-red-500" />
-                )}
+                {isPincodeValid === true && <CheckCircleOutlined className="text-green-500" />}
+                {isPincodeValid === false && <CloseCircleOutlined className="text-red-500" />}
               </div>
             }
           />
@@ -1446,9 +1259,7 @@ export const PincodeDeliveryCalculator = ({
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 text-green-700">
                 <CheckCircleOutlined className="text-green-500" />
-                <span className="font-medium">
-                  Delivery available to {state}
-                </span>
+                <span className="font-medium">Delivery available to {state}</span>
               </div>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
                 <span className="flex items-center gap-1.5 text-gray-700">
@@ -1462,29 +1273,23 @@ export const PincodeDeliveryCalculator = ({
               </div>
               <div className="mt-1 pt-2 border-t border-green-200">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
-                    Delivery Charges:
-                  </span>
+                  <span className="text-sm text-gray-600">Delivery Charges:</span>
                   {freeDelivery ? (
                     <>
-                      <span className="font-bold text-green-700 text-base">
-                        ₹0
-                      </span>
+                      <span className="font-bold text-green-700 text-base">₹0</span>
                       <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-0.5 rounded-full">
                         Free Delivery
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="font-bold text-green-700 text-base">
-                        ₹{displayCharge}
-                      </span>
-                      {displayCharge === 60 && (
+                      <span className="font-bold text-green-700 text-base">₹{displayCharge}</span>
+                      {state === "Tamil Nadu" && displayCharge > 0 && (
                         <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">
                           Within Tamil Nadu
                         </span>
                       )}
-                      {displayCharge === 100 && (
+                      {state !== "Tamil Nadu" && displayCharge > 0 && (
                         <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded-full">
                           Outside Tamil Nadu
                         </span>
@@ -1501,13 +1306,9 @@ export const PincodeDeliveryCalculator = ({
               <span className="text-sm text-gray-600">
                 Expected Dispatch by <strong>{productionDate}</strong>
               </span>
-              <span className="text-xs text-gray-500">
-                Enter pincode for delivery date & charges
-              </span>
+              <span className="text-xs text-gray-500">Enter pincode for delivery date & charges</span>
               {freeDelivery && (
-                <span className="text-xs text-green-600 font-medium">
-                  🎉 Free Delivery on this product!
-                </span>
+                <span className="text-xs text-green-600 font-medium">🎉 Free Delivery on this product!</span>
               )}
             </div>
           </motion.div>
@@ -1524,12 +1325,7 @@ export const SimpleHangingSoldBoard = () => {
   const swingAnimation = {
     animate: {
       rotate: [0, 8, -8, 6, -6, 3, -3, 0],
-      transition: {
-        duration: 5,
-        repeat: Infinity,
-        repeatType: "reverse",
-        ease: "easeInOut",
-      },
+      transition: { duration: 5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" },
     },
   };
 
@@ -1579,13 +1375,11 @@ const ProductDetails = ({
     const product_type = _.get(data, "type", "Stand Alone Product");
     if (user.role === "Dealer") {
       return product_type === "Stand Alone Product"
-        ? _.get(data, "Deler_product_price", 0) ||
-            _.get(data, "single_product_price", 0)
+        ? _.get(data, "Deler_product_price", 0) || _.get(data, "single_product_price", 0)
         : _.get(data, "variants_price[0].Deler_product_price", "");
     } else if (user.role === "Corporate") {
       return product_type === "Stand Alone Product"
-        ? _.get(data, "corporate_product_price", 0) ||
-            _.get(data, "single_product_price", 0)
+        ? _.get(data, "corporate_product_price", 0) || _.get(data, "single_product_price", 0)
         : _.get(data, "variants_price[0].corporate_product_price", "");
     } else if (user.role === "bni_user") {
       const del_price =
@@ -1599,8 +1393,7 @@ const ProductDetails = ({
       return cus_price - Math.abs((cus_price - del_price) / 2);
     } else {
       return product_type === "Stand Alone Product"
-        ? _.get(data, "customer_product_price", 0) ||
-            _.get(data, "single_product_price", 0)
+        ? _.get(data, "customer_product_price", 0) || _.get(data, "single_product_price", 0)
         : _.get(data, "variants_price[0].customer_product_price", "");
     }
   };
@@ -1618,10 +1411,7 @@ const ProductDetails = ({
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [quantity, setQuantity] = useState(null);
-  const [discountPercentage, setDiscountPercentage] = useState({
-    uuid: "",
-    percentage: 0,
-  });
+  const [discountPercentage, setDiscountPercentage] = useState({ uuid: "", percentage: 0 });
   const [variant, setVariant] = useState([]);
   const [currentPriceSplitup, setCurrentPriceSplitup] = useState([]);
   const [checked, setChecked] = useState(false);
@@ -1629,6 +1419,8 @@ const ProductDetails = ({
   const [maximum_quantity, setMaximumQuantity] = useState();
   const [freeDelivery, setFreeDelivery] = useState(false);
   const [deliveryCharges, setDeliveryCharges] = useState(100);
+  // ✅ NEW: tracks the outside-TN delivery rate separately
+  const [outOfTNCharge, setOutOfTNCharge] = useState(0);
   const [noDesignUpload, setNoDesignUpload] = useState(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [sendingNotification, setSendingNotification] = useState(false);
@@ -1701,55 +1493,13 @@ const ProductDetails = ({
 
   // ── Platform options ───────────────────────────────────────────────────────
   const platformOptions = [
-    {
-      value: "Google",
-      label: "Google",
-      icon: <FaGoogle />,
-      color: "#4285F4",
-      bgColor: "#4285F41A",
-    },
-    {
-      value: "Instagram",
-      label: "Instagram",
-      icon: <FaInstagram />,
-      color: "#E4405F",
-      bgColor: "#E4405F1A",
-    },
-    {
-      value: "Facebook",
-      label: "Facebook",
-      icon: <FaFacebook />,
-      color: "#1877F2",
-      bgColor: "#1877F21A",
-    },
-    {
-      value: "YouTube",
-      label: "YouTube",
-      icon: <FaYoutube />,
-      color: "#FF0000",
-      bgColor: "#FF00001A",
-    },
-    {
-      value: "WhatsApp",
-      label: "WhatsApp",
-      icon: <FaWhatsapp />,
-      color: "#25D366",
-      bgColor: "#25D3661A",
-    },
-    {
-      value: "Website",
-      label: "Website",
-      icon: <FaGlobe />,
-      color: "#4CAF50",
-      bgColor: "#4CAF501A",
-    },
-    {
-      value: "Other",
-      label: "Other",
-      icon: <FaPlus />,
-      color: "#9C27B0",
-      bgColor: "#9C27B01A",
-    },
+    { value: "Google", label: "Google", icon: <FaGoogle />, color: "#4285F4", bgColor: "#4285F41A" },
+    { value: "Instagram", label: "Instagram", icon: <FaInstagram />, color: "#E4405F", bgColor: "#E4405F1A" },
+    { value: "Facebook", label: "Facebook", icon: <FaFacebook />, color: "#1877F2", bgColor: "#1877F21A" },
+    { value: "YouTube", label: "YouTube", icon: <FaYoutube />, color: "#FF0000", bgColor: "#FF00001A" },
+    { value: "WhatsApp", label: "WhatsApp", icon: <FaWhatsapp />, color: "#25D366", bgColor: "#25D3661A" },
+    { value: "Website", label: "Website", icon: <FaGlobe />, color: "#4CAF50", bgColor: "#4CAF501A" },
+    { value: "Other", label: "Other", icon: <FaPlus />, color: "#9C27B0", bgColor: "#9C27B01A" },
   ];
 
   // ── Quantity options ───────────────────────────────────────────────────────
@@ -1782,25 +1532,17 @@ const ProductDetails = ({
   useEffect(() => {
     if (quantityType !== "textbox" && quantityDiscounts.length > 0) {
       const roleFields = getRoleFields(user.role);
-      const firstAvailableItem = quantityDiscounts.find(
-        (item) => item[roleFields.quantity],
-      );
+      const firstAvailableItem = quantityDiscounts.find((item) => item[roleFields.quantity]);
       if (firstAvailableItem) {
         const initialQuantity = Number(firstAvailableItem[roleFields.quantity]);
-        const initialDiscount = Number(
-          firstAvailableItem[roleFields.discount] || 0,
-        );
-        const initialFreeDelivery =
-          firstAvailableItem[roleFields.freeDelivery] || false;
+        const initialDiscount = Number(firstAvailableItem[roleFields.discount] || 0);
+        const initialFreeDelivery = firstAvailableItem[roleFields.freeDelivery] || false;
         const initialDeliveryCharges = initialFreeDelivery
           ? 0
           : Number(firstAvailableItem[roleFields.deliveryCharges] || 100);
 
         setQuantity(initialQuantity);
-        setDiscountPercentage({
-          uuid: firstAvailableItem.uniqe_id,
-          percentage: initialDiscount,
-        });
+        setDiscountPercentage({ uuid: firstAvailableItem.uniqe_id, percentage: initialDiscount });
         setFreeDelivery(initialFreeDelivery);
         setDeliveryCharges(initialDeliveryCharges);
         setCheckOutState((prev) => ({
@@ -1828,7 +1570,6 @@ const ProductDetails = ({
   // ── Platform handlers ──────────────────────────────────────────────────────
   const handlePlatformSelect = (platform, e) => {
     if (e) e.stopPropagation();
-
     if (isQrProduct) {
       if (selectedPlatforms.includes(platform)) {
         const newPlatforms = selectedPlatforms.filter((p) => p !== platform);
@@ -1897,15 +1638,11 @@ const ProductDetails = ({
       setCheckOutState((prev) => ({ ...prev, product_price: basePrice }));
       setStockCount(_.get(data, "stock_count", 0));
     } else if (_.isEmpty(currentPriceSplitup)) {
-      const items = _.get(product, "variants_price", []).map((r) =>
-        Number(r.price),
-      );
+      const items = _.get(product, "variants_price", []).map((r) => Number(r.price));
       const itemKeys = _.get(product, "variants_price", []).map((r) => r.key);
       const lowestIdx = items.indexOf(Math.min(...items));
       setVariant(String(itemKeys[lowestIdx]).split("-"));
-      setCurrentPriceSplitup(
-        _.get(product, `variants_price[${lowestIdx}]`, {}),
-      );
+      setCurrentPriceSplitup(_.get(product, `variants_price[${lowestIdx}]`, {}));
       setCheckOutState((prev) => ({
         ...prev,
         product_price: _.get(product, `variants_price[${lowestIdx}].price`, {}),
@@ -1957,53 +1694,41 @@ const ProductDetails = ({
     const applyDiscount = (selectedDiscount) => {
       if (selectedDiscount) {
         const isFree = selectedDiscount[roleFields.freeDelivery] || false;
-        const charges = isFree
-          ? 0
-          : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
+        const charges = isFree ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
         setDiscountPercentage({
           uuid: selectedDiscount.uniqe_id,
           percentage: Number(selectedDiscount[roleFields.discount] || 0),
         });
         setFreeDelivery(isFree);
         setDeliveryCharges(charges);
-        setCheckOutState((prev) => ({
-          ...prev,
-          DeliveryCharges: charges,
-          FreeDelivery: isFree,
-        }));
+        setCheckOutState((prev) => ({ ...prev, DeliveryCharges: charges, FreeDelivery: isFree }));
       } else {
         setDiscountPercentage({ uuid: "", percentage: 0 });
         setFreeDelivery(false);
         setDeliveryCharges(100);
-        setCheckOutState((prev) => ({
-          ...prev,
-          DeliveryCharges: 100,
-          FreeDelivery: false,
-        }));
+        setCheckOutState((prev) => ({ ...prev, DeliveryCharges: 100, FreeDelivery: false }));
       }
     };
 
     setQuantity(selectedQuantity);
-    setCheckOutState((prev) => ({
-      ...prev,
-      product_quantity: selectedQuantity,
-    }));
+    setCheckOutState((prev) => ({ ...prev, product_quantity: selectedQuantity }));
 
     if (quantityType === "textbox") {
       const best = quantityDiscounts
         .filter(
           (item) =>
-            item[roleFields.quantity] &&
-            Number(item[roleFields.quantity]) <= selectedQuantity,
+            item[getRoleFields(user.role).quantity] &&
+            Number(item[getRoleFields(user.role).quantity]) <= selectedQuantity,
         )
         .sort(
           (a, b) =>
-            Number(b[roleFields.quantity]) - Number(a[roleFields.quantity]),
+            Number(b[getRoleFields(user.role).quantity]) -
+            Number(a[getRoleFields(user.role).quantity]),
         )[0];
       applyDiscount(best);
     } else {
       const selected = quantityDiscounts.find(
-        (item) => Number(item[roleFields.quantity]) === selectedQuantity,
+        (item) => Number(item[getRoleFields(user.role).quantity]) === selectedQuantity,
       );
       applyDiscount(selected);
     }
@@ -2020,16 +1745,12 @@ const ProductDetails = ({
 
   const getUnitPrice = () => {
     const p = Number(_.get(checkOutState, "product_price", 0));
-    return Math.round(
-      calculateUnitPrice(p, discountPercentage.percentage, user.role, Gst),
-    );
+    return Math.round(calculateUnitPrice(p, discountPercentage.percentage, user.role, Gst));
   };
 
   const getUnitPricewithoutGst = () => {
     const p = Number(_.get(checkOutState, "product_price", 0));
-    return Math.round(
-      calculateUnitPriceWithoutGst(p, discountPercentage.percentage),
-    );
+    return Math.round(calculateUnitPriceWithoutGst(p, discountPercentage.percentage));
   };
 
   const getMRPUnitPrice = () => {
@@ -2039,13 +1760,10 @@ const ProductDetails = ({
 
   const getOriginalUnitPrice = () => {
     const p = Number(_.get(checkOutState, "product_price", 0));
-    return user.role === "Corporate" || user.role === "Dealer"
-      ? p
-      : p * (1 + Gst / 100);
+    return user.role === "Corporate" || user.role === "Dealer" ? p : p * (1 + Gst / 100);
   };
 
-  const calculateTotalPrice = () =>
-    !quantity ? 0 : (getUnitPrice() * quantity).toFixed(2);
+  const calculateTotalPrice = () => (!quantity ? 0 : (getUnitPrice() * quantity).toFixed(2));
   const calculateTotalPricewithoutGst = () =>
     !quantity ? 0 : (getUnitPricewithoutGst() * quantity).toFixed(2);
   const calculateGstPrice = () => {
@@ -2059,19 +1777,14 @@ const ProductDetails = ({
     !quantity ? 0 : (getOriginalUnitPrice() * quantity).toFixed(2);
   const calculateMRPSavings = () => {
     if (!quantity) return 0;
-    return (
-      (Number(_.get(data, "MRP_price", 0)) - getMRPUnitPrice()) *
-      quantity
-    ).toFixed(2);
+    return ((Number(_.get(data, "MRP_price", 0)) - getMRPUnitPrice()) * quantity).toFixed(2);
   };
   const calculateDiscountSavings = () => {
     if (!quantity) return 0;
     return ((getOriginalUnitPrice() - getUnitPrice()) * quantity).toFixed(2);
   };
   const calculateTotalSavings = () =>
-    (
-      parseFloat(calculateMRPSavings()) + parseFloat(calculateDiscountSavings())
-    ).toFixed(2);
+    (parseFloat(calculateMRPSavings()) + parseFloat(calculateDiscountSavings())).toFixed(2);
 
   const calculateDealPercentageDiscount = () => {
     if (!quantity) return 0;
@@ -2089,14 +1802,17 @@ const ProductDetails = ({
   };
 
   // ── Delivery charge from pincode calculator ────────────────────────────────
+  // ✅ Now receives both inside-TN and outside-TN rates
   const handleDeliveryChargeChange = useCallback(
-    (charge) => {
+    (charge, outsideTNCharge = 0) => {
       if (freeDelivery) {
         setDeliveryCharges(0);
+        setOutOfTNCharge(0);
         setCheckOutState((prev) => ({ ...prev, DeliveryCharges: 0 }));
         return;
       }
       setDeliveryCharges(charge);
+      setOutOfTNCharge(outsideTNCharge);
       setCheckOutState((prev) => ({ ...prev, DeliveryCharges: charge }));
     },
     [freeDelivery],
@@ -2123,14 +1839,8 @@ const ProductDetails = ({
       }
       for (const platform of selectedPlatforms) {
         const link = platformLinks[platform];
-        if (
-          link &&
-          !link.startsWith("http://") &&
-          !link.startsWith("https://")
-        ) {
-          toast.error(
-            `Please enter a valid URL for ${platform} (include http:// or https://)`,
-          );
+        if (link && !link.startsWith("http://") && !link.startsWith("https://")) {
+          toast.error(`Please enter a valid URL for ${platform} (include http:// or https://)`);
           return false;
         }
       }
@@ -2153,9 +1863,7 @@ const ProductDetails = ({
 
     const selectedPlatformLinks = {};
     selectedPlatforms.forEach((platform) => {
-      if (platformLinks[platform]) {
-        selectedPlatformLinks[platform] = platformLinks[platform];
-      }
+      if (platformLinks[platform]) selectedPlatformLinks[platform] = platformLinks[platform];
     });
 
     const userPhone = user.phone || user.phoneNumber || user.mobile || null;
@@ -2172,7 +1880,8 @@ const ProductDetails = ({
       MRP_savings: calculateMRPSavings(),
       TotalSavings: calculateTotalSavings(),
       FreeDelivery: freeDelivery,
-      DeliveryCharges: deliveryCharges,
+      DeliveryCharges: deliveryCharges,       // inside Tamil Nadu rate
+      out_of_tn_charge: outOfTNCharge,        // ✅ outside Tamil Nadu rate
       noCustomtation: noDesignUpload,
       final_total: Number(calculateTotalPrice()),
       final_total_withoutGst: Number(calculateTotalPricewithoutGst()),
@@ -2236,6 +1945,9 @@ const ProductDetails = ({
       setError("");
 
       await submitToCart({
+        // ✅ pass both delivery charge fields from photo frame modal too
+        DeliveryCharges: photoFrameData.delivery_charge,
+        out_of_tn_charge: photoFrameData.out_of_tn_charge || 0,
         photo_frame_details: {
           father_name: photoFrameData.father_name,
           son_name: photoFrameData.son_name,
@@ -2245,9 +1957,7 @@ const ProductDetails = ({
           pickup_from_office: photoFrameData.pickup_from_office,
           delivery_to_home: photoFrameData.delivery_to_home,
           delivery_charge: photoFrameData.delivery_charge,
-          delivery_mode: photoFrameData.delivery_to_home
-            ? "home_delivery"
-            : "office_pickup",
+          delivery_mode: photoFrameData.delivery_to_home ? "home_delivery" : "office_pickup",
           pincode: photoFrameData.pincode,
         },
       });
@@ -2337,9 +2047,7 @@ const ProductDetails = ({
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`text-base font-medium ${isSelected ? "text-blue-700" : "text-gray-800"}`}
-                    >
+                    <span className={`text-base font-medium ${isSelected ? "text-blue-700" : "text-gray-800"}`}>
                       {item.value} {unit}
                     </span>
                     {item.stats && item.stats !== "No comments" && (
@@ -2364,9 +2072,7 @@ const ProductDetails = ({
                   </div>
                 </div>
                 <div className="text-right">
-                  <p
-                    className={`font-semibold ${isSelected ? "text-yellow-700" : "text-gray-900"}`}
-                  >
+                  <p className={`font-semibold ${isSelected ? "text-yellow-700" : "text-gray-900"}`}>
                     {formatPrice(totalPrice)}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
@@ -2379,9 +2085,7 @@ const ProductDetails = ({
         </div>
 
         {options.length === 0 && (
-          <div className="text-center py-4 text-gray-500">
-            No quantity options available
-          </div>
+          <div className="text-center py-4 text-gray-500">No quantity options available</div>
         )}
 
         <div className="mt-4 pt-3 border-t border-gray-100">
@@ -2392,9 +2096,7 @@ const ProductDetails = ({
             <PlusOutlined />
             Bulk Order Inquiry
           </button>
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            Prices include all applicable taxes
-          </p>
+          <p className="text-xs text-gray-500 mt-2 text-center">Prices include all applicable taxes</p>
         </div>
       </div>
     );
@@ -2403,9 +2105,7 @@ const ProductDetails = ({
   // ── Share ──────────────────────────────────────────────────────────────────
   const shareProduct = async (platform) => {
     const productUrl = encodeURIComponent(window.location.href);
-    const productTitle = encodeURIComponent(
-      _.get(data, "product_description_tittle", ""),
-    );
+    const productTitle = encodeURIComponent(_.get(data, "product_description_tittle", ""));
     const shareUrls = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${productUrl}&quote=${productTitle}`,
       whatsapp: `https://api.whatsapp.com/send?text=${productTitle} - ${productUrl}`,
@@ -2471,10 +2171,12 @@ const ProductDetails = ({
   };
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const handleNoCustomization = (e) => {
     setNoDesignUpload(e.target.checked);
     setNeedDesignUpload(!e.target.checked);
   };
+
   const handleDesignRemove = () =>
     setCheckOutState((prev) => ({ ...prev, product_design_file: "" }));
 
@@ -2483,8 +2185,7 @@ const ProductDetails = ({
     <div className="max-h-[400px] overflow-y-auto text-gray-700">
       <Paragraph>
         After our <b>designing team</b> completes your design, you'll receive a{" "}
-        <b>WhatsApp message</b>. Just reply "Yes" — and we'll immediately start
-        processing your order.
+        <b>WhatsApp message</b>. Just reply "Yes" — and we'll immediately start processing your order.
       </Paragraph>
       <Paragraph>
         Please note that <b>delivery time may delay</b>, but your order is{" "}
@@ -2492,8 +2193,7 @@ const ProductDetails = ({
       </Paragraph>
       <Paragraph>
         <b>Returns or exchanges are not applicable for customized products.</b>{" "}
-        Share your <b>expectations clearly</b> so we prepare it <b>perfectly</b>
-        .
+        Share your <b>expectations clearly</b> so we prepare it <b>perfectly</b>.
       </Paragraph>
       <Alert
         message="If you place an order without a custom design, it will be delivered within 3–4 working days."
@@ -2506,14 +2206,10 @@ const ProductDetails = ({
 
   const generateLabel = (label) => {
     switch (label) {
-      case "new":
-        return <Tag color="green">New</Tag>;
-      case "popular":
-        return <Tag color="purple">Popular</Tag>;
-      case "only-for-today":
-        return <Tag color="red">Only For Today</Tag>;
-      default:
-        return <></>;
+      case "new": return <Tag color="green">New</Tag>;
+      case "popular": return <Tag color="purple">Popular</Tag>;
+      case "only-for-today": return <Tag color="red">Only For Today</Tag>;
+      default: return <></>;
     }
   };
 
@@ -2523,9 +2219,7 @@ const ProductDetails = ({
   return (
     <Spin
       spinning={loading}
-      indicator={
-        <IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />
-      }
+      indicator={<IconHelper.CIRCLELOADING_ICON className="animate-spin !text-yellow-500" />}
     >
       <div className="font-primary w-full space-y-2 relative">
         {/* ── Product Header ───────────────────────────────────────── */}
@@ -2541,18 +2235,11 @@ const ProductDetails = ({
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-md mb-2"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%)",
-                }}
+                style={{ background: "linear-gradient(135deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%)" }}
               >
                 <motion.span
                   animate={{ rotate: [0, -10, 10, -10, 0] }}
-                  transition={{
-                    duration: 1.8,
-                    repeat: Infinity,
-                    repeatDelay: 1.5,
-                  }}
+                  transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 1.5 }}
                   className="text-sm"
                 >
                   🖼️
@@ -2575,12 +2262,7 @@ const ProductDetails = ({
               </button>
               <motion.div
                 animate={{ scale: [1, 1.15, 1] }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  repeatType: "loop",
-                  ease: "easeInOut",
-                }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
                 className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
               >
                 <div className="flex items-baseline gap-2">
@@ -2603,12 +2285,7 @@ const ProductDetails = ({
               )}
               <motion.div
                 animate={{ scale: [1, 1.15, 1] }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  repeatType: "loop",
-                  ease: "easeInOut",
-                }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
                 className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
               >
                 <div className="flex items-baseline gap-2">
@@ -2629,9 +2306,7 @@ const ProductDetails = ({
                   onClose={() => setShowShareMenu(false)}
                   className="w-48 bg-white rounded-lg shadow-xl z-50 p-2 border border-gray-200"
                 >
-                  <p className="text-xs text-gray-500 font-semibold p-2">
-                    Share via
-                  </p>
+                  <p className="text-xs text-gray-500 font-semibold p-2">Share via</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => shareProduct("facebook")}
@@ -2664,10 +2339,7 @@ const ProductDetails = ({
             <li>{_.get(data, "Point_two", "")}</li>
             <li>{_.get(data, "Point_three", "")}</li>
             <li>{_.get(data, "Point_four", "")}</li>
-            <li
-              className="list-none text-blue-600 cursor-pointer"
-              onClick={scrollToproductDetails}
-            >
+            <li className="list-none text-blue-600 cursor-pointer" onClick={scrollToproductDetails}>
               read more
             </li>
           </ul>
@@ -2676,9 +2348,7 @@ const ProductDetails = ({
         {/* ── Quantity & Variants ──────────────────────────────────── */}
         <div className="w-full flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0">
-            <Text strong className="block mb-2 md:mb-0 md:w-24">
-              Quantity:
-            </Text>
+            <Text strong className="block mb-2 md:mb-0 md:w-24">Quantity:</Text>
             <Select
               value={quantity}
               onChange={handleQuantitySelect}
@@ -2692,78 +2362,52 @@ const ProductDetails = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {product_type !== "Stand Alone Product" &&
-              !_.isEmpty(currentPriceSplitup) && (
-                <>
-                  {_.get(data, "variants", []).map((v, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0"
-                    >
-                      <Text strong className="block mb-2 md:mb-0 md:w-24">
-                        {v.variant_name}:
-                      </Text>
-                      {v.variant_type !== "image_variant" ? (
-                        <Select
-                          defaultValue={_.get(
-                            currentPriceSplitup,
-                            `[${v.variant_name}]`,
-                            "",
-                          )}
-                          options={v.options.map((opt) => ({
-                            value: opt.value,
-                            label: opt.value,
-                          }))}
-                          onChange={(value) =>
-                            handleOnChangeSelectOption(value, index)
-                          }
-                          placeholder={`Select ${v.variant_name}`}
-                          className="w-full"
-                        />
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {v.options.map((option, optionIndex) => (
+            {product_type !== "Stand Alone Product" && !_.isEmpty(currentPriceSplitup) && (
+              <>
+                {_.get(data, "variants", []).map((v, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col md:flex-row md:items-center gap-2 space-y-2 md:space-y-0"
+                  >
+                    <Text strong className="block mb-2 md:mb-0 md:w-24">{v.variant_name}:</Text>
+                    {v.variant_type !== "image_variant" ? (
+                      <Select
+                        defaultValue={_.get(currentPriceSplitup, `[${v.variant_name}]`, "")}
+                        options={v.options.map((opt) => ({ value: opt.value, label: opt.value }))}
+                        onChange={(value) => handleOnChangeSelectOption(value, index)}
+                        placeholder={`Select ${v.variant_name}`}
+                        className="w-full"
+                      />
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {v.options.map((option, optionIndex) => (
+                          <div key={optionIndex} className="flex flex-col items-center">
                             <div
-                              key={optionIndex}
-                              className="flex flex-col items-center"
+                              onClick={() => handleOnChangeSelectOption(option.value, index)}
+                              className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
+                                _.get(currentPriceSplitup, `[${v.variant_name}]`, "") === option.value
+                                  ? "border-blue-500 shadow-md"
+                                  : "border-gray-300 hover:border-blue-400"
+                              }`}
+                              style={{ width: "50px", height: "50px" }}
                             >
-                              <div
-                                onClick={() =>
-                                  handleOnChangeSelectOption(
-                                    option.value,
-                                    index,
-                                  )
-                                }
-                                className={`cursor-pointer border-2 p-1 rounded transition duration-200 ${
-                                  _.get(
-                                    currentPriceSplitup,
-                                    `[${v.variant_name}]`,
-                                    "",
-                                  ) === option.value
-                                    ? "border-blue-500 shadow-md"
-                                    : "border-gray-300 hover:border-blue-400"
-                                }`}
-                                style={{ width: "50px", height: "50px" }}
-                              >
-                                <img
-                                  fetchpriority="high"
-                                  loading="eager"
-                                  src={option.image_name}
-                                  className="w-full h-full object-contain"
-                                  alt={option.value}
-                                />
-                              </div>
-                              <Text className="text-xs mt-1 text-center">
-                                {option.value}
-                              </Text>
+                              <img
+                                fetchpriority="high"
+                                loading="eager"
+                                src={option.image_name}
+                                className="w-full h-full object-contain"
+                                alt={option.value}
+                              />
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
+                            <Text className="text-xs mt-1 text-center">{option.value}</Text>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         </div>
 
@@ -2771,17 +2415,13 @@ const ProductDetails = ({
         <Card className="rounded-lg border-0 bg-blue-50">
           <div className="space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-              <Text strong className="text-gray-800">
-                Deal Price:
-              </Text>
+              <Text strong className="text-gray-800">Deal Price:</Text>
               <div className="text-right flex flex-col md:flex-row md:items-baseline gap-1">
                 <Text delete className="text-md text-gray-500 md:mr-2">
                   {formatPrice(calculateMRPTotalPrice())}
                 </Text>
                 <Title level={4} className="!m-0 !text-green-600">
-                  {quantity
-                    ? formatPrice(calculateTotalPrice())
-                    : formatPrice(0)}
+                  {quantity ? formatPrice(calculateTotalPrice()) : formatPrice(0)}
                 </Title>
               </div>
             </div>
@@ -2798,8 +2438,7 @@ const ProductDetails = ({
                     )}
                     {discountPercentage.percentage > 0 && (
                       <div className="text-sm mt-2">
-                        Additional Savings:{" "}
-                        {formatPrice(calculateDiscountSavings())} (
+                        Additional Savings: {formatPrice(calculateDiscountSavings())} (
                         {discountPercentage.percentage}% Quantity Discount)
                       </div>
                     )}
@@ -2820,9 +2459,7 @@ const ProductDetails = ({
               />
             )}
 
-            {(user.role === "Corporate" ||
-              user.role === "Dealer" ||
-              user.role === "bni_user") && (
+            {(user.role === "Corporate" || user.role === "Dealer" || user.role === "bni_user") && (
               <div className="text-gray-600">
                 <h1 className="!text-[12px]">
                   Exclusive of all taxes for <Text strong>{quantity}</Text> Qty
@@ -2846,9 +2483,7 @@ const ProductDetails = ({
                   Inclusive of all taxes for <span>{quantity}</span> Qty
                   <span className="font-bold">
                     &nbsp;(
-                    {user.role === "Dealer" ||
-                    user.role === "Corporate" ||
-                    user.role === "bni_user" ? (
+                    {user.role === "Dealer" || user.role === "Corporate" || user.role === "bni_user" ? (
                       <>{formatPrice(Gst_HELPER(Gst, getUnitPrice()))}</>
                     ) : (
                       <>{formatPrice(calculateGstPrice())}</>
@@ -2861,9 +2496,7 @@ const ProductDetails = ({
           </div>
 
           <div className="flex items-center gap-2 mt-4">
-            <Text strong className="text-gray-700">
-              Processing Time:
-            </Text>
+            <Text strong className="text-gray-700">Processing Time:</Text>
             <span className="font-bold">{processing_item} days</span>
           </div>
 
@@ -2886,14 +2519,13 @@ const ProductDetails = ({
             }}
             className="mt-4"
           >
-            <Text strong className="block mb-2 text-gray-700">
-              Estimated Delivery
-            </Text>
+            <Text strong className="block mb-2 text-gray-700">Estimated Delivery</Text>
             <div className="rounded-lg">
               <PincodeDeliveryCalculator
+                productData={data}
+                userRole={user.role}
                 Production={processing_item}
                 freeDelivery={freeDelivery}
-                deliveryCharges={deliveryCharges}
                 onDeliveryChargeChange={handleDeliveryChargeChange}
                 onPincodeChange={handlePincodeChange}
               />
@@ -2926,15 +2558,10 @@ const ProductDetails = ({
                     <div
                       key={platform.value}
                       className="flex flex-col p-3 border rounded-lg transition-all cursor-pointer"
-                      onClick={(e) =>
-                        handlePlatformContainerClick(platform.value, e)
-                      }
+                      onClick={(e) => handlePlatformContainerClick(platform.value, e)}
                       style={
                         isSelected
-                          ? {
-                              borderColor: platform.color,
-                              backgroundColor: platform.bgColor,
-                            }
+                          ? { borderColor: platform.color, backgroundColor: platform.bgColor }
                           : {}
                       }
                     >
@@ -2942,9 +2569,7 @@ const ProductDetails = ({
                         <div
                           className="flex items-center justify-center w-8 h-8 rounded-full mr-3"
                           style={{
-                            backgroundColor: isSelected
-                              ? platform.color
-                              : "#f3f4f6",
+                            backgroundColor: isSelected ? platform.color : "#f3f4f6",
                             color: isSelected ? "white" : platform.color,
                           }}
                         >
@@ -2953,12 +2578,7 @@ const ProductDetails = ({
                         <span className="font-medium">{platform.label}</span>
                         <div className="ml-auto">
                           {isSelected ? (
-                            <CheckCircleOutlined
-                              style={{
-                                color: platform.color,
-                                fontSize: "16px",
-                              }}
-                            />
+                            <CheckCircleOutlined style={{ color: platform.color, fontSize: "16px" }} />
                           ) : (
                             <div className="w-4 h-4 border border-gray-300 rounded"></div>
                           )}
@@ -2977,12 +2597,7 @@ const ProductDetails = ({
                             <Input
                               placeholder={`Enter ${platform.label} link`}
                               value={platformLinks[platform.value] || ""}
-                              onChange={(e) =>
-                                handlePlatformLinkChange(
-                                  platform.value,
-                                  e.target.value,
-                                )
-                              }
+                              onChange={(e) => handlePlatformLinkChange(platform.value, e.target.value)}
                               onClick={(e) => e.stopPropagation()}
                               onFocus={(e) => e.stopPropagation()}
                               className="flex-1"
@@ -2993,10 +2608,7 @@ const ProductDetails = ({
                             <Button
                               type="text"
                               className="w-3"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedPlatform(null);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); setExpandedPlatform(null); }}
                               style={{ color: platform.color }}
                             >
                               ✔️
@@ -3013,16 +2625,11 @@ const ProductDetails = ({
                           <Button
                             type="link"
                             size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setExpandedPlatform(platform.value);
-                            }}
+                            onClick={(e) => { e.stopPropagation(); setExpandedPlatform(platform.value); }}
                             style={{ color: platform.color }}
                             className="p-0"
                           >
-                            {platformLinks[platform.value]
-                              ? "Edit link"
-                              : "Add link"}
+                            {platformLinks[platform.value] ? "Edit link" : "Add link"}
                           </Button>
                           {platformLinks[platform.value] && (
                             <div className="text-xs text-gray-600 truncate mt-1">
@@ -3040,14 +2647,10 @@ const ProductDetails = ({
 
               {selectedPlatforms.length > 0 && (
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <Text strong>
-                    Selected Platforms ({selectedPlatforms.length})
-                  </Text>
+                  <Text strong>Selected Platforms ({selectedPlatforms.length})</Text>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedPlatforms.map((platform) => {
-                      const info = platformOptions.find(
-                        (p) => p.value === platform,
-                      );
+                      const info = platformOptions.find((p) => p.value === platform);
                       return (
                         <Tag
                           key={platform}
@@ -3058,18 +2661,14 @@ const ProductDetails = ({
                           }}
                           className="py-1 px-2 flex items-center gap-1"
                         >
-                          <span style={{ color: info?.color }}>
-                            {info?.icon}
-                          </span>
+                          <span style={{ color: info?.color }}>{info?.icon}</span>
                           <span className="font-medium">{platform}: </span>
                           {platformLinks[platform] ? (
                             <span className="text-xs truncate max-w-[150px] inline-block">
                               {platformLinks[platform]}
                             </span>
                           ) : (
-                            <span className="text-red-500 text-xs">
-                              No link
-                            </span>
+                            <span className="text-red-500 text-xs">No link</span>
                           )}
                           <CloseOutlined
                             className="ml-1 cursor-pointer hover:opacity-70"
@@ -3083,9 +2682,7 @@ const ProductDetails = ({
                       );
                     })}
                   </div>
-                  {selectedPlatforms.some(
-                    (p) => !platformLinks[p] || platformLinks[p].trim() === "",
-                  ) && (
+                  {selectedPlatforms.some((p) => !platformLinks[p] || platformLinks[p].trim() === "") && (
                     <Alert
                       message="Some platforms are missing links. Please enter links for all selected platforms."
                       type="warning"
@@ -3103,10 +2700,7 @@ const ProductDetails = ({
         {!isSoldOut && !isPhotoFrame && (
           <div className="space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-              <Checkbox
-                checked={noDesignUpload}
-                onChange={handleNoCustomization}
-              >
+              <Checkbox checked={noDesignUpload} onChange={handleNoCustomization}>
                 Proceed without Design
               </Checkbox>
               {!noDesignUpload && (
@@ -3117,10 +2711,7 @@ const ProductDetails = ({
                     onChange={(checked) => {
                       setNeedDesignUpload(checked);
                       if (!checked) {
-                        setCheckOutState((prev) => ({
-                          ...prev,
-                          product_design_file: "",
-                        }));
+                        setCheckOutState((prev) => ({ ...prev, product_design_file: "" }));
                         setChecked(false);
                       }
                     }}
@@ -3154,9 +2745,7 @@ const ProductDetails = ({
                           >
                             View Design
                           </Button>
-                          <Button type="link" onClick={handleDesignRemove}>
-                            Remove
-                          </Button>
+                          <Button type="link" onClick={handleDesignRemove}>Remove</Button>
                         </div>
                         <Checkbox
                           checked={checked}
@@ -3181,10 +2770,7 @@ const ProductDetails = ({
             <div>
               <div className="flex gap-3 mb-2">
                 <Text className="text-gray-800 font-bold">Instructions</Text>
-                <Switch
-                  checked={instructionsVisible}
-                  onChange={setInstructionsVisible}
-                />
+                <Switch checked={instructionsVisible} onChange={setInstructionsVisible} />
               </div>
               {instructionsVisible && (
                 <TextArea
@@ -3192,10 +2778,7 @@ const ProductDetails = ({
                   placeholder="Please provide the instructions for this product (max 180 words)"
                   maxLength={180}
                   onChange={(e) =>
-                    setCheckOutState((prev) => ({
-                      ...prev,
-                      instructions: e.target.value,
-                    }))
+                    setCheckOutState((prev) => ({ ...prev, instructions: e.target.value }))
                   }
                 />
               )}
@@ -3210,9 +2793,8 @@ const ProductDetails = ({
               <div className="flex items-center gap-2">
                 <span className="text-lg">🖼️</span>
                 <span>
-                  This is a <strong>personalised photo frame</strong>. You'll be
-                  asked to provide names, photos, and delivery preferences when
-                  adding to cart.
+                  This is a <strong>personalised photo frame</strong>. You'll be asked to provide
+                  names, photos, and delivery preferences when adding to cart.
                 </span>
               </div>
             }
@@ -3236,11 +2818,7 @@ const ProductDetails = ({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.7 }}
                 >
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="mb-4"
-                  >
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="mb-4">
                     <Button
                       type="default"
                       size="large"
@@ -3271,30 +2849,53 @@ const ProductDetails = ({
 
         <Divider className="!my-4" />
 
-        {/* ── Design Preview Modal ─────────────────────────────────── */}
-        <CustomModal
-          open={designPreviewVisible}
-          onClose={() => setDesignPreviewVisible(false)}
-          title="Design Preview"
-          width={700}
-          footer={[
-            <Button key="close" onClick={() => setDesignPreviewVisible(false)}>
-              Close
-            </Button>,
-          ]}
-        >
-          <div className="flex justify-center">
-            <img
-              fetchpriority="high"
-              loading="eager"
-              src={checkOutState.product_design_file}
-              alt="Design Preview"
-              style={{ maxHeight: "400px" }}
-            />
-          </div>
-        </CustomModal>
+        {/* ── Design Preview Modal (portaled to body, z-index above everything) ── */}
+        {designPreviewVisible &&
+          createPortal(
+            <div
+              className="fixed inset-0 flex items-center justify-center p-4"
+              style={{ zIndex: 99999 }}
+            >
+              {/* Backdrop */}
+              <div
+                className="absolute inset-0 bg-black/70"
+                onClick={() => setDesignPreviewVisible(false)}
+              />
+              {/* Panel */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+                style={{ maxWidth: 700, width: "100%", maxHeight: "90vh", zIndex: 1 }}
+              >
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Design Preview</h3>
+                  <button
+                    onClick={() => setDesignPreviewVisible(false)}
+                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    <CloseOutlined className="text-gray-500" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-auto p-6 flex justify-center items-center">
+                  <img
+                    fetchpriority="high"
+                    loading="eager"
+                    src={checkOutState.product_design_file}
+                    alt="Design Preview"
+                    style={{ maxHeight: "400px", maxWidth: "100%" }}
+                  />
+                </div>
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+                  <Button onClick={() => setDesignPreviewVisible(false)}>Close</Button>
+                </div>
+              </motion.div>
+            </div>,
+            document.body,
+          )}
 
-        {/* ── Photo Frame Order Modal (portaled to <body>) ─────────── */}
+        {/* ── Photo Frame Order Modal (portaled to body) ───────────── */}
         {showPhotoFrameModal &&
           createPortal(
             <AnimatePresence>
@@ -3303,6 +2904,8 @@ const ProductDetails = ({
                 onClose={() => setShowPhotoFrameModal(false)}
                 onConfirm={handlePhotoFrameConfirm}
                 loading={photoFrameLoading}
+                productData={data}
+                userRole={user.role}
               />
             </AnimatePresence>,
             document.body,
@@ -3311,10 +2914,7 @@ const ProductDetails = ({
         {/* ── Notify Modal ─────────────────────────────────────────── */}
         <CustomModal
           open={showNotifyModal}
-          onClose={() => {
-            setShowNotifyModal(false);
-            notifyForm.resetFields();
-          }}
+          onClose={() => { setShowNotifyModal(false); notifyForm.resetFields(); }}
           title="Notify When Available"
           width={500}
         >
@@ -3322,11 +2922,7 @@ const ProductDetails = ({
             <div className="space-y-4">
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item
-                    label="Product Name"
-                    name="product_name"
-                    initialValue={_.get(data, "name", "")}
-                  >
+                  <Form.Item label="Product Name" name="product_name" initialValue={_.get(data, "name", "")}>
                     <Input disabled />
                   </Form.Item>
                 </Col>
@@ -3334,9 +2930,7 @@ const ProductDetails = ({
                   <Form.Item
                     label="Quantity"
                     name="quantity"
-                    rules={[
-                      { required: true, message: "Please enter quantity" },
-                    ]}
+                    rules={[{ required: true, message: "Please enter quantity" }]}
                   >
                     <InputNumber min={1} className="w-full" addonAfter={unit} />
                   </Form.Item>
@@ -3360,8 +2954,7 @@ const ProductDetails = ({
                     )
                   }
                   onBlur={(e) => {
-                    if (e.target.value && validateEmail(e.target.value))
-                      handleSendOtp(e.target.value);
+                    if (e.target.value && validateEmail(e.target.value)) handleSendOtp(e.target.value);
                   }}
                 />
               </Form.Item>
@@ -3374,9 +2967,7 @@ const ProductDetails = ({
                   <div className="flex items-center gap-3">
                     <Input.OTP
                       length={6}
-                      onChange={(otp) => {
-                        if (otp.length === 6) handleVerifyOtp(otp);
-                      }}
+                      onChange={(otp) => { if (otp.length === 6) handleVerifyOtp(otp); }}
                       disabled={emailVerified}
                     />
                     <Button
@@ -3392,28 +2983,15 @@ const ProductDetails = ({
               <Form.Item
                 label="Mobile Number"
                 name="mobile"
-                rules={[
-                  { required: true, message: "Please enter mobile number" },
-                ]}
+                rules={[{ required: true, message: "Please enter mobile number" }]}
               >
                 <Input placeholder="+91 12345 67890" />
               </Form.Item>
-              <Form.Item
-                label="Additional Requirements"
-                name="additional_requirements"
-              >
-                <TextArea
-                  rows={3}
-                  placeholder="Any special requirements or notes..."
-                />
+              <Form.Item label="Additional Requirements" name="additional_requirements">
+                <TextArea rows={3} placeholder="Any special requirements or notes..." />
               </Form.Item>
               <div className="flex gap-3">
-                <Button
-                  onClick={() => setShowNotifyModal(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
+                <Button onClick={() => setShowNotifyModal(false)} className="flex-1">Cancel</Button>
                 <Button
                   type="primary"
                   htmlType="submit"
@@ -3438,11 +3016,7 @@ const ProductDetails = ({
             <div className="space-y-4">
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item
-                    label="Product Name"
-                    name="product_name"
-                    initialValue={_.get(data, "name", "")}
-                  >
+                  <Form.Item label="Product Name" name="product_name" initialValue={_.get(data, "name", "")}>
                     <Input disabled />
                   </Form.Item>
                 </Col>
@@ -3450,9 +3024,7 @@ const ProductDetails = ({
                   <Form.Item
                     label="Quantity"
                     name="quantity"
-                    rules={[
-                      { required: true, message: "Please enter quantity" },
-                    ]}
+                    rules={[{ required: true, message: "Please enter quantity" }]}
                   >
                     <InputNumber min={1} className="w-full" addonAfter={unit} />
                   </Form.Item>
@@ -3476,8 +3048,7 @@ const ProductDetails = ({
                     )
                   }
                   onBlur={(e) => {
-                    if (e.target.value && validateEmail(e.target.value))
-                      handleSendOtp(e.target.value);
+                    if (e.target.value && validateEmail(e.target.value)) handleSendOtp(e.target.value);
                   }}
                 />
               </Form.Item>
@@ -3486,9 +3057,7 @@ const ProductDetails = ({
                   <div className="flex items-center gap-3">
                     <Input.OTP
                       length={6}
-                      onChange={(otp) => {
-                        if (otp.length === 6) handleVerifyOtp(otp);
-                      }}
+                      onChange={(otp) => { if (otp.length === 6) handleVerifyOtp(otp); }}
                       disabled={emailVerified}
                     />
                     <Button
@@ -3504,28 +3073,15 @@ const ProductDetails = ({
               <Form.Item
                 label="Mobile Number"
                 name="mobile"
-                rules={[
-                  { required: true, message: "Please enter mobile number" },
-                ]}
+                rules={[{ required: true, message: "Please enter mobile number" }]}
               >
                 <Input placeholder="+91 12345 67890" />
               </Form.Item>
-              <Form.Item
-                label="Additional Requirements"
-                name="additional_requirements"
-              >
-                <TextArea
-                  rows={3}
-                  placeholder="Any special requirements or notes..."
-                />
+              <Form.Item label="Additional Requirements" name="additional_requirements">
+                <TextArea rows={3} placeholder="Any special requirements or notes..." />
               </Form.Item>
               <div className="flex gap-3">
-                <Button
-                  onClick={() => setShowBulkOrderForm(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
+                <Button onClick={() => setShowBulkOrderForm(false)} className="flex-1">Cancel</Button>
                 <Button
                   type="primary"
                   htmlType="submit"
@@ -3542,9 +3098,7 @@ const ProductDetails = ({
         {/* ── Product Meta ─────────────────────────────────────────── */}
         <div className="space-y-2 z-0 relative">
           <div className="flex items-center">
-            <Text strong className="!text-gray-800 !w-20">
-              Categories:
-            </Text>
+            <Text strong className="!text-gray-800 !w-20">Categories:</Text>
             <Text className="text-gray-600">
               {_.get(data, "category_details.main_category_name", "")}
               {_.get(data, "sub_category_details.sub_category_name", "") &&

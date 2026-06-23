@@ -587,7 +587,7 @@ export const SubCategoryBannerCarousel = () => {
               <img fetchpriority="high" loading="eager"
                 src={subCategories[activeIndex].sub_category_banner_image}
                 alt={subCategories[activeIndex].sub_category_name}
-                className="w-full h-48 object-contain"
+                className="w-full h-28 object-cover"
 
               />
 

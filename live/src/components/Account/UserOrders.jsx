@@ -1,5 +1,4 @@
-
-import { Table, Tag, Card, Statistic, Row, Col } from "antd";
+import { Table, Tag, Card, Statistic, Row, Col, Tooltip } from "antd";
 import React, { useEffect } from "react";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
@@ -8,78 +7,165 @@ import _ from "lodash";
 import {
   ShoppingOutlined,
   CalendarOutlined,
-  EyeOutlined
+  EyeOutlined,
+  TagOutlined,
 } from "@ant-design/icons";
 
-// Alternative approach using a simple rupee symbol
-const RupeeCircleOutlined = () => <span className="anticon">₹</span>;
+const RupeeIcon = () => <span style={{ fontFamily: "inherit" }}>₹</span>;
 
 const UserOrders = () => {
-  //config
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  //redux
   const { my_orders } = useSelector((state) => state.authSlice);
-  
-  //mount
+
   useEffect(() => {
     dispatch({ type: "GET_MY_ORDERS" });
   }, [dispatch]);
 
-  // Calculate statistics
-  const totalOrders = my_orders?.data?.length || 0;
-  const totalSpent = my_orders?.data?.reduce((sum, order) => sum + Number(order.total_price), 0) || 0;
-  const recentOrder = my_orders?.data?.length > 0 
-    ? moment(my_orders.data[my_orders.data.length - 1].createdAt).fromNow() 
-    : "No orders";
+  const orders = my_orders?.data || [];
 
-  //rendering data
+  // Statistics — always use total_price (the actual amount paid after coupon/discount)
+  const totalOrders = orders.length;
+
+  const totalSpent = orders.reduce((sum, order) => {
+    const paid = Number(order.total_price);
+    return sum + (isNaN(paid) ? 0 : paid);
+  }, 0);
+
+  const recentOrder =
+    orders.length > 0
+      ? moment(orders[orders.length - 1].createdAt).fromNow()
+      : "No orders yet";
+
   const columns = [
     {
-      title: "Invoice Number",
+      title: "Invoice No.",
       dataIndex: "invoice_no",
       key: "invoice_no",
-      render: (text) => <span className="font-mono">{text}</span>,
+      render: (text) => (
+        <span style={{ fontFamily: "monospace", fontSize: 13 }}>{text}</span>
+      ),
     },
     {
-      title: "Orders",
+      title: "Product",
       dataIndex: "cart_items",
       key: "cart_items",
-      render: (record) => {
-        return <span>{_.get(record, "product_name", "")}</span>;
+      render: (items) => {
+        if (!items || items.length === 0) return <span>—</span>;
+        // Show first product name; if multiple, show count
+        const firstName = _.get(items[0], "product_name", "Unknown Product");
+        return (
+          <span>
+            {firstName}
+            {items.length > 1 && (
+              <Tag
+                style={{ marginLeft: 6, fontSize: 11 }}
+                color="default"
+              >
+                +{items.length - 1} more
+              </Tag>
+            )}
+          </span>
+        );
       },
     },
     {
-      title: "Price",
+      title: "Amount Paid",
       dataIndex: "total_price",
       key: "total_price",
-      render: (price) => {
-        return <span className="font-semibold">₹ {Number(price).toFixed(2)}</span>;
-      },
-    },
-    {
-      title: "Date",
-      dataIndex: "createdAt",
-      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-      render: (_, { createdAt }) => {
+      sorter: (a, b) => Number(a.total_price) - Number(b.total_price),
+      render: (price, record) => {
+        const paid = Number(price);
+        const original = Number(record.subtotal || record.total_before_discount || 0);
+        const hasCoupon = record.coupon && record.coupon.code;
+        const discountAmount = Number(record.discount_amount || 0);
+
         return (
-          <div className="flex items-center">
-            <CalendarOutlined className="mr-1 text-gray-400" />
-            <span>{moment(createdAt).format("YYYY-MM-DD")}</span>
+          <div>
+            <span style={{ fontWeight: 600, color: "#3f8600" }}>
+              ₹ {paid.toFixed(2)}
+            </span>
+            {hasCoupon && discountAmount > 0 && (
+              <Tooltip
+                title={
+                  <span>
+                    Coupon: <strong>{record.coupon.code}</strong>
+                    <br />
+                    Original: ₹{original.toFixed(2)}
+                    <br />
+                    Discount: −₹{discountAmount.toFixed(2)}
+                  </span>
+                }
+              >
+                <Tag
+                  icon={<TagOutlined />}
+                  color="gold"
+                  style={{
+                    marginLeft: 6,
+                    fontSize: 11,
+                    cursor: "pointer",
+                  }}
+                >
+                  Coupon
+                </Tag>
+              </Tooltip>
+            )}
+            {hasCoupon && discountAmount > 0 && (
+              <div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "#999",
+                    textDecoration: "line-through",
+                  }}
+                >
+                  ₹{original.toFixed(2)}
+                </span>
+              </div>
+            )}
           </div>
         );
       },
     },
     {
+      title: "Payment",
+      dataIndex: "payment_status",
+      key: "payment_status",
+      render: (status) => {
+        const colorMap = {
+          completed: "success",
+          pending: "warning",
+          failed: "error",
+        };
+        return (
+          <Tag color={colorMap[status] || "default"}>
+            {status ? status.charAt(0).toUpperCase() + status.slice(1) : "—"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Date",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+      render: (createdAt) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <CalendarOutlined style={{ color: "#aaa" }} />
+          <span>{moment(createdAt).format("DD MMM YYYY")}</span>
+        </div>
+      ),
+    },
+    {
       title: "View",
-      key: "View",
+      key: "view",
       align: "center",
       render: (_, record) => (
-        <Tag 
-          className="!text-sm bg-[#fdecba] !text-black !cursor-pointer !border-transparent !flex !items-center !justify-center !px-3 !py-1"
-          onClick={() => handleView(record._id)}
+        <Tag
           icon={<EyeOutlined />}
+          className="!text-sm bg-[#fdecba] !text-black !cursor-pointer !border-transparent !flex !items-center !justify-center !px-3 !py-1"
+          onClick={() => navigate(`/account/my-orders/${record._id}`)}
         >
           Open
         </Tag>
@@ -87,60 +173,17 @@ const UserOrders = () => {
     },
   ];
 
-  //function
-  const handleView = (key) => {
-    navigate(`/account/my-orders/${key}`);
-  };
-
   return (
     <div className="max-w-6xl mx-auto">
-     
-      
-      {/* Statistics Cards
-      <Row gutter={16} className="mb-6">
-        <Col span={8}>
-          <Card className="shadow-md rounded-lg border-0">
-            <Statistic
-              title="Total Orders"
-              value={totalOrders}
-              prefix={<ShoppingOutlined className="text-blue-500" />}
-              valueStyle={{ color: '#3f8600' }}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card className="shadow-md rounded-lg border-0">
-            <Statistic
-              title="Total Amount Spent"
-              value={totalSpent}
-              precision={2}
-              prefix={<RupeeCircleOutlined className="text-green-500" />}
-              valueStyle={{ color: '#3f8600' }}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card className="shadow-md rounded-lg border-0">
-            <Statistic
-              title="Last Order"
-              value={recentOrder}
-              prefix={<CalendarOutlined className="text-orange-500" />}
-              valueStyle={{ color: '#3f8600' }}
-            />
-          </Card>
-        </Col>
-      </Row> */}
-
-      {/* Orders Table */}
-      <Card 
+      <Card
         className="border-0 shadow-md rounded-lg"
         bodyStyle={{ padding: 0 }}
       >
-        <div className="p-2 ">
-          <div className="mb-6 border-b border-gray-300">
-            <h1 className="text-xl font-bold text-gray-800 mb-1">My Orders</h1>
+        <div className="p-4">
+          {/* Header */}
+          <div className="mb-5 border-b border-gray-300 pb-3">
+            <h1 className="text-xl font-bold text-gray-800 mb-0">My Orders</h1>
           </div>
-           
 
           {/* Statistics Cards */}
           <Row gutter={16} className="mb-6">
@@ -149,49 +192,50 @@ const UserOrders = () => {
                 <Statistic
                   title="Total Orders"
                   value={totalOrders}
-                  prefix={<ShoppingOutlined className="text-blue-500" />}
-                  valueStyle={{ color: '#000' }}
-                   titleStyle={{ fontWeight: 'bold' }}
+                  prefix={<ShoppingOutlined style={{ color: "#1677ff" }} />}
+                  valueStyle={{ color: "#000" }}
                 />
               </Card>
             </Col>
             <Col span={8}>
-              <Card className="shadow-md rounded-lg border-0 bg-[#fff8e5]" >
+              <Card className="shadow-md rounded-lg border-0 bg-[#fff8e5]">
                 <Statistic
-                  title="Total Amount Spent"
+                  title="Total Amount Paid"
                   value={totalSpent}
                   precision={2}
-                  prefix={<RupeeCircleOutlined className="text-green-500" />}
-                  valueStyle={{ color: '#3f8600' }}
-                   titleStyle={{ fontWeight: 'bold' }}
+                  prefix={<RupeeIcon />}
+                  valueStyle={{ color: "#3f8600" }}
                 />
               </Card>
             </Col>
             <Col span={8}>
-              <Card className="shadow-md rounded-lg border-0 bg-[#fff8e5] ">
+              <Card className="shadow-md rounded-lg border-0 bg-[#fff8e5]">
                 <Statistic
                   title="Last Order"
                   value={recentOrder}
-                  prefix={<CalendarOutlined className="text-orange-500" />}
-                  valueStyle={{ color: '#000' }}
-                   titleStyle={{ fontWeight: 'bold' }}
+                  prefix={<CalendarOutlined style={{ color: "#fa8c16" }} />}
+                  valueStyle={{ color: "#000", fontSize: 16 }}
                 />
               </Card>
             </Col>
           </Row>
 
           <h2 className="text-lg font-semibold text-gray-700">Order History</h2>
-          <p className="text-gray-500">View and manage all your orders</p>
+          <p className="text-gray-500 mb-0">
+            View and manage all your orders
+          </p>
         </div>
-        <Table 
-          columns={columns} 
-          dataSource={my_orders.data} 
-          pagination={{ 
-            pageSize: 5, 
+
+        <Table
+          columns={columns}
+          dataSource={orders}
+          rowKey="_id"
+          pagination={{
+            pageSize: 5,
             showSizeChanger: false,
-            showTotal: (total, range) => 
-              `${range[0]}-${range[1]} of ${total} orders`
-          }} 
+            showTotal: (total, range) =>
+              `${range[0]}–${range[1]} of ${total} orders`,
+          }}
           className="overflow-auto"
           rowClassName="hover:bg-gray-50 transition-colors"
         />
