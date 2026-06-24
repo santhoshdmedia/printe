@@ -72,6 +72,11 @@ const couponSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  jobNo: {
+    type: String,
+    default: null
+  },
+
   applicableCategories: [{
     type: String
   }],
