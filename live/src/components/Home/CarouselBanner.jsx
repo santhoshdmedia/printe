@@ -188,7 +188,7 @@ const CarouselBanner = () => {
   const getButtonText = (banner) => {
     if (banner.is_reward) return "Claim Reward";
     const tag = banner.tag?.toLowerCase() || "";
-    if (tag.includes("exclusive") || tag.includes("launch")) return "Claim Now";
+    if (banner.is_reward) return "Claim Now";
     return "Shop Now";
   };
 
