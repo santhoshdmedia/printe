@@ -351,7 +351,7 @@ const ImagesSlider = ({ imageList = [], data = {} }) => {
   );
 
   return (
-    <div className="!sticky !top-24 w-full h-full">
+    <div className="lg:sticky lg:top-24 lg:self-start w-full h-full">
 
       {/* SEO Meta Tags */}
       <Helmet>

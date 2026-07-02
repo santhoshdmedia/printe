@@ -24,6 +24,7 @@ import {
   message,
   Drawer,
   Upload,
+  
 } from "antd";
 import React, { useCallback, useEffect, useState, useRef, useId } from "react";
 import { createPortal } from "react-dom";
@@ -80,6 +81,7 @@ import {
   HomeOutlined,
   ShopOutlined,
   CameraOutlined,
+  WarningOutlined
 } from "@ant-design/icons";
 import { CiFaceSmile } from "react-icons/ci";
 import { CgSmileSad } from "react-icons/cg";
@@ -1351,6 +1353,82 @@ export const SimpleHangingSoldBoard = () => {
   );
 };
 
+
+
+const StockIndicator = ({ stockCount, isLimited, isSoldOut }) => {
+  if (isSoldOut) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-xl"
+      >
+        <CloseCircleOutlined className="text-red-500 text-base flex-shrink-0" />
+        <div>
+          <span className="text-red-700 font-bold text-sm">Out of Stock</span>
+          <p className="text-red-500 text-xs mt-0.5">Notify me when available</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (!isLimited) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-xl">
+        <CheckCircleOutlined className="text-green-500 text-base flex-shrink-0" />
+        <span className="text-green-700 font-semibold text-sm">In Stock — Ready to Ship</span>
+      </div>
+    );
+  }
+
+  // Limited stock logic
+  const count = Number(stockCount) || 0;
+  const isVeryLow  = count <= 3;
+  const isLow      = count <= 10;
+
+  const config = isVeryLow
+    ? { bg: "bg-red-50",    border: "border-red-300",   bar: "#ef4444", text: "text-red-700",   icon: <FireOutlined className="text-red-500 animate-pulse" />,        urgency: "🔥 Almost Gone!" }
+    : isLow
+    ? { bg: "bg-amber-50",  border: "border-amber-300", bar: "#f59e0b", text: "text-amber-800", icon: <WarningOutlined className="text-amber-500" />,                   urgency: "⚡ Limited Stock" }
+    : { bg: "bg-blue-50",   border: "border-blue-200",  bar: "#3b82f6", text: "text-blue-700",  icon: <InfoCircleOutlined className="text-blue-400" />,                 urgency: "📦 Limited Edition" };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={`${config.bg} border ${config.border} rounded-xl p-3`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {config.icon}
+          <span className={`font-bold text-sm ${config.text}`}>{config.urgency}</span>
+        </div>
+        <span className={`text-xs font-bold ${config.text} tabular-nums`}>
+          {count} left
+        </span>
+      </div>
+
+      {/* Stock bar */}
+      <div className="w-full bg-white/60 rounded-full h-2 overflow-hidden border border-white">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.min(100, (count / 20) * 100)}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="h-full rounded-full"
+          style={{ background: config.bar }}
+        />
+      </div>
+
+      {isVeryLow && (
+        <p className={`text-xs mt-1.5 ${config.text} font-medium`}>
+          Hurry! Only {count} unit{count !== 1 ? "s" : ""} remaining — order now before it sells out.
+        </p>
+      )}
+    </motion.div>
+  );
+};
+
+
 // ═════════════════════════════════════════════════════════════════════════════
 // PRODUCT DETAILS — MAIN COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1370,6 +1448,7 @@ const ProductDetails = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  
   // ── Role-based base price ──────────────────────────────────────────────────
   const getRoleBasedPrice = () => {
     const product_type = _.get(data, "type", "Stand Alone Product");
@@ -1403,7 +1482,10 @@ const ProductDetails = ({
   const Gst = _.get(data, "GST", 0);
   const isSoldOut = _.get(data, "is_soldout", false);
   const isPhotoFrame = _.get(data, "is_photoframe", false);
+    const isLimited    = _.get(data, "is_limited", false);
+  const stockCounts   = _.get(data, "stock_count", 0);
 
+  
   const isQrProduct = (() => {
     const name = _.get(data, "name", "");
     return name.includes("QR");
@@ -1431,6 +1513,7 @@ const ProductDetails = ({
 
   // ── Pincode state ──────────────────────────────────────────────────────────
   const [pincode, setPincode] = useState("");
+  
 
   const [checkOutState, setCheckOutState] = useState({
     product_image: getFirstProductImage(data),
@@ -2250,6 +2333,7 @@ const ProductDetails = ({
               </motion.div>
             )}
           </div>
+        
 
           <div className="w-full md:w-auto flex flex-col md:flex-row items-start md:items-center gap-3 md:relative">
             {/* Mobile price */}
@@ -2328,7 +2412,11 @@ const ProductDetails = ({
             </AnimatePresence>
           </div>
         </div>
-
+  <StockIndicator
+          stockCount={stockCount}
+          isLimited={isLimited}
+          isSoldOut={isSoldOut}
+        />
         {/* ── Product Description ──────────────────────────────────── */}
         <div>
           <h2 className="text-md font-semibold w-full md:w-[70%]">
