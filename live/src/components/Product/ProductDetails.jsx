@@ -1353,8 +1353,6 @@ export const SimpleHangingSoldBoard = () => {
   );
 };
 
-
-
 const StockIndicator = ({ stockCount, isLimited, isSoldOut }) => {
   if (isSoldOut) {
     return (
@@ -1485,7 +1483,9 @@ const ProductDetails = ({
     const isLimited    = _.get(data, "is_limited", false);
   const stockCounts   = _.get(data, "stock_count", 0);
 
-  
+  // Instagram reel link shown for limited-edition products
+  const instagramReelUrl = "https://www.instagram.com/reel/DaSrtnqzaYm/?igsh=NThqYmRycWU3eG1t";
+
   const isQrProduct = (() => {
     const name = _.get(data, "name", "");
     return name.includes("QR");
@@ -1573,6 +1573,9 @@ const ProductDetails = ({
     stockCount === 0
       ? Number(productionTime) + Number(ArrangeTime)
       : Number(productionTime);
+
+  // ✅ Combined out-of-stock flag: explicitly sold out OR limited edition with zero stock
+  const isOutOfStock = isSoldOut || (isLimited && Number(stockCount) <= 0);
 
   // ── Platform options ───────────────────────────────────────────────────────
   const platformOptions = [
@@ -2332,6 +2335,21 @@ const ProductDetails = ({
                 </span>
               </motion.div>
             )}
+            {isLimited && (
+              <motion.a
+                href={instagramReelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm mb-2 bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 hover:shadow-md transition-all"
+              >
+                <FaInstagram className="text-pink-500 text-base flex-shrink-0" />
+                <span className="text-sm font-medium text-pink-700">
+                  Watch this Limited Edition product on Instagram
+                </span>
+              </motion.a>
+            )}
           </div>
         
 
@@ -2362,7 +2380,7 @@ const ProductDetails = ({
 
             {/* Desktop price */}
             <div className="hidden md:flex items-center gap-3 flex-col-reverse">
-              {isSoldOut && (
+              {isOutOfStock && (
                 <div className="relative top-0">
                   <AnimatedWaxSealBadge />
                 </div>
@@ -2412,11 +2430,7 @@ const ProductDetails = ({
             </AnimatePresence>
           </div>
         </div>
-  <StockIndicator
-          stockCount={stockCount}
-          isLimited={isLimited}
-          isSoldOut={isSoldOut}
-        />
+
         {/* ── Product Description ──────────────────────────────────── */}
         <div>
           <h2 className="text-md font-semibold w-full md:w-[70%]">
@@ -2785,7 +2799,7 @@ const ProductDetails = ({
         )}
 
         {/* ── File Upload Section ──────────────────────────────────── */}
-        {!isSoldOut && !isPhotoFrame && (
+        {!isOutOfStock && !isPhotoFrame && (
           <div className="space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <Checkbox checked={noDesignUpload} onChange={handleNoCustomization}>
@@ -2875,7 +2889,7 @@ const ProductDetails = ({
         )}
 
         {/* ── Photo Frame Info Banner ──────────────────────────────── */}
-        {isPhotoFrame && !isSoldOut && (
+        {isPhotoFrame && !isOutOfStock && (
           <Alert
             message={
               <div className="flex items-center gap-2">
@@ -2900,7 +2914,7 @@ const ProductDetails = ({
             </div>
           ) : (
             <>
-              {isSoldOut ? (
+              {isOutOfStock ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
