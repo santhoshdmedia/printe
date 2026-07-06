@@ -104,7 +104,7 @@ function getProductImageUrl(product) {
 
 app.get("/product/:id", async (req, res) => {
   const productId = req.params.id;
-  const frontendUrl = process.env.FRONTEND_URL || "https://printe.in";
+  const frontendUrl = process.env.FRONTEND_URL || "https://www.printe.in";
 
   try {
     const product = await ProductSchema.findOne({ seo_url: productId })
