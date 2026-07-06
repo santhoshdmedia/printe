@@ -52,17 +52,16 @@ const DOMAIN = "https://printe.in";
 const S3_BUCKET = "https://printe.s3.ap-south-1.amazonaws.com";
 const DEFAULT_KEYWORDS = "Printe, products, online shopping";
 const DEFAULT_DESCRIPTION = "Check out this amazing product on Printe";
-const DEFAULT_TITLE = "Printe Product";
+const DEFAULT_TITLE = "Printe | Product";
+const SITE_NAME = "Printe";
+const TWITTER_HANDLE = "@printe_in";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
  * Safely unwrap product from Redux store.
- * Your API returns { data: [ {...productObject} ] }.
- * Depending on how the reducer stores it, `product` could be:
- *   - the plain object   → use as-is
- *   - the array [obj]    → unwrap [0]
- *   - null / undefined   → return null
+ * API returns { data: [ {...productObject} ] }.
+ * Reducer may store the raw array or the unwrapped object.
  */
 const unwrapProduct = (raw) => {
   if (!raw) return null;
@@ -88,11 +87,19 @@ const normaliseImage = (img) => {
   };
 };
 
+/**
+ * Resolve the best OG / structured-data image.
+ *
+ * Priority:
+ *   1. seo_img   — manually set by the merchant, always S3
+ *   2. images[0] — first product image
+ *   3. DEFAULT   — fallback brand image
+ */
 const getOgImageUrl = (productData) => {
   if (!productData) return DEFAULT_OG_IMAGE;
 
   const candidates = [
-    productData?.seo_img,
+    productData.seo_img,
     productData?.images?.[0]?.url,
     productData?.images?.[0]?.path,
   ];
@@ -106,7 +113,7 @@ const getOgImageUrl = (productData) => {
           : "";
 
     if (!raw) continue;
-    const clean = raw.split("?")[0];
+    const clean = raw.split("?")[0]; // strip query params for clean OG url
     if (clean.startsWith("https://")) return clean;
     if (clean.startsWith("http://"))
       return clean.replace("http://", "https://");
@@ -117,26 +124,404 @@ const getOgImageUrl = (productData) => {
 };
 
 /**
- * Resolve is_acrylic for a product object.
- *
- * Priority order:
- *  1. Backend boolean flag `is_acrylic: true/false`  ← most reliable
- *  2. Name-based heuristic for old products that predate the flag
+ * Build a clean canonical / OG url from seo_url or fall back to window.href.
+ */
+const buildCanonical = (productData) => {
+  if (productData?.seo_url) return `${DOMAIN}/product/${productData.seo_url}`;
+  if (typeof window !== "undefined") return window.location.href;
+  return DOMAIN;
+};
+
+/**
+ * Resolve is_acrylic.
+ * Priority: explicit backend flag → name-based heuristic.
  */
 const resolveIsAcrylic = (productData) => {
   if (!productData) return false;
-
-  // 1. Explicit backend flag — truthy check handles both true and "true"
   const flag = productData.is_acrylic;
   if (flag === true || flag === "true") return true;
   if (flag === false || flag === "false") return false;
-
-  // 2. Name-based fallback
   const name = (productData.name || "").toLowerCase();
   return name.includes("acrylic") || name.includes("wall photo");
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
+/**
+ * Strip HTML tags for meta description use.
+ */
+const stripHtml = (html = "") =>
+  html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
+/**
+ * Clamp a string to maxLen chars, appending "..." if truncated.
+ */
+const clampStr = (str = "", maxLen = 155) => {
+  const s = str.trim();
+  return s.length > maxLen ? `${s.substring(0, maxLen - 3)}...` : s;
+};
+
+// ─── SEO Meta Component ───────────────────────────────────────────────────────
+/**
+ * Renders all <Helmet> tags for a product page.
+ *
+ * Extracted into its own component so it can be rendered:
+ *   - Immediately with placeholder data while the product loads (noindex)
+ *   - Again with full data once productData is available (index, follow)
+ *
+ * This ensures crawlers always receive a <title> and <meta description>
+ * even on first paint, while avoiding the 4-second artificial delay.
+ */
+const ProductHelmet = ({ productData }) => {
+  // ── Derived SEO values ────────────────────────────────────────────────────
+
+  const title = useMemo(() => {
+    if (!productData) return `Loading... | ${SITE_NAME}`;
+    // seo_title is the best; fall back to name with brand suffix
+    const raw = productData.seo_title || productData.name || "";
+    const cleaned = raw.trim();
+    // If the merchant already appended the brand name, don't double-add it
+    if (cleaned.toLowerCase().includes("printe")) return cleaned;
+    return cleaned ? `${cleaned} | ${SITE_NAME}` : DEFAULT_TITLE;
+  }, [productData]);
+
+  const description = useMemo(() => {
+    if (!productData) return DEFAULT_DESCRIPTION;
+    // Use seo_description → product_description_tittle → first description tab → points
+    const candidates = [
+      productData.seo_description,
+      productData.product_description_tittle,
+      stripHtml(productData.description_tabs?.[0]?.description || ""),
+      [
+        productData.Point_one,
+        productData.Point_two,
+        productData.Point_three,
+        productData.Point_four,
+      ]
+        .filter(Boolean)
+        .join(". "),
+    ];
+    for (const c of candidates) {
+      const s = (c || "").trim();
+      if (s.length >= 20) return clampStr(s, 155);
+    }
+    return DEFAULT_DESCRIPTION;
+  }, [productData]);
+
+  const keywords = useMemo(() => {
+    if (!productData) return DEFAULT_KEYWORDS;
+    const kw = productData.seo_keywords;
+    if (!kw) return DEFAULT_KEYWORDS;
+    // seo_keywords is an array of comma-separated strings in the real data
+    const flat = Array.isArray(kw) ? kw.join(", ") : String(kw);
+    return flat.trim() || DEFAULT_KEYWORDS;
+  }, [productData]);
+
+  const ogImage = useMemo(
+    () => (productData ? getOgImageUrl(productData) : DEFAULT_OG_IMAGE),
+    [productData],
+  );
+
+  const canonical = useMemo(
+    () => (productData ? buildCanonical(productData) : ""),
+    [productData],
+  );
+
+  const price = useMemo(() => {
+    if (!productData) return "0";
+    return String(
+      productData.customer_product_price ||
+        productData.price ||
+        productData.MRP_price ||
+        "0",
+    );
+  }, [productData]);
+
+  const mrpPrice = useMemo(() => {
+    if (!productData) return "0";
+    return String(productData.MRP_price || price);
+  }, [productData, price]);
+
+  const availability = useMemo(() => {
+    if (!productData) return "out of stock";
+    return (productData.stock_count ?? 0) > 0 ? "in stock" : "out of stock";
+  }, [productData]);
+
+  const schemaAvailability = useMemo(
+    () =>
+      availability === "in stock"
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+    [availability],
+  );
+
+  // Build an array of all product image URLs for ImageObject schema
+  const allImageUrls = useMemo(() => {
+    if (!productData?.images?.length) return [ogImage];
+    return productData.images
+      .map((img) => img?.url || img?.path || "")
+      .filter(Boolean)
+      .map((u) => (u.startsWith("https://") ? u : `${S3_BUCKET}/${u.replace(/^\//, "")}`));
+  }, [productData, ogImage]);
+
+  // Breadcrumb list for structured data
+  const breadcrumbSchema = useMemo(() => {
+    if (!productData) return null;
+    const catName = productData.category_details?.main_category_name || "";
+    const catSlug = productData.category_details?.slug || "";
+    const subName = productData.sub_category_details?.sub_category_name || "";
+    const subSlug = productData.sub_category_details?.slug || "";
+    const prodName = (productData.name || "").trim();
+    const prodUrl = buildCanonical(productData);
+
+    const items = [
+      { name: "Home", url: DOMAIN },
+      catSlug && { name: catName || catSlug, url: `${DOMAIN}/category/${catSlug}/` },
+      subSlug && catSlug && { name: subName || subSlug, url: `${DOMAIN}/category/${catSlug}/${subSlug}` },
+      { name: prodName, url: prodUrl },
+    ].filter(Boolean);
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: items.map((item, idx) => ({
+        "@type": "ListItem",
+        position: idx + 1,
+        name: item.name,
+        item: item.url,
+      })),
+    };
+  }, [productData]);
+
+  // Full Product schema
+  const productSchema = useMemo(() => {
+    if (!productData) return null;
+
+    const name = (productData.name || "").trim() || DEFAULT_TITLE;
+    const sku  = productData.product_code || productData.product_codeS_NO || "";
+    const gtin = productData.Vendor_Code || productData.HSNcode_time || "";
+
+    // Build bullet-point description from the "Point_*" fields if available
+    const bulletPoints = [
+      productData.Point_one,
+      productData.Point_two,
+      productData.Point_three,
+      productData.Point_four,
+    ].filter(Boolean);
+
+    const fullDescription =
+      bulletPoints.length > 0
+        ? bulletPoints.join(". ") + ". " + description
+        : description;
+
+    const schema = {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      name,
+      description: fullDescription,
+      image: allImageUrls,
+      sku: sku || undefined,
+      mpn: gtin || undefined,
+      brand: {
+        "@type": "Brand",
+        name: SITE_NAME,
+      },
+      offers: {
+        "@type": "Offer",
+        url: canonical,
+        priceCurrency: "INR",
+        price,
+        priceValidUntil: new Date(
+          new Date().getFullYear() + 1,
+          11,
+          31,
+        )
+          .toISOString()
+          .split("T")[0],
+        availability: schemaAvailability,
+        itemCondition: "https://schema.org/NewCondition",
+        seller: {
+          "@type": "Organization",
+          name: SITE_NAME,
+          url: DOMAIN,
+        },
+        hasMerchantReturnPolicy: {
+          "@type": "MerchantReturnPolicy",
+          applicableCountry: "IN",
+          returnPolicyCategory:
+            "https://schema.org/MerchantReturnFiniteReturnWindow",
+          merchantReturnDays: 7,
+        },
+        shippingDetails: {
+          "@type": "OfferShippingDetails",
+          shippingRate: {
+            "@type": "MonetaryAmount",
+            value: "100",
+            currency: "INR",
+          },
+          shippingDestination: {
+            "@type": "DefinedRegion",
+            addressCountry: "IN",
+          },
+          deliveryTime: {
+            "@type": "ShippingDeliveryTime",
+            businessDays: {
+              "@type": "OpeningHoursSpecification",
+              dayOfWeek: [
+                "https://schema.org/Monday",
+                "https://schema.org/Tuesday",
+                "https://schema.org/Wednesday",
+                "https://schema.org/Thursday",
+                "https://schema.org/Friday",
+              ],
+            },
+            cutoffTime: "17:00:00+05:30",
+            transitTime: {
+              "@type": "QuantitativeValue",
+              minValue: 2,
+              maxValue: 5,
+              unitCode: "DAY",
+            },
+          },
+        },
+      },
+    };
+
+    // Aggregate rating — only add if we have real values
+    if (productData.rating && parseFloat(productData.rating) > 0) {
+      schema.aggregateRating = {
+        "@type": "AggregateRating",
+        ratingValue: String(productData.rating),
+        reviewCount: String(productData.reviews_count || 1),
+        bestRating: "5",
+        worstRating: "1",
+      };
+    }
+
+    return schema;
+  }, [
+    productData,
+    description,
+    allImageUrls,
+    canonical,
+    price,
+    schemaAvailability,
+  ]);
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  return (
+    <Helmet>
+      {/* ── Primary ─────────────────────────────────────────────────────── */}
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <meta name="keywords" content={keywords} />
+      <meta
+        name="robots"
+        content={productData ? "index, follow, max-image-preview:large" : "noindex, nofollow"}
+      />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      {canonical && <link rel="canonical" href={canonical} />}
+
+      {/* ── Open Graph ──────────────────────────────────────────────────── */}
+      <meta property="og:type" content="product" />
+      <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:locale" content="en_IN" />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      {canonical && <meta property="og:url" content={canonical} />}
+      <meta property="og:image" content={ogImage} />
+      <meta property="og:image:secure_url" content={ogImage} />
+      <meta property="og:image:type" content="image/jpeg" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={title} />
+
+      {/* ── Open Graph — Product specifics ──────────────────────────────── */}
+      {productData && (
+        <>
+          <meta property="product:price:amount" content={price} />
+          <meta property="product:price:currency" content="INR" />
+          <meta property="product:availability" content={availability} />
+          {productData.product_code && (
+            <meta property="product:retailer_item_id" content={productData.product_code} />
+          )}
+          {mrpPrice !== price && (
+            <meta property="product:original_price:amount" content={mrpPrice} />
+          )}
+          {productData.GST && (
+            <meta property="product:condition" content="new" />
+          )}
+        </>
+      )}
+
+      {/* ── Twitter / X Card ────────────────────────────────────────────── */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:site" content={TWITTER_HANDLE} />
+      <meta name="twitter:creator" content={TWITTER_HANDLE} />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image:alt" content={title} />
+      {canonical && <meta name="twitter:url" content={canonical} />}
+
+      {/* ── Additional crawl hints ───────────────────────────────────────── */}
+      {productData && (
+        <>
+          <meta name="author" content={SITE_NAME} />
+          <meta name="publisher" content={SITE_NAME} />
+          <meta name="copyright" content={`© ${new Date().getFullYear()} ${SITE_NAME}`} />
+          {/* Tell Google this is the preferred language */}
+          <meta httpEquiv="content-language" content="en-IN" />
+          {/* Preconnect to S3 for faster image loads */}
+          <link rel="preconnect" href="https://printe.s3.ap-south-1.amazonaws.com" />
+        </>
+      )}
+
+      {/* ── Structured Data: Product ─────────────────────────────────────── */}
+      {productSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(productSchema, null, 0)}
+        </script>
+      )}
+
+      {/* ── Structured Data: BreadcrumbList ──────────────────────────────── */}
+      {breadcrumbSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbSchema, null, 0)}
+        </script>
+      )}
+
+      {/* ── Structured Data: WebPage ─────────────────────────────────────── */}
+      {productData && canonical && (
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "@id": canonical,
+            url: canonical,
+            name: title,
+            description,
+            inLanguage: "en-IN",
+            isPartOf: {
+              "@type": "WebSite",
+              "@id": `${DOMAIN}/#website`,
+              url: DOMAIN,
+              name: SITE_NAME,
+            },
+            breadcrumb: breadcrumbSchema
+              ? { "@id": `${canonical}#breadcrumb` }
+              : undefined,
+            primaryImageOfPage: {
+              "@type": "ImageObject",
+              contentUrl: ogImage,
+              url: ogImage,
+            },
+          })}
+        </script>
+      )}
+    </Helmet>
+  );
+};
+
+// ─── Main Product Component ───────────────────────────────────────────────────
 const Product = () => {
   const { id } = useParams();
   const location = useLocation();
@@ -152,27 +537,19 @@ const Product = () => {
   const [selectedVariants, setSelectedVariants] = useState({});
   const [variantImages, setVariantImages] = useState({});
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const [metaReady, setMetaReady] = useState(false);
 
   // Acrylic: state is lifted here so both columns stay in sync
-  const [acrylicDesignFile, setAcrylicDesignFile] = useState(null); // base64 dataUrl from ImageCropper
-  const [acrylicSize, setAcrylicSize] = useState("A4"); // controlled by AProductDetails
-  const [acrylicThickness, setAcrylicThickness] = useState("5mm"); // controlled by AProductDetails
+  const [acrylicDesignFile, setAcrylicDesignFile] = useState(null);
+  const [acrylicSize, setAcrylicSize] = useState("A4");
+  const [acrylicThickness, setAcrylicThickness] = useState("5mm");
 
   // ── Refs ───────────────────────────────────────────────────────────────────
   const hasAddedToHistory = useRef(false);
   const processedProductId = useRef(null);
-  const metaTimerRef = useRef(null);
 
   // ── Derived / normalised product data ─────────────────────────────────────
-  //
-  // `unwrapProduct` handles the case where the Redux reducer stores the raw
-  // API response array `data: [obj]` directly instead of just `obj`.
-  // This is the most common silent bug — Array.is_acrylic is always undefined.
-  //
   const productData = useMemo(() => unwrapProduct(product), [product]);
 
-  // Resolved once productData is available; re-evaluates whenever data changes
   const isAcrylicProduct = useMemo(
     () => resolveIsAcrylic(productData),
     [productData],
@@ -217,69 +594,16 @@ const Product = () => {
     [getProductValue],
   );
 
-  // ── SEO values ─────────────────────────────────────────────────────────────
-  const seoTitle = useMemo(() => {
-    if (!productData) return DEFAULT_TITLE;
-    return productData.seo_title || productData.name || DEFAULT_TITLE;
-  }, [productData]);
-
-  const seoDescription = useMemo(() => {
-    if (!productData) return DEFAULT_DESCRIPTION;
-    const desc = productData.seo_description || DEFAULT_DESCRIPTION;
-    return desc.length > 155 ? `${desc.substring(0, 152)}...` : desc;
-  }, [productData]);
-
-  const seoKeywords = useMemo(() => {
-    if (!productData) return DEFAULT_KEYWORDS;
-    const kw = productData.seo_keywords;
-    if (!kw) return DEFAULT_KEYWORDS;
-    return Array.isArray(kw) ? kw.join(", ") : String(kw);
-  }, [productData]);
-
-  const ogImage = useMemo(
-    () => (productData ? getOgImageUrl(productData) : DEFAULT_OG_IMAGE),
-    [productData],
-  );
-
-  const ogUrl = useMemo(() => {
-    if (!productData?.seo_url)
-      return typeof window !== "undefined" ? window.location.href : DOMAIN;
-    return `${DOMAIN}/product/${productData.seo_url}`;
-  }, [productData]);
-
-  const canonicalUrl = useMemo(
-    () =>
-      productData?.seo_url ? `${DOMAIN}/product/${productData.seo_url}` : ogUrl,
-    [productData, ogUrl],
-  );
-
-  const productPrice = useMemo(
-    () =>
-      productData
-        ? productData.customer_product_price || productData.price || "0"
-        : "0",
-    [productData],
-  );
-
-  const stockStatus = useMemo(
-    () =>
-      productData && productData.stock_count > 0 ? "in stock" : "out of stock",
-    [productData],
-  );
-
   // ── Effect 1: Reset everything on route / id change ────────────────────────
   useEffect(() => {
     setSelectedVariants({});
     setVariantImages({});
     setIsPageLoading(true);
-    setMetaReady(false);
-    // Reset acrylic state so a new product starts clean
     setAcrylicDesignFile(null);
     setAcrylicSize("A4");
     setAcrylicThickness("5mm");
     hasAddedToHistory.current = false;
     processedProductId.current = null;
-    if (metaTimerRef.current) clearTimeout(metaTimerRef.current);
     dispatch({ type: "CLEAR_CURRENT_PRODUCT" });
   }, [id, dispatch]);
 
@@ -306,19 +630,10 @@ const Product = () => {
     };
 
     fetchData();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [id, dispatch]);
 
-  // ── Effect 3: Delay SEO meta injection by 4 s ─────────────────────────────
-  useEffect(() => {
-    if (metaTimerRef.current) clearTimeout(metaTimerRef.current);
-    metaTimerRef.current = setTimeout(() => setMetaReady(true), 4000);
-    return () => clearTimeout(metaTimerRef.current);
-  }, [id]);
-
-  // ── Effect 4: Build variant image map once per product ────────────────────
+  // ── Effect 3: Build variant image map once per product ────────────────────
   useEffect(() => {
     if (!productData?.variants || processedProductId.current === productId)
       return;
@@ -340,7 +655,7 @@ const Product = () => {
     processedProductId.current = productId;
   }, [productData, productId]);
 
-  // ── Effect 5: Record browsing history ─────────────────────────────────────
+  // ── Effect 4: Record browsing history ─────────────────────────────────────
   useEffect(() => {
     if (!productId || !userId || hasAddedToHistory.current) return;
     const record = async () => {
@@ -360,7 +675,6 @@ const Product = () => {
     [],
   );
 
-  // Called by AImageSlider when user applies or removes a cropped photo
   const handleAcrylicDesignChange = useCallback((dataUrl) => {
     setAcrylicDesignFile(dataUrl || null);
   }, []);
@@ -369,10 +683,8 @@ const Product = () => {
   if (isPageLoading || (isGettingProduct && !productData)) {
     return (
       <>
-        <Helmet>
-          <title>Loading... | Printe</title>
-          <meta name="robots" content="noindex, nofollow" />
-        </Helmet>
+        {/* Render placeholder SEO while loading — noindex so Google ignores it */}
+        <ProductHelmet productData={null} />
         <React.Suspense fallback={<div>Loading...</div>}>
           <ProductPageLoadingSkeleton />
         </React.Suspense>
@@ -385,7 +697,7 @@ const Product = () => {
     return (
       <>
         <Helmet>
-          <title>Product Not Found | Printe</title>
+          <title>Product Not Found | {SITE_NAME}</title>
           <meta
             name="description"
             content="The product you're looking for doesn't exist or has been removed."
@@ -409,76 +721,16 @@ const Product = () => {
   // ── Render: full product page ──────────────────────────────────────────────
   return (
     <div className="lg:px-8 px-4 w-full lg:w-[70%] mx-auto my-0">
-      {/* ── SEO Meta Tags — injected only after 4 s to let the page settle ── */}
-      {metaReady && (
-        <Helmet>
-          {/* Primary */}
-          <title>{seoTitle}</title>
-          <meta name="description" content={seoDescription} />
-          <meta name="keywords" content={seoKeywords} />
-          <meta name="robots" content="index, follow" />
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0"
-          />
-          <link rel="canonical" href={canonicalUrl} />
 
-          {/* Open Graph */}
-          <meta property="og:type" content="product" />
-          <meta property="og:site_name" content="Printe" />
-          <meta property="og:title" content={seoTitle} />
-          <meta property="og:description" content={seoDescription} />
-          <meta property="og:url" content={ogUrl} />
-          <meta property="og:image" content={ogImage} />
-          <meta property="og:image:secure_url" content={ogImage} />
-          <meta property="og:image:type" content="image/jpeg" />
-          <meta property="og:image:width" content="1200" />
-          <meta property="og:image:height" content="630" />
-          <meta property="og:image:alt" content={seoTitle} />
-
-          {/* Product */}
-          <meta property="product:price:amount" content={productPrice} />
-          <meta property="product:price:currency" content="INR" />
-          <meta property="product:availability" content={stockStatus} />
-
-          {/* Twitter */}
-          <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:site" content="@printe" />
-          <meta name="twitter:title" content={seoTitle} />
-          <meta name="twitter:description" content={seoDescription} />
-          <meta name="twitter:image" content={ogImage} />
-          <meta name="twitter:image:alt" content={seoTitle} />
-
-          {/* Schema.org */}
-          <script type="application/ld+json">
-            {JSON.stringify({
-              "@context": "https://schema.org/",
-              "@type": "Product",
-              name: productData.name || DEFAULT_TITLE,
-              description: seoDescription,
-              image: ogImage,
-              brand: { "@type": "Brand", name: "Printe" },
-              offers: {
-                "@type": "Offer",
-                url: ogUrl,
-                priceCurrency: "INR",
-                price: productPrice,
-                availability: `https://schema.org/${
-                  stockStatus === "in stock" ? "InStock" : "OutOfStock"
-                }`,
-                seller: { "@type": "Organization", name: "Printe" },
-              },
-              ...(productData.rating && {
-                aggregateRating: {
-                  "@type": "AggregateRating",
-                  ratingValue: productData.rating,
-                  reviewCount: productData.reviews_count || 0,
-                },
-              }),
-            })}
-          </script>
-        </Helmet>
-      )}
+      {/*
+        ── SEO Meta Tags ──────────────────────────────────────────────────────
+        Rendered IMMEDIATELY when productData is available — no artificial
+        delay. The ProductHelmet component is a pure derived-state renderer:
+        it recomputes all values from productData via useMemo so there is no
+        risk of stale/partial data. Google and other crawlers receive complete
+        structured data on first paint.
+      */}
+      <ProductHelmet productData={productData} />
 
       {/* Breadcrumbs */}
       <div className="pt-5 pb-0">
@@ -495,21 +747,6 @@ const Product = () => {
             <div className="w-full lg:w-1/2 relative z-10">
               <React.Suspense fallback={<div>Loading images...</div>}>
                 {isAcrylicProduct ? (
-                  /*
-                   * ACRYLIC path
-                   * ─────────────────────────────────────────────────────────
-                   * AImageSlider shows product images + the live acrylic
-                   * preview once a photo is cropped.
-                   *
-                   * Props flowing DOWN  : selectedSize, selectedThickness
-                   *   → keeps the preview badge and AcrylicPreview in sync
-                   *     with whatever the user picks in AProductDetails.
-                   *
-                   * Props flowing UP    : onDesignChange(dataUrl | null)
-                   *   → stored in acrylicDesignFile (lifted state here)
-                   *   → forwarded to AProductDetails as uploadedDesignFile
-                   *   → gates the "Add to Cart" button.
-                   */
                   <AImageSlider
                     key={`acrylic-slider-${productId}-${location.key}`}
                     imageList={productImages}
@@ -540,19 +777,6 @@ const Product = () => {
             <div className="w-full lg:w-1/2 lg:pl-8 relative z-0">
               <React.Suspense fallback={<div>Loading details...</div>}>
                 {isAcrylicProduct ? (
-                  /*
-                   * ACRYLIC path
-                   * ─────────────────────────────────────────────────────────
-                   * AProductDetails owns size/thickness selectors and calls
-                   * onSizeChange / onThicknessChange to push them back up so
-                   * AImageSlider can update its live preview immediately.
-                   *
-                   * uploadedDesignFile comes from the cropper in AImageSlider
-                   * (via lifted state).  AProductDetails uses it to:
-                   *   • show a green "Photo applied" alert
-                   *   • unlock the Add-to-Cart button
-                   *   • include it in the cart payload
-                   */
                   <AProductDetails
                     key={`acrylic-details-${productId}-${location.key}`}
                     data={productData}
