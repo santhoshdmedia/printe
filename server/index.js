@@ -9,6 +9,28 @@ const { ProductSchema } = require("./controller/models_import");
 
 const app = express();
 
+// ==================== ENV SAFETY CHECK ====================
+// FRONTEND_URL MUST point to the domain that actually serves the React SPA
+// (Vercel), NOT this server's own domain — otherwise the meta-refresh below
+// redirects back to itself and real users get stuck in an infinite loop.
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.printe.in";
+
+if (!process.env.FRONTEND_URL) {
+  console.warn(
+    "⚠️  FRONTEND_URL not set in env — falling back to https://www.printe.in. " +
+    "Set it explicitly in .env to avoid ambiguity.",
+  );
+}
+
+if (FRONTEND_URL.replace(/\/$/, "") === "https://printe.in") {
+  console.error(
+    "❌ FRONTEND_URL is set to the apex domain (printe.in), which is THIS " +
+    "server. This will cause an infinite redirect loop for real users " +
+    "clicking shared links. It must point to the Vercel-hosted frontend " +
+    "(e.g. https://www.printe.in).",
+  );
+}
+
 app.set("trust proxy", 1);
 app.use(morgan("dev"));
 
@@ -104,7 +126,6 @@ function getProductImageUrl(product) {
 
 app.get("/product/:id", async (req, res) => {
   const productId = req.params.id;
-  const frontendUrl = process.env.FRONTEND_URL || "https://www.printe.in";
 
   try {
     const product = await ProductSchema.findOne({ seo_url: productId })
@@ -130,6 +151,13 @@ app.get("/product/:id", async (req, res) => {
         : product?.seo_keywords || ""
     );
 
+    // Bots should never index a product that doesn't exist.
+    const robotsContent = product ? "index, follow" : "noindex, nofollow";
+
+    // Where a real human lands after the instant redirect. Always the
+    // Vercel-hosted SPA — never this server's own domain.
+    const redirectTarget = `${FRONTEND_URL}/product/${productId}`;
+
     const schemaOrg = JSON.stringify({
       "@context": "https://schema.org/",
       "@type": "Product",
@@ -148,7 +176,7 @@ app.get("/product/:id", async (req, res) => {
       },
     }).replace(/<\/script>/gi, "<\\/script>");
 
-    res.setHeader("Content-Type", "text/html");
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(`<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -157,7 +185,7 @@ app.get("/product/:id", async (req, res) => {
     <title>${ogTitle}</title>
     <meta name="description" content="${ogDesc}"/>
     <meta name="keywords" content="${keywords}"/>
-    <meta name="robots" content="index, follow"/>
+    <meta name="robots" content="${robotsContent}"/>
     <link rel="canonical" href="${canonical}"/>
 
     <meta property="og:type" content="product"/>
@@ -180,18 +208,19 @@ app.get("/product/:id", async (req, res) => {
     <meta name="twitter:image" content="${ogImage}"/>
     <script type="application/ld+json">${schemaOrg}</script>
 
-    <!-- Instantly sends real users to Vercel. Crawlers ignore this. -->
-    <meta http-equiv="refresh" content="0;url=${frontendUrl}/product/${productId}"/>
+    <!-- Instantly sends real users to the Vercel-hosted app. Crawlers ignore this. -->
+    <meta http-equiv="refresh" content="0;url=${redirectTarget}"/>
   </head>
   <body>
-    <p><a href="${frontendUrl}/product/${productId}">${ogTitle}</a></p>
-    <img   fetchpriority="high" loading="eager" src="${ogImage}" alt="${ogTitle}"/>
+    <p><a href="${redirectTarget}">${ogTitle}</a></p>
+    <img fetchpriority="high" loading="eager" src="${ogImage}" alt="${ogTitle}"/>
   </body>
 </html>`);
 
   } catch (err) {
     console.error("❌ SSR error:", err);
-    res.send(`<html><head><meta http-equiv="refresh" content="0;url=${frontendUrl}/product/${productId}"/></head><body></body></html>`);
+    const fallbackTarget = `${FRONTEND_URL}/product/${productId}`;
+    res.send(`<html><head><meta http-equiv="refresh" content="0;url=${fallbackTarget}"/></head><body></body></html>`);
   }
 });
 
@@ -217,7 +246,7 @@ mongoose
       console.log(`\n🚀 VPS server running on http://${Host}:${Port}`);
       console.log(`📦 MongoDB connected`);
       console.log(`🔍 SSR OG injection active for /product/:id`);
-      console.log(`🌐 Frontend (Vercel): ${process.env.FRONTEND_URL || "https://printe.in"}`);
+      console.log(`🌐 Frontend (Vercel): ${FRONTEND_URL}`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV || "development"}`);
     });
   })
