@@ -13,10 +13,12 @@ const BOT_UA_REGEX =
 export default async function middleware(request) {
   const ua = request.headers.get('user-agent') || '';
 
-  // Real users: serve the normal React SPA, untouched.
-  if (!BOT_UA_REGEX.test(ua)) {
-    return next();
-  }
+  // TEMP DEBUG: bot-check disabled — every request on /product/* takes the
+  // fetch branch below, regardless of User-Agent. This is ONLY to prove
+  // whether the middleware executes at all. Re-enable the check once
+  // confirmed:
+  //   if (!BOT_UA_REGEX.test(ua)) { return next(); }
+  void BOT_UA_REGEX;
 
   // Crawlers: reuse the existing SSR OG-tag endpoint on the apex domain
   // (same Express server, same MongoDB lookup, same logic already fixed).
@@ -29,13 +31,27 @@ export default async function middleware(request) {
     });
     const html = await ogResponse.text();
 
+    // TEMP DEBUG: prove the middleware ran and show us exactly what the
+    // upstream returned, even on a non-2xx status. Remove the debug
+    // headers once this is confirmed working.
     return new Response(html, {
       status: ogResponse.status,
-      headers: { 'content-type': 'text/html; charset=utf-8' },
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'x-debug-middleware': 'reached-fetch',
+        'x-debug-og-url': ogUrl,
+        'x-debug-upstream-status': String(ogResponse.status),
+      },
     });
   } catch (err) {
-    // If the OG server is ever unreachable, don't break the page for the
-    // crawler — just fall through to the normal SPA.
-    return next();
+    // TEMP DEBUG: return the actual error instead of silently falling
+    // back, so we can see exactly why the proxy to printe.in failed.
+    return new Response(
+      `MIDDLEWARE FETCH FAILED\nog_url: ${ogUrl}\nerror: ${err && err.message}\nstack: ${err && err.stack}`,
+      {
+        status: 502,
+        headers: { 'content-type': 'text/plain', 'x-debug-middleware': 'fetch-threw' },
+      },
+    );
   }
 }
