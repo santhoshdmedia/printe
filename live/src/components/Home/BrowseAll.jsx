@@ -3,7 +3,6 @@ import { getsubcat } from "../../helper/api_helper";
 import _ from "lodash";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
-import "swiper/css";
 import { useNavigate } from "react-router-dom";
 
 const BrowseAll = () => {

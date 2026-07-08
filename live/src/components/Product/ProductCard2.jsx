@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { IconHelper } from "../../helper/IconHelper";
 import ExitementTag from "../Nav/ExitementTag";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Tooltip } from "antd";
 
 const ProductCard2 = ({ data }) => {

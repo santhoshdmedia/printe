@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import _ from "lodash";
-import moment from "moment";
+import dayjs from 'dayjs';
 import { getAllBlogs } from "../../helper/api_helper";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -28,7 +28,7 @@ const truncateWords = (html, wordLimit = 30) => {
 const BlogCard = ({ blog, featured = false }) => {
   const image = _.get(blog, "blog_image", "");
   const name = _.get(blog, "blog_name", "");
-  const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
+  const date = dayjs(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
   const slug = _.get(blog, "blog_slug", ""); // ✅ always use slug
   const shortDesc = _.get(blog, "short_description", ""); // ✅ always use slug
 

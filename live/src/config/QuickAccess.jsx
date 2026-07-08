@@ -116,7 +116,7 @@ const QuickAccess = () => {
 export default QuickAccess;
 
 
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'motion/react';
 import { FaGlobe, FaPiggyBank, FaHeadset, FaMoneyBillWave, FaGift, FaHandsHelping } from 'react-icons/fa';
 import { useState } from 'react';
 

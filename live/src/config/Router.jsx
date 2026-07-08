@@ -67,7 +67,6 @@ const BniProduct = lazy(() => import("../pages/CategoryProduct/BniProduct.jsx"))
 const AcBNi = lazy(() => import("../pages/CategoryProduct/AcBNi.jsx"));
 const SearchProduct = lazy(() => import("../pages/search/SearchProduct.jsx"));
 
-// Shared fallback shown for the brief moment a route chunk is downloading.
 // Branded with the logo so route transitions feel intentional rather than
 // like a stalled page. Most chunks are small enough this rarely shows.
 const RouteFallback = () => <LogoLoader fullScreen size={64} />;

@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { get } from "lodash";
 import { GST_DISCOUNT_HELPER, DISCOUNT_HELPER } from "../../helper/form_validation";
 import { useSelector } from "react-redux";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 const SearchProductCard = ({ data, className = "", onClick, index }) => {
   const [imageLoaded, setImageLoaded] = useState(false);

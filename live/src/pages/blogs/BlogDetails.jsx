@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import _ from "lodash";
-import moment from "moment";
+import dayjs from 'dayjs';
 import { getAllBlogs } from "../../helper/api_helper";
 import { BsInstagram, BsWhatsapp, BsYoutube, BsFacebook } from "react-icons/bs";
 
@@ -28,7 +28,7 @@ const RecentCard = ({ blog }) => {
   const slug = _.get(blog, "blog_slug", "");
   const name = _.get(blog, "blog_name", "");
   const image = _.get(blog, "blog_image", "");
-  const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY").toUpperCase();
+  const date = dayjs(_.get(blog, "createdAt", "")).format("MMM DD, YYYY").toUpperCase();
 
   return (
     <Link
@@ -65,7 +65,7 @@ const GridCard = ({ blog }) => {
   const name = _.get(blog, "blog_name", "");
   const image = _.get(blog, "blog_image", "");
   const desc = _.get(blog, "short_description", "");
-  const date = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
+  const date = dayjs(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
   const plainDesc = desc.replace(/<[^>]*>/g, "");
 
   return (
@@ -160,7 +160,7 @@ const BlogDetails = () => {
   const blogImage = _.get(currentBlog, "blog_image", "");
   const shortDesc = _.get(currentBlog, "short_description", "");
   const descriptions = _.get(currentBlog, "blog_descriptions", []);
-  const createdAt = moment(_.get(currentBlog, "createdAt", "")).format("dddd, MMMM DD, YYYY");
+  const createdAt = dayjs(_.get(currentBlog, "createdAt", "")).format("dddd, MMMM DD, YYYY");
 
   return (
     <div className="relative bg-[#FEFAE8] min-h-screen  text-gray-800">

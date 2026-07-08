@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { Avatar, Card, Rate, Skeleton, Spin, Tag } from "antd";
-import moment from "moment";
+import dayjs from 'dayjs';
 import _ from "lodash";
 import { useState } from "react";
 import { useSelector } from "react-redux";
@@ -44,7 +44,7 @@ const ReviewCard = ({ data, dummy, setDummy, setId }) => {
         title={
           <div className="flex flex-col">
             <span className="capitalize">{_.get(data, "user_data[0].name", "")}</span>
-            <span className="!text-[12px] !font-light">{moment(data.createdAt).fromNow()}</span>
+            <span className="!text-[12px] !font-light">{dayjs(data.createdAt).fromNow()}</span>
           </div>
         }
         description={

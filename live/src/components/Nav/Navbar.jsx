@@ -63,6 +63,7 @@ const Navbar = () => {
   const searchInputRef = useRef(null);
   const searchResultsRef = useRef(null);
   const isClickFromResultRef = useRef(false);
+  
 
   // Set active nav based on current route
   useEffect(() => {

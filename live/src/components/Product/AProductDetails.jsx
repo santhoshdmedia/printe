@@ -45,7 +45,7 @@ import {
 import { ADD_TO_CART } from "../../redux/slices/cart.slice";
 import Soldout from "../../assets/logo/soldOut.png";
 import { DISCOUNT_HELPER, GST_DISCOUNT_HELPER, Gst_HELPER } from "../../helper/form_validation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   HeartOutlined, PlusOutlined, MinusOutlined, ShoppingCartOutlined,
   EyeOutlined, CloseOutlined, MailOutlined, PhoneOutlined, UserOutlined,

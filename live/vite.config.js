@@ -22,11 +22,11 @@ export default defineConfig({
         // every time an unrelated feature adds a dependency.
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['framer-motion', 'motion'],
+          'ui-vendor': [ 'motion'],
           'antd-vendor': ['antd', '@ant-design/icons'],
           'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
           'pdf-vendor': ['jspdf', 'html2canvas'],
-          'date-vendor': ['moment'],
+          'date-vendor': ['dayjs'],
           'swiper-vendor': ['swiper'],
           'redux-vendor': ['@reduxjs/toolkit', 'react-redux', 'redux-saga'],
         },

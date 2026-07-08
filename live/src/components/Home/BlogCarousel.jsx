@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import _ from "lodash";
-import moment from "moment";
+import dayjs from 'dayjs';
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
-import "swiper/css";
 
 const truncateWords = (html, wordLimit = 22) => {
   if (!html) return "";
@@ -60,7 +59,7 @@ const BlogCarousel = ({ blogs = [] }) => {
   const blog      = blogs[active];
   const image     = _.get(blog, "blog_image", "");
   const name      = _.get(blog, "blog_name", "");
-  const date      = moment(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
+  const date      = dayjs(_.get(blog, "createdAt", "")).format("MMM DD, YYYY");
   const slug      = _.get(blog, "blog_slug", "");
   const shortDesc = _.get(blog, "short_description", "");
   const desc      = truncateWords(shortDesc, 22);

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { IconHelper } from "../../helper/IconHelper";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 const DividerCards = ({ name, subtitle, to, left = false }) => {
   const location = useLocation();

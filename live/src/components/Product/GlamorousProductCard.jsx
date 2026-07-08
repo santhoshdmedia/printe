@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { IconHelper } from "../../helper/IconHelper";
 import ExitementTag from "../Nav/ExitementTag";
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate } from "motion/react";
 import { DISCOUNT_HELPER, GST_DISCOUNT_HELPER } from "../../helper/form_validation";
 import Soldout from "../../assets/logo/soldOut.png";
 

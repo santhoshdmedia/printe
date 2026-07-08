@@ -5,7 +5,7 @@ import { IoCallOutline } from "react-icons/io5";
 import { CiMail } from "react-icons/ci";
 import { Link, useNavigate } from "react-router-dom";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitterSquare, FaArrowRight,FaYoutube } from "react-icons/fa";
-import moment from "moment";
+import dayjs from 'dayjs';
 import Logo from "../assets/logo/without_bg.png";
 import Gpay from "../assets/payment/gpay.svg";
 import Phonepay from "../assets/payment/phone-pay.svg";
@@ -139,7 +139,7 @@ const Footer = () => {
             <h3 className="text-lg font-semibold text-[#f2c41a] mb-2">100% SECURE PAYMENTS</h3>
             <div className="flex gap-2">
               <div className="">
-                <img   fetchpriority="high" loading="eager" src={Gpay} alt="Gpay" />
+               <img loading="lazy" width="48" height="48" src={Gpay} alt="GPay" />
               </div>
               <div className="">
                 <img   fetchpriority="high" loading="eager" src={Phonepay} alt="Phonepay" />
@@ -171,7 +171,7 @@ const Footer = () => {
       {/* Bottom section */}
       <div className="relative z-10 border-t border-gray-800 bg-gray-900 font-primary flex flex-col md:flex-row justify-between items-center py-6 px-[6vw] md:px-[8vw] xl:px-[10vw]">
         <span className="text-sm text-center text-gray-400 order-2 md:order-1">
-          © {moment().format("YYYY")}  Dmedia. All Rights Reserved.
+          © {dayjs().format("YYYY")}  Dmedia. All Rights Reserved.
         </span>
         {/* <div className="flex gap-6 mb-4 md:mb-0 order-1 md:order-2">
           <Link to="#" className="text-gray-400 hover:text-[#f2c41a] text-sm transition-colors">Privacy Policy</Link>

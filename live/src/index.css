@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 
 @layer components {
@@ -509,3 +509,17 @@ span.swiper-pagination-bullet.swiper-pagination-bullet-active {
   font-weight: 400;
   font-style: normal;
 }
+
+
+
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+

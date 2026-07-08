@@ -1,6 +1,6 @@
 import { Table, Tag, Card, Statistic, Row, Col, Tooltip } from "antd";
 import React, { useEffect } from "react";
-import moment from "moment";
+import dayjs from 'dayjs';
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import _ from "lodash";
@@ -35,7 +35,7 @@ const UserOrders = () => {
 
   const recentOrder =
     orders.length > 0
-      ? moment(orders[orders.length - 1].createdAt).fromNow()
+      ? dayjs(orders[orders.length - 1].createdAt).fromNow()
       : "No orders yet";
 
   const columns = [
@@ -153,7 +153,7 @@ const UserOrders = () => {
       render: (createdAt) => (
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <CalendarOutlined style={{ color: "#aaa" }} />
-          <span>{moment(createdAt).format("DD MMM YYYY")}</span>
+          <span>{dayjs(createdAt).format("DD MMM YYYY")}</span>
         </div>
       ),
     },

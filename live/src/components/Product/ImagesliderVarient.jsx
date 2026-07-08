@@ -19,7 +19,7 @@ import {
 import { IoShareSocial } from "react-icons/io5";
 import { FacebookIcon, WhatsappIcon } from "react-share";
 import { CustomPopover } from "../Product/ProductDetailVarient";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "motion/react";
 
 // Custom hook for image URL handling
 const useImageHandler = (imageList) => {

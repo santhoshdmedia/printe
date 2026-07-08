@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import _ from "lodash";
 import { Collapse, Spin, Tag, message, Timeline, Tooltip } from "antd";
-import moment from "moment";
+import dayjs from 'dayjs';
 import OrderDetailsSkeleton from "../LoadingSkeletons/OrderDetailsSkeleton";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -225,7 +225,7 @@ const OrderDetails = () => {
     <div style="display:flex;justify-content:space-between;background:#f8f9fa;padding:4px;border-radius:4px;margin-bottom:4px;">
       <div>
         <p style="margin:4px 0;font-size:10px;"><b>Invoice #:</b> ${invoiceNo}</p>
-        <p style="margin:4px 0;font-size:10px;"><b>Invoice Date:</b> ${moment(firstOrder.createdAt).format("DD MMM YYYY")}</p>
+        <p style="margin:4px 0;font-size:10px;"><b>Invoice Date:</b> ${dayjs(firstOrder.createdAt).format("DD MMM YYYY")}</p>
       </div>
       ${firstOrder.payment_status === "pending"
         ? `<div style="text-align:right;"><p style="margin:0;font-weight:bold;font-size:12px;color:#ff6b6b;">PAYMENT PENDING</p></div>`
@@ -429,13 +429,13 @@ const OrderDetails = () => {
                 <p className="text-sm"><span className="font-semibold">Invoice #:</span> {invoiceNo}</p>
                 <p className="text-sm">
                   <span className="font-semibold">Invoice Date:</span>{" "}
-                  {firstOrder.createdAt ? moment(firstOrder.createdAt).format("DD MMM YYYY") : "N/A"}
+                  {firstOrder.createdAt ? dayjs(firstOrder.createdAt).format("DD MMM YYYY") : "N/A"}
                 </p>
               </div>
               <div>
                 <p className="text-sm">
                   <span className="font-semibold">Due Date:</span>{" "}
-                  {firstOrder.createdAt ? moment(firstOrder.createdAt).add(7, "days").format("DD MMM YYYY") : "N/A"}
+                  {firstOrder.createdAt ? dayjs(firstOrder.createdAt).add(7, "days").format("DD MMM YYYY") : "N/A"}
                 </p>
               </div>
             </div>
@@ -735,7 +735,7 @@ const OrderDetails = () => {
                     <div className={`pl-4 ${createdAt ? "" : "opacity-50"}`}>
                       <h3 className="font-medium capitalize text-gray-800">{res.label}</h3>
                       {createdAt && (
-                        <p className="text-sm text-gray-500">{moment(createdAt).format("DD-MMM-YYYY")}</p>
+                        <p className="text-sm text-gray-500">{dayjs(createdAt).format("DD-MMM-YYYY")}</p>
                       )}
                     </div>
                   ),

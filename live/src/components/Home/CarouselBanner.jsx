@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectFade, Keyboard } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/effect-fade";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM (UI/UX Pro Max)
