@@ -2,6 +2,7 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Layout from "./Layout";
+import LogoLoader from "../components/reusable/LogoLoader.jsx";
 
 // ─── Route-level code splitting ────────────────────────────────────────────
 // Every page below used to be a static import, meaning visiting the
@@ -67,12 +68,9 @@ const AcBNi = lazy(() => import("../pages/CategoryProduct/AcBNi.jsx"));
 const SearchProduct = lazy(() => import("../pages/search/SearchProduct.jsx"));
 
 // Shared fallback shown for the brief moment a route chunk is downloading.
-// Intentionally minimal — most chunks are small enough this rarely shows.
-const RouteFallback = () => (
-  <div className="w-full min-h-[40vh] flex items-center justify-center">
-    <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
-  </div>
-);
+// Branded with the logo so route transitions feel intentional rather than
+// like a stalled page. Most chunks are small enough this rarely shows.
+const RouteFallback = () => <LogoLoader fullScreen size={64} />;
 
 // Wrap every route element in the same Suspense boundary so lazy chunks
 // resolve consistently regardless of where the route sits in the tree.

@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./config/Router.jsx";
 import { useDispatch, useSelector } from "react-redux";
-import { ConfigProvider, Spin, Button } from "antd";
+import { ConfigProvider, Button } from "antd";
 import { CartProvider } from "./helper/Carthelper.jsx";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { DomeGallery } from "./components/Demo.jsx";
+import LogoLoader from "./components/reusable/LogoLoader.jsx";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -335,8 +336,8 @@ const App = () => {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="w-screen h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="w-screen h-screen bg-white flex items-center justify-center">
+        <LogoLoader fullScreen size={80} label="Loading..." />
       </div>
     );
   }
@@ -389,9 +390,11 @@ const App = () => {
             },
           }}
         >
-          <Spin spinning={isAuthenicating}>
-            {!isAuthenicating && <RouterProvider router={router} />}
-          </Spin>
+          {isAuthenicating ? (
+            <LogoLoader fullScreen size={80} label="Loading..." />
+          ) : (
+            <RouterProvider router={router} />
+          )}
         </ConfigProvider>
       </CartProvider>
     </div>
