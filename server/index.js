@@ -4,14 +4,10 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const morgan = require("morgan");
-// server/index.js
-const compression = require('compression');
-app.use(compression({ threshold: 1024 })); // compress responses > 1 KB
 
 const { ProductSchema } = require("./controller/models_import");
 
 const app = express();
-
 
 // ==================== ENV SAFETY CHECK ====================
 // FRONTEND_URL MUST point to the domain that actually serves the React SPA
