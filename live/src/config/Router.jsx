@@ -1,213 +1,146 @@
 /* eslint-disable no-unused-vars */
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Layout from "./Layout";
-import Home from "../pages/Home/Home";
-import Product from "../pages/Product/Product";
-import Contact from "../pages/Contact/Contact";
-import Information from "../pages/Information/Information";
-import { termsAndConditions, privacyPolicy, returnPolicy, cancellingPolicy, aboutUs, shippingAndDeliveryPolicy } from "../../data.js";
-import Login from "../pages/Login/Login.jsx";
-import Signup from "../pages/Signup/Signup.jsx";
-import Account from "../pages/Account/Account.jsx";
-import Profile from "../components/Account/Profile.jsx";
-import ManageAddress from "../components/Account/ManageAddress.jsx";
-import Settings from "../components/Account/Settings.jsx";
-import UserOrders from "../components/Account/UserOrders.jsx";
-import WishList from "../components/Account/WishList.jsx";
-import CategoryProduct from "../pages/CategoryProduct/CategoryProduct.jsx";
-import CheckOut from "../pages/CheckOut/CheckOut.jsx";
-import OrderDetails from "../components/Account/OrderDetails.jsx";
-import BannerProduct from "../pages/BannerProduct/BannerProduct.jsx";
-import Help from "../components/Home/Help.jsx";
-import Careers from "../components/Home/Careers.jsx";
-import BlogDetails from "../pages/blogs/BlogDetails.jsx";
-import AllCategory from "../components/Category/AllCategory.jsx";
-import Blog from "../pages/blogs/Blog.jsx";
-import Forgetpassword from "../pages/Login/Forgetpassword.jsx";
-import ResetPassword from "../pages/Login/ResetPassword.jsx";
-import NotFound from "../pages/Notfound/NotFound.jsx";
-import SubcategoryProduct from "../pages/CategoryProduct/SubcategoryProduct.jsx";
-import Onlytoday from "../pages/Only/Onlytoday.jsx";
-import Newproduct from "../pages/New/Newproduct.jsx";
-import Popularproduct from "../pages/Popular/Popularproduct.jsx";
-import ShoppingCart from "../pages/shopping/ShoppingCart.jsx";
-import NewCheckout from "../pages/shopping/NewCheckout.jsx";
-import SectionExplore from "../pages/Home/SectionExplore.jsx";
-import HistoryExplore from "../pages/Product/HistoryExplore.jsx";
-import AboutUs from "../pages/Information/AboutUs.jsx";
-import CustomerPaymentPage from "../pages/Payment/CustomerPaymentPage.jsx";
 
-import Reward from "../components/Account/Reward.jsx";
+// ─── Route-level code splitting ────────────────────────────────────────────
+// Every page below used to be a static import, meaning visiting the
+// homepage downloaded the JS for Login, Checkout, Payment, every policy
+// page, etc. all at once. Converting these to React.lazy() means each
+// route's code only downloads when that route is actually visited.
+const Home = lazy(() => import("../pages/Home/Home"));
+const Product = lazy(() => import("../pages/Product/Product"));
+const Contact = lazy(() => import("../pages/Contact/Contact"));
+const Information = lazy(() => import("../pages/Information/Information"));
+const Login = lazy(() => import("../pages/Login/Login.jsx"));
+const Signup = lazy(() => import("../pages/Signup/Signup.jsx"));
+const Account = lazy(() => import("../pages/Account/Account.jsx"));
+const Profile = lazy(() => import("../components/Account/Profile.jsx"));
+const ManageAddress = lazy(() => import("../components/Account/ManageAddress.jsx"));
+const Settings = lazy(() => import("../components/Account/Settings.jsx"));
+const UserOrders = lazy(() => import("../components/Account/UserOrders.jsx"));
+const WishList = lazy(() => import("../components/Account/WishList.jsx"));
+const CategoryProduct = lazy(() => import("../pages/CategoryProduct/CategoryProduct.jsx"));
+const CheckOut = lazy(() => import("../pages/CheckOut/CheckOut.jsx"));
+const OrderDetails = lazy(() => import("../components/Account/OrderDetails.jsx"));
+const BannerProduct = lazy(() => import("../pages/BannerProduct/BannerProduct.jsx"));
+const Help = lazy(() => import("../components/Home/Help.jsx"));
+const Careers = lazy(() => import("../components/Home/Careers.jsx"));
+const BlogDetails = lazy(() => import("../pages/blogs/BlogDetails.jsx"));
+const AllCategory = lazy(() => import("../components/Category/AllCategory.jsx"));
+const Blog = lazy(() => import("../pages/blogs/Blog.jsx"));
+const Forgetpassword = lazy(() => import("../pages/Login/Forgetpassword.jsx"));
+const ResetPassword = lazy(() => import("../pages/Login/ResetPassword.jsx"));
+const NotFound = lazy(() => import("../pages/Notfound/NotFound.jsx"));
+const SubcategoryProduct = lazy(() => import("../pages/CategoryProduct/SubcategoryProduct.jsx"));
+const Onlytoday = lazy(() => import("../pages/Only/Onlytoday.jsx"));
+const Newproduct = lazy(() => import("../pages/New/Newproduct.jsx"));
+const Popularproduct = lazy(() => import("../pages/Popular/Popularproduct.jsx"));
+const ShoppingCart = lazy(() => import("../pages/shopping/ShoppingCart.jsx"));
+const NewCheckout = lazy(() => import("../pages/shopping/NewCheckout.jsx"));
+const SectionExplore = lazy(() => import("../pages/Home/SectionExplore.jsx"));
+const HistoryExplore = lazy(() => import("../pages/Product/HistoryExplore.jsx"));
+const AboutUs = lazy(() => import("../pages/Information/AboutUs.jsx"));
+const CustomerPaymentPage = lazy(() => import("../pages/Payment/CustomerPaymentPage.jsx"));
+
+const Reward = lazy(() => import("../components/Account/Reward.jsx"));
 
 // payment
-import PaymentCancelled from "../pages/shopping/pay/PaymentCancelled.jsx";
-import PaymentFailed from "../pages/shopping/pay/PaymentFailled.jsx";
-import PaymentSuccess from "../pages/shopping/pay/PaymentSuccess.jsx";
-import PaymentMethod from "../components/CheckOut/PaymentMethod.jsx";
-import PaymentError from "../pages/shopping/pay/PaymentError.jsx";
-import WarrantyActivation from "../pages/warrenty/Warrenty.jsx";
+const PaymentCancelled = lazy(() => import("../pages/shopping/pay/PaymentCancelled.jsx"));
+const PaymentFailed = lazy(() => import("../pages/shopping/pay/PaymentFailled.jsx"));
+const PaymentSuccess = lazy(() => import("../pages/shopping/pay/PaymentSuccess.jsx"));
+const PaymentMethod = lazy(() => import("../components/CheckOut/PaymentMethod.jsx"));
+const PaymentError = lazy(() => import("../pages/shopping/pay/PaymentError.jsx"));
+const WarrantyActivation = lazy(() => import("../pages/warrenty/Warrenty.jsx"));
 
 // policy
-import ReturnPolicy from "../pages/policys/ReturnPolicy.jsx";
-import ShippingPolicy from "../pages/policys/ShippingPolicy.jsx";
-import TermsAndConditions from "../pages/policys/TermsAndConditions.jsx";
-import CancellationPolicy from "../pages/policys/CancellationPolicy.jsx";
-import PrivacyPolicy from "../pages/policys/PrivacyPolicy.jsx";
+const ReturnPolicy = lazy(() => import("../pages/policys/ReturnPolicy.jsx"));
+const ShippingPolicy = lazy(() => import("../pages/policys/ShippingPolicy.jsx"));
+const TermsAndConditions = lazy(() => import("../pages/policys/TermsAndConditions.jsx"));
+const CancellationPolicy = lazy(() => import("../pages/policys/CancellationPolicy.jsx"));
+const PrivacyPolicy = lazy(() => import("../pages/policys/PrivacyPolicy.jsx"));
 
-// import ResetPassword from "../pages/Login/ResetPassword.jsx";
-// import ResetPasswordPage from "../components/Account/ResetPasswordPage.jsx";
 // BNI
-import BniLogin from "../pages/Signup/BniLogin.jsx";
-import BniProduct from "../pages/CategoryProduct/BniProduct.jsx";
-import AcBNi from "../pages/CategoryProduct/AcBNi.jsx";
-import SearchProduct from "../pages/search/SearchProduct.jsx";
+const BniLogin = lazy(() => import("../pages/Signup/BniLogin.jsx"));
+const BniProduct = lazy(() => import("../pages/CategoryProduct/BniProduct.jsx"));
+const AcBNi = lazy(() => import("../pages/CategoryProduct/AcBNi.jsx"));
+const SearchProduct = lazy(() => import("../pages/search/SearchProduct.jsx"));
+
+// Shared fallback shown for the brief moment a route chunk is downloading.
+// Intentionally minimal — most chunks are small enough this rarely shows.
+const RouteFallback = () => (
+  <div className="w-full min-h-[40vh] flex items-center justify-center">
+    <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+  </div>
+);
+
+// Wrap every route element in the same Suspense boundary so lazy chunks
+// resolve consistently regardless of where the route sits in the tree.
+const s = (el) => <Suspense fallback={<RouteFallback />}>{el}</Suspense>;
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <Layout />,
     children: [
-      { path: "/:id", element: <ResetPassword /> },
-      { path: "/shopping-cart", element: <ShoppingCart /> },
-      { path: "/checkout", element: <NewCheckout /> },
-      { path: "/blogs", element: <Blog /> },
-      { path: "/all-categories", element: <AllCategory /> },
-      { path: "/blog-details/:slug", element: <BlogDetails /> },
-      { path: "/", element: <Home /> },
-      { path: "/product/:id", element: <Product /> },
-      { path: "/category/:category/:id", element: <SubcategoryProduct /> },
-      { path: "/products", element: <BniProduct /> },
-      { path: "/category/:id", element: <CategoryProduct /> },
-      { path: "/contact-us", element: <Contact /> },
-      { path: "/see-more/:section_name/:id", element: <SectionExplore /> },
-      { path: "/check-out", element: <CheckOut /> },
-      { path: "/banner-product/:id", element: <BannerProduct /> },
-      { path: "/help", element: <Help /> },
-      { path: "/careers", element: <Careers /> },
-      { path: "/recent-Products", element: <HistoryExplore /> },
-      {
-        path: "/only-today",
-        element: <Onlytoday />,
-      },
-      { path: "/search", element: <SearchProduct /> },
-      {
-        path: "/new-product",
-        element: <Newproduct />,
-      },
-      {
-        path: "/popular-product",
-        element: <Popularproduct />,
-      },
-      {
-        path: "/terms-&-conditions",
-        element: <TermsAndConditions />,
-      },
-      {
-        path: "/privacy-policy",
-        element: <PrivacyPolicy />,
-      },
-      {
-        path: "/return-policy",
-        element: <ReturnPolicy />,
-      },
-      {
-        path: "/cancelling-policy",
-        element: <CancellationPolicy />,
-      },
-      {
-        path: "/shipping-&-delivery-policy",
-        element: <ShippingPolicy />,
-      },
-      {
-        path: "/about-us",
-        element: <AboutUs />,
-      },
+      { path: "/:id", element: s(<ResetPassword />) },
+      { path: "/shopping-cart", element: s(<ShoppingCart />) },
+      { path: "/checkout", element: s(<NewCheckout />) },
+      { path: "/blogs", element: s(<Blog />) },
+      { path: "/all-categories", element: s(<AllCategory />) },
+      { path: "/blog-details/:slug", element: s(<BlogDetails />) },
+      { path: "/", element: s(<Home />) },
+      { path: "/product/:id", element: s(<Product />) },
+      { path: "/category/:category/:id", element: s(<SubcategoryProduct />) },
+      { path: "/products", element: s(<BniProduct />) },
+      { path: "/category/:id", element: s(<CategoryProduct />) },
+      { path: "/contact-us", element: s(<Contact />) },
+      { path: "/see-more/:section_name/:id", element: s(<SectionExplore />) },
+      { path: "/check-out", element: s(<CheckOut />) },
+      { path: "/banner-product/:id", element: s(<BannerProduct />) },
+      { path: "/help", element: s(<Help />) },
+      { path: "/careers", element: s(<Careers />) },
+      { path: "/recent-Products", element: s(<HistoryExplore />) },
+      { path: "/only-today", element: s(<Onlytoday />) },
+      { path: "/search", element: s(<SearchProduct />) },
+      { path: "/new-product", element: s(<Newproduct />) },
+      { path: "/popular-product", element: s(<Popularproduct />) },
+      { path: "/terms-&-conditions", element: s(<TermsAndConditions />) },
+      { path: "/privacy-policy", element: s(<PrivacyPolicy />) },
+      { path: "/return-policy", element: s(<ReturnPolicy />) },
+      { path: "/cancelling-policy", element: s(<CancellationPolicy />) },
+      { path: "/shipping-&-delivery-policy", element: s(<ShippingPolicy />) },
+      { path: "/about-us", element: s(<AboutUs />) },
       {
         path: "/account",
-        element: <Account />,
+        element: s(<Account />),
         children: [
-          {
-            path: "",
-            element: <Navigate to="profile" replace />,
-          },
-          { path: "profile", element: <Profile /> },
-          { path: "manage-addresses", element: <ManageAddress /> },
-          { path: "settings", element: <Settings /> },
-          {
-            path: "my-orders",
-            element: <UserOrders />,
-          },
-          {
-            path: "BNI",
-            element: <AcBNi />,
-          },
-          {
-            path: "reward",
-            element: <Reward />,
-          },
-          { path: "wishlist", element: <WishList /> },
-          {
-            path: "my-orders/:order_id",
-            element: <OrderDetails />,
-          },
-          {
-            path: "Warranty",
-            element: <WarrantyActivation />,
-          },
-        
+          { path: "", element: <Navigate to="profile" replace /> },
+          { path: "profile", element: s(<Profile />) },
+          { path: "manage-addresses", element: s(<ManageAddress />) },
+          { path: "settings", element: s(<Settings />) },
+          { path: "my-orders", element: s(<UserOrders />) },
+          { path: "BNI", element: s(<AcBNi />) },
+          { path: "reward", element: s(<Reward />) },
+          { path: "wishlist", element: s(<WishList />) },
+          { path: "my-orders/:order_id", element: s(<OrderDetails />) },
+          { path: "Warranty", element: s(<WarrantyActivation />) },
         ],
       },
     ],
   },
-  {
-    path: "/login",
-    element: <Login />,
-  },
+  { path: "/login", element: s(<Login />) },
   // BNI
-  {
-    path: "/BNI/Signup",
-    element: <BniLogin />,
-  },
-  {
-    path: "/sign-up",
-    element: <Signup />,
-  },
-  {
-    path: "/forget-password",
-    element: <Forgetpassword />,
-  },
-  {
-    path: "/reset-password/:id",
-    element: <ResetPassword />,
-  },
+  { path: "/BNI/Signup", element: s(<BniLogin />) },
+  { path: "/sign-up", element: s(<Signup />) },
+  { path: "/forget-password", element: s(<Forgetpassword />) },
+  { path: "/reset-password/:id", element: s(<ResetPassword />) },
 
-  {
-    path: "/not-found",
-    element: <NotFound />,
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
-  {
-    path: "/payment/cancelled",
-    element: <PaymentCancelled />,
-  },
-  {
-    path: "/payment/success",
-    element: <PaymentSuccess />,
-  },
-  {
-    path: "/payment/failed",
-    element: <PaymentFailed />,
-  },
-  {
-    path: "/payment/error",
-    element: <PaymentError />,
-  },
-  {
-    path: "/payment/:invoice_no",
-    element: <CustomerPaymentPage />,
-  },
-
+  { path: "/not-found", element: s(<NotFound />) },
+  { path: "*", element: s(<NotFound />) },
+  { path: "/payment/cancelled", element: s(<PaymentCancelled />) },
+  { path: "/payment/success", element: s(<PaymentSuccess />) },
+  { path: "/payment/failed", element: s(<PaymentFailed />) },
+  { path: "/payment/error", element: s(<PaymentError />) },
+  { path: "/payment/:invoice_no", element: s(<CustomerPaymentPage />) },
 ]);

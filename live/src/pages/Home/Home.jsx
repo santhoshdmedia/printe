@@ -1,20 +1,27 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Divider, Spin } from "antd";
 import _ from "lodash";
-import StepProcess from "../../components/Home/StepProcess";
-import CarouselBanner, { SubCategoryBannerCarousel } from "../../components/Home/CarouselBanner";
 import { getCustomHomeSections, getAllBlogs } from "../../helper/api_helper";
 import { IconHelper } from "../../helper/IconHelper";
-import SwiperList from "../../components/Lists/SwiperList";
-import HistoryProducts from "../Product/HistoryProducts";
-import BrowseAll from "../../components/Home/BrowseAll";
-import { WGDesigns } from "../../config/QuickAccess";
-import BeforeAfterSlider from "../../components/Home/BeforeAfter";
-import BlogCarousel from "../../components/Home/BlogCarousel"; 
 import { Helmet } from "react-helmet-async";
+
+// ─── Lazy-loaded homepage sections ────────────────────────────────────────
+// These previously loaded eagerly with every route in the app (none of them
+// are needed for first paint), inflating the main JS bundle. Splitting them
+// out lets the browser render the hero/above-the-fold content first while
+// the rest streams in behind React.Suspense.
+const StepProcess = lazy(() => import("../../components/Home/StepProcess"));
+const CarouselBanner = lazy(() => import("../../components/Home/CarouselBanner").then(m => ({ default: m.default })));
+const SubCategoryBannerCarousel = lazy(() => import("../../components/Home/CarouselBanner").then(m => ({ default: m.SubCategoryBannerCarousel })));
+const SwiperList = lazy(() => import("../../components/Lists/SwiperList"));
+const HistoryProducts = lazy(() => import("../Product/HistoryProducts"));
+const BrowseAll = lazy(() => import("../../components/Home/BrowseAll"));
+const WGDesigns = lazy(() => import("../../config/QuickAccess").then(m => ({ default: m.WGDesigns })));
+const BeforeAfterSlider = lazy(() => import("../../components/Home/BeforeAfter"));
+const BlogCarousel = lazy(() => import("../../components/Home/BlogCarousel"));
 
 
 // changeg
@@ -89,10 +96,14 @@ const Home = () => {
       </Helmet>
 
       <div className="hidden lg:block">
-        <CarouselBanner />
+        <Suspense fallback={<div className="h-[400px]" />}>
+          <CarouselBanner />
+        </Suspense>
       </div>
       <div className="block lg:hidden">
-        <SubCategoryBannerCarousel />
+        <Suspense fallback={<div className="h-[300px]" />}>
+          <SubCategoryBannerCarousel />
+        </Suspense>
       </div>
 
       {!user?._id && (
@@ -112,34 +123,44 @@ const Home = () => {
       )}
 
       <div className="pb-10 mx-auto">
-        <BrowseAll />
+        <Suspense fallback={null}>
+          <BrowseAll />
+        </Suspense>
       </div>
 
       <div className="flex flex-col">
         {sectionData.map((section, index) => (
           <div key={`${section._id || index}`}>
-            <SwiperList
-              product_type={_.get(section, "product_display", "1")}
-              title={_.get(section, "section_name", "")}
-              data={_.get(section, "productDetails", [])}
-              subtitle={_.get(section, "sub_title", "")}
-              type="Product"
-              to={`/see-more/${encodeURIComponent(_.get(section, "section_name", ""))}/${_.get(section, "_id", "")}`}
-              productCardType="Simple"
-            />
+            <Suspense fallback={null}>
+              <SwiperList
+                product_type={_.get(section, "product_display", "1")}
+                title={_.get(section, "section_name", "")}
+                data={_.get(section, "productDetails", [])}
+                subtitle={_.get(section, "sub_title", "")}
+                type="Product"
+                to={`/see-more/${encodeURIComponent(_.get(section, "section_name", ""))}/${_.get(section, "_id", "")}`}
+                productCardType="Simple"
+              />
+            </Suspense>
           </div>
         ))}
       </div>
 
       <div className="mt-8">
-        <BeforeAfterSlider />
+        <Suspense fallback={null}>
+          <BeforeAfterSlider />
+        </Suspense>
       </div>
 
       {/* ✅ Blog Carousel — shows latest blog posts */}
-      <BlogCarousel blogs={blogsData} />
+      <Suspense fallback={null}>
+        <BlogCarousel blogs={blogsData} />
+      </Suspense>
 
       <div className="mt-0">
-        <WGDesigns />
+        <Suspense fallback={null}>
+          <WGDesigns />
+        </Suspense>
       </div>
     </>
   );

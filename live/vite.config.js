@@ -1,8 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import viteCompression from 'vite-plugin-compression'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Pre-compress assets at build time so Vercel/nginx can serve .gz
+    // directly instead of compressing on every request.
+    viteCompression({ algorithm: 'gzip', ext: '.gz' }),
+    viteCompression({ algorithm: 'brotliCompress', ext: '.br' }),
+  ],
 
   build: {
     // Raise warning limit to reduce noise
@@ -10,10 +17,18 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
-        // Split vendor code into separate chunks for better caching
+        // Split vendor code into separate chunks so each library is
+        // cached independently and the initial bundle stops growing
+        // every time an unrelated feature adds a dependency.
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['framer-motion'], // add your UI libs here
+          'ui-vendor': ['framer-motion', 'motion'],
+          'antd-vendor': ['antd', '@ant-design/icons'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          'pdf-vendor': ['jspdf', 'html2canvas'],
+          'date-vendor': ['moment'],
+          'swiper-vendor': ['swiper'],
+          'redux-vendor': ['@reduxjs/toolkit', 'react-redux', 'redux-saga'],
         },
 
         // Cache-busting filenames
