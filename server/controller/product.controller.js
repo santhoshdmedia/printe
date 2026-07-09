@@ -197,7 +197,13 @@ const getProduct = async (req, res) => {
     }
 
     if (id) {
-      where.seo_url = id;
+      // Support both slug (seo_url) links and raw ObjectId links so that
+      // any product-card component that navigates with `_id` still resolves.
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        where.$or = [{ seo_url: id }, { _id: id }];
+      } else {
+        where.seo_url = id;
+      }
     }
 
     const result = await ProductSchema.find(where)
