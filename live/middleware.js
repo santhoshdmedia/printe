@@ -13,11 +13,12 @@ const BOT_UA_REGEX =
 export default async function middleware(request) {
   const ua = request.headers.get('user-agent') || '';
 
-  // Only crawlers take the OG-tag proxy branch below. Real visitors get
-  // next() immediately and never touch the fetch() that was looping.
-  if (!BOT_UA_REGEX.test(ua)) {
-    return next();
-  }
+  // TEMP DEBUG: bot-check disabled — every request on /product/* takes the
+  // fetch branch below, regardless of User-Agent. This is ONLY to prove
+  // whether the middleware executes at all. Re-enable the check once
+  // confirmed:
+  //   if (!BOT_UA_REGEX.test(ua)) { return next(); }
+  void BOT_UA_REGEX;
 
   // Crawlers: reuse the existing SSR OG-tag endpoint on the apex domain
   // (same Express server, same MongoDB lookup, same logic already fixed).
