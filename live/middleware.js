@@ -10,48 +10,72 @@ export const config = {
 const BOT_UA_REGEX =
   /facebookexternalhit|Facebot|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|SkypeUriPreview|Pinterest|redditbot|Applebot|Googlebot|bingbot|YandexBot|DuckDuckBot/i;
 
+// The upstream that renders OG tags for crawlers — your Express server on
+// the VPS (see server/index.js, the "/product/:id" SSR route). This must
+// point somewhere this Vercel deployment does NOT also answer for.
+// Overridable via a Vercel env var so it never has to be guessed again.
+const OG_UPSTREAM_ORIGIN = process.env.OG_UPSTREAM_ORIGIN || 'https://printe.in';
+
+// Defence-in-depth loop guard. Even with the bot check below, if DNS/domain
+// aliasing ever changes so that OG_UPSTREAM_ORIGIN resolves back to this
+// same middleware, this header stops the recursion after one hop instead
+// of looping until Vercel's platform kills it (the INFINITE_LOOP_DETECTED
+// page you saw).
+const LOOP_GUARD_HEADER = 'x-og-proxy-depth';
+const MAX_PROXY_DEPTH = 1;
+
+const FETCH_TIMEOUT_MS = 4000;
+
 export default async function middleware(request) {
   const ua = request.headers.get('user-agent') || '';
 
-  // TEMP DEBUG: bot-check disabled — every request on /product/* takes the
-  // fetch branch below, regardless of User-Agent. This is ONLY to prove
-  // whether the middleware executes at all. Re-enable the check once
-  // confirmed:
-  //   if (!BOT_UA_REGEX.test(ua)) { return next(); }
-  void BOT_UA_REGEX;
+  // Real browsers: never proxy. Let the SPA load normally — this is what
+  // was disabled before and caused every page load (not just bots) to
+  // self-fetch forever.
+  if (!BOT_UA_REGEX.test(ua)) {
+    return next();
+  }
 
-  // Crawlers: reuse the existing SSR OG-tag endpoint on the apex domain
-  // (same Express server, same MongoDB lookup, same logic already fixed).
+  // If this request already passed through this proxy once, don't do it
+  // again — fall through to the SPA shell instead of recursing.
+  const depth = Number(request.headers.get(LOOP_GUARD_HEADER) || 0);
+  if (depth >= MAX_PROXY_DEPTH) {
+    return next();
+  }
+
   const url = new URL(request.url);
-  const ogUrl = `https://printe.in${url.pathname}${url.search}`;
+  const ogUrl = `${OG_UPSTREAM_ORIGIN}${url.pathname}${url.search}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
     const ogResponse = await fetch(ogUrl, {
-      headers: { 'user-agent': ua },
+      headers: {
+        'user-agent': ua,
+        [LOOP_GUARD_HEADER]: String(depth + 1),
+      },
+      signal: controller.signal,
     });
+
+    if (!ogResponse.ok) {
+      // Upstream had a problem (product not found, 5xx, etc.) — fail open
+      // to the SPA shell rather than showing the crawler an error page.
+      return next();
+    }
+
     const html = await ogResponse.text();
 
-    // TEMP DEBUG: prove the middleware ran and show us exactly what the
-    // upstream returned, even on a non-2xx status. Remove the debug
-    // headers once this is confirmed working.
     return new Response(html, {
-      status: ogResponse.status,
-      headers: {
-        'content-type': 'text/html; charset=utf-8',
-        'x-debug-middleware': 'reached-fetch',
-        'x-debug-og-url': ogUrl,
-        'x-debug-upstream-status': String(ogResponse.status),
-      },
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
     });
   } catch (err) {
-    // TEMP DEBUG: return the actual error instead of silently falling
-    // back, so we can see exactly why the proxy to printe.in failed.
-    return new Response(
-      `MIDDLEWARE FETCH FAILED\nog_url: ${ogUrl}\nerror: ${err && err.message}\nstack: ${err && err.stack}`,
-      {
-        status: 502,
-        headers: { 'content-type': 'text/plain', 'x-debug-middleware': 'fetch-threw' },
-      },
-    );
+    // Upstream unreachable or timed out — fail open instead of breaking
+    // the page.
+    console.error('OG proxy fetch failed:', ogUrl, err && err.message);
+    return next();
+  } finally {
+    clearTimeout(timeout);
   }
 }
