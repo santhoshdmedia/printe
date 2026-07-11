@@ -30,6 +30,7 @@ const CustomerRoutes=require('./CustomerCare.Route')
 const CustomerSettingsRoutes=require('./customercaresettings.route')
 const QuotationRoutes=require('./Quotation.routes')
 const pdfExportRoutes=require('./pdfExportRoutes')
+const campaign_routes=require('./campain.routes')
 
 
 
@@ -66,5 +67,6 @@ module.exports = {
   CustomerRoutes,
   CustomerSettingsRoutes,
   QuotationRoutes,
-  pdfExportRoutes
+  pdfExportRoutes,
+  campaign_routes
 };
