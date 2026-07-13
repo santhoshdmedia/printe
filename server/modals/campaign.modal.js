@@ -6,7 +6,6 @@ const interestedPersonSchema = new Schema(
   {
     name: {
       type: String,
-      required: true,
       trim: true,
     },
     phone: {

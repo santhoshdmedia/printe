@@ -117,8 +117,8 @@ exports.addInterestedPerson = async (req, res) => {
     const { id } = req.params; // campaign id
     const { name, phone, place = "", interest_scale = "Medium" } = req.body;
 
-    if (!name || !phone) {
-      return errorResponse(res, "name and phone are required");
+    if (!phone) {
+      return errorResponse(res, "Phone number is required");
     }
 
     const campaign = await Campaign.findById(id);
