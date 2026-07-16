@@ -127,6 +127,7 @@ const createPaymentOrder = async (req, res) => {
       cart_items,
       delivery_address,
       delivery_charges    = 0,
+      branding_charges    = 0,
       free_delivery       = false,
       user_id,
       guestId,                        // ← guest identifier sent by frontend
@@ -257,6 +258,7 @@ const createPaymentOrder = async (req, res) => {
       order_status:          "pending payment",
       total_price:           numericAmount,
       DeliveryCharges:       parseFloat(delivery_charges) || 0,
+      BrandingCharges:       parseFloat(branding_charges) || 0,
       FreeDelivery:          !!free_delivery,
       payment_type:          payment_type || "Online Payment",
       invoice_no:            finalOrderId,
@@ -359,7 +361,7 @@ const adminCreateOrder = async (req, res) => {
     const {
       customer_name, customer_email, customer_phone,
       cart_items, delivery_address,
-      delivery_charges = 0, free_delivery = false,
+      delivery_charges = 0, branding_charges = 0, free_delivery = false,
       gst_no, subtotal, tax_amount, discount_amount, total_amount,
       payment_type = "Online Payment", notes, admin_id,
     } = req.body;
@@ -473,6 +475,7 @@ const adminCreateOrder = async (req, res) => {
       order_status:        "pending payment",
       total_price:         parseFloat(total_amount    || 0),
       DeliveryCharges:     parseFloat(delivery_charges || 0),
+      BrandingCharges:     parseFloat(branding_charges || 0),
       FreeDelivery:        !!free_delivery,
       payment_type,
       invoice_no:          invoiceNo,
@@ -844,6 +847,7 @@ const getOrderByInvoice = async (req, res) => {
       subtotal:         order.subtotal,
       tax_amount:       order.tax_amount,
       delivery_charges: order.DeliveryCharges,
+      branding_charges: order.BrandingCharges,
       discount_amount:  order.discount_amount,
       total_amount:     order.total_amount,
       payment_status:   order.payment_status,

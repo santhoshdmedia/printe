@@ -154,6 +154,13 @@ module.exports = mongoose.model(
       is_limited:{
         type: Boolean,
       },
+      // Toggle: when true, this product carries branding/customization
+      // charges that vary by quantity tier (see quantity_discount_splitup,
+      // which stores branding_charges_customer / _dealer / _corporate per row).
+      is_branding: {
+        type: Boolean,
+        default: false,
+      },
       unit: { type: String },
       name: { type: String, require: true },
       Point_one: { type: String, require: true },

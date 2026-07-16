@@ -308,6 +308,7 @@ const getRoleFields = (role) => {
         recommended: "recommended_stats_dealer",
         deliveryCharges: "delivery_charges_dealer",
         deliveryChargesOuterTN: "delivery_charges_dealer_outer_tn",
+        brandingCharges: "branding_charges_dealer",
       };
     case "Corporate":
       return {
@@ -317,6 +318,7 @@ const getRoleFields = (role) => {
         recommended: "recommended_stats_corporate",
         deliveryCharges: "delivery_charges_corporate",
         deliveryChargesOuterTN: "delivery_charges_corporate_outer_tn",
+        brandingCharges: "branding_charges_corporate",
       };
     default:
       return {
@@ -326,6 +328,7 @@ const getRoleFields = (role) => {
         recommended: "recommended_stats_customer",
         deliveryCharges: "delivery_charges_customer",
         deliveryChargesOuterTN: "delivery_charges_customer_outer_tn",
+        brandingCharges: "branding_charges_customer",
       };
   }
 };
@@ -368,6 +371,18 @@ const getDeliveryChargesFromProduct = (productData, userRole, isOutsideTN = fals
     return Number(_.get(quantityDiscountData, roleFields.deliveryChargesOuterTN, 150)) || 100;
   }
   return Number(_.get(quantityDiscountData, roleFields.deliveryCharges, 10)) || 100;
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Helper: get branding charge for a specific quantity-tier row.
+// Branding charges are flat, one-time (per order, NOT multiplied by quantity),
+// and only apply when the product has branding enabled (is_branding = true).
+// ═════════════════════════════════════════════════════════════════════════════
+const getBrandingChargeFromRow = (productData, row, userRole) => {
+  const isBrandingEnabled = _.get(productData, "is_branding", false);
+  if (!isBrandingEnabled || !row) return 0;
+  const roleFields = getRoleFields(userRole);
+  return Number(_.get(row, roleFields.brandingCharges, 0)) || 0;
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1503,6 +1518,9 @@ const ProductDetails = ({
   const [deliveryCharges, setDeliveryCharges] = useState(100);
   // ✅ NEW: tracks the outside-TN delivery rate separately
   const [outOfTNCharge, setOutOfTNCharge] = useState(0);
+  // ✅ NEW: flat, one-time branding/customization charge for the selected
+  // quantity tier (only applies when the product has is_branding = true)
+  const [brandingCharges, setBrandingCharges] = useState(0);
   const [noDesignUpload, setNoDesignUpload] = useState(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [sendingNotification, setSendingNotification] = useState(false);
@@ -1530,6 +1548,7 @@ const ProductDetails = ({
     TotalSavings: 0,
     FreeDelivery: false,
     DeliveryCharges: 100,
+    BrandingCharges: 0,
   });
 
   // ── Platform state ─────────────────────────────────────────────────────────
@@ -1565,6 +1584,7 @@ const ProductDetails = ({
   const dropdownGap = _.get(data, "dropdown_gap", 100);
   const quantityType = _.get(data, "quantity_type", "dropdown");
   const maxQuantity = _.get(data, "max_quantity", 10000);
+  const isBrandingEnabled = _.get(data, "is_branding", false);
   const unit = _.get(data, "unit", "");
   const stockCount = _.get(data, "stock_count", "");
   const productionTime = _.get(data, "Production_time", "");
@@ -1608,6 +1628,7 @@ const ProductDetails = ({
         uuid: item.uniqe_id,
         stats: item[roleFields.recommended] || "No comments",
         deliveryCharges: Number(item[roleFields.deliveryCharges] || 100),
+        brandingCharges: getBrandingChargeFromRow(data, item, user.role),
       }))
       .sort((a, b) => a.value - b.value);
   };
@@ -1626,22 +1647,26 @@ const ProductDetails = ({
         const initialDeliveryCharges = initialFreeDelivery
           ? 0
           : Number(firstAvailableItem[roleFields.deliveryCharges] || 100);
+        const initialBrandingCharges = getBrandingChargeFromRow(data, firstAvailableItem, user.role);
 
         setQuantity(initialQuantity);
         setDiscountPercentage({ uuid: firstAvailableItem.uniqe_id, percentage: initialDiscount });
         setFreeDelivery(initialFreeDelivery);
         setDeliveryCharges(initialDeliveryCharges);
+        setBrandingCharges(initialBrandingCharges);
         setCheckOutState((prev) => ({
           ...prev,
           product_quantity: initialQuantity,
           DeliveryCharges: initialDeliveryCharges,
           FreeDelivery: initialFreeDelivery,
+          BrandingCharges: initialBrandingCharges,
         }));
       }
     } else {
       setDiscountPercentage({ uuid: "", percentage: 0 });
       setFreeDelivery(false);
       setDeliveryCharges(100);
+      setBrandingCharges(0);
       setMaximumQuantity(maxQuantity);
       setQuantity(null);
       setCheckOutState((prev) => ({
@@ -1649,6 +1674,7 @@ const ProductDetails = ({
         product_quantity: 0,
         DeliveryCharges: 100,
         FreeDelivery: false,
+        BrandingCharges: 0,
       }));
     }
   }, [quantityDiscounts, quantityType, maxQuantity, user.role]);
@@ -1781,18 +1807,21 @@ const ProductDetails = ({
       if (selectedDiscount) {
         const isFree = selectedDiscount[roleFields.freeDelivery] || false;
         const charges = isFree ? 0 : Number(selectedDiscount[roleFields.deliveryCharges] || 100);
+        const branding = getBrandingChargeFromRow(data, selectedDiscount, user.role);
         setDiscountPercentage({
           uuid: selectedDiscount.uniqe_id,
           percentage: Number(selectedDiscount[roleFields.discount] || 0),
         });
         setFreeDelivery(isFree);
         setDeliveryCharges(charges);
-        setCheckOutState((prev) => ({ ...prev, DeliveryCharges: charges, FreeDelivery: isFree }));
+        setBrandingCharges(branding);
+        setCheckOutState((prev) => ({ ...prev, DeliveryCharges: charges, FreeDelivery: isFree, BrandingCharges: branding }));
       } else {
         setDiscountPercentage({ uuid: "", percentage: 0 });
         setFreeDelivery(false);
         setDeliveryCharges(100);
-        setCheckOutState((prev) => ({ ...prev, DeliveryCharges: 100, FreeDelivery: false }));
+        setBrandingCharges(0);
+        setCheckOutState((prev) => ({ ...prev, DeliveryCharges: 100, FreeDelivery: false, BrandingCharges: 0 }));
       }
     };
 
@@ -1968,6 +1997,7 @@ const ProductDetails = ({
       FreeDelivery: freeDelivery,
       DeliveryCharges: deliveryCharges,       // inside Tamil Nadu rate
       out_of_tn_charge: outOfTNCharge,        // ✅ outside Tamil Nadu rate
+      BrandingCharges: brandingCharges,       // ✅ flat, one-time branding charge for this quantity tier
       noCustomtation: noDesignUpload,
       final_total: Number(calculateTotalPrice()),
       final_total_withoutGst: Number(calculateTotalPricewithoutGst()),
@@ -2153,6 +2183,11 @@ const ProductDetails = ({
                       <span className="text-blue-600 text-sm font-medium inline-flex items-center">
                         <FaTruckFast className="mr-1" />
                         Free Delivery
+                      </span>
+                    )}
+                    {isBrandingEnabled && item.brandingCharges > 0 && (
+                      <span className="text-purple-600 text-sm font-medium inline-flex items-center">
+                        + {formatPrice(item.brandingCharges)} Branding
                       </span>
                     )}
                   </div>
@@ -2527,6 +2562,13 @@ const ProductDetails = ({
                 </Title>
               </div>
             </div>
+
+            {isBrandingEnabled && brandingCharges > 0 && (
+              <div className="flex items-center justify-between">
+                <Text className="text-gray-600">Branding Charges:</Text>
+                <Text strong className="text-gray-800">{formatPrice(brandingCharges)}</Text>
+              </div>
+            )}
 
             {calculateTotalSavings() > 0 && (
               <Alert

@@ -51,6 +51,12 @@ const ShoppingCardSchemaDefinition = new mongoose.Schema(
     FreeDelivery: { type: Boolean, default: false },
     DeliveryCharges: { type: Number, default: 0 },
     out_of_tn_charge: { type: Number, default: 0 },
+
+    // ── Branding ───────────────────────────────────────────────────────────
+    // Flat, one-time charge for the selected quantity tier (not per-unit),
+    // resolved from the product's quantity_discount_splitup at add-to-cart
+    // time, same as DeliveryCharges.
+    BrandingCharges: { type: Number, default: 0 },
     noCustomtation: { type: Boolean, default: false },
 
     // ── Optional product fields ────────────────────────────────────────────

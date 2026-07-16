@@ -110,6 +110,11 @@ const CreateOrder = async (req, res) => {
           ? 0
           : Number(item.DeliveryCharges) || 0;
 
+      // Branding charge: flat, one-time amount already resolved at add-to-cart
+      // time from the product's quantity_discount_splitup for the selected
+      // quantity tier and user role.
+      const BrandingCharges = Number(item.BrandingCharges) || 0;
+
       console.log(
         `[CreateOrder] item=${item.product_name} | is_photoframe=${is_photoframe} | delivery_to_home=${delivery_to_home} | DeliveryCharges=${DeliveryCharges}`
       );
@@ -124,6 +129,7 @@ const CreateOrder = async (req, res) => {
         delivery_to_home,
         photo_frame_details: itemPhotoFrameDetails,  // ← now always saved
         DeliveryCharges,                              // ← 0 when no home delivery
+        BrandingCharges,
         total_price:  req.body.total_price,
         payment_type: req.body.payment_type,
         invoice_no,
@@ -199,7 +205,7 @@ const CollectMyOrders = async (req, res) => {
       {
         $project: {
           _id:1, user_id:1, cart_items:1, delivery_address:1, order_status:1,
-          total_price:1, total_amount:1, DeliveryCharges:1, FreeDelivery:1,
+          total_price:1, total_amount:1, DeliveryCharges:1, BrandingCharges:1, FreeDelivery:1,
           is_photoframe:1, delivery_to_home:1, photo_frame_details:1,
           payment_type:1, invoice_no:1, payment_id:1, payment_status:1,
           transaction_id:1, payment_date:1, payment_mode:1, card_name:1,

@@ -43,6 +43,7 @@ const Order = model(
 
       DeliveryCharges: { type: Number },
       FreeDelivery:    { type: Boolean },
+      BrandingCharges: { type: Number, default: 0 }, // flat, one-time branding/customization charge for this order's item
 
       // ─── Photo frame fields ───────────────────────────────────────────
       // is_photoframe: canonical flag name used throughout backend & frontend.

@@ -114,6 +114,9 @@ const addToShoppingCart = async (req, res) => {
     // out_of_tn_charge = outside Tamil Nadu rate (sent by frontend always)
     const incomingDeliveryChargesTN    = Number(req.body.DeliveryCharges   || 0);
     const incomingOutOfTNCharge        = Number(req.body.out_of_tn_charge  || 0);
+    // Branding charges: flat, one-time per order for the selected quantity
+    // tier (frontend always sends this, same as delivery charges).
+    const incomingBrandingCharges      = Number(req.body.BrandingCharges   || 0);
 
     // ── Check for existing item (same product + variant) ─────────────────────
     const existingItemQuery = {
@@ -150,6 +153,7 @@ const addToShoppingCart = async (req, res) => {
       // quantity-tier rates sent from the frontend.
       existingItem.DeliveryCharges   = incomingDeliveryChargesTN;
       existingItem.out_of_tn_charge  = incomingOutOfTNCharge;
+      existingItem.BrandingCharges   = incomingBrandingCharges;
 
       if (phone) existingItem.phone_number = phone;
       if (email) existingItem.email        = email;
@@ -186,6 +190,7 @@ const addToShoppingCart = async (req, res) => {
         // ── Dual delivery charges ─────────────────────────────────────────
         DeliveryCharges:          incomingDeliveryChargesTN,   // inside Tamil Nadu
         out_of_tn_charge:         incomingOutOfTNCharge,       // outside Tamil Nadu
+        BrandingCharges:          incomingBrandingCharges,     // flat, one-time per order
         // ─────────────────────────────────────────────────────────────────
         is_qr_product:            req.body.is_qr_product          || false,
         selected_platforms:       req.body.selected_platforms     || [],
@@ -268,6 +273,7 @@ const getMyShoppingCart = async (req, res) => {
           noCustomtation:         1,
           DeliveryCharges:        1,   // inside TN
           out_of_tn_charge:       1,   // outside TN
+          BrandingCharges:        1,   // flat, one-time per order
           product_image:          1,
           product_name:           1,
           category_name:          1,
@@ -308,6 +314,7 @@ const getMyShoppingCart = async (req, res) => {
       noCustomtation:         item.noCustomtation          || false,
       DeliveryCharges:        item.DeliveryCharges         || 0,    // inside TN
       out_of_tn_charge:       item.out_of_tn_charge        || 0,    // outside TN
+      BrandingCharges:        item.BrandingCharges         || 0,    // flat, one-time per order
       product_image:          item.product_image           || "",
       product_name:           item.product_name            || "",
       category_name:          item.category_name           || "",
@@ -427,9 +434,10 @@ const updateCartItemQuantity = async (req, res) => {
     const safeQty      = Math.max(1, quantity);
     const recalculated = recalcPriceFields(cartItem, safeQty);
 
-    // Note: delivery charges (DeliveryCharges + out_of_tn_charge) are NOT
-    // recalculated here — they are per-order flat rates, not per-unit.
-    // They were already set when the item was added / last updated from frontend.
+    // Note: delivery charges (DeliveryCharges + out_of_tn_charge) and
+    // BrandingCharges are NOT recalculated here — they are per-order flat
+    // rates, not per-unit. They were already set when the item was added /
+    // last updated from frontend.
     const updatedItem = await ShoppingCardSchema.findByIdAndUpdate(
       cartItem._id,
       {
@@ -495,6 +503,7 @@ const mergeCartsAfterLogin = async (req, res) => {
         // Carry over both delivery charges from the guest item if they exist
         if (guestItem.DeliveryCharges  !== undefined) existingUserItem.DeliveryCharges  = guestItem.DeliveryCharges;
         if (guestItem.out_of_tn_charge !== undefined) existingUserItem.out_of_tn_charge = guestItem.out_of_tn_charge;
+        if (guestItem.BrandingCharges  !== undefined) existingUserItem.BrandingCharges  = guestItem.BrandingCharges;
 
         if (contact.phone) existingUserItem.phone_number = contact.phone;
         if (contact.email) existingUserItem.email        = contact.email;
