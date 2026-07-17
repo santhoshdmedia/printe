@@ -2389,52 +2389,80 @@ const ProductDetails = ({
         
 
           <div className="w-full md:w-auto flex flex-col md:flex-row items-start md:items-center gap-3 md:relative">
-            {/* Mobile price */}
-            <div className="md:hidden flex flex-row-reverse items-center gap-3 w-full justify-between my-2">
-              <button
-                onClick={handleNativeShare}
-                className="bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300"
-              >
-                <IoShareSocial />
-              </button>
-              <motion.div
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
-                className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
-              >
-                <div className="flex items-baseline gap-2">
-                  <span className="text-white/70 text-xs line-through">
-                    {formatPrice(Number(_.get(data, "MRP_price", 0)))}
-                  </span>
-                  <h3 className="text-white text-base font-semibold">
-                    {quantity ? formatPrice(getUnitPrice()) : "Select Qty"}
-                  </h3>
-                </div>
-              </motion.div>
-            </div>
+          {/* Mobile price */}
+<div className="md:hidden flex flex-row-reverse items-center gap-3 w-full justify-between my-2">
+  <button
+    onClick={handleNativeShare}
+    className="bg-[#f2c41a] text-black p-3 rounded-full shadow-md transition-all duration-300"
+  >
+    <IoShareSocial />
+  </button>
+  <motion.div
+    animate={{ scale: [1, 1.15, 1] }}
+    transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
+    className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md"
+  >
+    <div className="flex items-center gap-3">
+      {/* Left: stacked strikethrough prices */}
+      <div className="flex flex-col gap-0.5">
+        <span className="text-white/70 text-xs line-through leading-tight whitespace-nowrap">
+          {formatPrice(Number(_.get(data, "MRP_price", 0)))}
+        </span>
+        {Number(_.get(data, "offer_MRP_price", 0)) > 0 && (
+          <span className="text-white/70 text-xs line-through leading-tight whitespace-nowrap">
+            {formatPrice(Number(_.get(data, "offer_MRP_price", 0)))}
+          </span>
+        )}
+      </div>
+      {/* Right: current price */}
+      <div className="flex flex-col items-end">
+        <h3 className="text-white text-base font-semibold leading-tight">
+          {quantity ? formatPrice(getUnitPrice()) : "Select Qty"}
+        </h3>
+        <span className="text-white/85 text-[10px] leading-none font-medium mt-0.5">
+          Inclusive of GST
+        </span>
+      </div>
+    </div>
+  </motion.div>
+</div>
 
-            {/* Desktop price */}
-            <div className="hidden md:flex items-center gap-3 flex-col-reverse">
-              {isOutOfStock && (
-                <div className="relative top-0">
-                  <AnimatedWaxSealBadge />
-                </div>
-              )}
-              <motion.div
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
-                className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md text-right"
-              >
-                <div className="flex items-baseline gap-2">
-                  <span className="text-white/70 text-xs line-through">
-                    {formatPrice(Number(_.get(data, "MRP_price", 0)))}
-                  </span>
-                  <h3 className="text-white text-base font-semibold">
-                    {formatPrice(getUnitPrice())}
-                  </h3>
-                </div>
-              </motion.div>
-            </div>
+          {/* Desktop price */}
+<div className="hidden md:flex items-center gap-3 flex-col-reverse">
+  {isOutOfStock && (
+    <div className="relative top-0">
+      <AnimatedWaxSealBadge />
+    </div>
+  )}
+  <motion.div
+    animate={{ scale: [1, 1.15, 1] }}
+    transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
+    className="bg-gradient-to-br from-green-500 to-green-600 rounded-md px-4 py-2 shadow-md"
+  >
+    <div className="flex items-center gap-3">
+      {/* Left: stacked strikethrough prices */}
+      <div className="flex flex-col gap-0.5">
+        <span className="text-white/70 text-xs line-through leading-tight whitespace-nowrap">
+          {formatPrice(Number(_.get(data, "MRP_price", 0)))}
+        </span>
+        {Number(_.get(data, "offer_MRP_price", 0)) > 0 && (
+          <span className="text-white/70 text-xs line-through leading-tight whitespace-nowrap">
+            {formatPrice(Number(_.get(data, "offer_MRP_price", 0)))}
+          </span>
+        )}
+      </div>
+      {/* Right: current price */}
+      <div className="flex flex-col items-end">
+        <h3 className="text-white text-base font-semibold leading-tight">
+          {formatPrice(getUnitPrice())}
+        </h3>
+        <span className="text-white/85 text-[10px] leading-none font-medium mt-0.5">
+          Inclusive of GST
+        </span>
+      </div>
+    </div>
+  </motion.div>
+</div>
 
             <AnimatePresence>
               {showShareMenu && (
