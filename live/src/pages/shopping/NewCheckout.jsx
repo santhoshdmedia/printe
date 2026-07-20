@@ -18,6 +18,12 @@
  *
  *   Typography : Outfit (headings) + Work Sans (body) — Geometric Modern
  *   Style      : Swiss Modernism 2.0 — grid, 8px unit, single accent rule
+ *
+ * FIX (this revision):
+ *   Coupons with discountType === 'shipping' now waive the delivery fee
+ *   instead of being subtracted from the item subtotal. The summary shows
+ *   a strikethrough of the original delivery charge, a "FREE" delivery
+ *   line, and a separate "Free shipping" coupon line for the amount saved.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -231,17 +237,32 @@ const iStyle = (hasIcon = true, overrides = {}) => ({
 });
 
 // ─── Pricing helpers ──────────────────────────────────────────────────────────
-// subtotal → discount off subtotal → GST on discounted base → + delivery = total
+// subtotal → discount off subtotal (skipped for shipping coupons) → GST on
+// discounted base → + delivery (waived entirely for shipping coupons) = total
 const calcPrices = (cartData, appliedCoupon, paymentOption, isTamilNaduDelivery) => {
-  const subtotal           = _.sum(cartData.map((i) => Number(i.final_total_withoutGst) || Number(i.final_total) || 0));
-  const discount           = appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0;
+  const subtotal    = _.sum(cartData.map((i) => Number(i.final_total_withoutGst) || Number(i.final_total) || 0));
+  const rawDelivery = getTotalDeliveryCharge(cartData, isTamilNaduDelivery);
+
+  const isShippingCoupon = appliedCoupon?.discountType === 'shipping';
+
+  // Shipping-type coupons waive delivery charges — they never discount the
+  // item subtotal, so `discount` (subtotal discount) is 0 in that case.
+  const discount           = isShippingCoupon ? 0 : (appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0);
   const discountedSubtotal = Math.max(0, subtotal - discount);
   const tax                = discountedSubtotal * 0.18;
-  const delivery           = getTotalDeliveryCharge(cartData, isTamilNaduDelivery);
-  const total              = discountedSubtotal + tax + delivery;
-  const totalBeforeDiscount = subtotal + subtotal * 0.18 + delivery;
-  const payable            = paymentOption === 'half' ? Math.ceil(total * 0.5) : total;
-  return { subtotal, discount, discountedSubtotal, tax, delivery, total, totalBeforeDiscount, payable };
+
+  const delivery         = isShippingCoupon ? 0 : rawDelivery;
+  const deliveryDiscount = isShippingCoupon ? rawDelivery : 0; // amount saved on delivery
+
+  const total               = discountedSubtotal + tax + delivery;
+  const totalBeforeDiscount = subtotal + subtotal * 0.18 + rawDelivery;
+  const payable             = paymentOption === 'half' ? Math.ceil(total * 0.5) : total;
+
+  return {
+    subtotal, discount, discountedSubtotal, tax,
+    delivery, rawDelivery, deliveryDiscount, isShippingCoupon,
+    total, totalBeforeDiscount, payable,
+  };
 };
 
 // ─── Main component ────────────────────────────────────────────────────────────
@@ -411,7 +432,7 @@ const NewCheckout = () => {
           street, city: formData.city, state: formData.state, pincode: formData.pincode,
         },
         user_id: user?._id, delivery_charges: calc.delivery,
-        free_delivery: cartData.every((i) => i.FreeDelivery),
+        free_delivery: calc.isShippingCoupon || cartData.every((i) => i.FreeDelivery),
         gst_no: gstNo || undefined,
         coupon: appliedCoupon ? {
           couponCode:    appliedCoupon.code,
@@ -426,6 +447,7 @@ const NewCheckout = () => {
         discounted_subtotal:   calc.discountedSubtotal,
         tax_amount:            calc.tax,
         discount_amount:       calc.discount,
+        delivery_discount:     calc.deliveryDiscount,
         total_amount:          calc.total,
         payment_type:          paymentOption,
         total_before_discount: calc.totalBeforeDiscount,
@@ -497,6 +519,36 @@ const NewCheckout = () => {
         </div>
       </>
     );
+
+  // Build the price-breakdown rows for the order summary, handling the
+  // "shipping" coupon type as a delivery waiver rather than a subtotal cut.
+  const summaryRows = [
+    { label: `Subtotal (${cartData.length} item${cartData.length !== 1 ? 's' : ''})`, val: `₹${calc.subtotal.toFixed(2)}` },
+  ];
+  if (appliedCoupon && calc.discount > 0) {
+    summaryRows.push({ label: `Coupon — ${appliedCoupon.code}`, val: `−₹${calc.discount.toFixed(2)}`, highlight: true });
+    summaryRows.push({ label: 'Taxable amount', val: `₹${calc.discountedSubtotal.toFixed(2)}`, small: true });
+  }
+  summaryRows.push({ label: `GST 18%${appliedCoupon && calc.discount > 0 ? ' (on discounted price)' : ''}`, val: `₹${calc.tax.toFixed(2)}` });
+
+  if (calc.isShippingCoupon) {
+    summaryRows.push({
+      label: `Coupon — ${appliedCoupon.code} (Free shipping)`,
+      val: `−₹${calc.deliveryDiscount.toFixed(2)}`,
+      highlight: true,
+    });
+    summaryRows.push({
+      label: `Delivery${formData.state ? ` (${isTN ? 'Tamil Nadu' : 'Outstation'})` : ''}`,
+      val: 'FREE',
+      strikeVal: calc.rawDelivery > 0 ? `₹${calc.rawDelivery.toFixed(2)}` : null,
+      free: true,
+    });
+  } else {
+    summaryRows.push({
+      label: `Delivery${formData.state ? ` (${isTN ? 'Tamil Nadu' : 'Outstation'})` : ''}`,
+      val: `₹${calc.delivery.toFixed(2)}`,
+    });
+  }
 
   // ── Main render ─────────────────────────────────────────────────────────────
   return (
@@ -701,7 +753,7 @@ const NewCheckout = () => {
                       <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--muted-fg)' }}>{discountLabel(appliedCoupon)}</p>
                     </div>
                     <p style={{ margin: 0, fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 15, color: 'var(--on-primary)' }}>
-                      −₹{calc.discount.toFixed(2)}
+                      −₹{(calc.isShippingCoupon ? calc.deliveryDiscount : calc.discount).toFixed(2)}
                     </p>
                   </div>
                 )}
@@ -767,7 +819,10 @@ const NewCheckout = () => {
                           <p style={{ margin: '2px 0 4px', fontSize: 11, color: 'var(--muted-fg)' }}>Qty: {item.product_quantity || 1}</p>
                           {isFrame && pickup && <p style={{ margin: 0, fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>✓ Pickup — no delivery fee</p>}
                           {isFrame && !pickup && !toHome && <p style={{ margin: 0, fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>✓ No delivery fee</p>}
-                          {charge > 0 && (
+                          {charge > 0 && calc.isShippingCoupon && (
+                            <p style={{ margin: 0, fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>✓ Free delivery (coupon)</p>
+                          )}
+                          {charge > 0 && !calc.isShippingCoupon && (
                             <p style={{ margin: 0, fontSize: 11, color: 'var(--muted-fg)', fontWeight: 500 }}>
                               📦 +₹{charge.toFixed(2)}{!isTN ? ' (outstation)' : ''}
                             </p>
@@ -785,22 +840,19 @@ const NewCheckout = () => {
                 <HR />
 
                 {/* Price breakdown */}
-                {[
-                  { label: `Subtotal (${cartData.length} item${cartData.length !== 1 ? 's' : ''})`, val: `₹${calc.subtotal.toFixed(2)}` },
-                  ...(appliedCoupon && calc.discount > 0 ? [
-                    { label: `Coupon — ${appliedCoupon.code}`, val: `−₹${calc.discount.toFixed(2)}`, highlight: true },
-                    { label: 'Taxable amount', val: `₹${calc.discountedSubtotal.toFixed(2)}`, small: true },
-                  ] : []),
-                  { label: `GST 18%${appliedCoupon && calc.discount > 0 ? ' (on discounted price)' : ''}`, val: `₹${calc.tax.toFixed(2)}` },
-                  { label: `Delivery${formData.state ? ` (${isTN ? 'Tamil Nadu' : 'Outstation'})` : ''}`, val: `₹${calc.delivery.toFixed(2)}` },
-                ].map(({ label, val, highlight, small }) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                {summaryRows.map(({ label, val, highlight, small, strikeVal, free }) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <span style={{ fontSize: small ? 11 : 13, color: 'var(--muted-fg)', fontFamily: 'var(--font-body)' }}>{label}</span>
-                    <span style={{
-                      fontSize: small ? 11 : 13, fontFamily: 'var(--font-heading)', fontWeight: highlight ? 800 : 600,
-                      color: highlight ? 'var(--on-primary)' : 'var(--foreground)',
-                      ...(highlight ? { background: 'var(--primary)', padding: '0 6px', borderRadius: 2 } : {}),
-                    }}>{val}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {strikeVal && (
+                        <span style={{ fontSize: 11, color: 'var(--muted-fg)', textDecoration: 'line-through' }}>{strikeVal}</span>
+                      )}
+                      <span style={{
+                        fontSize: small ? 11 : 13, fontFamily: 'var(--font-heading)', fontWeight: (highlight || free) ? 800 : 600,
+                        color: free ? 'var(--success)' : (highlight ? 'var(--on-primary)' : 'var(--foreground)'),
+                        ...(highlight ? { background: 'var(--primary)', padding: '0 6px', borderRadius: 2 } : {}),
+                      }}>{val}</span>
+                    </span>
                   </div>
                 ))}
 
@@ -815,7 +867,7 @@ const NewCheckout = () => {
                 </div>
 
                 {/* Savings callout */}
-                {appliedCoupon && calc.discount > 0 && (
+                {appliedCoupon && (calc.discount > 0 || calc.deliveryDiscount > 0) && (
                   <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
                     <span style={{ fontSize: 12, color: 'var(--muted-fg)', textDecoration: 'line-through' }}>₹{calc.totalBeforeDiscount.toFixed(2)}</span>
                     <span style={{
