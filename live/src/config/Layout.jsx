@@ -12,6 +12,7 @@ import { GoogleOAuthProvider, useGoogleOneTapLogin } from '@react-oauth/google';
 import { handleGoogleLoginSuccess } from "../utils/googleAuthHelper";
 import new_year from "../assets/new_year.jpeg";
 
+
 const GOOGLE_CLIENT_ID = "323773820042-ube4qhfaig1dbrgvl85gchkrlvphnlv9.apps.googleusercontent.com";
 
 
@@ -30,6 +31,8 @@ const LayoutContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+
 
   const { isAuth } = useSelector((state) => state.authSlice || { isAuth: false });
   const excludedPaths = ['/login', '/sign-up', '/forget-password', '/reset-password'];
@@ -70,40 +73,44 @@ const LayoutContent = () => {
       setScrollProgress(pct);
       setShowIcon(window.scrollY > 700);
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
-    <div className="w-full mx-auto !transition-all !duration-700">
-
-
+    <div className="w-full mx-auto">
 
       {/* ══════════════════════════════════════════════════
-          SCROLLING PROMO STRIP
+          FIXED HEADER (all pages)
+          1. Special offer carousel — fixed top-0
+          2. Header (Navbar)        — fixed top-[40px]
           ══════════════════════════════════════════════════ */}
-      <div className="sticky top-0 z-[999] w-full overflow-hidden valentine-strip">
+
+      {/* 1. Special Offer Carousel */}
+      <div className="fixed top-0 z-[999] w-full overflow-hidden valentine-strip">
         <div className="scrolling-text-container">
           <div className="scrolling-text valentine-strip__text whitespace-nowrap">
-             Special Offer: Buy 2 Products – Get Up to 5% OFF • Buy 3 Products – Get Up to 10% OFF • Add More Items to Your Cart & Save More!
+            Special Offer: Buy 2 Products – Get Up to 5% OFF • Buy 3 Products – Get Up to 10% OFF • Add More Items to Your Cart & Save More!
           </div>
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════
-          NAV
-          ══════════════════════════════════════════════════ */}
-  <div className="sticky top-[40px] z-[999] w-full">
+      {/* 2. Header */}
+      <div className="fixed top-[40px] z-[998] w-full">
         <Navbar />
-      </div>
-      <div className="sticky top-[50px] z-[20]">
-        <NavMenu />
       </div>
 
       {/* ══════════════════════════════════════════════════
-          PAGE CONTENT
+          SCROLLABLE BODY
+          Offset by the height of the two fixed bars so
+          content starts right below them.
           ══════════════════════════════════════════════════ */}
-      <div className="lg:pt-0 pt-16 overflow-x-hidden max-w-[2000px] mx-auto">
+      <div className="pt-[104px] lg:pt-[120px] overflow-x-hidden mx-auto">
+
+        {/* NavMenu — part of normal flow, scrolls with page */}
+        <NavMenu />
+
+        {/* Page content (Outlet) — follows NavMenu directly */}
         <Outlet />
       </div>
 
@@ -130,7 +137,7 @@ const LayoutContent = () => {
           <div className="absolute inset-0 bg-yellow-400 rounded-full opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300" />
         </div>
       </div>
-      
+
 
       {/* ══════════════════════════════════════════════════
           WHATSAPP BUTTON
@@ -148,7 +155,7 @@ const LayoutContent = () => {
             className="relative block bg-green-500 rounded-full lg:p-4 p-3 shadow-lg hover:shadow-2xl transform hover:scale-110 transition-all duration-300"
           >
             <div className="absolute inset-0 bg-green-300 rounded-full opacity-0 group-hover:opacity-60 blur-md transition-opacity duration-300" />
-            <img   fetchpriority="high" loading="eager" src={ImageHelper.WHATSAPP_IMG} alt="WhatsApp Icon" className="w-7 h-7 relative z-10" />
+            <img fetchpriority="high" loading="eager" src={ImageHelper.WHATSAPP_IMG} alt="WhatsApp Icon" className="w-7 h-7 relative z-10" />
           </a>
           <div className="absolute bottom-full right-0 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
             Chat with us!
@@ -166,12 +173,12 @@ const LayoutContent = () => {
           ══════════════════════════════════════════════════ */}
       <Toaster
         position="top-right" reverseOrder={true}
-        containerStyle={{ position:"fixed", top:"400px", right:"20px", zIndex:1000 }}
+        containerStyle={{ position: "fixed", top: "400px", right: "20px", zIndex: 1000 }}
         toastOptions={{
           duration: 4000,
-          style: { background:"#28aa59", color:"#fff", zIndex:1001 },
-          success: { duration:3000, theme:{ primary:"green", secondary:"black" } },
-          error:   { duration:5000, style:{ background:"#ff4d4f", color:"#fff", zIndex:1001 } },
+          style: { background: "#28aa59", color: "#fff", zIndex: 1001 },
+          success: { duration: 3000, theme: { primary: "green", secondary: "black" } },
+          error: { duration: 5000, style: { background: "#ff4d4f", color: "#fff", zIndex: 1001 } },
         }}
       />
 

@@ -1058,7 +1058,7 @@ const PhotoFrameOrderModal = ({ open, onClose, onConfirm, loading, productData, 
             icon={<ShoppingCartOutlined />}
             className="flex-1 h-11 rounded-xl font-semibold"
             style={{
-              background: "linear-gradient(135deg, rgb(242, 196, 26) 0%, rgb(242, 196, 26) 100%)",
+              background: "linear-gradient(135deg, #f2c41aff 0%, #f2c41aff 100%)",
               border: "none",
               color: "black",
             }}

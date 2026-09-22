@@ -1,0 +1,331 @@
+/* ═══════════════════════════════════════════════════
+   WhyChooseUs – Component Styles
+   ═══════════════════════════════════════════════════ */
+
+.wcu-section {
+  padding: 70px 40px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.wcu-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+/* ── LEFT: Image with SVG blob background ────────── */
+
+.wcu-image-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 480px;
+}
+
+.wcu-blob-svg {
+  position: absolute;
+  width: 110%;
+  height: 110%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  filter: drop-shadow(0 8px 30px rgba(248, 242, 221, 0.5));
+}
+
+/* Main blob morph animation — organic, never a perfect circle */
+.wcu-blob-path {
+  fill: #f8f2ddbf;
+  animation: blobMorph 8s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+@keyframes blobMorph {
+  0%, 100% {
+    d: path("M400,280 C460,180 560,160 600,260 C640,360 600,480 520,520 C440,560 340,540 280,480 C220,420 240,340 300,290 C340,260 370,300 400,280Z");
+  }
+  25% {
+    d: path("M420,260 C490,170 570,190 610,280 C650,370 590,500 500,530 C410,560 310,520 270,450 C230,380 260,300 330,270 C380,250 390,290 420,260Z");
+  }
+  50% {
+    d: path("M380,300 C440,200 550,180 600,270 C650,360 620,490 530,540 C440,590 330,550 260,470 C190,390 230,310 310,280 C350,265 350,340 380,300Z");
+  }
+  75% {
+    d: path("M410,270 C480,160 560,200 610,290 C660,380 600,510 510,540 C420,570 320,530 280,460 C240,390 270,310 340,280 C390,260 380,310 410,270Z");
+  }
+}
+
+/* Secondary decorative blob */
+.wcu-blob-path-2 {
+  fill: #f2c41a1a;
+  animation: blobMorph2 10s ease-in-out infinite reverse;
+  transform-origin: center center;
+}
+
+@keyframes blobMorph2 {
+  0%, 100% {
+    d: path("M440,250 C510,160 590,190 620,280 C650,370 610,500 520,530 C430,560 330,530 290,460 C250,390 280,300 350,270 C400,250 420,290 440,250Z");
+  }
+  50% {
+    d: path("M400,290 C450,200 540,170 590,260 C640,350 620,480 540,530 C460,580 350,560 280,480 C210,400 240,320 310,280 C360,260 370,330 400,290Z");
+  }
+}
+
+/* Floating dots decoration */
+.wcu-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: #f2c41a;
+  opacity: 0.35;
+  z-index: 0;
+}
+
+.wcu-dot--1 {
+  width: 14px;
+  height: 14px;
+  top: 8%;
+  right: 12%;
+  animation: floatDot 4s ease-in-out infinite;
+}
+.wcu-dot--2 {
+  width: 10px;
+  height: 10px;
+  bottom: 15%;
+  left: 5%;
+  animation: floatDot 5s ease-in-out infinite 1s;
+}
+.wcu-dot--3 {
+  width: 8px;
+  height: 8px;
+  top: 55%;
+  right: 3%;
+  animation: floatDot 6s ease-in-out infinite 2s;
+}
+
+@keyframes floatDot {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.wcu-image {
+  position: relative;
+  z-index: 1;
+  width: 80%;
+  max-width: 400px;
+  border-radius: 20px;
+  object-fit: cover;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+  animation: imgFloat 5s ease-in-out infinite;
+}
+
+@keyframes imgFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* ── RIGHT: Text content ─────────────────────────── */
+
+.wcu-content {
+  flex: 1;
+}
+
+/* 1. Label with ::before hr line */
+.wcu-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #f2c41a;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.wcu-label::before {
+  content: "";
+  display: inline-block;
+  width: 36px;
+  height: 3px;
+  background: #f2c41a;
+  border-radius: 2px;
+}
+
+/* 2. Heading */
+.wcu-heading {
+  font-size: 36px;
+  font-weight: 800;
+  color: #111;
+  line-height: 1.25;
+  margin: 0 0 20px 0;
+}
+
+/* 3. Description paragraph */
+.wcu-description {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #555;
+  margin-bottom: 32px;
+  max-width: 500px;
+}
+
+/* 4. Feature icons row */
+.wcu-features {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+}
+
+.wcu-feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 110px;
+}
+
+.wcu-feature-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #f2c41a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(242, 196, 26, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.wcu-feature-icon:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(242, 196, 26, 0.45);
+}
+
+.wcu-feature-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: #111;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wcu-feature-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+  text-align: center;
+}
+
+/* 5. CTA Button */
+.wcu-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 30px;
+  border: 2px solid #f2c41a;
+  border-radius: 8px;
+  background: transparent;
+  color: #f2c41a;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.35s ease;
+  letter-spacing: 0.3px;
+}
+
+.wcu-cta-btn:hover {
+  background: #f2c41a;
+  color: #111;
+}
+
+.wcu-cta-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.35s ease;
+}
+
+.wcu-cta-btn:hover svg {
+  transform: translateX(4px);
+}
+
+/* ── Responsive ──────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .wcu-container {
+    gap: 40px;
+  }
+  .wcu-heading {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .wcu-section {
+    padding: 50px 20px;
+  }
+  .wcu-container {
+    flex-direction: column;
+    gap: 36px;
+  }
+  .wcu-image-wrapper {
+    min-height: 340px;
+    width: 100%;
+  }
+  .wcu-image {
+    max-width: 300px;
+  }
+  .wcu-content {
+    text-align: center;
+  }
+  .wcu-label {
+    justify-content: center;
+  }
+  .wcu-heading {
+    font-size: 26px;
+  }
+  .wcu-description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .wcu-features {
+    justify-content: center;
+  }
+  .wcu-cta-btn {
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .wcu-heading {
+    font-size: 22px;
+  }
+  .wcu-image-wrapper {
+    min-height: 280px;
+  }
+  .wcu-image {
+    max-width: 240px;
+  }
+  .wcu-features {
+    gap: 14px;
+  }
+  .wcu-feature-item {
+    min-width: 90px;
+  }
+  .wcu-feature-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+  .wcu-feature-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+}

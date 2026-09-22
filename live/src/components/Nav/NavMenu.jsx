@@ -3,6 +3,8 @@ import { useSelector } from "react-redux";
 import { IconHelper } from "../../helper/IconHelper";
 import _ from "lodash";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
+import { BsArrowRight } from "react-icons/bs";
 
 // Safe icon component with fallback
 const SafeIcon = ({ icon: IconComponent, className, fallback = "→", ...props }) => {
@@ -26,6 +28,8 @@ const NavMenu = () => {
   const navigation = useNavigate();
   const dropdownRefs = useRef({});
 
+
+  const [isExploreHovered, setIsExploreHovered] = useState(false);
 
   // State management
   const [activeDropdown, setActiveDropdown] = useState({
@@ -92,7 +96,7 @@ const NavMenu = () => {
   // Helper function to get nav menu image based on type and main category
   const getNavMenuImage = (mainCategory, placeholderType) => {
     // placeholderType: 'square' or 'horizontal'
-    
+
     // Get image from main category
     if (mainCategory) {
       if (placeholderType === 'square' && mainCategory.nav_menu_square_image) {
@@ -107,7 +111,7 @@ const NavMenu = () => {
       square: "https://printe.s3.ap-south-1.amazonaws.com/1765363921070-v9jypfz72rr.png",
       horizontal: "https://printe.s3.ap-south-1.amazonaws.com/1762926357351-sd9qoh5lhfh.jpg"
     };
-    
+
     return fallbackImages[placeholderType] || fallbackImages.square;
   };
 
@@ -169,24 +173,37 @@ const NavMenu = () => {
 
 
   return (
-    <div className="hidden lg:block xl:block 2xl:block bg-primary h-full capitalize text-base lg:px-10 2xl:px-40 w-full p-4">
-      <div className="flex gap-x-2 h-full justify-center items-center w-full relative">
+    <div className="hidden lg:block xl:block 2xl:block bg-white h-full capitalize text-base px-2 sm-px-4 md:px-8 lg:px-10 w-full p-4">
+      <div className="flex gap-x-3 xl:gap-x-10 h-full justify-center items-center w-full relative">
         {/* All Categories Mega Menu */}
         <div className="w-fit center_div rounded-md text-white">
           <div ref={(el) => (dropdownRefs.current.megaMenu = { current: el })}>
-            <div
-              onMouseEnter={() => {
-                toggleDropdown("megaMenu");
-              }}
-              className="text-white center_div gap-x-2 text-[14px] font-bold hover:text-yellow-300 transition-all duration-300 py-2 px-4 rounded-lg   cursor-pointer"
+            <Link
+              to={"/all-categories"}
+              className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#f2c41a] text-[#111827] hover:text-[#111827] font-bold text-sm shadow-md hover:shadow-lg transform  hover:text-[14.5px] active:translate-y-0 transition-all duration-200"
+              onMouseEnter={() => setIsExploreHovered(true)}
+              onMouseLeave={() => setIsExploreHovered(false)}
             >
-              All categories <SafeIcon icon={IconHelper.DOWNARROW_ICON} />
-            </div>
+              <span>All Categories</span>
+              <motion.span
+                animate={isExploreHovered
+                  ? { x: [0, 6, 0] }
+                  : { x: 0 }
+                }
+                transition={isExploreHovered
+                  ? { duration: 0.55, repeat: Infinity, ease: "easeInOut" }
+                  : { duration: 0.2 }
+                }
+                className="flex items-center"
+              >
+                <BsArrowRight className="text-base stroke-[0.5]" />
+              </motion.span>
+            </Link>
 
             {/* Mega Menu Content */}
             {activeDropdown.megaMenu && (
               <div
-                className="absolute animate-fade-in w-[70vw] max-w-7xl z-50 top-16 left-0 transform bg-white rounded-xl  border border-gray-200 shadow-2xl "
+                className="absolute animate-fade-in w-[70vw] max-w-7xl z-50 top-16 left-0 transform rounded-xl  border border-gray-200 shadow-2xl "
                 onMouseLeave={closeAllDropdowns}
               >
                 <div className="p-8">
@@ -311,7 +328,7 @@ const NavMenu = () => {
                                                   }}
                                                 >
                                                   <div className="w-8 h-8 rounded border border-gray-200  flex-shrink-0">
-                                                    <img   fetchpriority="high" loading="eager"
+                                                    <img fetchpriority="high" loading="eager"
                                                       src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
                                                         product,
                                                         "images[0].path",
@@ -483,7 +500,7 @@ const NavMenu = () => {
                 }
               >
                 <div
-                  className="text-white center_div gap-x-2 text-nowrap cursor-pointer py-2 px-4 rounded-lg hover:text-yellow-300 transition-all duration-300"
+                  className="text-black center_div gap-x-2 text-nowrap cursor-pointer py-2 px-4 rounded-lg transition-all duration-300"
                   onMouseEnter={() => {
                     toggleDropdown("categories", category._id);
                     handleHoverState("category_id", category._id);
@@ -580,7 +597,7 @@ const NavMenu = () => {
                                           }}
                                         >
                                           <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-gray-200 group-hover/product:border-yellow-300 transition-all">
-                                            <img   fetchpriority="high" loading="eager"
+                                            <img fetchpriority="high" loading="eager"
                                               src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
                                                 product,
                                                 "images[0].path",
@@ -636,13 +653,12 @@ const NavMenu = () => {
                               return (
                                 <div
                                   key="placeholder-horizontal"
-                                  className={`p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center ${
-                                    placeholdersNeeded === 2 ? 'col-span-2' : 
-                                    placeholdersNeeded === 3 ? 'col-span-3' : 
-                                    'col-span-4'
-                                  }`}
+                                  className={`p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center ${placeholdersNeeded === 2 ? 'col-span-2' :
+                                    placeholdersNeeded === 3 ? 'col-span-3' :
+                                      'col-span-4'
+                                    }`}
                                 >
-                                  <img   fetchpriority="high" loading="eager"
+                                  <img fetchpriority="high" loading="eager"
                                     src={imageToUse}
                                     alt={`${category.main_category_name} Banner`}
                                     className="w-full h-full object-contain rounded-lg border border-gray-300"
@@ -653,7 +669,7 @@ const NavMenu = () => {
                                 </div>
                               );
                             }
-                            
+
                             // If only 1 empty column, show square image
                             if (placeholdersNeeded === 1) {
                               const imageToUse = getNavMenuImage(category, 'square');
@@ -662,7 +678,7 @@ const NavMenu = () => {
                                   key="placeholder-square"
                                   className="p-4 rounded-lg border border-gray-200 bg-gray-50 hidden lg:flex lg:items-center lg:justify-center"
                                 >
-                                  <img   fetchpriority="high" loading="eager"
+                                  <img fetchpriority="high" loading="eager"
                                     src={imageToUse}
                                     alt={`${category.main_category_name} Image`}
                                     className="w-full h-full object-cover rounded-lg border border-gray-300"
@@ -726,7 +742,7 @@ const NavMenu = () => {
                                       onClick={closeAllDropdowns}
                                     >
                                       <div className="">
-                                        <img   fetchpriority="high" loading="eager"
+                                        <img fetchpriority="high" loading="eager"
                                           src={_.get(product, "variants[0].options[0].image_names[0].url") || _.get(
                                             product,
                                             "images[0].path",

@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import SimpleProductCard from "../Product/SimpleProductCard";
+import ProductCardNew from "../Product/ProductCardNew";
 import ProductCard from "../Product/ProductCard";
 import DividerCards from "../cards/DividerCards";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -17,19 +18,85 @@ import Big_sale from "../../assets/mockup/big_sale.png";
 import { motion } from "motion/react";
 import QuickAccess from "../../config/QuickAccess";
 
+const PRODUCT_TYPE_CONFIG = {
+  1: {
+    component: SimpleProductCard,
+    slidesPerView: {
+      default: 1,
+      640: 2,
+      768: 3,
+      1024: 4,
+      1440: 5,
+    },
+    gridCols: {
+      mobile: "grid-cols-2",
+      tablet: "sm:grid-cols-2",
+      desktop: "md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+    },
+  },
+  2: {
+    component: SimpleProductCard,
+    slidesPerView: {
+      default: 1,
+      640: 2,
+      768: 3,
+      1024: 4,
+      1440: 5,
+    },
+    gridCols: {
+      mobile: "grid-cols-2",
+      tablet: "sm:grid-cols-2",
+      desktop: "md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+    },
+  },
+  3: {
+    component: SimpleProductCard,
+    slidesPerView: {
+      default: 1,
+      640: 2,
+      768: 4,
+      1024: 4,
+      1440: 4,
+    },
+    requiresBanner: true,
+    gridCols: {
+      mobile: "grid-cols-2",
+      tablet: "sm:grid-cols-2",
+      desktop: "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+    },
+  },
+  default: {
+    component: SimpleProductCard,
+    slidesPerView: {
+      default: 1,
+      640: 2,
+      768: 3,
+      1024: 4,
+      1440: 5,
+    },
+    gridCols: {
+      mobile: "grid-cols-2",
+      tablet: "sm:grid-cols-2",
+      desktop: "md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+    },
+  },
+};
 
 const SwiperList = ({
   data = [],
-  title = "",
+  title = "BEST SELLERS",
   type = "Category",
   productCardType = "Modern",
-  subtitle = "",
+  subtitle = "Most Loved Products",
   to = "",
   left = true,
   product_type,
 }) => {
-  const products = data.filter((res)=>res.is_visible==true);
-  
+  const products = useMemo(
+    () => (data || []).filter((res) => res.is_visible == true),
+    [data]
+  );
+
   const swiperRef = useRef(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
@@ -42,9 +109,9 @@ const SwiperList = ({
     };
 
     checkMobile();
-    window.addEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
 
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const handleSlideChange = (swiper) => {
@@ -58,132 +125,36 @@ const SwiperList = ({
     setIsEnd(swiper.isEnd);
   };
 
-  const GET_PRODUCT_DISPLAY_TYPE = ({ data }) => {
-    switch (product_type) {
-      case "1":
-        return (
-          <div className="relative">
-            <div className="">
-              <SimpleProductCard data={data} />
-            </div>
-          </div>
-        );
-      case "2":
-        return (
-          <div className="relative">
-            <SimpleProductCard data={data} />
-          </div>
-        );
-      case "3":
-        return <SimpleProductCard data={data} />;
-
-      default:
-        return <SimpleProductCard data={data} />;
-    }
-  };
-
-  const PRODUCT_TYPE_CONFIG = {
-    1: {
-      component: SimpleProductCard,
-      slidesPerView: {
-        default: 1,
-        640: 2,
-        768: 3,
-        1024: 4,
-        1440: 5,
-      },
-      gridCols: {
-        mobile: "grid-cols-2",
-        tablet: "sm:grid-cols-2",
-        desktop: "md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-      }
-    },
-    2: {
-      component: SimpleProductCard,
-      slidesPerView: {
-        default: 1,
-        640: 2,
-        768: 3,
-        1024: 4,
-        1440: 5,
-      },
-      gridCols: {
-        mobile: "grid-cols-2",
-        tablet: "sm:grid-cols-2",
-        desktop: "md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-      }
-    },
-    3: {
-      component: SimpleProductCard,
-      slidesPerView: {
-        default: 1,
-        640: 2,
-        768: 4,
-        1024: 4,
-        1440: 4,
-      },
-      requiresBanner: true,
-      gridCols: {
-        mobile: "grid-cols-2",
-        tablet: "sm:grid-cols-2",
-        desktop: "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-      }
-    },
-    default: {
-      component: SimpleProductCard,
-      slidesPerView: {
-        default: 1,
-        640: 2,
-        768: 3,
-        1024: 4,
-        1440: 5,
-      },
-      gridCols: {
-        mobile: "grid-cols-2",
-        tablet: "sm:grid-cols-2",
-        desktop: "md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-      }
-    },
-  };
-
   const config = PRODUCT_TYPE_CONFIG[product_type] || PRODUCT_TYPE_CONFIG.default;
 
-  // Mobile Grid View
-  const MobileGridView = () => (
-    <div className={`grid ${config.gridCols.mobile} ${config.gridCols.tablet} ${config.gridCols.desktop} gap-4 md:gap-6`}>
-      {products.map((product, index) => (
-        <div key={index} className="w-full">
-          {product_type === "2" ? (
-            <SimpleProductCard data={product} />
-          ) : (
-            <GET_PRODUCT_DISPLAY_TYPE data={product} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-
-  // Desktop Swiper View
-  const DesktopSwiperView = () => (
+  // Render product swiper directly (no nested component function that causes unmount)
+  const renderProductSwiper = () => (
     <Swiper
-      spaceBetween={16}
-      slidesPerView={config.slidesPerView.default}
+      onSwiper={handleSwiperInit}
+      onSlideChange={handleSlideChange}
+      spaceBetween={10}
+      slidesPerView={2}
       breakpoints={{
-        640: { slidesPerView: config.slidesPerView[640], spaceBetween: 14 },
-        768: { slidesPerView: config.slidesPerView[768], spaceBetween: 16 },
-        1024: { slidesPerView: config.slidesPerView[1024], spaceBetween: 18 },
-        1440: { slidesPerView: config.slidesPerView[1440], spaceBetween: 20 },
+        0: { slidesPerView: 2, spaceBetween: 10 },
+        480: { slidesPerView: 2, spaceBetween: 12 },
+        640: { slidesPerView: config.slidesPerView[640] || 2, spaceBetween: 14 },
+        768: { slidesPerView: config.slidesPerView[768] || 3, spaceBetween: 16 },
+        1024: { slidesPerView: config.slidesPerView[1024] || 4, spaceBetween: 18 },
+        1440: { slidesPerView: config.slidesPerView[1440] || 5, spaceBetween: 20 },
       }}
       className="w-full"
-      modules={[Navigation]}
+      modules={[Navigation, Autoplay]}
       navigation={false}
-      speed={400}
+      grabCursor={true}
+      loop={products.length > 4}
+      autoplay={{ delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true }}
+      speed={600}
       resistance={true}
       resistanceRatio={0.85}
     >
       {products.map((product, index) => (
-        <SwiperSlide key={index}>
-          <GET_PRODUCT_DISPLAY_TYPE data={product} />
+        <SwiperSlide key={product._id || product.seo_url || index}>
+          <ProductCardNew data={product} />
         </SwiperSlide>
       ))}
     </Swiper>
@@ -191,56 +162,47 @@ const SwiperList = ({
 
   return (
     <div>
-      {product_type === "2" && (
-        <div className="my-10 hidden lg:block">
-          <Bannear />
-        </div>
-      )}
-      {product_type === "3" && (
+      {product_type === "1" && (
         <>
-          <div className="lg:hidden block">
-            <div className="pt-8 block lg:hidden">
-              <h2 className="capitalize text-center pb-5 text-2xl font-bold">
-                Special gifts for your favorite person
-              </h2>
-              <div className="flex justify-center">
-                <button
-                  className="w-1/4 rounded-xl bg-[#020202] mx-10 p-2 font-semibold capitalize text-white"
-                >
-                  Shop Now
-                </button>
-              </div>
-              <div className="p-10 ">
-                <div className="relative rounded-2xl overflow-hidden">
-                  <img   fetchpriority="high" loading="eager" src="https://printe.s3.ap-south-1.amazonaws.com/1771589215725-5hv79l6lwla.jpeg" alt="bannear" className="" />
-                </div>
-              </div>
+          <div className="lg:px-20 px-2">
+            <DividerCards name={title || "BEST SELLERS"} subtitle={subtitle || "Most Loved Products"} to={to} left={left} />
+            <div className="relative">
+              {renderProductSwiper()}
             </div>
           </div>
-          <div className="my-20 hidden lg:block">
+          <div className="my-10 sm:my-16 lg:my-20">
             <ThreeStep />
           </div>
         </>
       )}
-      {product_type === "1" && (
-        <div className="">
-          <QuickAccess />
+
+      {product_type === "2" && (
+        <>
+          <div className="lg:px-20 px-2">
+            <DividerCards name={title || "BEST SELLERS"} subtitle={subtitle || "Most Loved Products"} to={to} left={left} />
+            <div className="relative">
+              {renderProductSwiper()}
+            </div>
+          </div>
+          <div className="mt-6 sm:mt-10">
+            <QuickAccess />
+          </div>
+        </>
+      )}
+
+      {product_type !== "1" && product_type !== "2" && (
+        <div className="lg:px-20 px-2">
+          <DividerCards name={title || "BEST SELLERS"} subtitle={subtitle || "Most Loved Products"} to={to} left={left} />
+          <div className="relative">
+            {renderProductSwiper()}
+          </div>
         </div>
       )}
-      <div className="lg:px-20 px-4">
-        {title && (
-          <DividerCards name={title} subtitle={subtitle} to={to} left={left} />
-        )}
-        <div className="relative">
-          {/* Show grid on mobile, swiper on desktop */}
-          {isMobile ? <MobileGridView /> : <DesktopSwiperView />}
-        </div>
-      </div>
     </div>
   );
 };
 
-export default SwiperList;
+export default React.memo(SwiperList);
 
 export const Bannear = () => {
   // Animation variants
@@ -283,110 +245,111 @@ export const Bannear = () => {
   };
 
   return (
-    <div className="w-full banear__section relative z-0 mb-20 py-2">
-      <div className="absolute h-full w-full bg-[#1c1c1c94] z-1 top-0"></div>
-      <div className="max-w-[90%] mx-auto">
-        <motion.div
-          className="flex flex-col md:flex-row lg:h-[55vh] items-center justify-between gap-12 p-6 rounded-xl relative"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={containerVariants}
-        >
-          {/* Left Image - Hidden on mobile */}
-          <motion.div
-            className="hidden md:block flex-shrink-0"
-            variants={itemVariants}
-          >
-            <motion.img
-              src={Banear}
-              alt="Printing business illustration"
-              className="w-auto h-[300px] lg:h-[500px] object-contain"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            />
-          </motion.div>
+    <></>
+    // <div className="w-full banear__section relative z-0 mb-20 py-2">
+    //   <div className="absolute h-full w-full bg-[#1c1c1c94] z-1 top-0"></div>
+    //   <div className="max-w-[90%] mx-auto">
+    //     <motion.div
+    //       className="flex flex-col md:flex-row lg:h-[55vh] items-center justify-between gap-12 p-6 rounded-xl relative"
+    //       initial="hidden"
+    //       whileInView="visible"
+    //       viewport={{ once: true, margin: "-100px" }}
+    //       variants={containerVariants}
+    //     >
+    //       {/* Left Image - Hidden on mobile */}
+    //       <motion.div
+    //         className="hidden md:block flex-shrink-0"
+    //         variants={itemVariants}
+    //       >
+    //         <motion.img
+    //           src={Banear}
+    //           alt="Printing business illustration"
+    //           className="w-auto h-[300px] lg:h-[500px] object-contain"
+    //           whileHover={{ scale: 1.05 }}
+    //           transition={{ type: "spring", stiffness: 300 }}
+    //         />
+    //       </motion.div>
 
-          {/* Content Section */}
-          <motion.div
-            className="flex-1 text-center md:text-left space-y-4"
-            variants={containerVariants}
-          >
-            <motion.h1
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#f8f8f8] leading-tight"
-              variants={itemVariants}
-            >
-              Take Your{" "}
-              <motion.span
-                className="text-[#f2c41a]"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                Printing Business
-              </motion.span>{" "}
-              to the Next Level
-            </motion.h1>
+    //       {/* Content Section */}
+    //       <motion.div
+    //         className="flex-1 text-center md:text-left space-y-4"
+    //         variants={containerVariants}
+    //       >
+    //         <motion.h1
+    //           className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#f8f8f8] leading-tight"
+    //           variants={itemVariants}
+    //         >
+    //           Take Your{" "}
+    //           <motion.span
+    //             className="text-[#f2c41a]"
+    //             whileHover={{ scale: 1.05 }}
+    //             transition={{ type: "spring", stiffness: 300 }}
+    //           >
+    //             Printing Business
+    //           </motion.span>{" "}
+    //           to the Next Level
+    //         </motion.h1>
 
-            <motion.p
-              className="text-[#f8f8f8] text-lg"
-              variants={itemVariants}
-            >
-              Premium, high-performance solutions designed for professional
-              printers seeking to enhance productivity, improve print quality,
-              and expand their service offerings with cutting-edge technology
-              and reliable innovation.
-            </motion.p>
+    //         <motion.p
+    //           className="text-[#f8f8f8] text-lg"
+    //           variants={itemVariants}
+    //         >
+    //           Premium, high-performance solutions designed for professional
+    //           printers seeking to enhance productivity, improve print quality,
+    //           and expand their service offerings with cutting-edge technology
+    //           and reliable innovation.
+    //         </motion.p>
 
-            <motion.button
-              className="mt-4 bg-[#f2c41a] hover:bg-[#e0b010] text-[#1a1a1a] font-semibold py-3 px-8 rounded-lg shadow-md hover:text-white"
-              whileHover="hover"
-              whileTap="tap"
-              variants={buttonVariants}
-            >
-              Unlock Growth Now
-              <motion.span
-                className="ml-2 inline-block"
-                animate={{
-                  x: [0, 4, 0],
-                  transition: {
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  },
-                }}
-              >
-                →
-              </motion.span>
-            </motion.button>
-          </motion.div>
+    //         <motion.button
+    //           className="mt-4 bg-[#f2c41a] hover:bg-[#e0b010] text-[#1a1a1a] font-semibold py-3 px-8 rounded-lg shadow-md hover:text-white"
+    //           whileHover="hover"
+    //           whileTap="tap"
+    //           variants={buttonVariants}
+    //         >
+    //           Unlock Growth Now
+    //           <motion.span
+    //             className="ml-2 inline-block"
+    //             animate={{
+    //               x: [0, 4, 0],
+    //               transition: {
+    //                 duration: 1.5,
+    //                 repeat: Infinity,
+    //                 ease: "easeInOut",
+    //               },
+    //             }}
+    //           >
+    //             →
+    //           </motion.span>
+    //         </motion.button>
+    //       </motion.div>
 
-          {/* Right Image - Hidden on mobile */}
-          <motion.div
-            className="hidden lg:block flex-shrink-0 absolute bottom-[-150px] right-[300px] z-10 single_product"
-            variants={itemVariants}
-          >
-            <motion.img
-              src={Carry_bag}
-              alt="Printing business illustration"
-              className="w-auto h-[300px] object-contain"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            />
-          </motion.div>
-          <motion.div
-            className="hidden lg:block flex-shrink-0 absolute bottom-[-150px] delay-150 right-[100px] z-10 single_product_right"
-            variants={itemVariants}
-          >
-            <motion.img
-              src={Big_sale}
-              alt="Printing business illustration"
-              className="w-auto h-[300px] object-contain"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            />
-          </motion.div>
-        </motion.div>
-      </div>
-    </div>
+    //       {/* Right Image - Hidden on mobile */}
+    //       <motion.div
+    //         className="hidden lg:block flex-shrink-0 absolute bottom-[-150px] right-[300px] z-10 single_product"
+    //         variants={itemVariants}
+    //       >
+    //         <motion.img
+    //           src={Carry_bag}
+    //           alt="Printing business illustration"
+    //           className="w-auto h-[300px] object-contain"
+    //           whileHover={{ scale: 1.05 }}
+    //           transition={{ type: "spring", stiffness: 300 }}
+    //         />
+    //       </motion.div>
+    //       <motion.div
+    //         className="hidden lg:block flex-shrink-0 absolute bottom-[-150px] delay-150 right-[100px] z-10 single_product_right"
+    //         variants={itemVariants}
+    //       >
+    //         <motion.img
+    //           src={Big_sale}
+    //           alt="Printing business illustration"
+    //           className="w-auto h-[300px] object-contain"
+    //           whileHover={{ scale: 1.05 }}
+    //           transition={{ type: "spring", stiffness: 300 }}
+    //         />
+    //       </motion.div>
+    //     </motion.div>
+    //   </div>
+    // </div>
   );
 };

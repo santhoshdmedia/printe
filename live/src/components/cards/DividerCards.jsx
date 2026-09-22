@@ -2,33 +2,33 @@ import { Link, useLocation } from "react-router-dom";
 import { IconHelper } from "../../helper/IconHelper";
 import { motion } from "motion/react";
 
-const DividerCards = ({ name, subtitle, to, left = false }) => {
+const DividerCards = ({ name = "BEST SELLERS", subtitle = "Most Loved Products", to, left = false }) => {
   const location = useLocation();
   const isSeeMorePage = location.pathname.startsWith("/see-more/") || 
                        location.pathname.startsWith("/recent-Products");
 
+  const heading = name || "BEST SELLERS";
+  const subHeading = subtitle || "Most Loved Products";
+
   return (
-    <div className="py-6 px-4">
+    <div className="pt-6 sm:py-6 sm:px-4">
       <div className={`flex ${left || isSeeMorePage ? "justify-between items-center" : "flex-col items-center"} gap-4`}>
         {/* Title Section */}
-        <div className="flex flex-col items-center lg:items-start gap-2">
-          <div className="relative inline-block">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">
-              {name}
-            </h1>
-            <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "100%" }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="absolute bottom-0 left-0 h-1 bg-[#f2c41a]"
-            />
+        <div className="flex flex-col items-start gap-1">
+          {/* Heading: primary yellow with --- before */}
+          <div className="flex items-center gap-2">
+            <span className="text-[#f2c41a] font-extrabold tracking-tighter text-sm sm:text-base select-none">
+              ---
+            </span>
+            <h2 className="text-xs sm:text-sm font-extrabold uppercase text-[#f2c41a]">
+              {heading}
+            </h2>
           </div>
 
-          {subtitle && (
-            <p className="text-sm text-gray-500 text-center lg:text-left">
-              {subtitle}
-            </p>
-          )}
+          {/* Subheading: black, larger than heading */}
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#111] leading-tight  lg:text-left">
+            {subHeading}
+          </h1>
         </div>
 
         {/* See More Link */}
@@ -39,7 +39,7 @@ const DividerCards = ({ name, subtitle, to, left = false }) => {
           >
             <Link
               to={to}
-              className="flex items-center gap-1 text-sm font-medium text-[#f2c41a] hover:text-[#d8ad2d] transition-colors"
+              className="flex items-center gap-1 text-[10px] sm:text-sm font-medium text-[#f2c41a] hover:text-[#d8ad2d] transition-colors"
             >
               See More
               <motion.span
